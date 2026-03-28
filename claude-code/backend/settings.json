@@ -1,0 +1,97 @@
+{
+  "_comment": "Claude Code project settings. Loaded when this plugin is enabled in the target project.",
+  "permissions": {
+    "_comment": "Tool permission rules. 'allow' auto-approves, 'ask' prompts user, 'deny' blocks. Each is an array of tool name patterns.",
+    "allow": [],
+    "ask": [],
+    "deny": [
+      "// Build and generated artifacts",
+      "Read(bin/**)", "Edit(bin/**)",
+      "Read(dist/**)", "Edit(dist/**)",
+      "Read(public/build/**)", "Edit(public/build/**)",
+      "Read(storage/framework/views/**)", "Edit(storage/framework/views/**)",
+      "Read(storage/framework/cache/**)", "Edit(storage/framework/cache/**)",
+      "Read(storage/framework/sessions/**)", "Edit(storage/framework/sessions/**)",
+      "Read(bootstrap/cache/**)", "Edit(bootstrap/cache/**)",
+
+      "// Test & coverage artifacts",
+      "Read(coverage.out)", "Edit(coverage.out)",
+      "Read(coverage.html)", "Edit(coverage.html)",
+      "Read(.phpunit.result.cache)", "Edit(.phpunit.result.cache)",
+
+      "// Dependencies",
+      "Read(vendor/**)", "Edit(vendor/**)",
+      "Read(node_modules/**)", "Edit(node_modules/**)",
+
+      "// Secrets & env (exceptions: .env.example, .template.env)",
+      "Read(.env)", "Edit(.env)",
+      "Read(.env.*)", "Edit(.env.*)",
+      "Read(storage/*.key)", "Edit(storage/*.key)",
+      "Read(*.pem)", "Edit(*.pem)",
+      "Read(*.key)", "Edit(*.key)",
+      "Read(*.crt)", "Edit(*.crt)",
+      "Read(*.p12)", "Edit(*.p12)",
+      "Read(*.pfx)", "Edit(*.pfx)",
+      "Read(*.jks)", "Edit(*.jks)",
+      "Read(*.json.secret)", "Edit(*.json.secret)",
+      "Read(*secret*.json)", "Edit(*secret*.json)",
+      "Read(*credentials*.json)", "Edit(*credentials*.json)",
+      "Read(service_account*.json)", "Edit(service_account*.json)",
+
+      "// Frontend dev artifacts",
+      "Read(tmp/**)", "Edit(tmp/**)",
+      "Read(.vite/**)", "Edit(.vite/**)",
+      "Read(.nuxt/**)", "Edit(.nuxt/**)",
+
+      "// Database files",
+      "Read(*.db)", "Edit(*.db)",
+      "Read(*.sqlite)", "Edit(*.sqlite)",
+      "Read(*.sqlite3)", "Edit(*.sqlite3)",
+      "Read(*.dump)", "Edit(*.dump)",
+      "Read(*.sql.gz)", "Edit(*.sql.gz)",
+      "Read(*.sql.bz2)", "Edit(*.sql.bz2)",
+
+      "// Uploads and runtime files",
+      "Read(storage/app/**)", "Edit(storage/app/**)",
+      "Read(storage/logs/**)", "Edit(storage/logs/**)",
+
+      "// CI artifacts",
+      "Read(.gitlab-ci-cache/**)", "Edit(.gitlab-ci-cache/**)",
+      "Read(.github/actions/cache/**)", "Edit(.github/actions/cache/**)",
+      "Read(reports/**)", "Edit(reports/**)",
+      "Read(test-results/**)", "Edit(test-results/**)",
+      "Read(junit*.xml)", "Edit(junit*.xml)",
+
+      "// Logs",
+      "Read(*.log)", "Edit(*.log)",
+      "Read(logs/**)", "Edit(logs/**)",
+      "Read(log/**)", "Edit(log/**)",
+
+      "// IDE",
+      "Read(.idea/**)", "Edit(.idea/**)",
+      "Read(*.iml)", "Edit(*.iml)",
+      "Read(*.iws)", "Edit(*.iws)",
+      "Read(*.ipr)", "Edit(*.ipr)",
+      "Read(.vscode/**)", "Edit(.vscode/**)",
+      "Read(*.swp)", "Edit(*.swp)",
+      "Read(*.swo)", "Edit(*.swo)",
+      "Read(.netrwhist)", "Edit(.netrwhist)",
+      "Read(Session.vim)", "Edit(Session.vim)",
+      "Read(*~)", "Edit(*~)",
+
+      "// OS",
+      "Read(.DS_Store)", "Edit(.DS_Store)",
+      "Read(.AppleDouble)", "Edit(.AppleDouble)",
+      "Read(.LSOverride)", "Edit(.LSOverride)",
+      "Read(._*)", "Edit(._*)",
+      "Read(Thumbs.db)", "Edit(Thumbs.db)",
+      "Read(ehthumbs.db)", "Edit(ehthumbs.db)",
+      "Read(desktop.ini)", "Edit(desktop.ini)",
+      "Read($RECYCLE.BIN/**)", "Edit($RECYCLE.BIN/**)",
+      "Read(.directory)", "Edit(.directory)"
+    ]
+  },
+  "env": {
+    "_comment": "Environment variables to set for Claude Code sessions."
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "vue-language-server": {
+    "command": "vue-language-server",
+    "args": ["--stdio"],
+    "extensionToLanguage": {
+      ".vue": "vue",
+      ".ts": "typescript",
+      ".js": "javascript"
+    }
+  },
+  "typescript-language-server": {
+    "command": "typescript-language-server",
+    "args": ["--stdio"],
+    "extensionToLanguage": {
+      ".ts": "typescript",
+      ".tsx": "typescriptreact",
+      ".js": "javascript",
+      ".jsx": "javascriptreact"
+    }
+  }
+}

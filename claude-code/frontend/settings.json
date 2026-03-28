@@ -1,0 +1,56 @@
+{
+  "_comment": "Claude Code project settings. Loaded when this plugin is enabled in the target project.",
+  "permissions": {
+    "_comment": "Tool permission rules. 'allow' auto-approves, 'ask' prompts user, 'deny' blocks. Each is an array of tool name patterns.",
+    "allow": [],
+    "ask": [],
+    "deny": [
+      "// Build and generated artifacts",
+      "Read(dist/**)", "Edit(dist/**)",
+      "Read(.output/**)", "Edit(.output/**)",
+      "Read(.nuxt/**)", "Edit(.nuxt/**)",
+      "Read(.vite/**)", "Edit(.vite/**)",
+      "Read(coverage/**)", "Edit(coverage/**)",
+      "Read(nitro.json)", "Edit(nitro.json)",
+
+      "// Dependencies",
+      "Read(node_modules/**)", "Edit(node_modules/**)",
+
+      "// Secrets and environment",
+      "Read(.env)", "Edit(.env)",
+      "Read(.env.*)", "Edit(.env.*)",
+      "Read(*.pem)", "Edit(*.pem)",
+      "Read(*.key)", "Edit(*.key)",
+      "Read(*.crt)", "Edit(*.crt)",
+      "Read(*.p12)", "Edit(*.p12)",
+      "Read(*.pfx)", "Edit(*.pfx)",
+      "Read(*secret*.json)", "Edit(*secret*.json)",
+      "Read(*credentials*.json)", "Edit(*credentials*.json)",
+      "Read(service_account*.json)", "Edit(service_account*.json)",
+
+      "// Runtime and logs",
+      "Read(tmp/**)", "Edit(tmp/**)",
+      "Read(.cache/**)", "Edit(.cache/**)",
+      "Read(*.log)", "Edit(*.log)",
+      "Read(logs/**)", "Edit(logs/**)",
+      "Read(log/**)", "Edit(log/**)",
+
+      "// Test and CI artifacts",
+      "Read(test-results/**)", "Edit(test-results/**)",
+      "Read(reports/**)", "Edit(reports/**)",
+      "Read(junit*.xml)", "Edit(junit*.xml)",
+
+      "// IDE and OS noise",
+      "Read(.idea/**)", "Edit(.idea/**)",
+      "Read(.vscode/**)", "Edit(.vscode/**)",
+      "Read(*.iml)", "Edit(*.iml)",
+      "Read(*.swp)", "Edit(*.swp)",
+      "Read(*.swo)", "Edit(*.swo)",
+      "Read(*~)", "Edit(*~)",
+      "Read(Thumbs.db)", "Edit(Thumbs.db)"
+    ]
+  },
+  "env": {
+    "_comment": "Environment variables to set for Claude Code sessions."
+  }
+}

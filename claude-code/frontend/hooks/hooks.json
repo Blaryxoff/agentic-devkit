@@ -1,0 +1,23 @@
+{
+  "_comment": "Hook definitions for Claude Code. Each key is a hook event type. Each event contains an array of hook objects with matcher and command fields.",
+  "_events": "PreToolUse, PostToolUse, Notification, Stop, SubagentStop",
+  "_hook_fields": "matcher (regex matching tool name), command (shell command to run), timeout_ms (optional, default 60000)",
+  "hooks": {
+    "Stop": [
+      {
+        "_comment": "Run lint and typecheck after Claude finishes a session to catch any introduced issues.",
+        "matcher": "",
+        "command": "pnpm lint && pnpm typecheck",
+        "timeout_ms": 60000
+      }
+    ],
+    "PostToolUse": [
+      {
+        "_comment": "After writing/editing Vue, TS, or SCSS files, run lint on the changed file.",
+        "matcher": "Write|Edit|MultiEdit",
+        "command": "pnpm lint --quiet",
+        "timeout_ms": 30000
+      }
+    ]
+  }
+}

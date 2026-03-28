@@ -1,0 +1,6 @@
+{
+  "_comment": "Hook definitions for Claude Code. Each key is a hook event type. Each event contains an array of hook objects with matcher and command fields.",
+  "_events": "PreToolUse, PostToolUse, Notification, Stop, SubagentStop",
+  "_hook_fields": "matcher (regex matching tool name), command (shell command to run), timeout_ms (optional, default 60000)",
+  "hooks": {}
+}

@@ -1,0 +1,17 @@
+{
+  "_comment": "MCP server configurations. Add servers under mcpServers with a unique key per server.",
+  "_example_stdio": {
+    "command": "npx",
+    "args": ["-y", "@example/mcp-server"],
+    "env": {
+      "API_KEY": "your-api-key"
+    },
+    "_comment": "Stdio transport: launches a subprocess that communicates via stdin/stdout"
+  },
+  "_example_http": {
+    "type": "http",
+    "url": "http://localhost:8080/mcp",
+    "_comment": "HTTP transport: connects to a running MCP server over HTTP"
+  },
+  "mcpServers": {}
+}

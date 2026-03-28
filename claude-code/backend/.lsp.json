@@ -1,0 +1,18 @@
+{
+  "intelephense": {
+    "command": "intelephense",
+    "args": ["--stdio"],
+    "extensionToLanguage": {
+      ".php": "php"
+    }
+  },
+  "vue-language-server": {
+    "command": "vue-language-server",
+    "args": ["--stdio"],
+    "extensionToLanguage": {
+      ".vue": "vue",
+      ".ts": "typescript",
+      ".js": "javascript"
+    }
+  }
+}

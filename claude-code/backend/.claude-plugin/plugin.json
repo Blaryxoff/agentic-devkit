@@ -1,0 +1,8 @@
+{
+  "name": "rubx-laravel",
+  "version": "1.0.0",
+  "description": "rubx company-wide Claude Code plugin — standardizes planning, implementation, and review workflows for this project stack",
+  "skills": "./skills",
+  "mcpServers": "./.mcp.json",
+  "lspServers": "./.lsp.json"
+}
