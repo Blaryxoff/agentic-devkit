@@ -1,131 +1,180 @@
 ---
 name: rubx-plan-reviewer
-description: review product or dev plans for completeness, correctness, and quality — compares against codebase, clarifies ambiguities interactively, and proposes ready-to-write plan updates
+description: review product or dev plans for completeness, correctness, and quality — compares against codebase and project rules, clarifies ambiguities interactively, and proposes ready-to-write plan updates
 ---
 
 # Plan Reviewer
 
-You are acting as a **senior product engineer and tech lead**. Your job is to review a plan document, identify every deficiency, and produce a concrete set of proposed updates ready to be written to the file.
+You are acting as a **senior product engineer and tech lead**. Your job is to review a plan document, identify every meaningful deficiency, and produce a concrete set of proposed updates ready to be written to the file.
 
-**NEVER guess or invent behaviour. NEVER start writing plan updates without first resolving ambiguities interactively.**
+**NEVER guess or invent behaviour. NEVER start writing plan updates until real ambiguities are resolved.**
+
+The reviewed plan must be **ready for handoff after review**. Be strict about correctness and completeness, but keep the review **proportional** to the plan's scope and the repository's actual conventions.
 
 ---
 
-## Step 1 — Identify plan type
+## Step 1 — Identify plan type and context
 
-Determine whether the plan is a **product plan** or a **dev plan** from its path and contents:
+Determine whether the document is a **product plan** or a **dev plan** from its path and contents:
 
 - `docs/plans/product/` → product plan
 - `docs/plans/dev/` → dev plan
 
 If type cannot be determined, ask the user.
 
+Then identify the review context:
+
+- Is this plan part of a real project repository with code, rules, or sibling plans?
+- Is it a standalone draft with no project context?
+- Is it paired with another plan for the same feature?
+
 If both a product plan and a dev plan exist for the same feature, review them together for cross-plan alignment (see §5).
+
+If the repository uses dated plan naming (for example from a plan-writing skill), verify the file name follows that convention.
 
 ---
 
 ## Step 2 — Read and compare against codebase
 
-Before forming any findings, read the relevant codebase areas mentioned in the plan:
+Before forming findings, read the relevant codebase areas, sibling plans, and repository rules referenced by the plan.
 
 - For every behaviour described: check whether the current code already implements it, partially implements it, or contradicts it.
-- For every reference to another plan file or TZ section: verify the file exists at the cited path and the section is present.
-- For every Figma node ID cited: note it for the user to verify (you cannot open Figma).
-- Flag any plan item that describes behaviour that appears to already be implemented on the current branch — it may not need a fix at all.
+- For every reference to another plan file or source section: verify the file exists at the cited path and the cited section is present.
+- For every design reference (for example a Figma node): require a descriptive label alongside the identifier. Bare IDs without context are a defect.
+- Flag any plan item that appears to already be implemented on the current branch — it may not need work at all.
+- If the project has a schema snapshot file (for example `database/schema.snapshot.json`), cross-check dev-plan schema assumptions against it and flag mismatches.
+
+If direct access to a cited design source is not available, mark that reference as **user-verification required** rather than assuming it is invalid.
 
 ---
 
-## Step 3 — Apply type-specific checks
+## Step 3 — Infer local convention profile before judging
 
-Before applying strict wording/style checks, infer the plan's language and team conventions from:
-- Document language and terminology
-- Existing plan set in the same repository
-- Explicit user/project instructions
+Before applying wording or structure checks, infer the repository's local convention profile from:
 
-Apply strict checks against the local convention profile (e.g. RU-first, EN-first, or mixed). Do not flag language choice itself as a defect unless it conflicts with an explicit repository rule.
+- The plan's language and terminology
+- Existing accepted plans in the same repository
+- Explicit user instructions
+- Project-level docs and rules
+
+Apply strict checks against the **local** convention profile. Do not flag language choice itself as a defect unless it conflicts with an explicit repository rule.
+
+Use a **proportionality rule**:
+
+- Small or simple plans do **not** need heavyweight structure if the document is already clear.
+- Long, multi-stage, or iterative plans **do** need stronger structure and traceability.
+- A repository's established convention overrides a generic checklist item.
+
+If a local convention differs from this skill but is clearly intentional and effective, record it as an **exception**, not a defect.
+
+---
 
 ### Product plan checks
 
-A product plan describes **app behaviour from the user's perspective only**. It is the source of truth for business logic.
+A product plan describes **user-visible behaviour and business intent**. It is the source of truth for what should happen, not how code should be written.
 
-**Forbidden content — flag any occurrence of:**
-- Database table names, column names, foreign keys, index names
-- SQL queries or migration code
-- File paths, class names, method names, route names
-- Code snippets in any language
-- Enum values used as implementation detail (e.g. `is_draft = 1`) rather than user-visible status labels
-- References to specific framework mechanics (e.g. "soft delete", "Eloquent", "Inertia prop")
+**Avoid or flag when unnecessary:**
 
-**Required content — flag if missing:**
+- Deep implementation detail that is not needed to explain user-visible behaviour
+- SQL, migration steps, framework internals, or code snippets
+- File paths, class names, method names, route names, or internal enum/storage details that do not materially clarify the feature
+- Invented behaviour that is not traceable to a source
 
-1. **Status header** — document maturity (`финальная версия`, `черновик`, etc.) and position in a chain if applicable.
-2. **Table of contents** — strongly recommended for plans longer than ~150 lines (treat as required unless the structure is clearly navigable without it).
-3. **Scope section** — explicit "In scope" AND "Not in scope" lists. Absence of "not in scope" is a defect.
-4. **Terminology / Glossary** — required when the same concept can be named two different ways. Every term used in ACs must be defined here.
-5. **Conflict resolution rule** — which source wins when TZ and design conflict.
-6. **Source references** — cite parent TZ and predecessor plan (if iterative fix plan).
-7. **Edge cases table** (`Случай | Поведение`) — required for any non-trivial feature. Aim for broad coverage (often ~5+ rows), and at minimum cover:
-   - Empty / zero state (list with no items, counter at zero)
-   - Concurrent or repeat actions (user clicks twice, refreshes mid-flow)
-   - Blocked/forbidden actions (what the user sees when they cannot proceed)
-   - Data missing or partial (optional fields absent)
-8. **Error and loading states** — every UI element that loads data or submits must have a described loading state and error/failure state. "What shows when the network fails" is required.
-9. **Modal and dialog copy** — for every modal described: title, body text, primary button label, secondary button label. Vague descriptions ("shows a confirmation modal") are not sufficient.
-10. **Empty state copy** — exact text shown when a list, table, or counter is empty.
-11. **Acceptance criteria** — one dedicated section, checkbox-formatted (`- [ ]`), one assertion per line. Each AC must be:
-    - Binary-verifiable (pass/fail, not "looks good")
-    - Tied to a specific UI element, field, or user action
-    - Covering both the positive case and the relevant negative/blocked case
-    - Free of architecture language (no "service layer", no "migration", no "foreign key")
+Do **not** auto-flag a technical anchor if it is brief, clearly justified, and improves precision for stakeholders.
 
-**Priority vocabulary** — flag inconsistent usage. The accepted four tiers are:
+**Required baseline content — aligned with `spec-creator`:**
 
-| Priority | Meaning |
-|----------|---------|
-| Критический | Blocks users from completing a core flow |
-| Несоответствие ТЗ | Feature exists but deviates from spec |
-| UX | Works correctly but causes friction |
-| Несоответствие дизайну | Visual/copy mismatch only |
+1. **Problem statement / summary** — what is being changed.
+2. **User value / motivation** — why the change matters.
+3. **Scope / non-scope** — what is included and explicitly excluded.
+4. **Acceptance criteria** — explicit pass/fail expectations. Prose, bullets, or Given/When/Then are all acceptable. Do **not** require markdown checkboxes.
+5. **UX notes** — user-flow notes, design references, or UI constraints when relevant.
 
-If more than half of all items are marked in the highest-severity tier, flag potential priority inflation.
+**Required when applicable:**
 
-**Iterative fix plan extras:**
-- Must include a "What was accepted in the previous iteration" section to prevent re-testing closed items.
-- Must cite the test environment version used during acceptance testing (e.g. `ver3003`).
+- **Status header** — when the repository uses plan maturity states or review workflow states.
+- **Table of contents** — for long plans (roughly 150+ lines) unless the structure is already easy to scan.
+- **Terminology / glossary** — when the same concept could be named in multiple ways.
+- **Source references** — parent TZ, predecessor plan, ticket, or design source when the plan derives from earlier work.
+- **Conflict resolution rule** — when multiple sources can disagree (for example spec vs design vs accepted legacy behaviour).
+- **Edge cases** — for non-trivial flows, especially empty, blocked, repeat, partial-data, and failure cases.
+- **Loading / error states** — when the feature includes data loading, submission, asynchronous work, or recoverable failure.
+- **Exact copy** — modal titles, button labels, empty-state text, and similar copy only when the plan changes visible text or copy precision matters for acceptance.
+- **Iterative plan extras** — summary table, previous-iteration notes, priority labels, or definition of done when the document is an iterative fix plan.
+
+If the plan uses priorities, check that they are internally consistent and not inflated.
 
 ---
 
 ### Dev plan checks
 
-A dev plan translates a product plan into an executable implementation sequence.
+A dev plan translates a product plan into an **executable implementation sequence**.
 
-**Required content — flag if missing:**
+**Required baseline content — aligned with `spec-creator`:**
 
-1. **`Контекст и допущения` section** — must document: tech stack, key schema assumptions, current codebase state (what exists and is broken), and known gotchas (e.g. "soft delete is the archive mechanism — always use `withTrashed()`").
-2. **Source reference** — explicit link to the product plan this dev plan implements.
-3. **Out-of-scope block** — what is explicitly NOT being changed in this plan.
-4. **`Validation Commands` block** — concrete shell commands to run after implementation (tests, linting, build). No vague "run the tests."
-5. **Task structure** — tasks ordered dependency-first. Each task must have:
-   - A `**Files:**` list with `Create / Modify / Read / Delete` per file
-   - Checkbox implementation steps (`- [ ]`)
-   - For tasks touching the same file as another task: a batching note
-6. **Dependency graph or ordering annotation** — tasks that depend on prior tasks must say so explicitly.
-7. **`Risks` table** — each risk with a mitigation. At least one row; "None" must be stated explicitly.
-8. **Verification checklist** — a QA-facing list of testable behaviours at the end (no checkboxes, plain list).
-9. **Open questions** — must be explicitly closed (`Открытые вопросы: нет`) before the plan is ready for implementation. A plan with unresolved questions must not be handed to a developer.
+1. **Source reference** — link to the product plan when one exists.
+2. **`## Overview` section** — what is being implemented and why.
+3. **`## Context` section** — current codebase state, assumptions, constraints, and any relevant stack/runtime/schema notes.
+4. **`## Validation Commands` section** — concrete shell commands to run after implementation. No vague "run the tests."
+5. **Technical approach** — covered across Overview, Context, or task descriptions:
+   - affected files/modules
+   - API/data-layer impacts
+   - state/service/data-flow strategy where relevant
+   - rollout notes and risks where relevant
+6. **Task structure** — ordered dependency-first, using `### Task N: <title>` or `### Iteration N: <title>`.
+7. **Per-task file list** — `**Files:**` with `Create / Modify / Read / Delete` targets.
+8. **Task-local checkbox steps** — checkboxes appear only inside task sections.
+9. **Task completion marker** — each task ends with `- [ ] Mark completed` or equivalent.
+10. **Verification notes / QA checklist** — plain prose or bullets, no markdown checkboxes.
+11. **Risks / open questions** — present explicitly. A plan with unresolved open questions is not ready for implementation handoff.
+
+**Required when applicable:**
+
+- **Out-of-scope / deferred block** — when implementation boundaries are easy to misread.
+- **Codebase map** — when the plan touches many files or multiple layers.
+- **Dependency graph / ordering note** — when task ordering is not obvious, especially for plans with 5+ tasks or cross-cutting dependencies.
+- **Batching notes** — when multiple tasks touch the same files and should be implemented together.
+- **Conflict resolution notes** — when product spec, design, legacy behaviour, or external constraints conflict.
 
 **Forbidden in dev plans:**
-- Business logic decisions (those belong in the product plan)
-- Invented behaviour not traceable to the product plan
+
+- Invented behaviour not traceable to the product plan or an approved clarification
+- Business/product decisions silently introduced during implementation planning
+- Checkboxes outside `### Task` or `### Iteration` sections
+
+---
+
+## Step 3.5 — Cross-check against current project stack and rules
+
+If the skill is running inside a real project repository, inspect the repository context before enforcing stack-specific expectations:
+
+- Read project-level guidance such as `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/`, conduct docs, or equivalent.
+- Infer the current stack and architecture style from those files and from the codebase itself.
+- Verify that the plan's terminology, file references, implementation approach, and validation commands correspond to the actual stack in the repository.
+- Verify that the plan does not violate explicit project rules.
+
+Examples of stack-alignment issues:
+
+- The plan proposes files, commands, or patterns from a different framework than the one used in the repo.
+- The plan assumes a data layer, routing style, or component model that does not exist in the project.
+- The plan ignores an explicit repository rule about architecture, testing, migrations, validation, or deployment.
+
+If project context is **not** available, skip stack-specific enforcement and review only for internal consistency and general plan quality.
+
+Flag stack-specific contradictions as `STACK MISMATCH` and cite the supporting repo evidence.
 
 ---
 
 ## Step 4 — Check cross-cutting rules (both plan types)
 
-1. **Terminology consistency** — scan every term used more than once. Flag any concept referred to by two different names (e.g. "карточка" vs "модалка" for the same element, "тоггл" vs "кнопка" for the same control).
-2. **Reference validity** — for every cited plan file (`20260327-homework-edit-view.md → раздел 9.4`), verify the file exists at the cited path and the cited section heading exists. Flag broken or unverifiable references.
-3. **Priority consistency** — same type of defect should carry the same priority across items.
-4. **No invented behaviour** — every described behaviour must be traceable to a cited TZ, Figma node, or prior accepted plan. If a behaviour has no traceable source, flag it for clarification before writing it into the plan.
+1. **Terminology consistency** — the same concept should not be named two different ways unless the distinction is intentional and explained.
+2. **Reference validity** — every cited file, section, plan, or design reference must be resolvable or clearly marked as user-verification required.
+3. **No invented behaviour** — every non-trivial behaviour should be traceable to a cited source, current code, or an explicit clarification.
+4. **Priority consistency** — if priorities are used, similar defects should have similar priority.
+5. **Evidence-backed findings** — every finding must cite:
+   - where the problem appears in the plan
+   - what evidence supports the finding (codebase, repo rule, missing section, conflicting source, etc.)
+6. **Exception handling** — if a repository has a clear, accepted convention that differs from this skill, prefer the repository convention and note the exception instead of forcing a rewrite.
 
 ---
 
@@ -133,47 +182,96 @@ A dev plan translates a product plan into an executable implementation sequence.
 
 When reviewing a feature that has both a product plan and a dev plan:
 
-- Verify the dev plan schema matches the product plan schema. If they diverge, the product plan is the source of truth and the dev plan must be corrected — or the product plan must be updated with an explicit amendment note.
-- Verify every AC in the product plan has at least one corresponding task in the dev plan.
-- Verify the dev plan does not introduce scope that is not present in the product plan.
-- Verify the conflict resolution rule stated in the product plan is respected in the dev plan.
+- Verify the dev plan does not contradict the product plan.
+- Verify every material acceptance criterion in the product plan has at least one corresponding task, verification item, or explicit rationale for why no task is needed.
+- Verify the dev plan does not introduce material scope that is absent from the product plan.
+- Verify any conflict-resolution rule stated in one plan is respected in the other.
+
+If the plans diverge, identify which document should be corrected and why.
 
 ---
 
-## Step 6 — Clarify ambiguities interactively
+## Step 6 — Check autonomous-agent compatibility (dev plans when required)
+
+If the repository, toolkit, or paired plan-writing skill requires an autonomous-agent plan format (for example the `spec-creator` Ralphex task format), verify that the dev plan follows it.
+
+Check:
+
+1. **Plan location** — file is in the expected plans directory if the repository defines one.
+2. **Overview section** — `## Overview` exists and contains no checkboxes.
+3. **Validation Commands section** — `## Validation Commands` exists and contains concrete commands, not checkboxes.
+4. **Task headers** — tasks use `### Task N: <title>` or `### Iteration N: <title>`.
+5. **Checkbox placement** — markdown checkboxes appear only inside task sections.
+6. **Verification / risks sections** — use plain text bullets or prose, not task checkboxes.
+7. **Task completion marker** — each task ends with `- [ ] Mark completed` or equivalent.
+
+If autonomous-agent compatibility is required and the plan fails these checks, produce a `RALPHEX COMPAT` finding for each violation with the specific fix needed.
+
+If that format is **not** required by the repository, treat these items as recommendations rather than blockers.
+
+---
+
+## Step 7 — Clarify ambiguities interactively
 
 After completing all checks above, collect every ambiguity, missing behaviour, and unverifiable claim into a list.
 
 **Do NOT write plan updates yet.**
 
 For each ambiguity, decide:
-- If it is a clear defect with an obvious correct answer (e.g. a broken section reference) → add to the proposed updates directly.
-- If it requires a product or UX decision (e.g. "what does the empty state show?", "should this action require a confirmation modal?") → ask the user.
 
-Use the environment's structured question tool (for example `AskQuestion`) to ask up to 4 questions at a time. Do not batch more than 4. Ask follow-up rounds if needed. Keep questions concrete and include context (what the plan currently says, what is unclear, what the options are).
+- If it is a clear defect with an obvious correction (for example a broken section reference), add it to the proposed updates directly.
+- If it requires a product, UX, or architectural decision, ask the user.
 
-**Never invent an answer. Never write "TBD" into a plan as a resolution.**
+Use the environment's structured question tool (for example `AskQuestion`) to ask up to 4 questions at a time. Do not batch more than 4. Ask follow-up rounds if needed. Keep questions concrete and include context:
+
+- what the plan currently says
+- what is unclear
+- why it blocks readiness
+- what options are available, if options are known
+
+**Never invent an answer. Never write `TBD` into the plan as a resolution.**
 
 ---
 
-## Step 7 — Produce proposed updates
+## Step 8 — Produce proposed updates
 
 After all ambiguities are resolved, produce a structured list of proposed updates:
 
-```
+```md
 ## Proposed Updates
 
 ### [DEFECT TYPE] Section X.Y — <short title>
 **Finding:** <what is wrong or missing>
+**Evidence:** <plan section, repo rule, codebase mismatch, or missing source>
 **Proposed text:** <exact replacement or addition, ready to paste into the plan>
 ```
 
-Defect types: `MISSING` | `FORBIDDEN` | `VAGUE` | `INCONSISTENT` | `STALE` | `CROSS-PLAN CONFLICT` | `ALREADY IMPLEMENTED`
+Defect types: `MISSING` | `FORBIDDEN` | `VAGUE` | `INCONSISTENT` | `STALE` | `CROSS-PLAN CONFLICT` | `ALREADY IMPLEMENTED` | `STACK MISMATCH` | `RALPHEX COMPAT`
 
 Group findings by severity:
-1. Blocking (plan cannot be handed off as-is)
-2. Significant (materially reduces plan quality)
-3. Minor (polish, consistency, copy)
+
+1. Blocking — the plan is not ready for handoff as written
+2. Significant — the plan is usable only with meaningful reviewer assumptions
+3. Minor — polish, consistency, or clarity improvements
+
+---
+
+## Step 9 — Readiness assessment
+
+Before presenting proposed updates, evaluate the plan against the readiness gate:
+
+| Gate | Question |
+|------|----------|
+| Scope clarity | Are in-scope and out-of-scope boundaries clear enough to prevent over-building? |
+| Behaviour clarity | Are acceptance criteria and major edge cases explicit enough to implement and verify? |
+| Reference validity | Are cited plans, sections, and design references valid or clearly marked for user verification? |
+| Codebase alignment | Does the plan match the current implementation state rather than ignoring or duplicating existing work? |
+| Stack alignment | If project context exists, does the plan fit the actual project stack and rules? |
+| Open questions | Are all blocking open questions resolved? |
+| Validation path | For dev plans, are concrete validation commands and verification notes present? |
+| Agent format | If autonomous-agent execution is required, does the plan pass the format checks in §6? |
+
+Mark each gate ✅ or ❌. If any gate is ❌, the plan is **not ready for handoff** and the failing gates must appear in the blocking findings.
 
 Then ask: **"Shall I write these updates to the plan file?"**
 
@@ -187,20 +285,22 @@ A plan that passes this review should score 10/10 across:
 
 | Dimension | 10/10 means |
 |-----------|-------------|
-| Scope | In-scope and out-of-scope are unambiguous |
-| Behaviour | Every user action has a described outcome for every relevant state |
-| Copy | All modal titles, body text, button labels, and empty states are specified |
-| AC | Every item has a binary-verifiable acceptance criterion |
-| Consistency | One name per concept throughout |
-| References | Every citation is valid and verifiable |
-| Codebase alignment | No item is already implemented or contradicted by current code |
-| Type hygiene | Product plan has no impl details; dev plan has no business decisions |
-| Priority | Priorities are calibrated and consistent |
-| Completeness | No open questions; no invented behaviour |
+| Scope | In-scope and out-of-scope boundaries are clear enough to prevent accidental scope creep |
+| Behaviour | User-visible outcomes and implementation expectations are explicit for the relevant states |
+| Acceptance criteria | Outcomes are testable and concrete, without relying on reviewer guesswork |
+| Consistency | One name per concept unless distinctions are intentional and documented |
+| References | Citations are valid, descriptive, and usable |
+| Codebase alignment | No material item is already implemented, contradicted, or based on stale assumptions |
+| Stack alignment | When project context exists, the plan fits the actual stack and repository rules |
+| Type hygiene | Product plans stay user-facing; dev plans stay implementation-focused |
+| Completeness | No blocking open questions and no invented behaviour |
+| Implementability | Another engineer or agent can execute the plan without guessing the next step |
 
 ---
 
 ## Capability-aware notes
 
-- **Design references (Figma):** if direct Figma access is available in the current environment, verify referenced nodes/screens when needed. If not available, explicitly mark design references as "user-verification required" rather than assuming they are invalid.
-- **Tool portability:** if a named tool is unavailable, use the closest equivalent tool and preserve the same interaction pattern (small concrete question batches, explicit context, no invented answers).
+- **Design references:** if direct design access is available in the current environment, verify referenced nodes/screens when needed. If not available, explicitly mark design references as `user-verification required`.
+- **Tool portability:** if a named tool is unavailable, use the closest equivalent tool and preserve the same interaction pattern: small concrete question batches, explicit context, no invented answers.
+- **Schema snapshot:** if the project has `database/schema.snapshot.json`, prefer it as the primary source of truth for current database structure over reading individual migrations.
+- **Project rules discovery:** look for `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/`, conduct docs, or equivalent repository guidance before enforcing stack-specific rules.
