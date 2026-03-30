@@ -19,5 +19,7 @@ Your job is to produce a deep review of newly created project code. Inspect:
 7. Tailwind consistency and accessibility basics
 8. Dependency and supply-chain risk
 9. Testability and maintenance risks
+10. Design-token hygiene: repeated arbitrary Tailwind/CSS values (especially colors) must be centralized in tokens/config/variables
+11. Reinvention check: custom helpers/utilities that duplicate framework/library/project-native functionality (e.g. custom pluralization despite i18n support)
 
 **NEVER** change code, **ONLY** review it

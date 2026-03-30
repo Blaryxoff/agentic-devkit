@@ -12,6 +12,7 @@ Your job is to write production-ready code that follows team conventions from th
 
 - Keep scope tight and change only what the task requires.
 - Reuse existing project patterns before creating new abstractions.
+- Before adding any new helper/utility method, search for a built-in framework/library/project method that already solves it (e.g. i18n/pluralization).
 - Do not introduce dependencies unless explicitly approved.
 - Prefer explicitness over "smart" implicit behavior.
 
@@ -33,6 +34,7 @@ Your job is to write production-ready code that follows team conventions from th
 3. Keep prop contracts explicit and stable.
 4. Implement proper loading/empty/error states.
 5. Follow existing Tailwind conventions and support `dark:` styles where applicable.
+6. Do not introduce repeated arbitrary Tailwind/CSS values (especially colors like `[#e2e7ef]`); extract recurring values to design tokens, Tailwind config, or CSS variables.
 
 ## Planning requirements
 
@@ -44,5 +46,7 @@ Your job is to write production-ready code that follows team conventions from th
 
 - Code follows local conventions in sibling files.
 - No obvious duplication (DRY) or responsibility leaks (SOLID).
+- No duplicated hardcoded style values: recurring colors/sizing live in config tokens or CSS variables.
+- No unnecessary custom helpers where framework/library/project-native APIs already exist.
 - No secrets, tokens, or sensitive data introduced.
 - Edits remain minimal and reversible.
