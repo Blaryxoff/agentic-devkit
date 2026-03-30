@@ -5,6 +5,36 @@
   },
   "plugins": [
     {
+      "name": "rubx-core",
+      "source": "./core",
+      "description": "rubx cross-stack core plugin for workflow and shared standards",
+      "version": "0.1.0"
+    },
+    {
+      "name": "rubx-frontend",
+      "source": "./frontend-base",
+      "description": "rubx tool-agnostic frontend and generic CSS standards plugin",
+      "version": "0.1.0"
+    },
+    {
+      "name": "rubx-inertia",
+      "source": "./inertia",
+      "description": "rubx plugin for Inertia-specific transport and page contract standards",
+      "version": "0.1.0"
+    },
+    {
+      "name": "rubx-vue",
+      "source": "./vue",
+      "description": "rubx plugin for Vue component/composable/state conventions",
+      "version": "0.1.0"
+    },
+    {
+      "name": "rubx-tailwind",
+      "source": "./tailwind",
+      "description": "rubx plugin for Tailwind-specific styling conventions",
+      "version": "0.1.0"
+    },
+    {
       "name": "rubx-nuxt",
       "source": "./frontend",
       "description": "rubx company-wide Claude Code plugin for Nuxt 3 + TypeScript + BEM workflows",

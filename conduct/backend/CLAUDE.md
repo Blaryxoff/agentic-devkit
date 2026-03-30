@@ -25,6 +25,10 @@ Read the conduct documents in this order — each builds on the previous:
 - **[code_review_checklist.md](conduct/code_review_checklist.md)** — pre-commit/PR review checklist
 - **[git.md](conduct/git.md)** — branching strategy, commit conventions, merge requests, tagging
 - **[spec/spec.md](spec/spec.md)** — feature specification template
+- **[../inertia/overview.md](../inertia/overview.md)** — Inertia-specific transport rules
+- **[../vue/overview.md](../vue/overview.md)** — Vue-specific conventions
+- **[../tailwind/overview.md](../tailwind/overview.md)** — Tailwind-specific conventions
+- **[../ownership-map.md](../ownership-map.md)** — strict policy ownership map
 
 ## Key architectural rules
 

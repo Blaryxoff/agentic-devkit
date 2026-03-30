@@ -1,0 +1,6 @@
+{
+  "name": "rubx-tailwind",
+  "version": "0.1.0",
+  "description": "rubx plugin for Tailwind-specific styling rules",
+  "skills": "./skills"
+}

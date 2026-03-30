@@ -1,0 +1,1 @@
+../../../shared/skills/spec-creator/SKILL.md

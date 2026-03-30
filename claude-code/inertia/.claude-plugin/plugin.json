@@ -1,0 +1,6 @@
+{
+  "name": "rubx-inertia",
+  "version": "0.1.0",
+  "description": "rubx plugin for Inertia-specific rules and contracts",
+  "skills": "./skills"
+}

@@ -1,0 +1,1 @@
+../../../shared/skills/test-case-creator/SKILL.md

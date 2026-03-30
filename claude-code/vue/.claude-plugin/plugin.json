@@ -1,0 +1,6 @@
+{
+  "name": "rubx-vue",
+  "version": "0.1.0",
+  "description": "rubx plugin for Vue-specific component and composable conventions",
+  "skills": "./skills"
+}

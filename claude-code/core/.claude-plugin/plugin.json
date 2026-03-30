@@ -1,0 +1,6 @@
+{
+  "name": "rubx-core",
+  "version": "0.1.0",
+  "description": "rubx cross-stack core workflow plugin",
+  "skills": "./skills"
+}

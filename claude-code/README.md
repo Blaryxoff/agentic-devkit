@@ -6,6 +6,11 @@ This directory is a Claude Code plugin marketplace containing rubx's plugins.
 
 | Plugin | Stack | Skills |
 |--------|-------|--------|
+| `rubx-core` | Cross-stack | git, reviewer-logging, spec-creator, test-case-creator |
+| `rubx-frontend` | Tool-agnostic frontend + CSS | frontend-guidelines |
+| `rubx-inertia` | Inertia transport/page contracts | inertia-guidelines |
+| `rubx-vue` | Vue conventions | vue-guidelines |
+| `rubx-tailwind` | Tailwind conventions | tailwind-guidelines |
 | `rubx-nuxt` | Nuxt 3 + TypeScript + BEM | coder, reviewer-deep, reviewer-fast, reviewer-architecture, reviewer-logging, reviewer-error-handling, reviewer-security, spec-creator, test-case-creator, tester, git |
 | `rubx-laravel` | Laravel + Inertia + Vue 3 | coder, reviewer-deep, reviewer-fast, reviewer-architecture, reviewer-logging, reviewer-error-handling, reviewer-security, spec-creator, test-case-creator, tester, git |
 
@@ -30,6 +35,39 @@ git clone https://github.com/Blaryxoff/rubx-agentic-tools.git ~/www/rubx-agentic
 ```
 ```
 /plugin install rubx-laravel@rubx
+```
+```
+/plugin install rubx-core@rubx
+```
+```
+/plugin install rubx-frontend@rubx
+```
+```
+/plugin install rubx-inertia@rubx
+```
+```
+/plugin install rubx-vue@rubx
+```
+```
+/plugin install rubx-tailwind@rubx
+```
+
+### 4. Enable only the plugins your project needs
+
+Example for Laravel + Inertia + Vue projects:
+
+```json
+{
+  "enabledPlugins": {
+    "rubx-core@rubx": true,
+    "rubx-laravel@rubx": true,
+    "rubx-frontend@rubx": true,
+    "rubx-inertia@rubx": true,
+    "rubx-vue@rubx": true,
+    "rubx-tailwind@rubx": true,
+    "rubx-nuxt@rubx": false
+  }
+}
 ```
 
 ## Updating
@@ -67,6 +105,10 @@ Stack-specific coding standards live in `conduct/`:
 
 - `conduct/frontend/` — Nuxt 3 + TypeScript + BEM conventions
 - `conduct/backend/` — Laravel + Inertia + Vue 3 conventions
+- `conduct/inertia/` — Inertia transport and props contract conventions
+- `conduct/vue/` — Vue component/composable/state conventions
+- `conduct/tailwind/` — Tailwind-specific style conventions
+- `conduct/ownership-map.md` — strict rule ownership map for plugins
 
 ## Project Setup: Permission Deny Rules
 
