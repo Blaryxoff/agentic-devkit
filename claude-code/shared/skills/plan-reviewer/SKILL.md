@@ -37,6 +37,13 @@ Before forming any findings, read the relevant codebase areas mentioned in the p
 
 ## Step 3 — Apply type-specific checks
 
+Before applying strict wording/style checks, infer the plan's language and team conventions from:
+- Document language and terminology
+- Existing plan set in the same repository
+- Explicit user/project instructions
+
+Apply strict checks against the local convention profile (e.g. RU-first, EN-first, or mixed). Do not flag language choice itself as a defect unless it conflicts with an explicit repository rule.
+
 ### Product plan checks
 
 A product plan describes **app behaviour from the user's perspective only**. It is the source of truth for business logic.
@@ -52,12 +59,12 @@ A product plan describes **app behaviour from the user's perspective only**. It 
 **Required content — flag if missing:**
 
 1. **Status header** — document maturity (`финальная версия`, `черновик`, etc.) and position in a chain if applicable.
-2. **Table of contents** — required for plans longer than ~150 lines.
+2. **Table of contents** — strongly recommended for plans longer than ~150 lines (treat as required unless the structure is clearly navigable without it).
 3. **Scope section** — explicit "In scope" AND "Not in scope" lists. Absence of "not in scope" is a defect.
 4. **Terminology / Glossary** — required when the same concept can be named two different ways. Every term used in ACs must be defined here.
 5. **Conflict resolution rule** — which source wins when TZ and design conflict.
 6. **Source references** — cite parent TZ and predecessor plan (if iterative fix plan).
-7. **Edge cases table** (`Случай | Поведение`) — required for any non-trivial feature. Minimum 5 rows. Must cover:
+7. **Edge cases table** (`Случай | Поведение`) — required for any non-trivial feature. Aim for broad coverage (often ~5+ rows), and at minimum cover:
    - Empty / zero state (list with no items, counter at zero)
    - Concurrent or repeat actions (user clicks twice, refreshes mid-flow)
    - Blocked/forbidden actions (what the user sees when they cannot proceed)
@@ -80,7 +87,7 @@ A product plan describes **app behaviour from the user's perspective only**. It 
 | UX | Works correctly but causes friction |
 | Несоответствие дизайну | Visual/copy mismatch only |
 
-If more than half of all items are marked "Критический", flag priority inflation.
+If more than half of all items are marked in the highest-severity tier, flag potential priority inflation.
 
 **Iterative fix plan extras:**
 - Must include a "What was accepted in the previous iteration" section to prevent re-testing closed items.
@@ -116,10 +123,9 @@ A dev plan translates a product plan into an executable implementation sequence.
 ## Step 4 — Check cross-cutting rules (both plan types)
 
 1. **Terminology consistency** — scan every term used more than once. Flag any concept referred to by two different names (e.g. "карточка" vs "модалка" for the same element, "тоггл" vs "кнопка" for the same control).
-2. **Reference validity** — every cited plan file (`20260327-homework-edit-view.md → раздел 9.4`) must be verified to exist at the cited path with the cited section present. Flag broken or unverifiable references.
-3. **Broken references** — for every `docs/plans/product/*.md` or `docs/plans/dev/*.md` citation: check the file exists. For every `раздел N` citation: check the section heading is present in that file.
-4. **Priority consistency** — same type of defect should carry the same priority across items.
-5. **No invented behaviour** — every described behaviour must be traceable to a cited TZ, Figma node, or prior accepted plan. If a behaviour has no traceable source, flag it for clarification before writing it into the plan.
+2. **Reference validity** — for every cited plan file (`20260327-homework-edit-view.md → раздел 9.4`), verify the file exists at the cited path and the cited section heading exists. Flag broken or unverifiable references.
+3. **Priority consistency** — same type of defect should carry the same priority across items.
+4. **No invented behaviour** — every described behaviour must be traceable to a cited TZ, Figma node, or prior accepted plan. If a behaviour has no traceable source, flag it for clarification before writing it into the plan.
 
 ---
 
@@ -144,7 +150,7 @@ For each ambiguity, decide:
 - If it is a clear defect with an obvious correct answer (e.g. a broken section reference) → add to the proposed updates directly.
 - If it requires a product or UX decision (e.g. "what does the empty state show?", "should this action require a confirmation modal?") → ask the user.
 
-Use the `AskUserQuestion` tool to ask up to 4 questions at a time. Do not batch more than 4. Ask follow-up rounds if needed. Keep questions concrete and include context (what the plan currently says, what is unclear, what the options are).
+Use the environment's structured question tool (for example `AskQuestion`) to ask up to 4 questions at a time. Do not batch more than 4. Ask follow-up rounds if needed. Keep questions concrete and include context (what the plan currently says, what is unclear, what the options are).
 
 **Never invent an answer. Never write "TBD" into a plan as a resolution.**
 
@@ -191,3 +197,10 @@ A plan that passes this review should score 10/10 across:
 | Type hygiene | Product plan has no impl details; dev plan has no business decisions |
 | Priority | Priorities are calibrated and consistent |
 | Completeness | No open questions; no invented behaviour |
+
+---
+
+## Capability-aware notes
+
+- **Design references (Figma):** if direct Figma access is available in the current environment, verify referenced nodes/screens when needed. If not available, explicitly mark design references as "user-verification required" rather than assuming they are invalid.
+- **Tool portability:** if a named tool is unavailable, use the closest equivalent tool and preserve the same interaction pattern (small concrete question batches, explicit context, no invented answers).
