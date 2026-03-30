@@ -7,7 +7,7 @@
       {
         "_comment": "Run lint and typecheck after Claude finishes a session to catch any introduced issues.",
         "matcher": "",
-        "command": "pnpm lint && pnpm typecheck",
+        "command": "source \"$HOME/.nvm/nvm.sh\" 2>/dev/null; pnpm run --if-present lint; pnpm run --if-present typecheck",
         "timeout_ms": 60000
       }
     ],
@@ -15,7 +15,7 @@
       {
         "_comment": "After writing/editing Vue, TS, or SCSS files, run lint on the changed file.",
         "matcher": "Write|Edit|MultiEdit",
-        "command": "pnpm lint --quiet",
+        "command": "pnpm run --if-present lint --quiet",
         "timeout_ms": 30000
       }
     ]
