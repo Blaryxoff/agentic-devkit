@@ -165,6 +165,53 @@ Flag stack-specific contradictions as `STACK MISMATCH` and cite the supporting r
 
 ---
 
+## Step 3.6 — Thin controller / thin model gate (Laravel projects)
+
+For **dev plans in Laravel projects**, apply this gate after Step 3.5. It is **blocking** — a plan that fails it is not ready for handoff.
+
+### Thin controller rule
+
+A controller method must only: authenticate/authorise, delegate to Action(s), and assemble an HTTP response. It must not contain business logic.
+
+Read every task that modifies or creates a controller method. Flag the task as `STACK MISMATCH` if any of the following appear **inside the controller method body** rather than inside a dedicated Action class:
+
+- State/status guard logic (e.g. `if ($attempt->status !== X) return 422`)
+- Ownership or authorship checks beyond a single-line `abort(403)` after an Action resolves the resource
+- Direct Eloquent queries other than `Model::find()` / `findOrFail()` / `withTrashed()->findOrFail()` lookup of the primary resource
+- Business rule branching or calculations (points validation loops, scoring, transition logic)
+- Logic that is identical or near-identical across two or more controller methods — this is always an Action extraction candidate
+
+**Correct pattern for a new endpoint in a dev plan task:**
+
+```
+- [ ] Create XxxAction — receives $attempt and $comment; enforces state guard, ownership check, authorship check; throws typed domain exception on failure
+- [ ] Controller method: resolve homework (findOrFail), resolve attempt (FindHomeworkAttemptForAdminReviewAction), call XxxAction, return JSON response
+```
+
+**Incorrect (flag this):**
+
+```
+- [ ] Add updateReviewComment to the controller:
+  - Load HwComment::findOrFail($comment)
+  - Verify $hwComment->attempt_id === $attempt->id; abort 403 if not
+  - Check authorship: $hwComment->author_id === $request->user()->id or Gate::allows(...)
+  - Update $hwComment->body and return JSON
+```
+
+When the task describes implementation steps that place business logic directly in the controller, flag it:
+
+- **Finding:** Task N prescribes controller-level business logic — [list what: state guard / ownership check / query / duplication].
+- **Evidence:** CLAUDE.md "Thin Controller Rule — STRICTLY ENFORCED" / conduct architecture.md "DO NOT: put business logic in controllers".
+- **Proposed fix:** Extract to `[SuggestedActionName]Action`; controller method calls the action and maps its typed exception to an HTTP response.
+
+### Thin model rule
+
+Eloquent models may contain: `$fillable`/`$casts`/`$dates`, relationships, query scopes, simple accessors/mutators, and `scopeX()` methods. They must not contain business workflows.
+
+Flag any task that adds business workflow logic (multi-step branching, cross-model orchestration, notification dispatch, status transitions) directly to a model method as `STACK MISMATCH` — belongs in an Action or Service.
+
+---
+
 ## Step 4 — Check cross-cutting rules (both plan types)
 
 1. **Terminology consistency** — the same concept should not be named two different ways unless the distinction is intentional and explained.
@@ -267,6 +314,7 @@ Before presenting proposed updates, evaluate the plan against the readiness gate
 | Reference validity | Are cited plans, sections, and design references valid or clearly marked for user verification? |
 | Codebase alignment | Does the plan match the current implementation state rather than ignoring or duplicating existing work? |
 | Stack alignment | If project context exists, does the plan fit the actual project stack and rules? |
+| Thin controller / model | For Laravel dev plans: do all tasks keep business logic out of controllers and models? (§3.6) |
 | Open questions | Are all blocking open questions resolved? |
 | Validation path | For dev plans, are concrete validation commands and verification notes present? |
 | Agent format | If autonomous-agent execution is required, does the plan pass the format checks in §6? |
