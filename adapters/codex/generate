@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# devkit-toolkit: Codex (OpenAI) adapter
+#
+# Generates Codex skill symlinks and AGENTS.md conduct references from resolved plugins.
+#
+# Output (in PROJECT_ROOT):
+#   .codex/skills/devkit-<plugin>--<skill>/  — symlinks to resolved plugins' skill dirs
+#   AGENTS.md                              — appends/updates ## devkit-toolkit section
+#
+# Input config:
+#   .devkit/toolkit.json                     — standard devkit project config
+#
+# Resolution logic:
+#   - Sources adapters/_lib/resolve.sh for plugin resolution
+#   - Skills are symlinked (not copied) to keep them in sync
+#   - AGENTS.md gets a managed section listing conduct doc paths
+
+set -euo pipefail
+
+ADAPTER_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$ADAPTER_DIR/../_lib/resolve.sh"
+
+RELPATH=$(toolkit_relpath)
+
+echo "==> Codex adapter: generating config..."
+echo "    Toolkit: $TOOLKIT_ROOT"
+echo "    Project: $PROJECT_ROOT"
+echo ""
+
+plugin_index=$(_build_plugin_index)
+resolved_names=$(resolve_plugins)
+
+skills_dir="$PROJECT_ROOT/.codex/skills"
+mkdir -p "$skills_dir"
+
+agents_file="$PROJECT_ROOT/AGENTS.md"
+conduct_lines=""
+
+while IFS= read -r name; do
+  [ -z "$name" ] && continue
+  plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
+  plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
+  plugin_basename=$(basename "$plugin_dir")
+  rel_plugin="$RELPATH/plugins/$plugin_basename"
+
+  has_conduct=$(echo "$plugin_data" | jq 'has("paths") and (.paths | has("conduct"))')
+  has_skills=$(echo "$plugin_data" | jq 'has("paths") and (.paths | has("skills"))')
+
+  # --- Symlink skills ---
+  if [ "$has_skills" = "true" ]; then
+    skills_source="$plugin_dir/skills"
+    if [ -d "$skills_source" ]; then
+      for skill_dir in "$skills_source"/*/; do
+        [ -d "$skill_dir" ] || continue
+        skill_name=$(basename "$skill_dir")
+        skill_target="$skills_dir/${name}--${skill_name}"
+        rm -rf "$skill_target"
+        ln -s "$(cd "$skill_dir" && pwd)" "$skill_target"
+      done
+      echo "    Linked:  .codex/skills/${name}--* ($(ls -d "$skills_source"/*/ 2>/dev/null | wc -l | tr -d ' ') skills)"
+    fi
+  fi
+
+  # --- Collect conduct references ---
+  if [ "$has_conduct" = "true" ]; then
+    conduct_abs="$plugin_dir/conduct"
+    conduct_rel="$rel_plugin/conduct"
+    if [ -d "$conduct_abs" ]; then
+      conduct_lines="${conduct_lines}\n### ${name}\n"
+      while IFS= read -r md; do
+        rel_md="$conduct_rel/$(python3 -c "import os.path; print(os.path.relpath('$md', '$conduct_abs'))")"
+        conduct_lines="${conduct_lines}\n- ${rel_md}"
+      done < <(find "$conduct_abs" -name "*.md" -type f | sort)
+      conduct_lines="${conduct_lines}\n"
+    fi
+  fi
+
+done <<< "$resolved_names"
+
+# --- Update AGENTS.md ---
+SECTION_START="<!-- devkit-toolkit:start -->"
+SECTION_END="<!-- devkit-toolkit:end -->"
+
+new_section="${SECTION_START}
+## devkit-toolkit
+
+Read and apply the following conduct documents for this project:
+$(echo -e "$conduct_lines")
+${SECTION_END}"
+
+if [ -f "$agents_file" ]; then
+  if grep -q "$SECTION_START" "$agents_file"; then
+    # Replace existing section
+    python3 -c "
+import re, sys
+content = open('$agents_file').read()
+pattern = re.escape('$SECTION_START') + r'.*?' + re.escape('$SECTION_END')
+replacement = open('/dev/stdin').read()
+result = re.sub(pattern, replacement, content, flags=re.DOTALL)
+open('$agents_file', 'w').write(result)
+" <<< "$new_section"
+    echo "    Updated: AGENTS.md (devkit-toolkit section replaced)"
+  else
+    printf "\n%s\n" "$new_section" >> "$agents_file"
+    echo "    Updated: AGENTS.md (devkit-toolkit section appended)"
+  fi
+else
+  printf "# AGENTS\n\n%s\n" "$new_section" > "$agents_file"
+  echo "    Created: AGENTS.md"
+fi
+
+echo ""
+echo "Done. Codex will discover skills and conduct references automatically."
+echo ""
+echo "Resolved plugins:"
+echo "$resolved_names" | while read -r name; do echo "  - $name"; done

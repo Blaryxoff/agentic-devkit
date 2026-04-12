@@ -1,8 +1,0 @@
-{
-  "name": "rubx-nuxt",
-  "version": "1.0.0",
-  "description": "rubx company-wide Claude Code plugin for Nuxt 3 + TypeScript + BEM workflows",
-  "skills": "./skills",
-  "mcpServers": "./.mcp.json",
-  "lspServers": "./.lsp.json"
-}

@@ -1,0 +1,7 @@
+{
+  "$schema": "../schemas/toolkit.schema.json",
+  "version": 1,
+  "enabled": [
+    "devkit-laravel"
+  ]
+}

@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# devkit-resolve: resolve enabled plugins and optionally run an adapter.
+#
+# Usage:
+#   devkit-resolve                     # List resolved plugin names
+#   devkit-resolve --dirs              # List resolved plugin directories
+#   devkit-resolve --validate          # Validate config only
+#   devkit-resolve --adapter=claude    # Resolve + generate Claude Code config
+#   devkit-resolve --adapter=cursor    # Resolve + generate Cursor config
+#   devkit-resolve --adapter=codex     # Resolve + generate Codex config
+#
+# Environment:
+#   DEVKIT_PROJECT_ROOT  Override project root (default: CWD)
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+TOOLKIT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# shellcheck source=../adapters/_lib/resolve.sh
+source "$TOOLKIT_ROOT/adapters/_lib/resolve.sh"
+
+usage() {
+  cat <<'EOF'
+devkit-resolve — resolve devkit-toolkit plugins for a project
+
+Usage:
+  devkit-resolve                     List resolved plugin names (one per line)
+  devkit-resolve --dirs              List resolved plugin directories
+  devkit-resolve --validate          Validate .devkit/toolkit.json only
+  devkit-resolve --adapter=<name>    Resolve + generate config for an adapter
+                                   Supported: claude, cursor, codex
+
+Options:
+  -h, --help      Show this help
+  --project=DIR   Override project root (default: CWD)
+
+Environment:
+  DEVKIT_PROJECT_ROOT   Same as --project
+EOF
+  exit 0
+}
+
+MODE="list"
+ADAPTER=""
+
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help)
+      usage
+      ;;
+    --validate)
+      MODE="validate"
+      ;;
+    --dirs)
+      MODE="dirs"
+      ;;
+    --adapter=*)
+      MODE="adapter"
+      ADAPTER="${arg#--adapter=}"
+      ;;
+    --project=*)
+      export DEVKIT_PROJECT_ROOT="${arg#--project=}"
+      ;;
+    *)
+      echo "Unknown option: $arg" >&2
+      usage
+      ;;
+  esac
+done
+
+case "$MODE" in
+  validate)
+    resolved=$(resolve_plugins)
+    count=$(echo "$resolved" | wc -l | tr -d ' ')
+    echo "OK: $count plugins resolved"
+    echo "$resolved" | while read -r name; do echo "  - $name"; done
+    ;;
+  dirs)
+    resolve_plugin_dirs
+    ;;
+  list)
+    resolve_plugins
+    ;;
+  adapter)
+    adapter_script="$TOOLKIT_ROOT/adapters/$ADAPTER/generate"
+    if [[ ! -f "$adapter_script" ]]; then
+      echo "ERROR: Unknown adapter '$ADAPTER'. Available:" >&2
+      for d in "$TOOLKIT_ROOT"/adapters/*/generate; do
+        [[ -f "$d" ]] && echo "  - $(basename "$(dirname "$d")")" >&2
+      done
+      exit 1
+    fi
+    exec bash "$adapter_script"
+    ;;
+esac

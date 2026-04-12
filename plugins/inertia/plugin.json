@@ -1,0 +1,12 @@
+{
+  "name": "devkit-inertia",
+  "version": "0.2.0",
+  "description": "Inertia.js transport, page props contracts, and form/navigation behavior",
+  "layer": "framework",
+  "defaultEnabled": false,
+  "dependencies": ["devkit-core"],
+  "paths": {
+    "skills": "./skills",
+    "conduct": "./conduct"
+  }
+}

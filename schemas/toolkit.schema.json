@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Blaryxoff/agentic-devkit/schemas/toolkit.schema.json",
+  "title": "devkit-toolkit project configuration",
+  "description": "Declares which devkit plugins are enabled for a project. Place at .devkit/toolkit.json in the project root.",
+  "type": "object",
+  "required": ["version", "enabled"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Schema version. Currently must be 1."
+    },
+    "enabled": {
+      "type": "array",
+      "description": "List of plugin names to enable. devkit-core is always included implicitly.",
+      "items": {
+        "type": "string",
+        "pattern": "^devkit-[a-z][a-z0-9-]*$"
+      },
+      "uniqueItems": true
+    }
+  }
+}

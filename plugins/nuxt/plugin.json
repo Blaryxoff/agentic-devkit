@@ -1,0 +1,16 @@
+{
+  "name": "devkit-nuxt",
+  "version": "1.1.0",
+  "description": "Nuxt 3 conventions: SSR, data-fetching, TypeScript, BEM/SCSS workflows",
+  "layer": "framework",
+  "defaultEnabled": false,
+  "dependencies": ["devkit-core", "devkit-frontend", "devkit-vue"],
+  "paths": {
+    "skills": "./skills",
+    "conduct": "./conduct",
+    "mcpServers": "./.mcp.json",
+    "lspServers": "./.lsp.json",
+    "hooks": "./hooks/hooks.json",
+    "settings": "./settings.json"
+  }
+}

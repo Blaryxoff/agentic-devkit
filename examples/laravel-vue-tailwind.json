@@ -1,0 +1,10 @@
+{
+  "$schema": "../schemas/toolkit.schema.json",
+  "version": 1,
+  "enabled": [
+    "devkit-laravel",
+    "devkit-vue",
+    "devkit-inertia",
+    "devkit-tailwind"
+  ]
+}

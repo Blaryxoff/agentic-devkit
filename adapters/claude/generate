@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# devkit-toolkit: Claude Code adapter
+#
+# Generates Claude Code plugin marketplace and settings from resolved plugins.
+#
+# Output (in PROJECT_ROOT):
+#   .claude-plugin/marketplace.json  — filtered marketplace for resolved plugins only
+#   .claude/settings.json            — merged enabledPlugins + permissions.deny
+#
+# Input config:
+#   .devkit/toolkit.json               — standard devkit project config
+#
+# Resolution logic:
+#   - Sources adapters/_lib/resolve.sh for plugin resolution
+#   - Each resolved plugin with paths.skills becomes a marketplace entry
+#   - source paths are relative from project root to the plugin directory
+#   - MCP/LSP configs from resolved plugins are noted but not merged (manual step)
+#   - permissions.deny lists are merged from all resolved plugins' settings.json
+
+set -euo pipefail
+
+ADAPTER_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$ADAPTER_DIR/../_lib/resolve.sh"
+
+RELPATH=$(toolkit_relpath)
+
+echo "==> Claude Code adapter: generating config..."
+echo "    Toolkit: $TOOLKIT_ROOT"
+echo "    Project: $PROJECT_ROOT"
+echo ""
+
+plugin_index=$(_build_plugin_index)
+resolved_names=$(resolve_plugins)
+
+# --- marketplace.json ---
+marketplace_dir="$PROJECT_ROOT/.claude-plugin"
+mkdir -p "$marketplace_dir"
+
+plugins_json="[]"
+enabled_json="{}"
+
+while IFS= read -r name; do
+  [ -z "$name" ] && continue
+  plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
+  plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
+  rel_source="$RELPATH/plugins/$(basename "$plugin_dir")"
+
+  version=$(echo "$plugin_data" | jq -r '.version')
+  desc=$(echo "$plugin_data" | jq -r '.description')
+  has_skills=$(echo "$plugin_data" | jq 'has("paths") and (.paths | has("skills"))')
+
+  if [ "$has_skills" = "true" ]; then
+    plugins_json=$(echo "$plugins_json" | jq \
+      --arg name "$name" \
+      --arg source "$rel_source" \
+      --arg desc "$desc" \
+      --arg version "$version" \
+      '. + [{name: $name, source: $source, description: $desc, version: $version}]')
+  fi
+
+  enabled_json=$(echo "$enabled_json" | jq --arg key "${name}@devkit" '. + {($key): true}')
+done <<< "$resolved_names"
+
+marketplace=$(jq -n \
+  --argjson plugins "$plugins_json" \
+  '{name: "devkit", owner: {name: "devkit"}, plugins: $plugins}')
+
+echo "$marketplace" | jq '.' > "$marketplace_dir/marketplace.json"
+echo "    Created: .claude-plugin/marketplace.json"
+
+# --- settings.json (merge permissions.deny) ---
+settings_dir="$PROJECT_ROOT/.claude"
+mkdir -p "$settings_dir"
+settings_file="$settings_dir/settings.json"
+
+deny_list="[]"
+while IFS= read -r name; do
+  [ -z "$name" ] && continue
+  plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
+  plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
+  settings_path=$(echo "$plugin_data" | jq -r '.paths.settings // empty')
+
+  if [ -n "$settings_path" ] && [ -f "$plugin_dir/$settings_path" ]; then
+    plugin_deny=$(jq '[.permissions.deny[]? // empty | select(startswith("//") | not)]' "$plugin_dir/$settings_path" 2>/dev/null || echo "[]")
+    deny_list=$(echo "$deny_list" | jq --argjson new "$plugin_deny" '. + $new | unique')
+  fi
+done <<< "$resolved_names"
+
+if [ -f "$settings_file" ]; then
+  existing=$(cat "$settings_file")
+  updated=$(echo "$existing" | jq \
+    --argjson enabled "$enabled_json" \
+    --argjson deny "$deny_list" \
+    '.enabledPlugins = (.enabledPlugins // {}) + $enabled | .permissions.deny = ((.permissions.deny // []) + $deny | unique)')
+  echo "$updated" | jq '.' > "$settings_file"
+  echo "    Updated: .claude/settings.json (merged enabledPlugins + permissions.deny)"
+else
+  jq -n \
+    --argjson enabled "$enabled_json" \
+    --argjson deny "$deny_list" \
+    '{enabledPlugins: $enabled, permissions: {deny: $deny}}' > "$settings_file"
+  echo "    Created: .claude/settings.json"
+fi
+
+echo ""
+echo "Done. To activate, run inside Claude Code:"
+echo "  /plugin marketplace add .claude-plugin"
+echo ""
+echo "Resolved plugins:"
+echo "$resolved_names" | while read -r name; do echo "  - $name"; done

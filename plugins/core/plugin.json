@@ -1,0 +1,12 @@
+{
+  "name": "devkit-core",
+  "version": "0.2.0",
+  "description": "Cross-stack shared engineering standards: workflow, git, spec/test-case process, review conventions",
+  "layer": "core",
+  "defaultEnabled": true,
+  "dependencies": [],
+  "paths": {
+    "skills": "./skills",
+    "conduct": "./conduct"
+  }
+}

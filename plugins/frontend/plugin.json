@@ -1,0 +1,11 @@
+{
+  "name": "devkit-frontend",
+  "version": "0.2.0",
+  "description": "Tool-agnostic frontend architecture and generic CSS standards",
+  "layer": "stack",
+  "defaultEnabled": false,
+  "dependencies": ["devkit-core"],
+  "paths": {
+    "skills": "./skills"
+  }
+}

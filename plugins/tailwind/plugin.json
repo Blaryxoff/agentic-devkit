@@ -1,0 +1,12 @@
+{
+  "name": "devkit-tailwind",
+  "version": "0.2.0",
+  "description": "Tailwind CSS utility conventions and tokenization rules",
+  "layer": "styling",
+  "defaultEnabled": false,
+  "dependencies": ["devkit-core"],
+  "paths": {
+    "skills": "./skills",
+    "conduct": "./conduct"
+  }
+}

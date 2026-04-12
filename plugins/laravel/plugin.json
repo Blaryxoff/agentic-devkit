@@ -1,0 +1,16 @@
+{
+  "name": "devkit-laravel",
+  "version": "1.2.0",
+  "description": "Laravel framework conventions: architecture, PHP, security, Inertia integration",
+  "layer": "framework",
+  "defaultEnabled": false,
+  "dependencies": ["devkit-core"],
+  "paths": {
+    "skills": "./skills",
+    "conduct": "./conduct",
+    "mcpServers": "./.mcp.json",
+    "lspServers": "./.lsp.json",
+    "hooks": "./hooks/hooks.json",
+    "settings": "./settings.json"
+  }
+}

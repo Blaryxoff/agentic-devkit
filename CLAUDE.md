@@ -1,81 +1,99 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI agents working with code in this repository.
 
 ## What This Repo Is
 
-A Claude Code **plugin marketplace** for product teams. It contains plugins that bundle skills, hooks, agents, MCP/LSP configs, and shared coding conduct for AI-assisted web product development.
+A model-agnostic **plugin toolkit** for AI-assisted product development. It ships plugins that bundle skills, conduct
+docs, hooks, MCP/LSP configs, and shared coding standards. Included as a git submodule at `toolkits/agentic-devkit` in
+consuming projects.
 
-This is NOT an application project itself. It is a collection of Markdown-based skill definitions, JSON configs, and guidance docs. There is no runtime app in this repository.
+This is NOT an application project. It is a collection of Markdown-based skill definitions, JSON configs, shell scripts,
+and standards docs.
 
 ## Repository Layout
 
 ```
-claude-code/                         # Marketplace root
-├── .claude-plugin/marketplace.json  # Registry: lists all plugins
-├── README.md                        # Installation & usage docs
-├── frontend/                        # "rubx-nuxt" plugin (Nuxt 3 + TypeScript + BEM)
-│   ├── .claude-plugin/plugin.json   # Plugin manifest
-│   ├── skills/                      # Skill definitions (each dir has SKILL.md)
-│   ├── .mcp.json / .lsp.json        # Server configs
-│   └── settings.json / hooks.json   # Plugin settings and hook defs
-└── backend/                         # "rubx-laravel" plugin (Laravel + Inertia + Vue 3)
-    ├── .claude-plugin/plugin.json   # Plugin manifest
-    ├── skills/                      # Skill definitions (each dir has SKILL.md)
-    ├── agents/                      # Subagent definitions
-    ├── hooks/                       # Hook scripts
-    ├── mcp-servers/                 # MCP server source
-    ├── .mcp.json / .lsp.json        # Server configs
-    └── settings.json / hooks.json   # Plugin settings and hook defs
-
-conduct/
-├── frontend/                        # Nuxt conduct standards
-│   ├── CLAUDE.md                    # Stack overview and reading order
-│   ├── conduct/*.md                 # Architecture, security, logging, etc.
-│   ├── spec/                        # Feature spec template
-│   └── testing/                     # Test-case guidelines
-└── backend/                         # Laravel conduct standards
-    ├── CLAUDE.md                    # Stack overview and reading order
-    ├── conduct/*.md                 # Architecture, PHP, security, logging, etc.
-    ├── spec/                        # Feature spec template
-    └── testing/                     # Test-case guidelines
-
-howto/                               # Developer guides for Claude Code and AI tooling
+plugins/                 All plugins (convention: plugins/*/plugin.json)
+  core/                  Always-on shared standards (git, spec, test-case, review)
+  frontend/              Generic frontend architecture + CSS
+  laravel/               Laravel framework skills + conduct
+  nuxt/                  Nuxt 3 framework skills + conduct
+  vue/                   Vue component/state conventions
+  inertia/               Inertia.js transport rules
+  tailwind/              Tailwind CSS conventions
+bin/
+  devkit-resolve           CLI entry point for resolution and adapter generation
+adapters/
+  _lib/resolve.sh        Core resolution algorithm (bash + jq)
+  claude/generate        Claude Code adapter
+  cursor/generate        Cursor IDE adapter
+  codex/generate         OpenAI Codex adapter
+schemas/                 JSON schemas for toolkit.json and plugin.json
+examples/                Example .devkit/toolkit.json files
+howto/                   Developer guides (Russian)
 ```
 
 ## Key Conventions
 
-### Versioning
-When adding, removing, or renaming skills/components, bump the version in **both**:
-- `claude-code/<plugin>/.claude-plugin/plugin.json` — the plugin manifest
-- `claude-code/.claude-plugin/marketplace.json` — the marketplace registry
+### Plugins
+
+- Each plugin is a directory under `plugins/` with a `plugin.json` manifest.
+- Discovery is convention-based: any `plugins/*/plugin.json` is a plugin.
+- Plugin names use the `devkit-` prefix (e.g. `devkit-laravel`).
+- Directory names match the technology (e.g. `laravel/`, not `backend/`).
 
 ### Skills
-- Each skill lives in `claude-code/<plugin>/skills/<skill-name>/SKILL.md`
-- SKILL.md has YAML frontmatter (`name`, `description`) followed by the prompt body
-- Skill names use the `rubx-` prefix in frontmatter (e.g. `rubx-reviewer-fast`)
-- Directory names omit the prefix (e.g. `reviewer-fast/`)
-- Reviewer skills follow a naming pattern: `reviewer-<focus>` (not `<focus>-reviewer`)
-- Skills should be self-sufficient and focused on the active stack
+
+- Each skill lives in `plugins/<plugin>/skills/<skill-name>/SKILL.md`.
+- SKILL.md has YAML frontmatter (`name`, `description`) followed by the prompt body.
+- Skill names use the `devkit-` prefix in frontmatter.
+- Shared skills (git, spec-creator, etc.) live ONLY in `core/` -- never duplicated.
+- Stack-specific skills live in their owning plugin.
 
 ### Conduct
-- Frontend (Nuxt) conduct lives in `conduct/frontend/`
-- Backend (Laravel) conduct lives in `conduct/backend/`
-- Conduct docs are stack-specific and should not be merged across stacks
+
+- Each plugin may have a `conduct/` directory with Markdown standards docs.
+- Conduct is the canonical source of truth; skills summarize and enforce conduct.
+- Cross-plugin references use relative paths (e.g. `../../vue/conduct/overview.md`).
+- **Conduct docs are the extension mechanism for core skills.** Core skills (plan-reviewer, spec-creator, git, etc.)
+  automatically discover and enforce conduct rules from all active plugins by reading `.devkit/toolkit.json` and
+  scanning each plugin's `conduct/` directory. To add a new rule that core skills should enforce, add a `.md` file to
+  the appropriate plugin's `conduct/` directory -- no skill changes needed.
+
+### Plugin Manifests
+
+- `layer` determines loading order: `core` -> `stack` -> `framework` -> `styling`.
+- `dependencies` are auto-resolved transitively.
+- `defaultEnabled: true` only for `devkit-core`.
+- `paths` object groups resource locations.
+
+### Resolution
+
+- Project declares enabled plugins in `.devkit/toolkit.json`.
+- `devkit-core` is always included.
+- Transitive dependencies are auto-included.
+- Disabled plugins are excluded from all generated context.
 
 ## Common Commands
 
 ```bash
-# Clone
-git clone https://github.com/Blaryxoff/rubx-agentic-tools.git ~/www/rubx-agentic-tools
+# Resolve plugins for a project
+bin/devkit-resolve --validate
 
-# Open plugin docs
-open claude-code/README.md
+# Generate configs
+bin/devkit-resolve --adapter=claude
+bin/devkit-resolve --adapter=cursor
+bin/devkit-resolve --adapter=codex
 ```
+
+## Adding a New Plugin
+
+1. Create `plugins/<name>/plugin.json` with the standard schema.
+2. Add skills at `plugins/<name>/skills/<skill>/SKILL.md`.
+3. Add conduct docs at `plugins/<name>/conduct/*.md`.
+4. No registry edits needed -- discovery is automatic.
 
 ## Adding a New Skill
 
-1. Create `claude-code/<plugin>/skills/<skill-name>/SKILL.md` with frontmatter
-2. Make guidance explicit for the active project stack and conventions
-3. Update `claude-code/README.md` plugin table
-4. Bump version in both `plugin.json` and `marketplace.json`
+Create `plugins/<plugin>/skills/<skill-name>/SKILL.md` with frontmatter. The adapters pick it up on next run.

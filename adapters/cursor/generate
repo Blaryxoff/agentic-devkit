@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+# devkit-toolkit: Cursor adapter
+#
+# Generates Cursor rules (.mdc) and skill symlinks from resolved plugins.
+#
+# Output (in PROJECT_ROOT):
+#   .cursor/rules/devkit-<plugin>.mdc  — one rule file per resolved plugin with conduct
+#   .cursor/skills/devkit-<plugin>/    — symlinks to each resolved plugin's skill dirs
+#
+# Input config:
+#   .devkit/toolkit.json               — standard devkit project config
+#
+# Resolution logic:
+#   - Sources adapters/_lib/resolve.sh for plugin resolution
+#   - For each resolved plugin with conduct, generates an .mdc rule that
+#     instructs Cursor to read the conduct docs on demand
+#   - devkit-core.mdc is always generated with alwaysApply: true
+#   - Skills are symlinked (not copied) to keep them in sync with the toolkit
+
+set -euo pipefail
+
+ADAPTER_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$ADAPTER_DIR/../_lib/resolve.sh"
+
+RELPATH=$(toolkit_relpath)
+
+echo "==> Cursor adapter: generating config..."
+echo "    Toolkit: $TOOLKIT_ROOT"
+echo "    Project: $PROJECT_ROOT"
+echo ""
+
+plugin_index=$(_build_plugin_index)
+resolved_names=$(resolve_plugins)
+
+rules_dir="$PROJECT_ROOT/.cursor/rules"
+skills_dir="$PROJECT_ROOT/.cursor/skills"
+mkdir -p "$rules_dir" "$skills_dir"
+
+# Glob patterns per plugin (used for rule activation)
+declare_globs() {
+  local name=$1
+  case "$name" in
+    devkit-core)      echo '**/*' ;;
+    devkit-frontend)  echo '**/*.vue,**/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.css,**/*.scss' ;;
+    devkit-laravel)   echo '**/*.php,app/**,routes/**,database/**,config/**' ;;
+    devkit-nuxt)      echo '**/*.vue,**/*.ts,pages/**,composables/**,components/**' ;;
+    devkit-vue)       echo '**/*.vue,**/*.ts,components/**,composables/**' ;;
+    devkit-inertia)   echo '**/*.vue,**/*.ts,**/*.php,resources/**' ;;
+    devkit-tailwind)  echo '**/*.vue,**/*.css,**/*.scss,**/*.html' ;;
+    *)              echo '**/*' ;;
+  esac
+}
+
+while IFS= read -r name; do
+  [ -z "$name" ] && continue
+  plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
+  plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
+  plugin_basename=$(basename "$plugin_dir")
+  rel_plugin="$RELPATH/plugins/$plugin_basename"
+
+  has_conduct=$(echo "$plugin_data" | jq 'has("paths") and (.paths | has("conduct"))')
+  has_skills=$(echo "$plugin_data" | jq 'has("paths") and (.paths | has("skills"))')
+
+  # --- Generate .mdc rule ---
+  if [ "$has_conduct" = "true" ]; then
+    conduct_rel="$rel_plugin/conduct"
+    conduct_abs="$plugin_dir/conduct"
+
+    globs=$(declare_globs "$name")
+    desc=$(echo "$plugin_data" | jq -r '.description')
+
+    always_apply="false"
+    if [ "$name" = "devkit-core" ]; then
+      always_apply="true"
+    fi
+
+    mdc_file="$rules_dir/${name}.mdc"
+
+    {
+      echo "---"
+      echo "description: \"$name: $desc\""
+      if [ "$always_apply" = "true" ]; then
+        echo "alwaysApply: true"
+      else
+        echo "globs: [\"${globs//,/\", \"}\"]"
+      fi
+      echo "---"
+      echo ""
+      echo "# $name"
+      echo ""
+      echo "Read and apply the following conduct documents for this project:"
+      echo ""
+      # List all .md files in the conduct directory
+      if [ -d "$conduct_abs" ]; then
+        find "$conduct_abs" -name "*.md" -type f | sort | while read -r md; do
+          rel_md="$conduct_rel/$(python3 -c "import os.path; print(os.path.relpath('$md', '$conduct_abs'))")"
+          echo "- $rel_md"
+        done
+      fi
+    } > "$mdc_file"
+    echo "    Created: .cursor/rules/${name}.mdc"
+  fi
+
+  # --- Symlink skills ---
+  if [ "$has_skills" = "true" ]; then
+    skills_source="$plugin_dir/skills"
+    target_dir="$skills_dir/$name"
+
+    rm -rf "$target_dir"
+
+    # Create skill symlinks per skill subdirectory
+    if [ -d "$skills_source" ]; then
+      for skill_dir in "$skills_source"/*/; do
+        [ -d "$skill_dir" ] || continue
+        skill_name=$(basename "$skill_dir")
+        skill_target="$skills_dir/${name}--${skill_name}"
+        rm -rf "$skill_target"
+        ln -s "$(cd "$skill_dir" && pwd)" "$skill_target"
+      done
+      echo "    Linked:  .cursor/skills/${name}--* ($(ls -d "$skills_source"/*/ 2>/dev/null | wc -l | tr -d ' ') skills)"
+    fi
+  fi
+
+done <<< "$resolved_names"
+
+echo ""
+echo "Done. Cursor will pick up rules and skills automatically."
+echo ""
+echo "Resolved plugins:"
+echo "$resolved_names" | while read -r name; do echo "  - $name"; done

@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Blaryxoff/agentic-devkit/schemas/plugin.schema.json",
+  "title": "devkit plugin manifest",
+  "description": "Plugin manifest placed at plugins/<name>/plugin.json inside the toolkit.",
+  "type": "object",
+  "required": ["name", "version", "description", "layer", "defaultEnabled", "dependencies", "paths"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^devkit-[a-z][a-z0-9-]*$",
+      "description": "Unique plugin identifier (e.g. devkit-laravel)."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semver version string."
+    },
+    "description": {
+      "type": "string",
+      "description": "One-line description of the plugin."
+    },
+    "layer": {
+      "type": "string",
+      "enum": ["core", "stack", "framework", "styling"],
+      "description": "Determines loading order: core -> stack -> framework -> styling."
+    },
+    "defaultEnabled": {
+      "type": "boolean",
+      "description": "If true, plugin is always included (only devkit-core should be true)."
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "Other plugin names that must be co-enabled. Resolver auto-includes them.",
+      "items": {
+        "type": "string",
+        "pattern": "^devkit-[a-z][a-z0-9-]*$"
+      },
+      "uniqueItems": true
+    },
+    "paths": {
+      "type": "object",
+      "description": "Relative paths to plugin resources. Omit keys for resources the plugin does not provide.",
+      "additionalProperties": false,
+      "properties": {
+        "skills": {
+          "type": "string",
+          "description": "Directory containing skill subdirectories, each with SKILL.md."
+        },
+        "conduct": {
+          "type": "string",
+          "description": "Directory containing conduct/standards markdown files."
+        },
+        "mcpServers": {
+          "type": "string",
+          "description": "Path to .mcp.json MCP server configuration."
+        },
+        "lspServers": {
+          "type": "string",
+          "description": "Path to .lsp.json LSP server configuration."
+        },
+        "hooks": {
+          "type": "string",
+          "description": "Path to hooks.json hook definitions."
+        },
+        "settings": {
+          "type": "string",
+          "description": "Path to settings.json (permissions, deny lists, etc.)."
+        }
+      }
+    }
+  }
+}

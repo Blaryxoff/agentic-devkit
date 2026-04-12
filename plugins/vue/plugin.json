@@ -1,0 +1,12 @@
+{
+  "name": "devkit-vue",
+  "version": "0.2.0",
+  "description": "Vue component, composable, and state organization conventions",
+  "layer": "framework",
+  "defaultEnabled": false,
+  "dependencies": ["devkit-core", "devkit-frontend"],
+  "paths": {
+    "skills": "./skills",
+    "conduct": "./conduct"
+  }
+}
