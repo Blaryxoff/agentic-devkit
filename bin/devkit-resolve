@@ -175,6 +175,15 @@ _init_toolkit() {
   resolved=$(resolve_plugins)
   echo "Resolved plugins:"
   echo "$resolved" | while read -r name; do echo "  - $name"; done
+
+  local relpath
+  relpath=$(toolkit_relpath)
+  echo ""
+  echo "Next step — generate config for your IDE:"
+  echo ""
+  echo "  $relpath/bin/devkit-resolve --adapter=claude    # Claude Code"
+  echo "  $relpath/bin/devkit-resolve --adapter=cursor    # Cursor"
+  echo "  $relpath/bin/devkit-resolve --adapter=codex     # Codex"
 }
 
 case "$MODE" in
