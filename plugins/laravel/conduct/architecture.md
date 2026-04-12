@@ -35,7 +35,6 @@ repositories in the future. So design in the way to make the split easy, fast an
 ### Port interface example
 
 ```php
-// app/Domain/User/Contracts/UserRepository.php
 interface UserRepository
 {
     public function create(User $user): void;
@@ -46,36 +45,26 @@ interface UserRepository
 }
 ```
 
-## Domain driven design key points
+## Domain driven design rules
 
-- Entity: An object defined by its identity, not its attributes. Two entities with the same data are still different
-  objects if they have different IDs. Use when: the object has a lifecycle and must be tracked over time (Orders, Users,
-  Accounts). Something having an ID.
-- Value objects: An object defined by its attributes, with no identity. Immutable. Two value objects with the same data
-  are equal. Use when: identity doesn't matter — just the value (Money, Address, DateRange, Email)
-- Aggregate: A cluster of entities and value objects treated as a single unit. One object is the Aggregate Root — the
-  only entry point for changes.
-  Rules:
-    - External objects can only reference the root, never internal entities directly
-    - All invariants (business rules) are enforced within the aggregate
-    - Each aggregate is a transaction boundary — save it as a whole
-    - Use aggregates when: multiple entities must change together as one atomic operation and splitting them would risk
-      broken invariants (e.g. an Order with OrderLines — you never save a line without its parent order). If a single
-      entity can enforce its own rules and is saved independently, an aggregate is not needed.
-- Contracts should only be used inside Application Services, never in entities or value objects.
-- **Services/Actions constraint**: one public method = one business scenario. Services must be small, predictable, and testable. Avoid god-services that accumulate unrelated methods. Extract a new service/action when a method does not belong to the existing scenario.
-- Make services slim so put as much logic as possible into value objects, entities and aggregates
-- Eloquent models should stay thin: data shape, relationships, simple accessors/mutators, and query scopes are
-  acceptable; business workflows belong in services/actions/domain.
-- A value object and entity:
-    - should do one thing and do it well.
-    - should expose clear behavior methods and avoid uncontrolled public mutation.
-    - should provide predictable serialization (`__toString()` / `toArray()`) where needed.
+| Concept | Definition | Use when | Key constraint |
+|---|---|---|---|
+| **Entity** | Object defined by identity, not attributes. Mutable, has lifecycle. | Must be tracked over time (Order, User, Account) | Validates invariants in constructor and mutators |
+| **Value object** | Object defined by attributes. Immutable, no identity. Equal if data matches. | Identity doesn't matter — just the value (Money, Email, DateRange) | Immutable; validation in constructor |
+| **Aggregate** | Cluster of entities + value objects with one Aggregate Root as sole entry point | Multiple entities must change atomically with shared invariants (Order + OrderLines) | External code references root only; save as a whole; each aggregate = transaction boundary |
+
+**DDD rules:**
+
+- Contracts (interfaces) used only inside Application Services — never in entities or value objects.
+- **Services/Actions constraint**: one public method = one business scenario. Avoid god-services. Extract a new service/action when a method does not belong to the existing scenario.
+- Push logic into value objects, entities and aggregates — keep services slim.
+- Eloquent models stay thin: data shape, relationships, simple accessors/mutators, and query scopes only. Business workflows belong in services/actions/domain.
+- Entities and value objects: do one thing well, expose behavior methods, avoid uncontrolled public mutation, provide predictable serialization (`__toString()` / `toArray()`) where needed.
+- Use aggregates only when multiple entities must change together and splitting them risks broken invariants. If a single entity enforces its own rules independently, an aggregate is not needed.
 
 ### Entity example
 
 ```php
-// app/Domain/User/Entities/User.php
 final class User
 {
     public function __construct(
@@ -107,7 +96,6 @@ final class User
 ### Value object example
 
 ```php
-// app/Domain/User/ValueObjects/Email.php
 final class Email
 {
     public function __construct(private string $value)
@@ -128,7 +116,6 @@ final class Email
 ### Mapper example (domain ↔ DTO)
 
 ```php
-// app/Infrastructure/Persistence/User/Mapper/UserMapper.php
 final class UserMapper
 {
     public function toDomain(UserModel $model): DomainUser
@@ -200,110 +187,65 @@ final class UserMapper
 - separate concerns into dedicated classes/files when code grows: `CreateUserHandler.php`, `GetUserQuery.php`,
   `UserPolicy.php`
 
-### Project structure without CQRS
+### Project structure (base)
 
 ```
-example-project/
-├── app/
-│   ├── Domain/                       # core domain (framework-light)
-│   │   ├── User/
-│   │   │   ├── Entities/
-│   │   │   │   └── User.php
-│   │   │   ├── ValueObjects/
-│   │   │   │   ├── Email.php
-│   │   │   │   └── UserId.php
-│   │   │   └── Contracts/
-│   │   │       └── UserRepository.php
-│   │   └── ...
-│   ├── Application/                  # use-cases / orchestration
-│   │   ├── User/
-│   │   │   ├── Services/
-│   │   │   │   └── UserService.php
-│   │   │   ├── Data/
-│   │   │   │   └── CreateUserData.php
-│   │   │   └── Mappers/
-│   │   │       └── UserResponseMapper.php
-│   │   └── ...
-│   ├── Infrastructure/               # implementations of contracts
-│   │   ├── Persistence/
-│   │   │   └── User/
-│   │   │       ├── EloquentUserRepository.php
-│   │   │       └── Mapper/
-│   │   │           └── UserMapper.php
-│   │   ├── Clients/
-│   │   │   ├── BillingClient.php
-│   │   │   ├── NotificationClient.php
-│   │   │   └── ...
-│   │   └── ...
-│   ├── Http/
-│   │   ├── Controllers/              # inbound HTTP adapter
-│   │   ├── Requests/                 # validation
-│   │   └── Middleware/
-│   ├── Jobs/                         # async commands
-│   ├── Models/                       # Eloquent models
-│   ├── Policies/
-│   └── Providers/
-├── bootstrap/
-├── config/
-├── database/
-│   ├── factories/
-│   ├── migrations/
-│   └── seeders/
-├── public/
-├── resources/
-│   ├── js/
-│   │   ├── Pages/                    # Inertia Vue pages
-│   │   ├── Components/
-│   │   └── Layouts/
-│   └── css/
-├── routes/
-│   ├── web.php
-│   └── api.php
-├── storage/
-├── tests/
-│   ├── Feature/
-│   └── Unit/
-├── nginx/                            # Nginx site / reverse-proxy config
-│   └── default.conf
-├── composer.json
-├── package.json
-└── vite.config.js
+app/
+├── Domain/                       # core domain (framework-light)
+│   └── User/
+│       ├── Entities/User.php
+│       ├── ValueObjects/Email.php, UserId.php
+│       └── Contracts/UserRepository.php
+├── Application/                  # use-cases / orchestration
+│   └── User/
+│       ├── Services/UserService.php
+│       ├── Data/CreateUserData.php
+│       └── Mappers/UserResponseMapper.php
+├── Infrastructure/               # implementations of contracts
+│   ├── Persistence/User/
+│   │   ├── EloquentUserRepository.php
+│   │   └── Mapper/UserMapper.php
+│   └── Clients/BillingClient.php, NotificationClient.php ...
+├── Http/
+│   ├── Controllers/              # inbound HTTP adapter
+│   ├── Requests/                 # validation
+│   └── Middleware/
+├── Jobs/                         # async commands
+├── Models/                       # Eloquent models
+├── Policies/
+└── Providers/
+
+bootstrap/, config/, database/{factories,migrations,seeders}/
+public/, storage/
+resources/js/{Pages,Components,Layouts}/, resources/css/
+routes/{web.php,api.php}
+tests/{Feature,Unit}/
+nginx/default.conf
+composer.json, package.json, vite.config.js
 ```
 
-### Project structure with CQRS (partial) (showing only changed parts)
+### CQRS additions (changes to Application/ and Infrastructure/ only)
+
+When using CQRS, replace `Services/` with `Commands/` + `Queries/` + `ReadModels/`:
 
 ```
-example-project/
-├── app/
-│   ├── Application/
-│   │   ├── User/
-│   │   │   ├── Commands/
-│   │   │   │   ├── CreateUserCommand.php
-│   │   │   │   ├── CreateUserHandler.php
-│   │   │   │   └── ...
-│   │   │   ├── Queries/
-│   │   │   │   ├── GetUserQuery.php
-│   │   │   │   ├── GetUserHandler.php
-│   │   │   │   └── ...
-│   │   │   ├── ReadModels/
-│   │   │   │   └── UserView.php
-│   │   │   └── ...
-│   │   └── ...
-│   ├── Infrastructure/
-│   │   ├── Persistence/
-│   │   │   └── User/
-│   │   │       ├── UserCommandRepository.php
-│   │   │       ├── UserQueryRepository.php
-│   │   │       └── ...
-│   │   └── ...
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── UserCommandController.php
-│   │   │   ├── UserQueryController.php
-│   │   │   └── ...
-│   │   └── ...
-│   └── ...
-└── ...
+app/Application/User/
+├── Commands/
+│   ├── CreateUserCommand.php
+│   └── CreateUserHandler.php
+├── Queries/
+│   ├── GetUserQuery.php
+│   └── GetUserHandler.php
+└── ReadModels/
+    └── UserView.php
+
+app/Infrastructure/Persistence/User/
+├── UserCommandRepository.php
+└── UserQueryRepository.php
+
+app/Http/Controllers/
+├── UserCommandController.php
+└── UserQueryController.php
 ```
 
 ## DO / DO NOT
