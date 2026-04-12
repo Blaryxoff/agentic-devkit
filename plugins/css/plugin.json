@@ -1,0 +1,11 @@
+{
+  "name": "devkit-css",
+  "version": "1.0.0",
+  "description": "Modern CSS intelligence layer — expert guidance, auditing, layout, animation, theming, accessibility, and debugging skills from css.dev",
+  "layer": "styling",
+  "defaultEnabled": false,
+  "dependencies": ["devkit-core"],
+  "paths": {
+    "skills": "./skills"
+  }
+}
