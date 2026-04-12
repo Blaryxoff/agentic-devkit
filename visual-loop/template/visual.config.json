@@ -1,0 +1,51 @@
+{
+  "baseUrl": "http://127.0.0.1:5173",
+  "framework": "vite",
+  "thresholds": {
+    "pass": 0.3,
+    "warn": 1.5
+  },
+  "pixelmatch": {
+    "threshold": 0.1
+  },
+  "viewports": {
+    "mobile": {
+      "width": 390,
+      "height": 844
+    },
+    "tablet": {
+      "width": 768,
+      "height": 1024
+    },
+    "desktop": {
+      "width": 1440,
+      "height": 1200
+    }
+  },
+  "server": {
+    "readyUrl": "http://127.0.0.1:5173",
+    "command": "pnpm dev",
+    "startupTimeoutMs": 120000,
+    "reuseIfAvailable": true
+  },
+  "loop": {
+    "maxIterations": 6,
+    "waitForChangesMs": 300000,
+    "pollIntervalMs": 1500,
+    "watchGlobs": [
+      "resources/js/**/*.{js,ts,vue}",
+      "resources/css/**/*.{css,scss}",
+      "src/**/*.{js,ts,vue,css,scss}"
+    ]
+  },
+  "pages": {
+    "home": {
+      "route": "/",
+      "waitFor": null,
+      "theme": "light",
+      "locale": "en",
+      "timezone": "UTC",
+      "clip": null
+    }
+  }
+}

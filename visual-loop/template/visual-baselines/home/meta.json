@@ -1,0 +1,9 @@
+{
+  "route": "/",
+  "frame": "Home",
+  "waitFor": null,
+  "clip": null,
+  "notes": [
+    "Export baseline PNGs from Figma for mobile/tablet/desktop."
+  ]
+}

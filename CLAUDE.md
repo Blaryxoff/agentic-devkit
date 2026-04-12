@@ -32,6 +32,7 @@ adapters/
 schemas/                 JSON schemas for toolkit.json and plugin.json
 examples/                Example .devkit/toolkit.json files
 howto/                   Developer guides (Russian)
+visual-loop/             Reusable visual screenshot-diff bootstrap tool
 ```
 
 ## Key Conventions
