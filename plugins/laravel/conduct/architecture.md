@@ -155,7 +155,7 @@ final class UserMapper
 - A command is an intent to change something. It should be named in the imperative. Command Rules
     - Return void or just a new resource ID
     - One handler per command
-    - Validate inputs inside the handler (or via Form Request / pipeline)
+    - Validate inputs via Form Request before reaching the handler
     - Never query and return business data from a command handler
     - Never share a handler between two commands
 - A query asks a question. It must have zero side effects. Query Rules
