@@ -3,6 +3,7 @@
 #
 # Usage:
 #   devkit-resolve                     # List resolved plugin names
+#   devkit-resolve --init              # Create .devkit/toolkit.json interactively
 #   devkit-resolve --dirs              # List resolved plugin directories
 #   devkit-resolve --validate          # Validate config only
 #   devkit-resolve --adapter=claude    # Resolve + generate Claude Code config
@@ -26,6 +27,7 @@ devkit-resolve — resolve devkit-toolkit plugins for a project
 
 Usage:
   devkit-resolve                     List resolved plugin names (one per line)
+  devkit-resolve --init              Create .devkit/toolkit.json interactively
   devkit-resolve --dirs              List resolved plugin directories
   devkit-resolve --validate          Validate .devkit/toolkit.json only
   devkit-resolve --adapter=<name>    Resolve + generate config for an adapter
@@ -49,6 +51,9 @@ for arg in "$@"; do
     -h|--help)
       usage
       ;;
+    --init)
+      MODE="init"
+      ;;
     --validate)
       MODE="validate"
       ;;
@@ -69,7 +74,113 @@ for arg in "$@"; do
   esac
 done
 
+_init_toolkit() {
+  local config_dir="$PROJECT_ROOT/.devkit"
+  local config_file="$config_dir/toolkit.json"
+
+  if [ -f "$config_file" ]; then
+    echo "ERROR: $config_file already exists." >&2
+    exit 1
+  fi
+
+  local relpath
+  relpath=$(toolkit_relpath)
+  local schema_ref="$relpath/schemas/toolkit.schema.json"
+
+  local examples_dir="$TOOLKIT_ROOT/examples"
+  local -a preset_files=()
+  local -a preset_labels=()
+
+  for f in "$examples_dir"/*.json; do
+    [ -f "$f" ] || continue
+    local base
+    base=$(basename "$f" .json)
+    local desc
+    desc=$(jq -r '.enabled | join(", ")' "$f")
+    preset_files+=("$f")
+    preset_labels+=("$base  ($desc)")
+  done
+
+  echo ""
+  echo "Available presets:"
+  local i=1
+  for label in "${preset_labels[@]}"; do
+    echo "  $i) $label"
+    ((i++))
+  done
+  echo "  $i) custom — pick plugins manually"
+  echo ""
+
+  local total=${#preset_files[@]}
+  local choice
+  read -rp "Select preset [1-$((total + 1))]: " choice
+
+  local enabled_json
+
+  if [ "$choice" -ge 1 ] 2>/dev/null && [ "$choice" -le "$total" ] 2>/dev/null; then
+    enabled_json=$(jq '.enabled' "${preset_files[$((choice - 1))]}")
+  elif [ "$choice" -eq $((total + 1)) ] 2>/dev/null; then
+    local -a all_plugins=()
+    for manifest in "$TOOLKIT_ROOT"/plugins/*/plugin.json; do
+      [ -f "$manifest" ] || continue
+      local pname pdesc player pdefault
+      pname=$(jq -r '.name' "$manifest")
+      pdesc=$(jq -r '.description' "$manifest")
+      player=$(jq -r '.layer' "$manifest")
+      pdefault=$(jq -r '.defaultEnabled // false' "$manifest")
+      [ "$pdefault" = "true" ] && continue
+      all_plugins+=("$pname|$pdesc|$player")
+    done
+
+    echo ""
+    echo "Available plugins (devkit-core is always included):"
+    i=1
+    for entry in "${all_plugins[@]}"; do
+      local pname pdesc player
+      pname=$(echo "$entry" | cut -d'|' -f1)
+      pdesc=$(echo "$entry" | cut -d'|' -f2)
+      player=$(echo "$entry" | cut -d'|' -f3)
+      echo "  $i) $pname [$player] — $pdesc"
+      ((i++))
+    done
+    echo ""
+
+    local selections
+    read -rp "Enter plugin numbers separated by spaces: " selections
+
+    enabled_json="[]"
+    for sel in $selections; do
+      if [ "$sel" -ge 1 ] 2>/dev/null && [ "$sel" -le ${#all_plugins[@]} ] 2>/dev/null; then
+        local selected_name
+        selected_name=$(echo "${all_plugins[$((sel - 1))]}" | cut -d'|' -f1)
+        enabled_json=$(echo "$enabled_json" | jq --arg n "$selected_name" '. + [$n]')
+      fi
+    done
+  else
+    echo "Invalid selection." >&2
+    exit 1
+  fi
+
+  mkdir -p "$config_dir"
+  jq -n \
+    --arg schema "$schema_ref" \
+    --argjson enabled "$enabled_json" \
+    '{"$schema": $schema, version: 1, enabled: $enabled}' > "$config_file"
+
+  echo ""
+  echo "Created: .devkit/toolkit.json"
+  echo ""
+
+  local resolved
+  resolved=$(resolve_plugins)
+  echo "Resolved plugins:"
+  echo "$resolved" | while read -r name; do echo "  - $name"; done
+}
+
 case "$MODE" in
+  init)
+    _init_toolkit
+    ;;
   validate)
     resolved=$(resolve_plugins)
     count=$(echo "$resolved" | wc -l | tr -d ' ')

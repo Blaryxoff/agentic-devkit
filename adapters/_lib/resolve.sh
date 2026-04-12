@@ -43,7 +43,7 @@ resolve_plugins() {
   local config="$PROJECT_ROOT/.devkit/toolkit.json"
   if [ ! -f "$config" ]; then
     echo "ERROR: No .devkit/toolkit.json found at $PROJECT_ROOT" >&2
-    echo "Create one with: {\"version\": 1, \"enabled\": [\"devkit-laravel\"]}" >&2
+    echo "Run:   devkit-resolve --init" >&2
     exit 1
   fi
 
@@ -103,6 +103,7 @@ resolve_plugins() {
   local config="$PROJECT_ROOT/.devkit/toolkit.json"
   if [ ! -f "$config" ]; then
     echo "ERROR: No .devkit/toolkit.json found at $PROJECT_ROOT" >&2
+    echo "Run:   devkit-resolve --init" >&2
     exit 1
   fi
 

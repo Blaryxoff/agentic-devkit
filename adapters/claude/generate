@@ -97,6 +97,9 @@ else
 fi
 
 echo ""
+echo "Resolved plugins:"
+echo "$resolved_names" | while read -r name; do echo "  - $name"; done
+echo ""
 echo "Done. Run these commands inside Claude Code:"
 echo ""
 echo "  /plugin marketplace remove rubx"
@@ -108,6 +111,3 @@ if [ -n "$plugin_names" ]; then
   done
 fi
 echo "  /reload-plugins"
-echo ""
-echo "Resolved plugins:"
-echo "$resolved_names" | while read -r name; do echo "  - $name"; done
