@@ -16,41 +16,7 @@ All telemetry providers are initialized during Laravel bootstrap alongside loggi
 
 ### Config
 
-```php
-// config/telemetry.php
-
-return [
-    'enabled' => env('TELEMETRY_ENABLED', false),
-    'endpoint' => env('OTEL_EXPORTER_OTLP_ENDPOINT', 'http://localhost:4318'),
-    'service_name' => env('OTEL_SERVICE_NAME', 'grow-place'),
-    'sample_rate' => (float) env('OTEL_TRACES_SAMPLE_RATE', 1.0), // 0.0 to 1.0
-];
-```
-
-### Initialization in bootstrap / provider
-
-```php
-// app/Providers/AppServiceProvider.php
-
-public function boot(): void
-{
-    if (! config('telemetry.enabled')) {
-        return;
-    }
-
-    // Initialize TracerProvider + MeterProvider once per process
-    // using OTEL endpoint, service name, and sample rate from config.
-    // Keep provider construction in a dedicated bootstrap class.
-}
-```
-
-### Wiring for HTTP and queue workers
-
-```php
-// App bootstrapping rule of thumb:
-// - HTTP requests (Nginx -> PHP-FPM): initialize telemetry in app bootstrap
-// - Queue workers (php artisan queue:work): initialize telemetry on worker boot
-```
+Store telemetry settings in `config/telemetry.php` (`enabled`, `endpoint`, `service_name`, `sample_rate`). Initialize `TracerProvider` + `MeterProvider` once in the app provider's `boot()`, gated by `config('telemetry.enabled')`. For queue workers, initialize on worker boot.
 
 ## Tracing
 
@@ -64,96 +30,34 @@ public function boot(): void
 | Queue job | `job.ClassName.handle` | `job.SendInvoiceJob.handle` |
 | External client | `client.Service.operation` | `client.Stripe.createPaymentIntent` |
 
-### Creating spans in services
+### Creating spans in services and repositories
 
 ```php
-use OpenTelemetry\API\Globals;
-use OpenTelemetry\API\Trace\StatusCode;
-
-public function createUser(array $payload): User
-{
-    $tracer = Globals::tracerProvider()->getTracer('user_service');
-    $span = $tracer->spanBuilder('UserService.createUser')->startSpan();
-    $scope = $span->activate();
-
-    try {
-        $span->setAttribute('email_domain', Str::after($payload['email'] ?? '', '@'));
-
-        $user = User::query()->create($payload);
-
-        $span->setAttribute('user_id', (string) $user->id);
-        return $user;
-    } catch (\Throwable $exception) {
-        $span->recordException($exception);
-        $span->setStatus(StatusCode::STATUS_ERROR, 'failed to create user');
-        throw $exception;
-    } finally {
-        $scope->detach();
-        $span->end();
-    }
+$span = $tracer->spanBuilder('UserService.createUser')->startSpan();
+$scope = $span->activate();
+try {
+    $span->setAttribute('email_domain', Str::after($payload['email'] ?? '', '@'));
+    $user = User::query()->create($payload);
+    $span->setAttribute('user_id', (string) $user->id);
+    return $user;
+} catch (\Throwable $exception) {
+    $span->recordException($exception);
+    $span->setStatus(StatusCode::STATUS_ERROR, 'failed to create user');
+    throw $exception;
+} finally {
+    $scope->detach();
+    $span->end();
 }
 ```
 
-### Creating spans in repositories
+### Tracer/meter field in structs
 
-```php
-use OpenTelemetry\API\Globals;
+Every service and repository that creates spans should resolve a `TracerInterface` once via constructor DI, then reuse it. Apply the same pattern for `MeterInterface`.
 
-public function findById(int $id): ?User
-{
-    $tracer = Globals::tracerProvider()->getTracer('user_repository');
-    $span = $tracer->spanBuilder('UserRepository.findById')->startSpan();
-    $scope = $span->activate();
+### HTTP and queue instrumentation
 
-    try {
-        $span->setAttribute('user_id', (string) $id);
-        return User::query()->find($id);
-    } finally {
-        $scope->detach();
-        $span->end();
-    }
-}
-```
-
-### Tracer field in structs
-
-Every service and repository that creates spans should resolve a tracer once (constructor or service container), then reuse it:
-
-```php
-use OpenTelemetry\API\Globals;
-use OpenTelemetry\API\Trace\TracerInterface;
-
-final class UserService
-{
-    public function __construct(
-        private readonly UserRepository $repository,
-        private readonly TracerInterface $tracer = Globals::tracerProvider()->getTracer('user_service'),
-    ) {}
-}
-```
-
-### HTTP middleware (Laravel)
-
-```php
-// app/Http/Kernel.php
-
-protected $middleware = [
-    // ...
-    \App\Http\Middleware\TraceContextMiddleware::class,
-];
-```
-
-### Queue job instrumentation
-
-```php
-// app/Jobs/SendInvoiceJob.php
-
-public function handle(): void
-{
-    // Start span for job execution, attach job name and tenant/user context,
-    // record exception + status on failure, then end span.
-}
-```
+- Register `TraceContextMiddleware` in the HTTP kernel for automatic request spans
+- In queue jobs, start a span in `handle()`, attach job name and context, record exceptions on failure
 
 ### Context propagation
 
@@ -188,12 +92,7 @@ $traceparent = request()->header('traceparent');
 
 ### Prometheus endpoint
 
-Expose `/metrics` on the Laravel app only if your deployment model supports it, and restrict access (internal network or auth):
-
-```php
-// routes/web.php or routes/internal.php
-Route::get('/metrics', MetricsController::class);
-```
+Expose `/metrics` on the Laravel app only if your deployment model supports it, and restrict access (internal network or auth).
 
 ### RED metrics (automatic via middleware)
 
@@ -206,19 +105,6 @@ HTTP middleware and reverse proxy instrumentation should emit the core RED metri
 | `queue_job_duration_seconds` | Histogram | `job`, `queue`, `status` | Queue job instrumentation |
 
 ### Infrastructure metrics
-
-Instrument key infrastructure components with custom metrics:
-
-```php
-// Example: database query duration
-$queryDurationHistogram->record(
-    $durationSeconds,
-    [
-        'repo' => 'user_repository',
-        'method' => 'findById',
-    ]
-);
-```
 
 Standard infrastructure metrics to instrument:
 
@@ -264,19 +150,7 @@ Follow Prometheus naming best practices:
 | Histogram | Measuring distributions (latency, size) | `request_duration_seconds`, `response_size_bytes` |
 | Gauge | Value goes up and down | `active_connections`, `queue_depth` |
 
-### Meter field in structs
-
-Services or repositories that emit custom metrics should receive metric instruments via dependency injection and reuse them:
-
-```php
-final class UserRepository
-{
-    public function __construct(
-        private readonly ConnectionInterface $db,
-        private readonly QueryDurationHistogram $queryDuration,
-    ) {}
-}
-```
+Services or repositories that emit custom metrics should receive metric instruments via dependency injection and reuse them (same DI pattern as tracers above).
 
 ## Logs ↔ Traces correlation
 

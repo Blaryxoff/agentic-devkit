@@ -25,11 +25,7 @@ For retries:
 - normalize transport errors into typed app errors.
 - return stable result shape from composables.
 
-Example:
-
-```ts
-export type LoadState = 'idle' | 'loading' | 'success' | 'error'
-```
+Model state as a union type: `'idle' | 'loading' | 'success' | 'error'`.
 
 ## UI behavior rules
 

@@ -4,15 +4,7 @@ Code should be well documented. Every public class, interface, method, function,
 
 ## Documentation generation
 
-Documentation should be readable directly in IDE/GitHub from docblocks and type declarations. Keep docs close to code and framework conventions.
-
-Run local docs/quality checks with project scripts when available:
-
-```bash
-composer test
-```
-
-Use this flow to ensure docs stay aligned with code behavior and typed signatures.
+Documentation should be readable directly in IDE/GitHub from docblocks and type declarations. Keep docs close to code and framework conventions. Run local quality checks with project scripts (`composer test`) to ensure docs stay aligned with code behavior.
 
 ## DO / DO NOT
 

@@ -35,25 +35,13 @@ repositories in the future. So design in the way to make the split easy, fast an
 ### Port interface example
 
 ```php
-<?php
-
 // app/Domain/User/Contracts/UserRepository.php
-namespace App\Domain\User\Contracts;
-
-use App\Domain\User\Entities\User;
-use App\Domain\User\ValueObjects\Email;
-use App\Domain\User\ValueObjects\UserId;
-
 interface UserRepository
 {
     public function create(User $user): void;
-
     public function getById(UserId $id): ?User;
-
     public function getByEmail(Email $email): ?User;
-
     public function update(User $user): void;
-
     public function delete(UserId $id): void;
 }
 ```
@@ -87,17 +75,7 @@ interface UserRepository
 ### Entity example
 
 ```php
-<?php
-
 // app/Domain/User/Entities/User.php
-namespace App\Domain\User\Entities;
-
-use App\Domain\User\ValueObjects\Email;
-use App\Domain\User\ValueObjects\Role;
-use App\Domain\User\ValueObjects\UserId;
-use DateTimeImmutable;
-use InvalidArgumentException;
-
 final class User
 {
     public function __construct(
@@ -113,32 +91,13 @@ final class User
         }
     }
 
-    public function id(): UserId
-    {
-        return $this->id;
-    }
-
-    public function email(): Email
-    {
-        return $this->email;
-    }
-
-    public function username(): string
-    {
-        return $this->username;
-    }
-
-    public function role(): Role
-    {
-        return $this->role;
-    }
+    // typed getters: id(), email(), username(), role() ...
 
     public function rename(string $username): void
     {
         if ($username === '') {
             throw new InvalidArgumentException('username cannot be empty');
         }
-
         $this->username = $username;
         $this->updatedAt = new DateTimeImmutable('now');
     }
@@ -148,98 +107,28 @@ final class User
 ### Value object example
 
 ```php
-<?php
-
 // app/Domain/User/ValueObjects/Email.php
-namespace App\Domain\User\ValueObjects;
-
-use InvalidArgumentException;
-
 final class Email
 {
     public function __construct(private string $value)
     {
         $normalized = mb_strtolower(trim($this->value));
-
         if (! filter_var($normalized, FILTER_VALIDATE_EMAIL)) {
             throw new InvalidArgumentException("invalid email '{$this->value}'");
         }
-
         $this->value = $normalized;
     }
 
-    public function value(): string
-    {
-        return $this->value;
-    }
-
-    public function equals(self $other): bool
-    {
-        return $this->value === $other->value;
-    }
-
-    public function __toString(): string
-    {
-        return $this->value;
-    }
-}
-```
-
-```php
-<?php
-
-// app/Domain/User/ValueObjects/UserId.php
-namespace App\Domain\User\ValueObjects;
-
-use Illuminate\Support\Str;
-use InvalidArgumentException;
-
-final class UserId
-{
-    public function __construct(private string $value)
-    {
-        if (! Str::isUuid($this->value)) {
-            throw new InvalidArgumentException("invalid user id '{$this->value}'");
-        }
-    }
-
-    public static function generate(): self
-    {
-        return new self((string) Str::uuid());
-    }
-
-    public function value(): string
-    {
-        return $this->value;
-    }
-
-    public function equals(self $other): bool
-    {
-        return $this->value === $other->value;
-    }
-
-    public function __toString(): string
-    {
-        return $this->value;
-    }
+    public function value(): string { return $this->value; }
+    public function equals(self $other): bool { return $this->value === $other->value; }
+    public function __toString(): string { return $this->value; }
 }
 ```
 
 ### Mapper example (domain ↔ DTO)
 
 ```php
-<?php
-
 // app/Infrastructure/Persistence/User/Mapper/UserMapper.php
-namespace App\Infrastructure\Persistence\User\Mapper;
-
-use App\Domain\User\Entities\User as DomainUser;
-use App\Domain\User\ValueObjects\Email;
-use App\Domain\User\ValueObjects\Role;
-use App\Domain\User\ValueObjects\UserId;
-use App\Models\User as UserModel;
-use DateTimeImmutable;
-
 final class UserMapper
 {
     public function toDomain(UserModel $model): DomainUser
@@ -263,27 +152,6 @@ final class UserMapper
             'role' => $user->role()->value,
         ];
     }
-}
-```
-
-```php
-<?php
-
-// app/Models/User.php
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Model;
-
-final class User extends Model
-{
-    protected $table = 'users';
-
-    protected $fillable = [
-        'id',
-        'email',
-        'username',
-        'role',
-    ];
 }
 ```
 

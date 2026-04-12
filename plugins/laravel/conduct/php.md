@@ -22,34 +22,12 @@
 - prefer `final` for classes that are not intended for inheritance
 - prefer immutable value objects where possible
 
-Example:
-
-```php
-final class CreateOrderAction
-{
-    public function __construct(
-        private OrderRepository $orders,
-        private PaymentGateway $payments,
-    ) {
-    }
-}
-```
-
 ## Type declarations
 
 - always declare parameter types and return types
 - use nullable types explicitly (`?string`, `?User`)
 - use union/intersection types only when they simplify contracts (not to hide poor modeling)
 - avoid mixed/implicit types unless unavoidable at boundaries
-
-Example:
-
-```php
-public function findByEmail(string $email): ?User
-{
-    // ...
-}
-```
 
 ## Control flow and readability
 
@@ -64,14 +42,6 @@ public function findByEmail(string $email): ?User
 - throw domain-meaningful exceptions or return explicit failure results according to project style
 - include contextual information in exception/log messages
 - do not use exceptions for normal control flow
-
-Example:
-
-```php
-if (! $user->canPurchase($product)) {
-    throw new DomainException('User is not allowed to purchase this product.');
-}
-```
 
 ## Collections and arrays
 

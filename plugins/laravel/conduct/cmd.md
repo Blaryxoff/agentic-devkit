@@ -35,80 +35,30 @@ Wiring inside providers/bootstrap must follow this order, with comments grouping
 
 This matches the dependency direction and makes the wiring easy to read and audit.
 
-## root.go equivalent example (public/index.php)
-
-```php
-<?php
-
-use Illuminate\Contracts\Http\Kernel;
-use Illuminate\Http\Request;
-
-define('LARAVEL_START', microtime(true));
-
-require __DIR__.'/../vendor/autoload.php';
-
-$app = require_once __DIR__.'/../bootstrap/app.php';
-
-$kernel = $app->make(Kernel::class);
-
-$response = $kernel->handle(
-    $request = Request::capture()
-)->send();
-
-$kernel->terminate($request, $response);
-```
-
 ## Full wiring example (AppServiceProvider)
 
 ```php
-<?php
-
-namespace App\Providers;
-
-use App\Application\User\Services\UserService;
-use App\Domain\User\Contracts\UserRepository;
-use App\Infrastructure\Clients\NotificationClient;
-use App\Infrastructure\Persistence\User\EloquentUserRepository;
-use Illuminate\Support\ServiceProvider;
-
-final class AppServiceProvider extends ServiceProvider
+// AppServiceProvider::register()
+public function register(): void
 {
-    public function register(): void
-    {
-        // 1. Config
-        $notificationConfig = config('services.notification');
-
-        // 2. Logging
-        // Logging channels are configured in config/logging.php and used via Log facade
-
-        // 3. Clients
-        $this->app->singleton(NotificationClient::class, function () use ($notificationConfig) {
-            return new NotificationClient(
-                baseUrl: $notificationConfig['base_url'],
-                apiKey: $notificationConfig['api_key'],
-            );
-        });
-
-        // 4. Repositories
-        $this->app->bind(UserRepository::class, EloquentUserRepository::class);
-
-        // 5. Services / Use-cases
-        $this->app->singleton(UserService::class, function ($app) {
-            return new UserService(
-                $app->make(UserRepository::class),
-                $app->make(NotificationClient::class),
-            );
-        });
-
-        // 6. HTTP / Jobs / Listeners
-        // Controllers, jobs, and listeners resolve dependencies from the container automatically
-
-        // 7. Run (Nginx -> PHP-FPM -> Laravel)
-        // Runtime path only; no app logic here
-
-        // 8. Termination hooks / cleanup
-        // Use terminating middleware, queue worker stop hooks, or service destructors if needed
-    }
+    // 1. Config
+    $notificationConfig = config('services.notification');
+    // 2. Logging — configured in config/logging.php
+    // 3. Clients
+    $this->app->singleton(NotificationClient::class, fn () => new NotificationClient(
+        baseUrl: $notificationConfig['base_url'],
+        apiKey: $notificationConfig['api_key'],
+    ));
+    // 4. Repositories
+    $this->app->bind(UserRepository::class, EloquentUserRepository::class);
+    // 5. Services / Use-cases
+    $this->app->singleton(UserService::class, fn ($app) => new UserService(
+        $app->make(UserRepository::class),
+        $app->make(NotificationClient::class),
+    ));
+    // 6. HTTP / Jobs / Listeners — auto-resolved from container
+    // 7. Run — runtime path only
+    // 8. Termination hooks / cleanup
 }
 ```
 
@@ -133,27 +83,10 @@ final class AppServiceProvider extends ServiceProvider
 - Avoid passing request context into constructors; pass request-scoped values to methods
 - Never perform heavy I/O in constructors — defer side effects to explicit methods
 
-## main.go equivalent
+## Entrypoints
 
 - `public/index.php` and `artisan` must stay minimal — only bootstrap framework and dispatch
 - All wiring lives in service providers/container bindings, not in entry files directly
-
-```php
-<?php
-
-// artisan (simplified)
-
-require __DIR__.'/vendor/autoload.php';
-
-$app = require_once __DIR__.'/bootstrap/app.php';
-
-$status = $app->make(Illuminate\Contracts\Console\Kernel::class)->handle(
-    $input = new Symfony\Component\Console\Input\ArgvInput,
-    new Symfony\Component\Console\Output\ConsoleOutput
-);
-
-exit($status);
-```
 
 ## DO / DO NOT
 

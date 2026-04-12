@@ -46,14 +46,7 @@ PR body should include:
 
 ## Pre-commit checks
 
-Run:
-
-```bash
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
-```
+Run: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
 
 ## Hygiene
 

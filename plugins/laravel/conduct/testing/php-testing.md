@@ -50,21 +50,6 @@ public function test_create_user_fails_when_email_already_exists(): void
 - aim for full branch coverage on core business logic
 - naming convention: `test_<method_or_behavior>_<scenario>` ex.: `test_create_user_fails_with_duplicate_email`
 
-### Single test example
-
-```php
-public function test_create_user_fails_with_duplicate_email(): void
-{
-    $repository = $this->createMock(UserRepository::class);
-    $repository->method('findByEmail')->willReturn(new User('test@example.com'));
-
-    $service = new UserService($repository);
-
-    $this->expectException(DuplicateEmailException::class);
-    $service->createUser('test@example.com');
-}
-```
-
 ### Data provider example
 
 ```php
@@ -90,15 +75,6 @@ public static function invalidEmails(): array
 - place shared test data in class constants, factories, or dedicated helper methods
 - use model factories for entities persisted in tests
 - extract repeated setup into helper methods in `tests/TestCase.php` or traits under `tests/Support/`
-
-```php
-protected function makeTestUser(array $attributes = []): User
-{
-    return User::factory()->make(array_merge([
-        'email' => 'test@example.com',
-    ], $attributes));
-}
-```
 
 ## Integration tests
 

@@ -79,14 +79,7 @@ Rules:
 - do not call APIs directly from stores — delegate to composables/services and call them from store actions.
 - do not put UI state (loading spinners, modal open/close) in global stores unless multiple unrelated pages need it.
 
-```ts
-// prefer this (composition store)
-export const useCatalogStore = defineStore('catalog', () => {
-  const items = ref<CatalogItem[]>([])
-  async function fetchItems(filters: CatalogFilters) { ... }
-  return { items, fetchItems }
-})
-```
+See [stores.md](./stores.md) for detailed Pinia store rules and examples.
 
 ## Accessibility
 

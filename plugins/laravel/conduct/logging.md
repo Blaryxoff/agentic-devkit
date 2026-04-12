@@ -4,11 +4,7 @@ Logger uses Laravel logging channels from `config/logging.php`, powered by [Mono
 
 ## Initialization
 
-Should be initialized at the very beginning of the app via framework config (`config/logging.php`) and environment (`LOG_CHANNEL`, `LOG_LEVEL`):
-
-```php
-'default' => env('LOG_CHANNEL', 'stack'),
-```
+Configured via `config/logging.php` and environment (`LOG_CHANNEL`, `LOG_LEVEL`).
 
 ## Log levels guide
 

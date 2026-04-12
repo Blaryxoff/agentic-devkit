@@ -8,29 +8,8 @@
 ### Every module must have domain errors/exceptions defined in the header
 
 - at least one as a module-level error (ex.: `UserServiceException` for user service)
-- if needed, every method call can have its own error, wrapping a main module error as `previous`:
-
-```php
-<?php
-
-namespace App\Domain\User\Exceptions;
-
-use RuntimeException;
-use Throwable;
-
-final class UserServiceException extends RuntimeException
-{
-    public static function createUser(Throwable $previous): self
-    {
-        return new self('userService: createUser', previous: $previous);
-    }
-
-    public static function getUser(Throwable $previous): self
-    {
-        return new self('userService: getUser', previous: $previous);
-    }
-}
-```
+- if needed, every method call can have its own error, wrapping a main module error as `previous`
+- use static factory methods for each failure point: `UserServiceException::createUser($previous)`
 
 ### All errors in services and repositories, before being returned upward, should be wrapped in a typed domain exception and reported with Laravel logging/reporting
 
@@ -77,124 +56,18 @@ try {
 Do not wrap an exception again with the same meaning if it was already wrapped at the level below. Each exception should be wrapped exactly once per layer boundary.
 
 ```php
-// bad — double wrapping (repo already wrapped with UserRepositoryException)
-try {
-    return $this->userRepository->getById($id);
-} catch (Throwable $e) {
-    throw new UserServiceException('userService: getUser', previous: $e);
-}
+// ❌ bad — double wrapping (repo already wrapped with UserRepositoryException)
+catch (Throwable $e) { throw new UserServiceException('getUser', previous: $e); }
 
-// good — catch only domain exceptions you want to translate, pass-through others
-try {
-    return $this->userRepository->getById($id);
-} catch (UserRepositoryNotFoundException $e) {
-    throw new UserNotFoundException(previous: $e);
-}
-```
-
-## Full error chain example (controller → service → repository)
-
-```php
-<?php
-
-// --- Repository layer ---
-// app/Repositories/UserRepository.php
-
-namespace App\Repositories;
-
-use App\Domain\User\Exceptions\UserRepositoryException;
-use App\Domain\User\Exceptions\UserRepositoryNotFoundException;
-use App\Models\User;
-use Throwable;
-
-final class UserRepository
-{
-    public function getById(string $id): User
-    {
-        try {
-            return User::query()->findOrFail($id);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            throw new UserRepositoryNotFoundException(previous: $e);
-        } catch (Throwable $e) {
-            report($e);
-            throw new UserRepositoryException('userRepo: getById', previous: $e);
-        }
-    }
-}
-
-// --- Service layer ---
-// app/Services/UserService.php
-
-namespace App\Services;
-
-use App\Domain\User\Exceptions\UserNotFoundException;
-use App\Domain\User\Exceptions\UserServiceException;
-use App\Repositories\UserRepository;
-use Throwable;
-
-final class UserService
-{
-    public function __construct(private UserRepository $users)
-    {
-    }
-
-    public function getUser(string $id): \App\Models\User
-    {
-        try {
-            return $this->users->getById($id);
-        } catch (\App\Domain\User\Exceptions\UserRepositoryNotFoundException $e) {
-            throw new UserNotFoundException(previous: $e);
-        } catch (Throwable $e) {
-            report($e);
-            throw new UserServiceException('userService: getUser', previous: $e);
-        }
-    }
-}
-
-// --- Controller layer ---
-// app/Http/Controllers/UserController.php
-
-namespace App\Http\Controllers;
-
-use App\Domain\User\Exceptions\UserNotFoundException;
-use App\Services\UserService;
-use Illuminate\Http\JsonResponse;
-use Throwable;
-
-final class UserController extends Controller
-{
-    public function __construct(private UserService $users)
-    {
-    }
-
-    public function show(string $id): JsonResponse
-    {
-        try {
-            $user = $this->users->getUser($id);
-        } catch (UserNotFoundException $e) {
-            return response()->json(['message' => 'user not found'], 404);
-        } catch (Throwable $e) {
-            report($e);
-            return response()->json(['message' => 'internal error'], 500);
-        }
-
-        return response()->json(['data' => $user]);
-    }
-}
+// ✅ good — catch only domain exceptions you want to translate
+catch (UserRepositoryNotFoundException $e) { throw new UserNotFoundException(previous: $e); }
 ```
 
 ## HTTP controller error handling
 
 - controllers should translate domain/repository errors into HTTP status codes using typed exceptions
 - never expose internal error details to the client — return generic messages
-- use a consistent error response structure:
-
-```php
-return response()->json([
-    'message' => 'internal error',
-], 500);
-```
-
+- use a consistent error response structure: `response()->json(['message' => '...'], $statusCode)`
 - common mappings:
   - `NotFound` exceptions → `404 Not Found`
   - `AlreadyExists` / duplicate key exceptions → `409 Conflict`

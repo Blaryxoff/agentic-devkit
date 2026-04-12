@@ -6,24 +6,7 @@ Security rules apply across all layers. Every developer and AI agent working on 
 
 - validate all external input at the controller/request boundary before it reaches service/domain logic
 - never trust data from HTTP requests, Inertia form payloads, queued jobs, webhooks, or any external source
-- use Form Request classes and value objects for validation — invalid input must be rejected early:
-
-```php
-// controller receives raw input, passes through Form Request rules
-// invalid payload is rejected before business logic executes
-final class UserController extends Controller
-{
-    public function store(StoreUserRequest $request, UserService $service): JsonResponse
-    {
-        $validated = $request->validated();
-
-        $user = $service->createUser($validated['email']);
-
-        return response()->json(['id' => $user->id], 201);
-    }
-}
-```
-
+- use Form Request classes and value objects for validation — invalid input must be rejected early
 - never pass raw user input directly to database queries — always use Eloquent/query builder parameter binding
 - validate string lengths, numeric ranges, and enum values explicitly in Form Request rules and domain/value objects when applicable
 
@@ -120,14 +103,6 @@ return [
 - apply rate limiting to all public and authentication endpoints
 - use Laravel rate limiter definitions and `throttle` middleware; use Redis-backed limits in distributed setups
 
-```php
-// routes/api.php
-Route::middleware('throttle:api')->group(function () {
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/password/email', [ForgotPasswordController::class, 'store']);
-});
-```
-
 ## TLS
 
 - in production all browser and service traffic must use TLS — no plain HTTP for public endpoints
@@ -139,29 +114,12 @@ Route::middleware('throttle:api')->group(function () {
 
 - run dependency vulnerability scans regularly (`composer audit`, `pnpm audit`)
 - keep security advisory packages and CI checks enabled for Composer dependencies
-- add dependency security checks to CI as required gates
-
-```bash
-composer audit
-pnpm audit --prod
-```
+- add dependency security checks to CI as required gates (`composer audit`, `pnpm audit --prod`)
 
 ## Error messages to clients
 
 - **never** return internal error details, stack traces, SQL errors, or vendor exception messages to clients
-- return generic user-facing messages; log/report the real exception server-side:
-
-```php
-// ❌ WRONG — leaks internal details
-return response()->json(['error' => $exception->getMessage()], 500);
-
-// ✅ CORRECT — generic client message, full error reported server-side
-report($exception);
-
-return response()->json([
-    'message' => 'Internal server error',
-], 500);
-```
+- return generic user-facing messages; log/report the real exception server-side (see `anti_patterns.md` and `error_handling.md`)
 
 ## DO / DO NOT
 

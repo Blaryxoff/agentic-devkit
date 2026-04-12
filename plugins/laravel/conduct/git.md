@@ -181,24 +181,11 @@ Squash merge is the default strategy. This keeps `main` history clean — one co
 
 ### Rebase before merging
 
-Rebase feature branches onto `main` before merging to avoid merge commits and resolve conflicts early:
-
-```bash
-git fetch origin
-git rebase origin/main
-```
+Rebase feature branches onto `main` before merging to avoid merge commits and resolve conflicts early.
 
 ### Clean up local commits
 
-Do not push "fix lint", "oops", or "wip" commits. Amend or squash them locally before pushing:
-
-```bash
-# Amend the last commit
-git commit --amend
-
-# Interactive rebase to squash multiple commits
-git rebase -i origin/main
-```
+Do not push "fix lint", "oops", or "wip" commits. Amend or squash them locally before pushing (`git commit --amend`, `git rebase -i origin/main`).
 
 ### Never force-push to main
 
