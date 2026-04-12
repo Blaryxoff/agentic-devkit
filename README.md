@@ -75,8 +75,8 @@ Disabled plugins are never generated -- their skills, rules, and conduct do not 
 plugins/              All plugins (convention-based discovery)
   core/               Shared skills + ownership map
   frontend/           Generic frontend + CSS
-  laravel/            Laravel skills + conduct (18 docs)
-  nuxt/               Nuxt skills + conduct (17 docs)
+  laravel/            Laravel skills + conduct
+  nuxt/               Nuxt skills + conduct
   vue/                Vue skills + conduct
   inertia/            Inertia skills + conduct
   tailwind/           Tailwind skills + conduct

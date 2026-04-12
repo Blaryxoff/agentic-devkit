@@ -95,6 +95,17 @@ The dev plan must be a valid ralphex plan so the agent can track progress automa
 <Prose — no checkboxes.>
 ```
 
+## Stack-specific rules from active plugins
+
+If the project uses the devkit toolkit, read `.devkit/toolkit.json` to identify enabled plugins. For each active plugin, read its conduct docs (`plugins/<plugin>/conduct/`). Apply their architecture rules and anti-patterns when writing task steps.
+
+Specifically:
+- Task steps must follow the architecture patterns defined in active plugins' conduct docs.
+- Red-flag patterns listed in conduct docs must be avoided in generated task steps.
+- If a conduct doc defines a correct task step shape (e.g. Action extraction pattern), use that shape.
+
+If the project does not use the devkit toolkit (no `.devkit/toolkit.json`), skip this section.
+
 ## Rules
 
 - Never start coding while in this skill.

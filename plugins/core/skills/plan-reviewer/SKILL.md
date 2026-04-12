@@ -165,6 +165,20 @@ Flag stack-specific contradictions as `STACK MISMATCH` and cite the supporting r
 
 ---
 
+## Step 3.6 — Enforce active plugin conduct rules
+
+If the project uses the devkit toolkit, read `.devkit/toolkit.json` to identify enabled plugins. Locate the toolkit directory (look for `plugins/*/plugin.json` relative to the toolkit submodule root).
+
+For each active plugin that has a `conduct/` directory:
+
+1. Read all conduct docs in `plugins/<plugin>/conduct/`.
+2. Verify the plan does not violate any architecture rule, anti-pattern, or convention defined in those docs.
+3. For dev plans: verify that task steps follow the patterns prescribed in conduct docs and avoid the red-flag anti-patterns. Flag violations as `STACK MISMATCH` with evidence citing the specific conduct doc and rule.
+
+If the project does not use the devkit toolkit (no `.devkit/toolkit.json`), skip this step.
+
+---
+
 ## Step 4 — Check cross-cutting rules (both plan types)
 
 1. **Terminology consistency** — the same concept should not be named two different ways unless the distinction is intentional and explained.
@@ -267,6 +281,7 @@ Before presenting proposed updates, evaluate the plan against the readiness gate
 | Reference validity | Are cited plans, sections, and design references valid or clearly marked for user verification? |
 | Codebase alignment | Does the plan match the current implementation state rather than ignoring or duplicating existing work? |
 | Stack alignment | If project context exists, does the plan fit the actual project stack and rules? |
+| Plugin conduct compliance | Do all plan tasks comply with conduct rules from active devkit plugins (§3.6)? |
 | Open questions | Are all blocking open questions resolved? |
 | Validation path | For dev plans, are concrete validation commands and verification notes present? |
 | Agent format | If autonomous-agent execution is required, does the plan pass the format checks in §6? |
