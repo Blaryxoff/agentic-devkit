@@ -42,8 +42,10 @@ resolve_plugins() {
 
   local config="$PROJECT_ROOT/.devkit/toolkit.json"
   if [ ! -f "$config" ]; then
+    local _hint
+    _hint=$(python3 -c "import os.path; print(os.path.relpath('$TOOLKIT_ROOT', '$PROJECT_ROOT'))")
     echo "ERROR: No .devkit/toolkit.json found at $PROJECT_ROOT" >&2
-    echo "Run:   devkit-resolve --init" >&2
+    echo "Run:   $_hint/bin/devkit-resolve --init" >&2
     exit 1
   fi
 
@@ -102,8 +104,10 @@ resolve_plugins() {
 
   local config="$PROJECT_ROOT/.devkit/toolkit.json"
   if [ ! -f "$config" ]; then
+    local _hint
+    _hint=$(python3 -c "import os.path; print(os.path.relpath('$TOOLKIT_ROOT', '$PROJECT_ROOT'))")
     echo "ERROR: No .devkit/toolkit.json found at $PROJECT_ROOT" >&2
-    echo "Run:   devkit-resolve --init" >&2
+    echo "Run:   $_hint/bin/devkit-resolve --init" >&2
     exit 1
   fi
 
