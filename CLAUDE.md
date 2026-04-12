@@ -15,7 +15,7 @@ and standards docs.
 
 ```
 plugins/                 All plugins (convention: plugins/*/plugin.json)
-  core/                  Always-on shared standards (git, spec, test-case, review)
+  core/                  Always-on shared standards (git, plan, test-case, review)
   frontend/              Generic frontend architecture + CSS
   laravel/               Laravel framework skills + conduct
   nuxt/                  Nuxt 3 framework skills + conduct
@@ -48,8 +48,8 @@ visual-loop/             Reusable visual screenshot-diff bootstrap tool
 
 - Each skill lives in `plugins/<plugin>/skills/<skill-name>/SKILL.md`.
 - SKILL.md has YAML frontmatter (`name`, `description`) followed by the prompt body.
-- Skill names use the `devkit-` prefix in frontmatter.
-- Shared skills (git, spec-creator, etc.) live ONLY in `core/` -- never duplicated.
+- Skill names use the `devkit-` or `ralphex-` prefix in frontmatter.
+- Shared skills (git, plan-creator, plan-reviewer, etc.) live ONLY in `core/` -- never duplicated.
 - Stack-specific skills live in their owning plugin.
 
 ### Conduct
@@ -57,7 +57,7 @@ visual-loop/             Reusable visual screenshot-diff bootstrap tool
 - Each plugin may have a `conduct/` directory with Markdown standards docs.
 - Conduct is the canonical source of truth; skills summarize and enforce conduct.
 - Cross-plugin references use relative paths (e.g. `../../vue/conduct/overview.md`).
-- **Conduct docs are the extension mechanism for core skills.** Core skills (plan-reviewer, spec-creator, git, etc.)
+- **Conduct docs are the extension mechanism for core skills.** Core skills (plan-reviewer, plan-creator, git, etc.)
   automatically discover and enforce conduct rules from all active plugins by reading `.devkit/toolkit.json` and
   scanning each plugin's `conduct/` directory. To add a new rule that core skills should enforce, add a `.md` file to
   the appropriate plugin's `conduct/` directory -- no skill changes needed.
