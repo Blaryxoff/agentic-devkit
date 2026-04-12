@@ -5,7 +5,7 @@
 #
 # Output (in PROJECT_ROOT):
 #   .claude-plugin/marketplace.json  — filtered marketplace for resolved plugins only
-#   .claude/settings.json            — merged enabledPlugins + permissions.deny
+#   .claude/settings.json            — merged permissions.deny from resolved plugins
 #
 # Input config:
 #   .devkit/toolkit.json               — standard devkit project config
@@ -37,7 +37,6 @@ marketplace_dir="$PROJECT_ROOT/.claude-plugin"
 mkdir -p "$marketplace_dir"
 
 plugins_json="[]"
-enabled_json="{}"
 
 while IFS= read -r name; do
   [ -z "$name" ] && continue
@@ -52,13 +51,10 @@ while IFS= read -r name; do
   if [ "$has_skills" = "true" ]; then
     plugins_json=$(echo "$plugins_json" | jq \
       --arg name "$name" \
-      --arg source "$rel_source" \
+      --arg source "./$rel_source" \
       --arg desc "$desc" \
-      --arg version "$version" \
-      '. + [{name: $name, source: $source, description: $desc, version: $version}]')
+      '. + [{name: $name, source: $source, description: $desc}]')
   fi
-
-  enabled_json=$(echo "$enabled_json" | jq --arg key "${name}@devkit" '. + {($key): true}')
 done <<< "$resolved_names"
 
 marketplace=$(jq -n \
@@ -89,22 +85,29 @@ done <<< "$resolved_names"
 if [ -f "$settings_file" ]; then
   existing=$(cat "$settings_file")
   updated=$(echo "$existing" | jq \
-    --argjson enabled "$enabled_json" \
     --argjson deny "$deny_list" \
-    '.enabledPlugins = (.enabledPlugins // {}) + $enabled | .permissions.deny = ((.permissions.deny // []) + $deny | unique)')
+    '.permissions.deny = ((.permissions.deny // []) + $deny | unique)')
   echo "$updated" | jq '.' > "$settings_file"
-  echo "    Updated: .claude/settings.json (merged enabledPlugins + permissions.deny)"
+  echo "    Updated: .claude/settings.json (permissions.deny)"
 else
   jq -n \
-    --argjson enabled "$enabled_json" \
     --argjson deny "$deny_list" \
-    '{enabledPlugins: $enabled, permissions: {deny: $deny}}' > "$settings_file"
+    '{permissions: {deny: $deny}}' > "$settings_file"
   echo "    Created: .claude/settings.json"
 fi
 
 echo ""
-echo "Done. To activate, run inside Claude Code:"
-echo "  /plugin marketplace add .claude-plugin"
+echo "Done. Run these commands inside Claude Code:"
+echo ""
+echo "  /plugin marketplace remove rubx"
+echo "  /plugin marketplace add ./"
+plugin_names=$(echo "$plugins_json" | jq -r '.[].name')
+if [ -n "$plugin_names" ]; then
+  echo "$plugin_names" | while read -r pname; do
+    echo "  /plugin install ${pname}@devkit"
+  done
+fi
+echo "  /reload-plugins"
 echo ""
 echo "Resolved plugins:"
 echo "$resolved_names" | while read -r name; do echo "  - $name"; done
