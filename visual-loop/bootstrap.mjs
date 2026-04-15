@@ -157,6 +157,28 @@ async function upsertPackageJsonScripts(targetRoot) {
   console.log("Injected ui:* scripts into parent package.json");
 }
 
+async function ensureVisualIgnored(targetRoot) {
+  const gitignorePath = path.join(targetRoot, ".gitignore");
+  const ignoreRule = "visual/";
+  const visualIgnorePattern = /^\s*\/?visual\/?\s*(?:#.*)?$/;
+
+  if (!(await exists(gitignorePath))) {
+    await fs.writeFile(gitignorePath, `${ignoreRule}\n`, "utf8");
+    console.log("Added visual/ to .gitignore");
+    return;
+  }
+
+  const raw = await fs.readFile(gitignorePath, "utf8");
+  const lines = raw.split(/\r?\n/);
+  if (lines.some((line) => visualIgnorePattern.test(line))) {
+    return;
+  }
+
+  const normalized = raw.endsWith("\n") ? raw : `${raw}\n`;
+  await fs.writeFile(gitignorePath, `${normalized}${ignoreRule}\n`, "utf8");
+  console.log("Added visual/ to .gitignore");
+}
+
 function printHelp() {
   console.log(
     `Usage: bootstrap.mjs [target-dir] [options]
@@ -177,7 +199,8 @@ Scaffolded structure:
 This command also:
   1) installs visual-loop dependencies in toolkits/agentic-devkit/visual-loop
   2) installs Playwright Chromium in toolkit-local cache
-  3) injects ui:* scripts into parent package.json`,
+  3) injects ui:* scripts into parent package.json
+  4) adds visual/ to parent .gitignore`,
   );
 }
 
@@ -229,6 +252,7 @@ async function bootstrap(targetRoot) {
   }
 
   await upsertPackageJsonScripts(targetRoot);
+  await ensureVisualIgnored(targetRoot);
 
   console.log("Installing visual-loop dependencies...");
   await runCommand("pnpm", ["--dir", scriptDir, "install", "--ignore-workspace"], scriptDir);

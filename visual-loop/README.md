@@ -16,6 +16,7 @@ This single command:
 - installs `visual-loop` dependencies inside toolkit submodule via `pnpm install`
 - installs Playwright Chromium via `pnpm exec playwright install chromium` in toolkit-local cache
 - injects `ui:*` scripts into parent `package.json`
+- adds `visual/` to parent `.gitignore`
 
 Scaffolded project files:
 

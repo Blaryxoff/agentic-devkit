@@ -19,6 +19,7 @@ Bootstrap also:
 - installs toolkit deps in `toolkits/agentic-devkit/visual-loop` via `pnpm install`
 - installs Playwright Chromium via `pnpm exec playwright install chromium` (toolkit-local cache)
 - adds `ui:*` scripts to parent `package.json`
+- adds `visual/` to parent `.gitignore`
 
 ## Commands
 
