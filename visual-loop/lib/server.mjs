@@ -2,6 +2,25 @@ import { execaCommand } from "execa";
 
 const DEFAULT_PING_TIMEOUT_MS = 1500;
 
+function buildProbeUrls(url) {
+  try {
+    const parsed = new URL(url);
+    const urls = new Set([parsed.toString()]);
+
+    if (parsed.hostname === "localhost") {
+      parsed.hostname = "127.0.0.1";
+      urls.add(parsed.toString());
+    } else if (parsed.hostname === "127.0.0.1") {
+      parsed.hostname = "localhost";
+      urls.add(parsed.toString());
+    }
+
+    return [...urls];
+  } catch {
+    return [url];
+  }
+}
+
 async function canReachUrl(url) {
   try {
     const controller = new AbortController();
@@ -17,10 +36,19 @@ async function canReachUrl(url) {
   }
 }
 
-async function waitForUrl(url, timeoutMs) {
+async function canReachAnyUrl(urls) {
+  for (const url of urls) {
+    if (await canReachUrl(url)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+async function waitForAnyUrl(urls, timeoutMs) {
   const startedAt = Date.now();
   while (Date.now() - startedAt <= timeoutMs) {
-    if (await canReachUrl(url)) {
+    if (await canReachAnyUrl(urls)) {
       return true;
     }
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -36,7 +64,8 @@ export async function ensureServer(config, { cwd } = {}) {
     return null;
   }
 
-  const available = await canReachUrl(readyUrl);
+  const probeUrls = buildProbeUrls(readyUrl);
+  const available = await canReachAnyUrl(probeUrls);
   if (available && server.reuseIfAvailable !== false) {
     return null;
   }
@@ -54,7 +83,7 @@ export async function ensureServer(config, { cwd } = {}) {
   });
 
   const startupTimeoutMs = server.startupTimeoutMs ?? 120000;
-  const isReady = await waitForUrl(readyUrl, startupTimeoutMs);
+  const isReady = await waitForAnyUrl(probeUrls, startupTimeoutMs);
   if (!isReady) {
     child.kill("SIGTERM", {
       forceKillAfterTimeout: 5000,

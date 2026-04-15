@@ -30,6 +30,74 @@ async function copyIfMissing(source, destination) {
   return true;
 }
 
+function normalizeEnvValue(value) {
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith("\"") && trimmed.endsWith("\"")) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
+async function readAppUrlFromEnv(targetRoot) {
+  const envPath = path.join(targetRoot, ".env");
+  if (!(await exists(envPath))) {
+    return null;
+  }
+
+  const envRaw = await fs.readFile(envPath, "utf8");
+  const lines = envRaw.split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) {
+      continue;
+    }
+
+    const match = trimmed.match(/^APP_URL\s*=\s*(.+)$/);
+    if (!match) {
+      continue;
+    }
+
+    const parsed = normalizeEnvValue(match[1]);
+    if (!parsed) {
+      return null;
+    }
+
+    try {
+      const normalized = new URL(parsed);
+      return normalized.toString().replace(/\/$/, "");
+    } catch {
+      console.warn(`Ignoring APP_URL from .env because it is not a valid URL: ${parsed}`);
+      return null;
+    }
+  }
+
+  return null;
+}
+
+async function scaffoldConfigIfMissing(templatePath, destinationPath, appUrl = null) {
+  if (await exists(destinationPath)) {
+    return false;
+  }
+
+  const raw = await fs.readFile(templatePath, "utf8");
+  const config = JSON.parse(raw);
+
+  if (appUrl) {
+    config.baseUrl = appUrl;
+    config.server = {
+      ...(config.server ?? {}),
+      readyUrl: appUrl,
+    };
+  }
+
+  await fs.mkdir(path.dirname(destinationPath), { recursive: true });
+  await fs.writeFile(destinationPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+  return true;
+}
+
 function parseArgs(argv) {
   const args = argv.slice(2);
   let target = null;
@@ -124,12 +192,14 @@ async function bootstrap(targetRoot) {
     "playwright",
     "cli.js",
   );
+  const appUrl = await readAppUrlFromEnv(targetRoot);
 
   const scaffolded = [];
 
-  if (await copyIfMissing(
+  if (await scaffoldConfigIfMissing(
     path.join(templateRoot, "config.json"),
     path.join(visualDir, "config.json"),
+    appUrl,
   )) {
     scaffolded.push("visual/config.json");
   }
@@ -152,6 +222,10 @@ async function bootstrap(targetRoot) {
     console.log(`Scaffolded:\n  ${scaffolded.join("\n  ")}`);
   } else {
     console.log("All scaffold files already exist. Nothing to do.");
+  }
+
+  if (appUrl) {
+    console.log(`Detected APP_URL from .env: ${appUrl}`);
   }
 
   await upsertPackageJsonScripts(targetRoot);
