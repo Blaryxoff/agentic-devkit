@@ -118,6 +118,12 @@ async function bootstrap(targetRoot) {
   const templateRoot = path.join(scriptDir, "template");
   const visualDir = path.join(targetRoot, "visual");
   const playwrightCachePath = path.join(scriptDir, ".cache", "ms-playwright");
+  const playwrightCliPath = path.join(
+    scriptDir,
+    "node_modules",
+    "playwright",
+    "cli.js",
+  );
 
   const scaffolded = [];
 
@@ -151,12 +157,12 @@ async function bootstrap(targetRoot) {
   await upsertPackageJsonScripts(targetRoot);
 
   console.log("Installing visual-loop dependencies...");
-  await runCommand("pnpm", ["install"], scriptDir);
+  await runCommand("pnpm", ["--dir", scriptDir, "install", "--ignore-workspace"], scriptDir);
 
   console.log("Installing Playwright Chromium...");
   await runCommand(
-    "pnpm",
-    ["exec", "playwright", "install", "chromium"],
+    "node",
+    [playwrightCliPath, "install", "chromium"],
     scriptDir,
     { PLAYWRIGHT_BROWSERS_PATH: playwrightCachePath },
   );
