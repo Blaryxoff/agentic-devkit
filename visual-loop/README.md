@@ -80,6 +80,32 @@ After bootstrap, parent `package.json` has `ui:*` scripts, so you can run:
 
 `visual/config.json` controls server, viewports, thresholds, loop behavior, and page definitions. See `template/config.json` for the full default.
 
+## Authentication
+
+For pages behind login, add an `auth` block to `visual/config.json`:
+
+```json
+{
+  "auth": {
+    "loginUrl": "/login",
+    "fields": {
+      "email": "[name=email]",
+      "password": "[name=password]"
+    },
+    "submit": "button[type=submit]",
+    "waitAfterLogin": "a[href*=dashboard]",
+    "credentials": {
+      "email": "test@example.com",
+      "password": "secret"
+    }
+  }
+}
+```
+
+- If `credentials.email` or `credentials.password` are empty, the CLI prompts interactively.
+- Auth state is saved to `visual/.auth-state.json` and reused for 30 minutes.
+- To skip auth for a specific page, set `"auth": false` on that page entry.
+
 ## CI / Production Guardrails
 
 - Do **not** run `ui:*` commands in production pipelines.

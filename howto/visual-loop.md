@@ -52,6 +52,38 @@ All runtime dependencies (`playwright`, `pixelmatch`, `pngjs`, `globby`, `execa`
 
 Playwright browsers are cached at `toolkits/agentic-devkit/visual-loop/.cache/ms-playwright` to avoid polluting the parent project or global cache.
 
+## Authentication
+
+To capture pages behind login, configure the `auth` block in `visual/config.json`:
+
+```json
+{
+  "auth": {
+    "loginUrl": "/login",
+    "fields": {
+      "email": "[name=email]",
+      "password": "[name=password]"
+    },
+    "submit": "button[type=submit]",
+    "waitAfterLogin": null,
+    "credentials": {
+      "email": "",
+      "password": ""
+    }
+  }
+}
+```
+
+- `loginUrl` -- route to navigate to for login (relative to `baseUrl`).
+- `fields` -- CSS selectors for the email and password inputs.
+- `submit` -- CSS selector for the submit button.
+- `waitAfterLogin` -- optional CSS selector to confirm successful login. If `null`, waits for URL to change.
+- `credentials` -- if empty, the CLI prompts interactively.
+
+Auth state is cached at `visual/.auth-state.json` for 30 minutes.
+
+Per-page control: set `"auth": false` on a page entry to skip auth for public routes.
+
 ## Production Safety
 
 `agentic-devkit` is strictly development-only tooling:

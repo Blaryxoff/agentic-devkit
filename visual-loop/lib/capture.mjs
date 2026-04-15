@@ -23,9 +23,10 @@ export async function captureViewport({
   locale = "en",
   timezone = "UTC",
   timeoutMs = 30000,
+  storageStatePath = null,
 }) {
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({
+  const contextOptions = {
     viewport: {
       width: viewport.width,
       height: viewport.height,
@@ -33,7 +34,11 @@ export async function captureViewport({
     locale,
     timezoneId: timezone,
     colorScheme: theme === "dark" ? "dark" : "light",
-  });
+  };
+  if (storageStatePath) {
+    contextOptions.storageState = storageStatePath;
+  }
+  const context = await browser.newContext(contextOptions);
   const page = await context.newPage();
 
   try {

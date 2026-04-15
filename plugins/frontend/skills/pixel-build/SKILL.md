@@ -15,6 +15,7 @@ The Figma design is the source of truth. Your goal is to make the rendered UI ma
 - Visual-loop CLI is bootstrapped (`visual/config.json` exists in the project root).
 - Dev server is running (`pnpm dev`).
 - Figma MCP server is connected (for `get_design_context`).
+- For authenticated routes: `auth` block configured in `visual/config.json` with login URL, field selectors, and credentials (or leave credentials empty to be prompted).
 
 If any prerequisite is missing, tell the user what to set up before proceeding.
 

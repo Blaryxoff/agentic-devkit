@@ -22,6 +22,19 @@
       "height": 1200
     }
   },
+  "auth": {
+    "loginUrl": "/login",
+    "fields": {
+      "email": "[name=email]",
+      "password": "[name=password]"
+    },
+    "submit": "button[type=submit]",
+    "waitAfterLogin": null,
+    "credentials": {
+      "email": "",
+      "password": ""
+    }
+  },
   "server": {
     "readyUrl": "http://127.0.0.1:5173",
     "command": "pnpm dev",

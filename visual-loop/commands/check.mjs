@@ -10,6 +10,7 @@ import { captureViewport } from "../lib/capture.mjs";
 import { runDiff } from "../lib/diff.mjs";
 import { fileExists, writeJson } from "../lib/io.mjs";
 import { ensureServer } from "../lib/server.mjs";
+import { resolveAuth, ensureStorageState, authStatePath } from "../lib/auth.mjs";
 
 export async function runVisualCheck({ page, viewport = null, projectRoot, configPath }) {
   if (!page) {
@@ -33,6 +34,13 @@ export async function runVisualCheck({ page, viewport = null, projectRoot, confi
 
   const selectedViewports = getViewports(config, viewport);
   const thresholds = config.thresholds ?? { pass: 0.3, warn: 1.5 };
+
+  const auth = resolveAuth(config.auth, pageMeta.auth);
+  let storageStatePath = null;
+  if (auth) {
+    storageStatePath = await ensureStorageState(auth, config.baseUrl, authStatePath(paths.visualDir));
+  }
+
   const serverProcess = await ensureServer(config, { cwd: projectRoot });
 
   const reports = [];
@@ -54,6 +62,7 @@ export async function runVisualCheck({ page, viewport = null, projectRoot, confi
         theme: pageMeta.theme ?? "light",
         locale: pageMeta.locale ?? "en",
         timezone: pageMeta.timezone ?? "UTC",
+        storageStatePath,
       });
 
       const hasBaseline = await fileExists(currentBaselinePath);
