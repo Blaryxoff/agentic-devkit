@@ -4,9 +4,9 @@ For visual frontend implementation or restyling tasks, follow a structured verif
 
 ## Workflow
 
-1. Run the project's visual check command (e.g. `pnpm ui:check <page>`) before edits when a baseline exists.
+1. Run the project's visual check command (e.g. `pnpm ui:check -- --page <page>`) before edits when a baseline exists.
 2. Run the visual check command again after edits.
-3. Read the visual diff report (e.g. `visual-output/<page>/<viewport>/report.json`) before touching styles.
+3. Read the visual diff report (e.g. `visual/output/<page>/<viewport>/report.json`) before touching styles.
 4. Fix highest-impact hotspots first.
 5. Prioritize fixes in this order: layout, spacing, typography, sizing, alignment.
 6. Keep all configured viewports passing; do not optimize for only one breakpoint.

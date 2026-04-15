@@ -1,6 +1,5 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
 
 export async function ensureDirForFile(filePath) {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -18,20 +17,4 @@ export async function fileExists(filePath) {
   } catch {
     return false;
   }
-}
-
-export function isMainModule(importMetaUrl) {
-  if (!process.argv[1]) {
-    return false;
-  }
-
-  return importMetaUrl === pathToFileURL(process.argv[1]).href;
-}
-
-export function toAbsolutePath(...parts) {
-  return path.resolve(process.cwd(), ...parts);
-}
-
-export function thisFilePath(importMetaUrl) {
-  return fileURLToPath(importMetaUrl);
 }

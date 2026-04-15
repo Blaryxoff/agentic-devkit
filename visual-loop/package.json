@@ -1,0 +1,22 @@
+{
+  "name": "@agentic-devkit/visual-loop",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "visual-loop": "./cli.mjs"
+  },
+  "scripts": {
+    "check": "node ./cli.mjs check --project-root .",
+    "loop": "node ./cli.mjs loop --project-root .",
+    "approve": "node ./cli.mjs approve --project-root .",
+    "figma-map": "node ./cli.mjs figma-map --project-root .",
+    "mcp-health": "node ./cli.mjs mcp-health --project-root ."
+  },
+  "dependencies": {
+    "execa": "^9.6.1",
+    "globby": "^16.2.0",
+    "pixelmatch": "^7.1.0",
+    "playwright": "^1.59.1",
+    "pngjs": "^7.0.0"
+  }
+}

@@ -28,7 +28,7 @@ async function waitForUrl(url, timeoutMs) {
   return false;
 }
 
-export async function ensureServer(config) {
+export async function ensureServer(config, { cwd } = {}) {
   const server = config.server ?? {};
   const readyUrl = server.readyUrl ?? config.baseUrl;
 
@@ -50,6 +50,7 @@ export async function ensureServer(config) {
   const child = execaCommand(server.command, {
     shell: true,
     stdio: "inherit",
+    cwd,
   });
 
   const startupTimeoutMs = server.startupTimeoutMs ?? 120000;

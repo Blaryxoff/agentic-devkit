@@ -3,22 +3,6 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const REQUIRED_DEV_DEPENDENCIES = {
-  execa: "^9.6.1",
-  globby: "^16.2.0",
-  pixelmatch: "^7.1.0",
-  playwright: "^1.59.1",
-  pngjs: "^7.0.0",
-};
-
-const PACKAGE_SCRIPTS = {
-  "ui:check": "node scripts/visual/check.mjs",
-  "ui:loop": "node scripts/visual/loop.mjs",
-  "ui:approve": "node scripts/visual/approve.mjs",
-  "ui:figma-map": "node scripts/visual/export-figma-map.mjs",
-  "ui:mcp-health": "node scripts/visual/mcp-healthcheck.mjs",
-};
-
 async function exists(filePath) {
   try {
     await fs.access(filePath);
@@ -28,86 +12,89 @@ async function exists(filePath) {
   }
 }
 
-async function copyFile(source, destination) {
+async function copyIfMissing(source, destination) {
+  if (await exists(destination)) {
+    return false;
+  }
   await fs.mkdir(path.dirname(destination), { recursive: true });
   await fs.copyFile(source, destination);
-}
-
-async function writeJson(filePath, data) {
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+  return true;
 }
 
 function parseArgs(argv) {
   const args = argv.slice(2);
+  let target = null;
+
+  for (const arg of args) {
+    if (arg === "--help") {
+      printHelp();
+      process.exit(0);
+    } else if (!arg.startsWith("--")) {
+      target = arg;
+    }
+  }
+
   return {
-    target: args[0] ? path.resolve(args[0]) : process.cwd(),
+    target: target ? path.resolve(target) : process.cwd(),
   };
 }
 
-async function upsertPackageJson(targetRoot) {
-  const packageJsonPath = path.join(targetRoot, "package.json");
-  const packageJsonExists = await exists(packageJsonPath);
-  if (!packageJsonExists) {
-    console.warn(`Skipping package.json update. File not found in ${targetRoot}`);
-    return;
-  }
+function printHelp() {
+  console.log(
+    `Usage: bootstrap.mjs [target-dir] [options]
 
-  const pkgRaw = await fs.readFile(packageJsonPath, "utf8");
-  const pkg = JSON.parse(pkgRaw);
-  pkg.scripts = {
-    ...(pkg.scripts ?? {}),
-    ...PACKAGE_SCRIPTS,
-  };
-  pkg.devDependencies = {
-    ...(pkg.devDependencies ?? {}),
-    ...REQUIRED_DEV_DEPENDENCIES,
-  };
+Scaffold the visual/ folder structure in a target project.
 
-  await writeJson(packageJsonPath, pkg);
-  console.log("Updated package.json scripts and devDependencies.");
+Arguments:
+  target-dir        Project root (default: current directory)
+
+Options:
+  --help            Show this help message
+
+Scaffolded structure:
+  <target>/visual/config.json
+  <target>/visual/baselines/home/meta.json
+  <target>/visual/output/.gitkeep
+
+Dependencies live inside the toolkit (visual-loop/package.json).
+Parent projects do not need visual-related devDependencies.`,
+  );
 }
 
 async function bootstrap(targetRoot) {
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   const templateRoot = path.join(scriptDir, "template");
+  const visualDir = path.join(targetRoot, "visual");
 
-  await copyFile(
-    path.join(templateRoot, "visual.config.json"),
-    path.join(targetRoot, "visual.config.json"),
-  );
-  await copyFile(
-    path.join(templateRoot, "visual-baselines", "home", "meta.json"),
-    path.join(targetRoot, "visual-baselines", "home", "meta.json"),
-  );
-  await copyFile(
-    path.join(templateRoot, "visual-output", ".gitkeep"),
-    path.join(targetRoot, "visual-output", ".gitkeep"),
-  );
+  const scaffolded = [];
 
-  const visualScripts = [
-    "check.mjs",
-    "loop.mjs",
-    "approve.mjs",
-    "export-figma-map.mjs",
-    "mcp-healthcheck.mjs",
-    "extensions.md",
-    path.join("lib", "capture.mjs"),
-    path.join("lib", "config.mjs"),
-    path.join("lib", "diff.mjs"),
-    path.join("lib", "hotspots.mjs"),
-    path.join("lib", "io.mjs"),
-    path.join("lib", "server.mjs"),
-  ];
-
-  for (const filePath of visualScripts) {
-    await copyFile(
-      path.join(templateRoot, "scripts", "visual", filePath),
-      path.join(targetRoot, "scripts", "visual", filePath),
-    );
+  if (await copyIfMissing(
+    path.join(templateRoot, "config.json"),
+    path.join(visualDir, "config.json"),
+  )) {
+    scaffolded.push("visual/config.json");
   }
 
-  await upsertPackageJson(targetRoot);
+  if (await copyIfMissing(
+    path.join(templateRoot, "baselines", "home", "meta.json"),
+    path.join(visualDir, "baselines", "home", "meta.json"),
+  )) {
+    scaffolded.push("visual/baselines/home/meta.json");
+  }
+
+  if (await copyIfMissing(
+    path.join(templateRoot, "output", ".gitkeep"),
+    path.join(visualDir, "output", ".gitkeep"),
+  )) {
+    scaffolded.push("visual/output/.gitkeep");
+  }
+
+  if (scaffolded.length > 0) {
+    console.log(`Scaffolded:\n  ${scaffolded.join("\n  ")}`);
+  } else {
+    console.log("All scaffold files already exist. Nothing to do.");
+  }
+
   console.log(`Visual loop scaffold ready in ${targetRoot}`);
 }
 
