@@ -3,11 +3,8 @@
 ## Quick Start
 
 ```bash
-# Scaffold visual/ folder in your project
-node toolkits/agentic-devkit/visual-loop/bootstrap.mjs /absolute/path/to/project
-
-# Install toolkit deps (one-time, inside toolkit only)
-cd toolkits/agentic-devkit/visual-loop && npm install && npx playwright install chromium
+# One command from parent project root
+node toolkits/agentic-devkit/visual-loop/bootstrap.mjs .
 ```
 
 ## What Bootstrap Creates
@@ -18,7 +15,10 @@ Inside the target project:
 - `visual/baselines/home/meta.json` — starter page metadata
 - `visual/output/.gitkeep` — output directory placeholder
 
-No scripts or dependencies are added to the parent `package.json`.
+Bootstrap also:
+- installs toolkit deps in `toolkits/agentic-devkit/visual-loop` via `pnpm install`
+- installs Playwright Chromium via `pnpm exec playwright install chromium` (toolkit-local cache)
+- adds `ui:*` scripts to parent `package.json`
 
 ## Commands
 
@@ -43,23 +43,7 @@ $VISUAL_CLI figma-map --project-root .
 $VISUAL_CLI mcp-health --project-root .
 ```
 
-## Optional Script Aliases
-
-Add to your project's `package.json` for convenience:
-
-```json
-{
-  "scripts": {
-    "ui:check": "node toolkits/agentic-devkit/visual-loop/cli.mjs check --project-root .",
-    "ui:loop": "node toolkits/agentic-devkit/visual-loop/cli.mjs loop --project-root .",
-    "ui:approve": "node toolkits/agentic-devkit/visual-loop/cli.mjs approve --project-root .",
-    "ui:figma-map": "node toolkits/agentic-devkit/visual-loop/cli.mjs figma-map --project-root .",
-    "ui:mcp-health": "node toolkits/agentic-devkit/visual-loop/cli.mjs mcp-health --project-root ."
-  }
-}
-```
-
-Usage with aliases: `pnpm ui:check -- --page home --viewport desktop`
+Usage with injected aliases: `pnpm ui:check -- --page home --viewport desktop`
 
 ## Where Dependencies Live
 

@@ -7,17 +7,17 @@ Self-contained screenshot+diff pipeline for deterministic UI verification. All d
 ## Setup
 
 ```bash
-# 1. Install toolkit dependencies (one-time, inside the toolkit)
-cd toolkits/agentic-devkit/visual-loop && npm install
-
-# 2. Install Playwright browsers (cached inside toolkit)
-npx playwright install chromium
-
-# 3. Scaffold visual/ folder in your project
-node toolkits/agentic-devkit/visual-loop/bootstrap.mjs /path/to/project
+# One command setup from your project root
+node toolkits/agentic-devkit/visual-loop/bootstrap.mjs .
 ```
 
-This creates project-local files only:
+This single command:
+- scaffolds project-local visual files
+- installs `visual-loop` dependencies inside toolkit submodule via `pnpm install`
+- installs Playwright Chromium via `pnpm exec playwright install chromium` in toolkit-local cache
+- injects `ui:*` scripts into parent `package.json`
+
+Scaffolded project files:
 
 ```
 <project>/visual/
@@ -26,7 +26,7 @@ This creates project-local files only:
   output/.gitkeep             Output directory
 ```
 
-No scripts or dependencies are injected into the parent `package.json`.
+Dependencies still stay inside toolkit (`toolkits/agentic-devkit/visual-loop`), while parent gets only script aliases.
 
 ## CLI Usage
 
@@ -54,23 +54,8 @@ node toolkits/agentic-devkit/visual-loop/cli.mjs mcp-health \
   --project-root .
 ```
 
-### Optional `package.json` aliases
-
-Add shorthand scripts to your project (not required):
-
-```json
-{
-  "scripts": {
-    "ui:check": "node toolkits/agentic-devkit/visual-loop/cli.mjs check --project-root .",
-    "ui:loop": "node toolkits/agentic-devkit/visual-loop/cli.mjs loop --project-root .",
-    "ui:approve": "node toolkits/agentic-devkit/visual-loop/cli.mjs approve --project-root .",
-    "ui:figma-map": "node toolkits/agentic-devkit/visual-loop/cli.mjs figma-map --project-root .",
-    "ui:mcp-health": "node toolkits/agentic-devkit/visual-loop/cli.mjs mcp-health --project-root ."
-  }
-}
-```
-
-Then run: `pnpm ui:check -- --page home --viewport desktop`
+After bootstrap, parent `package.json` has `ui:*` scripts, so you can run:
+`pnpm ui:check -- --page home --viewport desktop`
 
 ## Project Layout
 

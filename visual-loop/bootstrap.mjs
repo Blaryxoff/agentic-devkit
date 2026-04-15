@@ -1,7 +1,16 @@
 #!/usr/bin/env node
 import fs from "node:fs/promises";
+import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+const PACKAGE_SCRIPTS = {
+  "ui:check": "node toolkits/agentic-devkit/visual-loop/cli.mjs check --project-root .",
+  "ui:loop": "node toolkits/agentic-devkit/visual-loop/cli.mjs loop --project-root .",
+  "ui:approve": "node toolkits/agentic-devkit/visual-loop/cli.mjs approve --project-root .",
+  "ui:figma-map": "node toolkits/agentic-devkit/visual-loop/cli.mjs figma-map --project-root .",
+  "ui:mcp-health": "node toolkits/agentic-devkit/visual-loop/cli.mjs mcp-health --project-root .",
+};
 
 async function exists(filePath) {
   try {
@@ -39,6 +48,47 @@ function parseArgs(argv) {
   };
 }
 
+function runCommand(command, args, cwd, env = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd,
+      stdio: "inherit",
+      shell: process.platform === "win32",
+      env: {
+        ...process.env,
+        ...env,
+      },
+    });
+
+    child.on("error", reject);
+    child.on("exit", (code) => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+      reject(new Error(`Command failed (${command} ${args.join(" ")}), exit code ${code}`));
+    });
+  });
+}
+
+async function upsertPackageJsonScripts(targetRoot) {
+  const packageJsonPath = path.join(targetRoot, "package.json");
+  if (!(await exists(packageJsonPath))) {
+    console.warn(`Skipping scripts injection. package.json not found in ${targetRoot}`);
+    return;
+  }
+
+  const raw = await fs.readFile(packageJsonPath, "utf8");
+  const pkg = JSON.parse(raw);
+  pkg.scripts = {
+    ...(pkg.scripts ?? {}),
+    ...PACKAGE_SCRIPTS,
+  };
+
+  await fs.writeFile(packageJsonPath, `${JSON.stringify(pkg, null, 2)}\n`, "utf8");
+  console.log("Injected ui:* scripts into parent package.json");
+}
+
 function printHelp() {
   console.log(
     `Usage: bootstrap.mjs [target-dir] [options]
@@ -56,8 +106,10 @@ Scaffolded structure:
   <target>/visual/baselines/home/meta.json
   <target>/visual/output/.gitkeep
 
-Dependencies live inside the toolkit (visual-loop/package.json).
-Parent projects do not need visual-related devDependencies.`,
+This command also:
+  1) installs visual-loop dependencies in toolkits/agentic-devkit/visual-loop
+  2) installs Playwright Chromium in toolkit-local cache
+  3) injects ui:* scripts into parent package.json`,
   );
 }
 
@@ -65,6 +117,7 @@ async function bootstrap(targetRoot) {
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   const templateRoot = path.join(scriptDir, "template");
   const visualDir = path.join(targetRoot, "visual");
+  const playwrightCachePath = path.join(scriptDir, ".cache", "ms-playwright");
 
   const scaffolded = [];
 
@@ -94,6 +147,19 @@ async function bootstrap(targetRoot) {
   } else {
     console.log("All scaffold files already exist. Nothing to do.");
   }
+
+  await upsertPackageJsonScripts(targetRoot);
+
+  console.log("Installing visual-loop dependencies...");
+  await runCommand("pnpm", ["install"], scriptDir);
+
+  console.log("Installing Playwright Chromium...");
+  await runCommand(
+    "pnpm",
+    ["exec", "playwright", "install", "chromium"],
+    scriptDir,
+    { PLAYWRIGHT_BROWSERS_PATH: playwrightCachePath },
+  );
 
   console.log(`Visual loop scaffold ready in ${targetRoot}`);
 }
