@@ -42,12 +42,12 @@ Read the conduct documents in this order — each builds on the previous:
 
 | Concern | Technology |
 |---------|-----------|
-| Backend language | PHP 8.3 |
-| Backend framework | Laravel 12 |
+| Backend language | PHP |
+| Backend framework | Laravel |
 | Web transport | Nginx + PHP-FPM |
-| Frontend transport | Inertia v2 |
-| Frontend framework | Vue 3 |
-| UI styling | Tailwind CSS v3 |
+| Frontend transport | Inertia.js |
+| Frontend framework | Vue |
+| UI styling | Tailwind CSS |
 | Database | PostgreSQL/MySQL via Eloquent ORM |
 | Cache/queue | Redis + Laravel Queue |
 | Logging | Laravel Monolog channels |

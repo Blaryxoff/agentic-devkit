@@ -36,7 +36,7 @@ Supported adapters: `claude`, `cursor`, `codex`.
 | `devkit-core` | core | Cross-stack shared standards: workflow, git, spec/test-case process, review conventions | *(always enabled)* |
 | `devkit-frontend` | stack | Tool-agnostic frontend architecture and generic CSS standards | core |
 | `devkit-laravel` | framework | Laravel conventions: architecture, PHP, security, Inertia integration | core |
-| `devkit-nuxt` | framework | Nuxt 3 conventions: SSR, data-fetching, TypeScript, BEM/SCSS workflows | core, frontend, vue |
+| `devkit-nuxt` | framework | Nuxt conventions: SSR, data-fetching, TypeScript, BEM/SCSS workflows | core, frontend, vue |
 | `devkit-vue` | framework | Vue component, composable, and state organization conventions | core, frontend |
 | `devkit-inertia` | framework | Inertia.js transport, page props contracts, and form/navigation behavior | core |
 | `devkit-tailwind` | styling | Tailwind CSS utility conventions and tokenization rules | core |

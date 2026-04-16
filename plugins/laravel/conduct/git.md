@@ -1,6 +1,6 @@
 # Git workflow
 
-This document defines branching strategy, commit message conventions, pull request process, tagging, and pre-commit checks for all Laravel + Inertia (Vue 3) + Tailwind services deployed behind Nginx.
+This document defines branching strategy, commit message conventions, pull request process, tagging, and pre-commit checks for all Laravel + Inertia + Vue + Tailwind services deployed behind Nginx.
 
 ## Commit messages
 

@@ -1,7 +1,7 @@
 {
   "name": "devkit-nuxt",
   "version": "1.1.0",
-  "description": "Nuxt 3 conventions: SSR, data-fetching, TypeScript, BEM/SCSS workflows",
+  "description": "Nuxt conventions: SSR, data-fetching, TypeScript, BEM/SCSS workflows",
   "layer": "framework",
   "defaultEnabled": false,
   "dependencies": ["devkit-core", "devkit-frontend", "devkit-vue"],

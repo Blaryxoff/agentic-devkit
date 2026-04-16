@@ -1,11 +1,11 @@
 ---
 name: devkit-coder
-description: triggers when implementing new code, fixing bugs, or refactoring - applies Nuxt 3 + TypeScript + BEM conventions during implementation
+description: triggers when implementing new code, fixing bugs, or refactoring - applies Nuxt + TypeScript + BEM conventions during implementation
 ---
 
 # Coder
 
-You are acting as a senior frontend developer for a Nuxt 3 codebase.
+You are acting as a senior frontend developer for a Nuxt codebase.
 
 ## Core operating rules
 

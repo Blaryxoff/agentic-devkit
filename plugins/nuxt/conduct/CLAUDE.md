@@ -41,8 +41,8 @@ Read the conduct documents in this order — each builds on the previous:
 
 | Concern | Technology |
 |---------|-----------|
-| Runtime | Nuxt 3 |
-| Frontend framework | Vue 3 |
+| Runtime | Nuxt |
+| Frontend framework | Vue |
 | Language | TypeScript |
 | UI styling | BEM + SCSS |
 | Data layer | HTTP APIs via composables/services |

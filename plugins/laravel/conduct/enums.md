@@ -1,6 +1,6 @@
 # Enums for Status and Type Fields
 
-All status and type fields must use PHP 8.1+ backed enums, not plain strings or constants.
+All status and type fields must use native PHP backed enums, not plain strings or constants.
 
 ## Rules
 

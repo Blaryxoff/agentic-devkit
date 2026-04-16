@@ -56,7 +56,7 @@ Refer to active plugin conduct docs for full rules. Key architectural points:
 
 - **Validation**: FormRequest; complex rules via custom Rule objects or DTOs.
 - **Authorization**: Policies/Gates, never inline role checks.
-- **Enums**: PHP 8.1+ backed enums for all status/type fields (see `enums.md`).
+- **Enums**: native PHP backed enums for all status/type fields (see `enums.md`).
 - **API errors**: consistent style — predictable codes, messages, field keys, correlation/request IDs.
 - **Transactions**: where related entities change together. Keep transactions short. Avoid external HTTP calls inside transactions.
 - **Idempotency**: for repeatable operations (webhooks, payments, imports) — idempotency key + unique indexes.

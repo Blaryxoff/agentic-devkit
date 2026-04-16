@@ -18,7 +18,7 @@ plugins/                 All plugins (convention: plugins/*/plugin.json)
   core/                  Always-on shared standards (git, plan, test-case, review)
   frontend/              Generic frontend architecture + CSS
   laravel/               Laravel framework skills + conduct
-  nuxt/                  Nuxt 3 framework skills + conduct
+  nuxt/                  Nuxt framework skills + conduct
   vue/                   Vue component/state conventions
   inertia/               Inertia.js transport rules
   tailwind/              Tailwind CSS conventions

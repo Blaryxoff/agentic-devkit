@@ -1,11 +1,11 @@
 # Architecture Overview
 
-This document set defines architecture and development rules for Nuxt 3 frontend applications.
+This document set defines architecture and development rules for Nuxt frontend applications.
 
 ## Technology stack
 
-- **Runtime**: Nuxt 3
-- **Framework**: Vue 3
+- **Runtime**: Nuxt
+- **Framework**: Vue
 - **Language**: TypeScript (strict)
 - **Styling**: BEM + SCSS
 - **Package manager**: pnpm

@@ -5,8 +5,8 @@ This will dramatically increase development speed as well as code consistency an
 These rules are a source of truth.
 
 Primary target stack in this repository:
-- Nuxt 3
-- Vue 3
+- Nuxt
+- Vue
 - TypeScript (strict)
 - BEM + SCSS
 

@@ -2,7 +2,7 @@
 
 ## Language baseline
 
-- use PHP 8.3+ features when they improve clarity and safety
+- use modern PHP language features when they improve clarity and safety
 - add `declare(strict_types=1);` in PHP source files unless project convention explicitly excludes it
 - prefer framework-idiomatic code over "plain PHP patterns" that bypass established conventions
 

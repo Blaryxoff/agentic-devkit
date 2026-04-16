@@ -1,6 +1,6 @@
 # Migration Guide
 
-## From `claude-code/` marketplace to `plugins/` toolkit (v2.0)
+## From `claude-code/` marketplace to `plugins/` toolkit
 
 This documents breaking changes from the old Claude-Code-centric structure to the model-agnostic plugin toolkit.
 

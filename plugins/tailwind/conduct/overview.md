@@ -33,7 +33,7 @@ Tailwind config is the single source of truth for design tokens. Treat `theme.ex
 
 - Never repeat arbitrary values (`[#e2e7ef]`, `[14px]`) across components — if it appears twice, it belongs in config.
 - Derive shades with opacity modifiers (`bg-primary/80`) instead of defining new one-off color entries.
-- Dark mode via `dark:` variant; in Tailwind v4, prefer CSS `color-scheme` integration.
+- Dark mode via `dark:` variant; when the project uses Tailwind’s CSS-first / `@theme` setup, prefer CSS `color-scheme` integration.
 - Keep `tailwind.config` theme flat and scannable — avoid deeply nested custom scales.
 - Prefer semantic token names (`text-muted`, `bg-surface`) over raw palette names (`text-gray-400`) in component markup.
 
@@ -147,7 +147,7 @@ Flag and rewrite these patterns — they signal generic AI-generated output:
 
 ## Responsive strategy
 
-### Container queries first (Tailwind v4)
+### Container queries first
 
 - Use `@container` variants for component-level responsiveness — the component adapts to its container, not the viewport.
 - Reserve `sm:` / `md:` / `lg:` / `xl:` breakpoints for page-level layout shifts only (sidebar collapse, navigation pattern change).
