@@ -81,12 +81,9 @@ Check `database/schema.snapshot.json` first as the primary source of truth (see 
 
 ## Inertia props contract
 
-Props passed from controller to Inertia page are a public API. Changing prop shape is a breaking change.
+If the Inertia plugin is enabled, follow its conduct rules (`plugins/inertia/conduct/overview.md`) for props contract, deferred props, navigation, and loading/empty/error state requirements.
 
-- Use Eloquent Resources or explicit arrays — never pass models directly.
-- Use `Inertia::defer()` for heavy data not needed at first render; require skeleton/pulse state on the frontend.
-- Use `<Link>` or `router.visit()` for internal navigation — never `<a href>`.
-- Every page/component with data must have loading, empty, and error states.
+Backend responsibility: use Eloquent Resources or explicit arrays when passing data to `Inertia::render()` — never pass model instances directly.
 
 ## Response format
 
@@ -109,6 +106,4 @@ Name classes, tables, and methods directly in the response.
 - Ignoring indexes and unique constraints with "we will add them later"
 - External HTTP calls inside a transaction without necessity
 - Duplicated logic — reduce via composition (services/helpers/DTOs); traits and inheritance only if they genuinely reduce complexity without hiding dependencies
-- Passing Eloquent models directly to Inertia props
-- `<a href>` for internal navigation instead of `<Link>`
-- Missing loading/empty/error states on pages with data
+- Passing Eloquent models directly to `Inertia::render()` — use Resources or explicit arrays
