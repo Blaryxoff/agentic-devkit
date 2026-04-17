@@ -10,6 +10,7 @@ toolkits/agentic-devkit/bin/devkit-resolve --init
 toolkits/agentic-devkit/bin/devkit-resolve --adapter=claude
 toolkits/agentic-devkit/bin/devkit-resolve --adapter=cursor
 toolkits/agentic-devkit/bin/devkit-resolve --adapter=codex
+node toolkits/agentic-devkit/visual-loop/bootstrap.mjs .
 ```
 
 ## CLI Usage
