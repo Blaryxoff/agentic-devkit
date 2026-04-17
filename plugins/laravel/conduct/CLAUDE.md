@@ -1,6 +1,6 @@
-# Conduct — Laravel + Inertia Development Standards
+# Conduct — Laravel Development Standards
 
-This toolkit contains architecture rules, coding conventions, and best practices for Laravel + Inertia applications. It is standards/documentation content used as context for AI coding agents (Claude Code, Cursor) and as a reference for human developers.
+This toolkit contains architecture rules, coding conventions, and best practices for Laravel applications. It is standards/documentation content used as context for AI coding agents (Claude Code, Cursor) and as a reference for human developers.
 
 ## Document reading order
 
@@ -25,16 +25,12 @@ Read the conduct documents in this order — each builds on the previous:
 - **[fast_code_review_checklist.md](./fast_code_review_checklist.md)** — pre-commit/PR review checklist
 - **[git.md](./git.md)** — branching strategy, commit conventions, merge requests, tagging
 - **[spec/spec.md](spec/spec.md)** — feature specification template
-- **[inertia/overview.md](../../inertia/conduct/overview.md)** — Inertia-specific transport rules
-- **[vue/overview.md](../../vue/conduct/overview.md)** — Vue-specific conventions
-- **[tailwind/overview.md](../../tailwind/conduct/overview.md)** — Tailwind-specific conventions
 - **[ownership-map.md](../../core/conduct/ownership-map.md)** — strict policy ownership map
 
 ## Key architectural rules
 
 - **Layered architecture** (REQUIRED): business logic stays in domain/services; HTTP, persistence, queues, and external APIs stay at boundaries. Keep domain rules framework-light where possible.
 - **Laravel-first conventions** (REQUIRED): use Form Requests for validation, Policies/Gates for authorization, Eloquent scopes/relationships for query composition, and Resources/Transformers for response shaping.
-- **Inertia-first web flow** (REQUIRED): server routes/controllers return Inertia responses, pages live in Vue components, and page props define the contract between backend and frontend.
 - **DTO/Value object boundaries** (OPTIONAL but preferred): avoid passing raw arrays across layers when structure is stable; use typed objects or validated payloads.
 - **Mappers at every boundary**: request-to-domain, model-to-domain/view-model — avoid leaking transport-specific payloads into core business logic.
 
@@ -45,13 +41,10 @@ Read the conduct documents in this order — each builds on the previous:
 | Backend language | PHP |
 | Backend framework | Laravel |
 | Web transport | Nginx + PHP-FPM |
-| Frontend transport | Inertia.js |
-| Frontend framework | Vue |
-| UI styling | Tailwind CSS |
 | Database | PostgreSQL/MySQL via Eloquent ORM |
 | Cache/queue | Redis + Laravel Queue |
 | Logging | Laravel Monolog channels |
-| Testing | PHPUnit, Laravel testing helpers, browser/e2e tooling as configured |
+| Testing | PHPUnit, Laravel testing helpers |
 | CLI | Artisan |
 | Config (env) | Laravel config + `.env` |
 
@@ -63,11 +56,11 @@ Read the conduct documents in this order — each builds on the previous:
 | `test-unit` | Run unit tests only |
 | `test-feature` | Run feature/integration tests only |
 | `test-coverage` | Generate test coverage report |
-| `lint` | Run static analysis and frontend linting |
-| `fmt` | Run Laravel Pint and frontend formatter |
+| `lint` | Run static analysis |
+| `fmt` | Run Laravel Pint |
 | `migrate` | Run database migrations |
 | `seed` | Seed database fixtures |
-| `build` | Build frontend assets |
+| `build` | Build assets |
 | `ci` | lint + tests + build |
 
 ## Development workflow
