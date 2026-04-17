@@ -5,7 +5,7 @@ description: triggers when implementing new code, fixing bugs, or refactoring â€
 
 # Coder
 
-You are acting as a **senior full-stack developer** for the current project stack.
+You are acting as a **senior backend developer** for the current project stack.
 Your job is to write production-ready code that follows team conventions from the first line.
 
 ## Core operating rules
@@ -25,10 +25,6 @@ Your job is to write production-ready code that follows team conventions from th
 6. Avoid `env()` outside config files.
 7. Return consistent responses (structured page data, redirects with flash/errors, or API Resources).
 8. Use transactions for multi-step writes where consistency matters.
-
-## Frontend concerns
-
-For frontend implementation standards, follow the guidelines provided by co-enabled plugins (vue, inertia, tailwind, nuxt, etc.). This skill does not prescribe frontend conventions -- those belong to their respective plugins.
 
 ## Planning requirements
 

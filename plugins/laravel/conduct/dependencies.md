@@ -16,11 +16,7 @@ framework-native features and already-installed packages before adding new libra
 | Package                     | Purpose                                                                     |
 |-----------------------------|-----------------------------------------------------------------------------|
 | `laravel/framework`         | Core framework (routing, container, queue, cache, events, HTTP, validation) |
-| `inertiajs/inertia-laravel` | Server adapter for Inertia responses and shared props                       |
-| `@inertiajs/vue3`           | Inertia client adapter for Vue pages/forms/navigation                       |
 | `laravel/sanctum`           | Token/session-based auth for API + SPA patterns                             |
-| `tightenco/ziggy`           | Route name sharing from Laravel to Vue                                      |
-| `tailwindcss`               | Utility-first styling system for frontend UI                                |
 | `dedoc/scramble`            | OpenAPI docs generation for API routes/controllers                          |
 | `stancl/tenancy`            | Multi-tenant architecture boundaries and runtime context                    |
 | `laravel/scout`             | Search abstraction and indexing flow conventions                            |
@@ -46,7 +42,6 @@ Before adding a new dependency:
   project)
 - **Client (server-side)**: `Illuminate\Support\Facades\Http` — Laravel HTTP client with timeout/retry/middleware
   support
-- **Client (frontend)**: browser `fetch` / Inertia requests via `@inertiajs/vue3` helpers
 - **OpenAPI/Swagger alternatives** (optional): propose only if Scramble cannot satisfy a specific requirement, with
   clear justification
 
@@ -78,14 +73,6 @@ Before adding a new dependency:
 - **Tracing/metrics**: use project-approved integration only when needed; keep instrumentation behind application
   boundaries
 
-## Frontend (Inertia + Vue + Tailwind)
-
-- **UI framework**: `vue` + `@inertiajs/vue3`
-- **Styling**: `tailwindcss`
-- **Formatting/linting**: `prettier`, `eslint`
-- **Route helpers**: `ziggy-js` (via `tightenco/ziggy`)
-- Prefer existing shared components and composables before introducing new frontend utility libraries
-
 ## Runtime / Web server (Nginx)
 
 - Nginx is runtime infrastructure (reverse proxy, static assets, gzip/cache headers, request limits)
@@ -113,4 +100,4 @@ These should **never** be used:
 | Direct SQL string concatenation                       | Eloquent / Query Builder with bindings |
 | `float` for money calculations                        | decimal columns + value objects/casts  |
 | Business logic in controllers/routes/views            | services/use-cases/domain layer        |
-| Exposing secrets via `VITE_*`                         | server-only env + backend config       |
+| Exposing secrets in response payloads                 | server-only env + backend config       |

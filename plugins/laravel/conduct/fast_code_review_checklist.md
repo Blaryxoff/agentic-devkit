@@ -11,12 +11,10 @@ Use this checklist before committing code or when reviewing pull requests. Every
 - [ ] New value objects / custom casts are used instead of raw arrays/strings where applicable
 - [ ] Interfaces/contracts are small and specific (1-3 methods) where abstraction is needed
 - [ ] API Resources / DTO mapping exists for boundary crossing (request ↔ domain, domain ↔ response)
-- [ ] Inertia page data is shaped intentionally (only required props, no over-fetching)
 
 ## Code quality
 
 - [ ] PHP code is formatted with `vendor/bin/pint --dirty`
-- [ ] Frontend code is formatted/linted with project ESLint/Prettier rules
 - [ ] No lint-ignore directives without a justifying comment
 - [ ] Files are under 500 lines
 - [ ] Classes/components stay focused and avoid "god objects/components"
@@ -29,7 +27,7 @@ Use this checklist before committing code or when reviewing pull requests. Every
 - [ ] Domain/business exceptions are explicit and typed where needed
 - [ ] Exceptions are wrapped/re-thrown with useful context where needed
 - [ ] Error checks rely on exception types/classes, not fragile string matching
-- [ ] Controllers translate domain errors to proper HTTP status/validation/Inertia errors
+- [ ] Controllers translate domain errors to proper HTTP status/validation responses
 - [ ] No `dd()`, `dump()`, `die()`, or `exit()` in committed code
 - [ ] No swallowed exceptions (`catch` without meaningful handling/logging)
 
@@ -39,7 +37,7 @@ Use this checklist before committing code or when reviewing pull requests. Every
 - [ ] Heavy data is not logged (files, large payloads) — only metadata (size, count)
 - [ ] No secrets, passwords, tokens, or PII in logs
 - [ ] Log levels are appropriate: debug for development, info for events, error for failures
-- [ ] No debug output statements left in code (`var_dump`, `print_r`, `console.log` for production paths)
+- [ ] No debug output statements left in code (`var_dump`, `print_r`)
 - [ ] Failures in queue/jobs/HTTP integrations include enough context for incident debugging
 
 ## Configuration
@@ -53,7 +51,7 @@ Use this checklist before committing code or when reviewing pull requests. Every
 ## Testing
 
 - [ ] Unit tests exist for new service methods, entities, and value objects
-- [ ] Feature tests exist for new routes/controllers/middleware/Inertia flows where applicable
+- [ ] Feature tests exist for new routes/controllers/middleware where applicable
 - [ ] Tests use mocks/fakes, not real external integrations
 - [ ] Each test is self-contained — no shared mutable state
 - [ ] Data providers are used for parameterized scenarios
@@ -96,5 +94,5 @@ Use this checklist before committing code or when reviewing pull requests. Every
 - [ ] Commit message follows Conventional Commits format (`<type>: <summary>`)
 - [ ] One logical change per commit
 - [ ] No secrets or `.env` files in the changeset
-- [ ] `composer.lock` and frontend lockfile changes are intentional and consistent
+- [ ] `composer.lock` changes are intentional and consistent
 - [ ] Branch is rebased onto latest `main` / `master`

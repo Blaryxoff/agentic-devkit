@@ -179,7 +179,6 @@ final class UserMapper
 ### File naming rules
 
 - PHP classes: use `StudlyCase` file names matching class names (`UserService.php`, `BroadcastRepository.php`)
-- Vue pages/components: use `PascalCase` file names (`Users/Index.vue`, `Orders/Create.vue`)
 - test files: `<ClassName>Test.php` — placed in `tests/Feature` or `tests/Unit`
 - DTO files: `*Data.php` / `*Dto.php` inside data/DTO folder
 - mapper files: `*Mapper.php` inside infrastructure/application mapping folder
@@ -216,12 +215,11 @@ app/
 └── Providers/
 
 bootstrap/, config/, database/{factories,migrations,seeders}/
-public/, storage/
-resources/js/{Pages,Components,Layouts}/, resources/css/
+public/, storage/, resources/
 routes/{web.php,api.php}
 tests/{Feature,Unit}/
 nginx/default.conf
-composer.json, package.json, vite.config.js
+composer.json
 ```
 
 ### CQRS additions (changes to Application/ and Infrastructure/ only)
@@ -254,8 +252,7 @@ app/Http/Controllers/
 
 - define contracts (interfaces) in core/application, implement them in infrastructure
 - keep entities and value objects self-contained with validation in constructors/factories
-- use mappers for every boundary crossing (controller/request ↔ domain, repository/model ↔ domain, domain ↔ Inertia
-  props)
+- use mappers for every boundary crossing (controller/request ↔ domain, repository/model ↔ domain, domain ↔ response)
 - split files by concern when they grow beyond 500 lines
 
 **DO NOT:**
@@ -264,4 +261,4 @@ app/Http/Controllers/
 - import one adapter from another adapter for orchestration
 - put business logic in controllers, repositories, route closures, or view components
 - use general types (string, int, float) where a value object or entity ID exists
-- bypass Inertia boundaries by leaking backend internals directly into Vue pages
+- leak backend internals (model instances, raw queries) directly into response payloads

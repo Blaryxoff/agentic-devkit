@@ -1,18 +1,16 @@
 # Architecture Overview
 
-This document set defines the architecture, conventions, and development rules for Laravel + Inertia + Vue + Tailwind services deployed behind Nginx. It is designed to be used as context for AI coding agents and as a reference for human developers.
+This document set defines the architecture, conventions, and development rules for Laravel services deployed behind Nginx. It is designed to be used as context for AI coding agents and as a reference for human developers.
 
 ## Technology stack
 
-- **Language**: PHP + JavaScript (Vue)
+- **Language**: PHP
 - **Backend framework**: Laravel
-- **Frontend transport**: Inertia.js
-- **UI layer**: Vue + Tailwind CSS
 - **Web server**: Nginx (reverse proxy / static assets / TLS termination)
 - **Database**: PostgreSQL / MySQL (via Eloquent ORM)
 - **Cache / queues**: Redis (cache, session, queue drivers)
 - **Observability**: Laravel logging stack (Monolog), Telescope, optional OpenTelemetry integration
-- **CLI / tooling**: Artisan, Composer, pnpm
+- **CLI / tooling**: Artisan, Composer
 - **Testing**: PHPUnit feature + unit tests
 
 ## Reading order

@@ -29,7 +29,7 @@ try {
 #### Where wrapping/reporting is and is not required
 
 - **Required**: all services (`app/Services/`, actions/use-cases) and repositories (`app/Repositories/` or equivalent infrastructure layer)
-- **Not required**: HTTP controllers (`app/Http/Controllers/`) — controllers should translate domain errors into HTTP/Inertia responses
+- **Not required**: HTTP controllers (`app/Http/Controllers/`) — controllers should translate domain errors into HTTP responses
 - **Not required**: external clients/integrations — wrap with a local integration error and return; avoid duplicate logging if upper layer already reports
 
 ### Error checking at call sites
@@ -76,13 +76,6 @@ catch (UserRepositoryNotFoundException $e) { throw new UserNotFoundException(pre
   - authentication errors (`AuthenticationException`) → `401 Unauthorized`
   - everything else → `500 Internal Server Error`
 
-## Inertia + Vue error handling
-
-- for Inertia requests, return domain-safe errors via redirects and session flash (or shared props), not raw stack traces
-- keep validation in FormRequest and surface via Inertia form errors
-- use dedicated error pages (`resources/js/Pages/Errors/*.vue`) for `403/404/500`
-- in Vue, always handle failed form submissions (`onError`, `errors`) and avoid swallowing Promise rejections
-
 ## Nginx and edge error handling
 
 - Nginx should return standard upstream errors (`502/503/504`) without exposing internal PHP-FPM details
@@ -102,12 +95,12 @@ catch (UserRepositoryNotFoundException $e) { throw new UserNotFoundException(pre
 - define typed domain exceptions at module boundaries
 - wrap low-level exceptions into domain/application exceptions in services/repositories
 - use typed `catch` blocks (`instanceof`) at call sites
-- translate domain exceptions to HTTP/Inertia responses in controllers/handlers
+- translate domain exceptions to HTTP responses in controllers/handlers
 
 **DO NOT:**
 - compare errors by message string
 - string-match exceptions with `$e->getMessage() === '...'`
 - double-wrap exceptions with the same semantics
-- expose internal exception messages to API or Inertia clients
+- expose internal exception messages to API clients
 - terminate request flow abruptly in business code
 - silently ignore exceptions — make intentional suppression explicit

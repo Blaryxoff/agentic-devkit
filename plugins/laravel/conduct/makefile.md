@@ -9,11 +9,9 @@ Every project must have a `Makefile` in the root with standard targets. This ens
 ```makefile
 .PHONY: build run run-dev
 
-# Build backend and frontend artifacts
+# Build backend artifacts
 build:
 	composer install --no-interaction --prefer-dist --optimize-autoloader
-	pnpm install --frozen-lockfile
-	pnpm build
 	php artisan config:cache
 	php artisan route:cache
 	php artisan view:cache
@@ -50,14 +48,13 @@ test-coverage:
 ```makefile
 .PHONY: lint fmt
 
-# Run lint checks
+# Run static analysis
 lint:
-	pnpm exec eslint resources/js --ext .js,.vue
+	vendor/bin/phpstan analyse
 
 # Format code
 fmt:
 	vendor/bin/pint --dirty
-	pnpm exec prettier --write resources/js
 ```
 
 ### Generated artifacts
@@ -94,16 +91,6 @@ migrate-new:
 # Show migration status
 migrate-status:
 	php artisan migrate:status
-```
-
-### Frontend routing
-
-```makefile
-.PHONY: ziggy
-
-# Generate Ziggy routes for frontend usage
-ziggy:
-	php artisan ziggy:generate
 ```
 
 ### Docker
@@ -149,20 +136,17 @@ docs:
 ```makefile
 .PHONY: deps-install deps-update deps-audit
 
-# Install PHP and Node dependencies
+# Install PHP dependencies
 deps-install:
 	composer install --no-interaction --prefer-dist
-	pnpm install --frozen-lockfile
 
-# Update PHP and Node dependencies
+# Update PHP dependencies
 deps-update:
 	composer update
-	pnpm update
 
 # Check dependencies for known vulnerabilities
 deps-audit:
 	composer audit
-	pnpm audit
 ```
 
 ## Variables section
@@ -174,7 +158,6 @@ APP_NAME ?= myapp
 VERSION  ?= $(shell git describe --tags --always --dirty)
 ENV      ?= local
 PHP      ?= php
-PNPM     ?= pnpm
 ```
 
 ## Quick reference
@@ -201,8 +184,8 @@ help:
 	@echo "  fmt                Format code"
 	@echo ""
 	@echo "Dependencies:"
-	@echo "  deps-install       Install PHP/Node dependencies"
-	@echo "  deps-update        Update PHP/Node dependencies"
+	@echo "  deps-install       Install PHP dependencies"
+	@echo "  deps-update        Update PHP dependencies"
 	@echo "  deps-audit         Audit dependencies"
 	@echo ""
 	@echo "Database:"
@@ -231,7 +214,7 @@ pre-commit: fmt lint test build
 	@echo "Pre-commit checks passed"
 ```
 
-If API contracts or routes changed, also run `make openapi` and `make ziggy` before committing.
+If API contracts or routes changed, also run `make openapi` before committing.
 
 ## CI/CD target
 
@@ -252,7 +235,7 @@ ci: lint test build
 - use `.PHONY` for all targets that don't produce files
 - use `?=` for variables so they can be overridden: `make test ENV=staging`
 - add a `help` target as the default target
-- keep build targets aligned with Laravel/Inertia conventions (`composer`, `php artisan`, `pnpm`)
+- keep build targets aligned with Laravel conventions (`composer`, `php artisan`)
 - keep deployment/runtime concerns explicit (`build` artifacts, cache warming, worker command)
 
 **DO NOT:**

@@ -42,3 +42,14 @@ Props passed from a controller to an Inertia page are a **public API**. Changing
   - **Loading**: skeleton, spinner, or pulse placeholder while data is being fetched.
   - **Empty**: explicit empty-state UI when a collection has zero items — never show a blank area.
   - **Error**: user-facing feedback when the server returns a validation error or a generic failure.
+
+## Error handling
+
+- For Inertia requests, surface domain errors via redirects and session flash or shared props — never return raw stack traces or PHP exception output.
+- Keep validation errors in FormRequest and surface them via Inertia form errors; do not construct manual error arrays in controllers.
+
+## Shared props security
+
+- Shared props are sent to every page — only include non-sensitive, user-safe data.
+- Never place secrets, tokens, internal IDs, or server configuration in shared props.
+- Expose client-accessible values via dedicated mechanisms (e.g. `VITE_*` env vars for build-time config); keep server-only values server-side.

@@ -6,8 +6,6 @@ These rules are a source of truth.
 
 Primary target stack in this repository:
 - Laravel (PHP)
-- Inertia + Vue
-- Tailwind CSS
 - Nginx (web transport/runtime boundary)
 
 ## Usage
@@ -28,7 +26,7 @@ We have created some basic implementations for many tools: ClaudeCode, Cursor et
   - [Testing rules](./testing/)
 - Validate the newly created test cases; make sure all edge cases and happy paths are covered
 - Review the code (or by using [checklist](./fast_code_review_checklist.md) only or all files)
-- Commit following [git conventions](./git.md): Conventional Commits format, one logical change per commit, run project checks (at minimum `vendor/bin/pint --dirty`, related `php artisan test`, and relevant frontend lint/format checks)
+- Commit following [git conventions](./git.md): Conventional Commits format, one logical change per commit, run project checks (at minimum `vendor/bin/pint --dirty`, related `php artisan test`)
 
 ## Proposing Rule Changes
 

@@ -50,12 +50,8 @@ Validate critical config immediately after loading. Create a validator class per
 - sensitive fields in config files should read from `env(...)`, actual values come from environment
 - `.env.example` contains all required variables with empty/placeholder values for secrets — this serves as documentation
 
-## Frontend and runtime config notes (Inertia + Vue + Tailwind + Nginx)
+## Nginx runtime config notes
 
-- expose only safe client-side values via `VITE_*` variables
-- never expose secrets to frontend runtime (`resources/js/**`)
-- Inertia shared props must contain only non-sensitive configuration data
-- Tailwind theme tokens/config stay in `tailwind.config.js`; do not duplicate the same tokens in multiple places
 - Nginx config (`nginx/*.conf`) should control transport/runtime behavior (gzip, caching headers, request limits), while application behavior stays in Laravel config
 
 ## DO / DO NOT
@@ -72,4 +68,4 @@ Validate critical config immediately after loading. Create a validator class per
 - commit `.env` files or secrets to git
 - read `env()` outside config files in app logic
 - skip validation — always check required fields and value ranges for critical config
-- expose server secrets into Inertia props or `VITE_*` variables
+- expose server secrets in response payloads or client-accessible variables

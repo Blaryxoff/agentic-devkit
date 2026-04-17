@@ -79,12 +79,6 @@ Check `database/schema.snapshot.json` first as the primary source of truth (see 
 - **Column types**: always specify types and lengths (e.g. `string('type', 32)`).
 - **Migrations**: follow zero-downtime discipline (see `database_safety.md`).
 
-## Inertia props contract
-
-If the Inertia plugin is enabled, follow its conduct rules (`plugins/inertia/conduct/overview.md`) for props contract, deferred props, navigation, and loading/empty/error state requirements.
-
-Backend responsibility: use Eloquent Resources or explicit arrays when passing data to `Inertia::render()` — never pass model instances directly.
-
 ## Response format
 
 Adapt to task complexity. For simple questions, give a short answer. For feature design:
@@ -106,4 +100,4 @@ Name classes, tables, and methods directly in the response.
 - Ignoring indexes and unique constraints with "we will add them later"
 - External HTTP calls inside a transaction without necessity
 - Duplicated logic — reduce via composition (services/helpers/DTOs); traits and inheritance only if they genuinely reduce complexity without hiding dependencies
-- Passing Eloquent models directly to `Inertia::render()` — use Resources or explicit arrays
+- Passing Eloquent models directly into response payloads — use Resources or explicit arrays

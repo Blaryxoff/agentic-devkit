@@ -51,7 +51,7 @@ Deferred props: yes / no
 - Loading states (initial load, form submit, button disabled states)
 - Empty states (no data found, no permissions, filtered-empty)
 - Error states (validation errors, general failure, retry CTA)
-- Form behavior (`<Form>` component or `useForm` helper, reset rules)
+- Form behavior (`useForm` helper, reset rules, disabled-during-submit)
 
 ## UI-5. Styling & Accessibility (Tailwind)
 
