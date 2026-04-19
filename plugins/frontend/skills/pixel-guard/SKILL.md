@@ -29,6 +29,8 @@ Apply all loaded conduct rules throughout the implementation.
 - Baselines exist for the affected pages.
 - For authenticated routes: `auth` block configured in `visual/config.json` with login URL, field selectors, and credentials (or leave credentials empty to be prompted).
 
+See `plugins/core/conduct/inputs-grounding-gate.md` for the general grounding rule.
+
 If baselines are missing, capture and approve them before starting any changes:
 
 ```bash

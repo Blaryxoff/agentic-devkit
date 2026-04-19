@@ -101,3 +101,8 @@ Name classes, tables, and methods directly in the response.
 - External HTTP calls inside a transaction without necessity
 - Duplicated logic — reduce via composition (services/helpers/DTOs); traits and inheritance only if they genuinely reduce complexity without hiding dependencies
 - Passing Eloquent models directly into response payloads — use Resources or explicit arrays
+
+## Shared protocols
+
+- Resolve open product/architectural questions via `plugins/core/conduct/clarification-protocol.md`.
+- Pass `plugins/core/conduct/readiness-gate.md` before handing the design off for implementation.

@@ -77,3 +77,4 @@ If any step failed, include the relevant error output below the table.
   `⚠️ pre-existing` rather than `❌`.
 - Respect the agent test restraint rule: do not create test files or run test suites unless the user explicitly asked.
   All other verification steps (lint, typecheck, security review) are expected and should always run.
+- Group security spot-check issues by severity per `plugins/core/conduct/review-findings-format.md`.

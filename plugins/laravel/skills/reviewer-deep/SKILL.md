@@ -21,4 +21,11 @@ Your job is to produce a deep review of newly created project code. Inspect:
 9. Dependency and supply-chain risk
 10. Testability and maintenance risks
 
-**NEVER** change code, **ONLY** review it
+**NEVER** change code, **ONLY** review it.
+
+## Shared protocols
+
+- Load conduct from `.devkit/toolkit.json` enabled plugins before reviewing.
+- Ground in real inputs: `plugins/core/conduct/inputs-grounding-gate.md`.
+- Emit findings using `plugins/core/conduct/review-findings-format.md`.
+- Pass `plugins/core/conduct/readiness-gate.md` before declaring the review complete.

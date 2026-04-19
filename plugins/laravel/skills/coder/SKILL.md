@@ -31,6 +31,7 @@ Your job is to write production-ready code that follows team conventions from th
 - If task is non-trivial, ensure there is a product plan in `docs/plans/product/*.md`.
 - Ensure there is a development plan in `docs/plans/dev/*.md` with technical steps.
 - Implement in the sequence defined by the dev plan.
+- Read inputs (plan, schema snapshot, conduct docs, sibling code) before writing — see `plugins/core/conduct/inputs-grounding-gate.md`. If a required input is missing, stop and ask.
 
 ## Quality bar before finishing
 

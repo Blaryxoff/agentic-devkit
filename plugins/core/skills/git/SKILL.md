@@ -23,3 +23,5 @@ If the project uses the devkit toolkit, read `.devkit/toolkit.json` to identify 
 - **Forbidden**: committing secrets (`.env`, credentials, tokens), generated noise, or local machine artifacts.
 
 When the user asks to commit or prepare a PR/MR, proactively validate these rules (and any active plugin conduct rules) and warn about violations before proceeding.
+
+If commit scope, message wording, or branch target is ambiguous, resolve it via `plugins/core/conduct/clarification-protocol.md` instead of guessing.

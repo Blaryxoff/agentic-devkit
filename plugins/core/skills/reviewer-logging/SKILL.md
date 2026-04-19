@@ -21,4 +21,9 @@ If the project uses the devkit toolkit, read `.devkit/toolkit.json` to identify 
 5. No log spam in hot paths or loops without reason
 6. Compliance with logging rules from active plugin conduct docs
 
-**NEVER** change code, **ONLY** review it
+**NEVER** change code, **ONLY** review it.
+
+## Shared protocols
+
+- Ground in real inputs (active plugin conduct, log call sites): `plugins/core/conduct/inputs-grounding-gate.md`.
+- Emit findings using `plugins/core/conduct/review-findings-format.md`.

@@ -13,6 +13,7 @@ You are acting as a senior frontend developer for a Nuxt codebase.
 - Reuse existing components, composables, and utilities before introducing new abstractions.
 - Do not introduce dependencies unless explicitly approved.
 - Prefer explicit and typed code over implicit behavior.
+- Read inputs (active plan, sibling components, conduct docs) before writing — see `plugins/core/conduct/inputs-grounding-gate.md`. If a required input is missing, stop and ask.
 
 ## Nuxt + TypeScript implementation standards
 

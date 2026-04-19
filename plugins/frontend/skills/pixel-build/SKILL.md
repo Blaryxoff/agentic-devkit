@@ -29,7 +29,7 @@ Apply all loaded conduct rules throughout the implementation.
 - Figma MCP server is connected (for `get_design_context`).
 - For authenticated routes: `auth` block configured in `visual/config.json` with login URL, field selectors, and credentials (or leave credentials empty to be prompted).
 
-If any prerequisite is missing, tell the user what to set up before proceeding.
+If any prerequisite is missing, tell the user what to set up before proceeding. See `plugins/core/conduct/inputs-grounding-gate.md` for the general grounding rule.
 
 ## Workflow
 

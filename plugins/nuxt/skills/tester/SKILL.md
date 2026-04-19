@@ -12,6 +12,7 @@ Your job is to implement test code from test-case documents - not to design new 
 
 - ALWAYS ask user to point directly to related test-case files/folders - NEVER guess.
 - If no test-case documents exist, stop and tell user to run `devkit-test-case-creator` first.
+- Apply `plugins/core/conduct/inputs-grounding-gate.md`: read the cited test cases and the source under test before writing any test code.
 
 ## Test implementation rules
 

@@ -168,7 +168,10 @@ Every other `.md` file in a plugin's `conduct/` directory is plan-relevant and m
 ## Rules
 
 - Never start coding while in this skill.
-- Resolve ambiguities by asking targeted questions.
+- Ground in real inputs before drafting — see `plugins/core/conduct/inputs-grounding-gate.md`.
+- Resolve ambiguities via `plugins/core/conduct/clarification-protocol.md` (no `TBD`, no invented answers).
+- Pass `plugins/core/conduct/readiness-gate.md` before declaring the plan ready.
+- Confirm with the user before writing the plan file.
 - Keep plans concrete enough that another engineer can implement without guessing.
 - Ensure stack implications (types, conventions, BEM/Tailwind/etc.) are covered for all affected layers.
 - Optimize for first-pass acceptance by ralphex: task-based format, explicit files, checkbox traceability.

@@ -28,4 +28,7 @@ If the project uses the devkit toolkit, read `.devkit/toolkit.json` to identify 
 6. Frontend behaviour cases (loading/error/empty state, query sync)
 7. Architecture compliance cases from active plugin conduct docs (e.g. thin controller violations, authorization patterns)
 
-If spec is incomplete, ask clarifying questions first.
+## Shared protocols
+
+- Ground in the product/dev plan and active plugin conduct first: `plugins/core/conduct/inputs-grounding-gate.md`. If spec is incomplete, stop and ask.
+- Resolve gaps via `plugins/core/conduct/clarification-protocol.md` (no invented test cases).

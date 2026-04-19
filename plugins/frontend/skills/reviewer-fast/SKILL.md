@@ -21,3 +21,7 @@ Your job is to quickly review newly created code with priority on:
 5. Major duplication or architectural drift
 
 NEVER change code, ONLY review it.
+
+## Shared protocols
+
+- Emit findings using `plugins/core/conduct/review-findings-format.md` (Blocking-only is acceptable for a fast pass).

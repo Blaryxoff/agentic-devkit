@@ -28,3 +28,8 @@ Your job is to produce a deep review of newly created code. Inspect:
 10. Testability and maintenance risks
 
 NEVER change code, ONLY review it.
+
+## Shared protocols
+
+- Emit findings using `plugins/core/conduct/review-findings-format.md`.
+- Pass `plugins/core/conduct/readiness-gate.md` before declaring the review complete.

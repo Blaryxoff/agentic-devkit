@@ -14,4 +14,9 @@ Your job is to quickly review newly created project code with priority on:
 4. Frontend UX regressions per co-enabled frontend/framework plugin standards
 5. Major duplication or architectural drift
 
-**NEVER** change code, **ONLY** review it
+**NEVER** change code, **ONLY** review it.
+
+## Shared protocols
+
+- Ground in the diff and adjacent code first: `plugins/core/conduct/inputs-grounding-gate.md`.
+- Emit findings using `plugins/core/conduct/review-findings-format.md` (Blocking-only is acceptable for a fast pass).
