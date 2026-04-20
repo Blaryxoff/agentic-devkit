@@ -323,9 +323,13 @@ Before presenting proposed updates, evaluate the plan against the readiness gate
 | Open questions            | Are all blocking open questions resolved?                                                                                                                                  |
 | Validation path           | For dev plans, are concrete validation commands and verification notes present?                                                                                            |
 | Ralphex format            | For dev plans: `### Task N:` / `### Iteration N:` headers, checkboxes only in task sections, `## Validation Commands` present, each task ends with `- [ ] Mark completed`? |
+| First-break               | Plan names most-likely failure with trigger and actor?                                                                                                                     |
+| User-assumption           | Plan flags every UI step that assumes prior knowledge?                                                                                                                     |
 
 Mark each gate ✅ or ❌. If any gate is ❌, the plan is **not ready for handoff** and the failing gates must appear in the
 blocking findings.
+
+Append the Risk Probes block from `plugins/core/conduct/risk-probe-gate.md`.
 
 Then ask: **"Shall I write these updates to the plan file?"**
 
@@ -350,6 +354,8 @@ A plan that passes this review should score 10/10 across:
 | Ralphex format      | Dev plans pass all structural requirements from the "Dev plan checks" section              |
 | Completeness        | No blocking open questions and no invented behaviour                                       |
 | Implementability    | Another engineer or agent can execute the plan without guessing the next step              |
+| First-break         | Most-likely failure named with trigger and actor                                           |
+| User-assumption     | Every UI step assuming prior knowledge is flagged                                          |
 
 ---
 

@@ -54,6 +54,10 @@ Review the changes (not the full codebase) for obvious security issues:
 
 This is a quick review, not a full audit. Report findings inline with the other results.
 
+### 5. Risk probe
+
+Run probes from `plugins/core/conduct/risk-probe-gate.md` against the diff. Append the Risk Probes block. Surface only Blocking-grade items here.
+
 ## Output format
 
 ```
@@ -65,6 +69,7 @@ This is a quick review, not a full audit. Report findings inline with the other 
 | Type check | ✅/⏭️  | <one-line summary or "skipped — not configured"> |
 | Test       | ✅/⏭️  | <one-line summary or "skipped — not requested"> |
 | Security   | ✅/⚠️  | <one-line summary or "no issues found"> |
+| Risk probe | ✅/⚠️  | <one-line summary> |
 ```
 
 If any step failed, include the relevant error output below the table.

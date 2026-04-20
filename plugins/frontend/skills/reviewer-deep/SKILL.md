@@ -33,3 +33,4 @@ NEVER change code, ONLY review it.
 
 - Emit findings using `plugins/core/conduct/review-findings-format.md`.
 - Pass `plugins/core/conduct/readiness-gate.md` before declaring the review complete.
+- Run probes from `plugins/core/conduct/risk-probe-gate.md` and append the Risk Probes block (A, B, C).

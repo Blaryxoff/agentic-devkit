@@ -135,6 +135,8 @@ Severity rubric:
 - **Significant** — feature works in happy path but fails in documented edge case.
 - **Minor** — polish, missing log, weak guard with low exploit value.
 
+Append the Risk Probes block from `plugins/core/conduct/risk-probe-gate.md` (A; B per state-changing transition; C = n/a).
+
 ---
 
 ## Quality bar
@@ -146,5 +148,6 @@ A review passes when it can answer "yes" to all of:
 - Every finding cites file:line evidence and a confidence label.
 - Every transition has been checked for guard, side-effect, idempotency, and time-trigger requirements.
 - The `LOW CONFIDENCE` banner is present when any grounding source was missing.
+- Risk Probes block names first-break transition with trigger and chaos cases per state-changing transition.
 
 **NEVER change code, ONLY review it.**

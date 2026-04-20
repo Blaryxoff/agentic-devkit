@@ -29,3 +29,4 @@ Your job is to produce a deep review of newly created project code. Inspect:
 - Ground in real inputs: `plugins/core/conduct/inputs-grounding-gate.md`.
 - Emit findings using `plugins/core/conduct/review-findings-format.md`.
 - Pass `plugins/core/conduct/readiness-gate.md` before declaring the review complete.
+- Run probes from `plugins/core/conduct/risk-probe-gate.md` and append the Risk Probes block (A, B; C = n/a).

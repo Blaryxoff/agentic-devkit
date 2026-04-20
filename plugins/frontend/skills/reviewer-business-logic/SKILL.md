@@ -132,6 +132,8 @@ Defect types: `MISSING FLOW STEP` | `INCOMPLETE FLOW STEP` | `MISSING STATE BRAN
 
 Severity: **Blocking** = user cannot complete a documented flow, dead screen, silent data loss. **Significant** = breaks in a documented edge case (refresh, error, empty, blocked). **Minor** = polish, weak cleanup with no observable leak.
 
+Append the Risk Probes block from `plugins/core/conduct/risk-probe-gate.md` (A, B, C).
+
 ---
 
 ## Quality bar
@@ -144,5 +146,6 @@ A review passes when it can answer "yes" to all of:
 - Every optimistic update has a rollback; every mutation has its cache-invalidation path traced.
 - Every finding cites file:line evidence and a confidence label.
 - The `LOW CONFIDENCE` banner is present when any grounding source was missing.
+- Risk Probes block present, all three probes answered with named items.
 
 **NEVER change code, ONLY review it.**

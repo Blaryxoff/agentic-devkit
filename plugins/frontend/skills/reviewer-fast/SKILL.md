@@ -25,3 +25,4 @@ NEVER change code, ONLY review it.
 ## Shared protocols
 
 - Emit findings using `plugins/core/conduct/review-findings-format.md` (Blocking-only is acceptable for a fast pass).
+- Run probes from `plugins/core/conduct/risk-probe-gate.md` and append the Risk Probes block (A, B; C if UI changed).
