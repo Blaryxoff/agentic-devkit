@@ -38,3 +38,15 @@ Bad breakpoints:
 - Treat unrelated tasks as separate sessions — clear context between them.
 - When a session becomes long and unfocused, summarize progress and start fresh.
 - Before compacting, ensure any critical decisions or findings are recorded outside the session (commit messages, plan files, comments).
+
+## CLI loop session state
+
+When running an **iterated CLI workflow** (see `plugins/core/skills/cli-loop/SKILL.md`), restate a compact **State** block in full before any `/compact` or context trim, and when resuming after a long break. Include:
+
+- **Task** — one-liner and acceptance criteria.
+- **Env fingerprint** — OS, shell, and key tool versions as **observed** in the session (not assumed).
+- **Secrets metadata** — names of env vars and paths of temp files that hold secrets; **not** the secret values. Note pending cleanup (`unset`, `rm`, `trap`).
+- **Identifiers** — hostnames, cluster/role IDs, generated resource names, and where a generated password was **stored** (never the password itself in chat).
+- **Progress** — last completed step, next step goal.
+
+Losing this block after compaction without restating it risks wrong commands, repeated probes, or leaked secret handling. Prefer logical breakpoints (after a batch completes, before a new trust boundary) over mid-batch compaction.
