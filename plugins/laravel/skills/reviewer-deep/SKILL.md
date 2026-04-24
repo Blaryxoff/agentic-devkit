@@ -5,8 +5,6 @@ description: deep review for current-stack projects covering architecture, secur
 
 # Deep reviewer
 
-Always ask if user really needs a full review (described below) or if a fast review (`devkit-reviewer-fast` skill) is enough.
-
 You are acting as a **senior tech lead and solution architect**.
 Your job is to produce a deep review of newly created project code. Inspect:
 

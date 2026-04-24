@@ -5,8 +5,6 @@ description: deep review for frontend projects covering architecture, security, 
 
 # Deep reviewer
 
-Always ask if user really needs a full review or if a fast review is enough.
-
 ## Stack context
 
 Read `.devkit/toolkit.json` and load conduct for all active plugins — `plugins/frontend/conduct/` is always included. If toolkit.json is absent, detect the stack from `package.json` and read conduct from matching plugin directories.
