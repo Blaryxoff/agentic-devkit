@@ -3,8 +3,6 @@ import path from "node:path";
 import readline from "node:readline/promises";
 import { chromium } from "playwright";
 
-const STATE_TTL_MS = 30 * 60 * 1000;
-
 export function resolveAuth(globalAuth, pageAuth) {
   if (pageAuth === false) {
     return null;
@@ -19,10 +17,14 @@ export function authStatePath(visualDir) {
   return path.join(visualDir, ".auth-state.json");
 }
 
-async function isStateFresh(statePath) {
+export async function clearStorageState(statePath) {
+  await fs.unlink(statePath).catch(() => {});
+}
+
+async function stateExists(statePath) {
   try {
-    const stat = await fs.stat(statePath);
-    return Date.now() - stat.mtimeMs < STATE_TTL_MS;
+    await fs.stat(statePath);
+    return true;
   } catch {
     return false;
   }
@@ -41,7 +43,7 @@ function getNestedValue(obj, dotPath) {
  *
  * Resolution order:
  *   1. credentials.token set in config → use it directly (bearer/cookie/localStorage)
- *   2. Auth state file is fresh (<30 min) → reuse
+ *   2. Auth state file exists → reuse
  *   3. loginMode "api" → POST credentials as JSON, extract JWT from response
  *   4. credentials.email + password set → browser form login
  *   5. Fallback → interactive prompt: user pastes token from DevTools
@@ -58,7 +60,7 @@ export async function ensureStorageState(auth, baseUrl, statePath) {
     return { statePath, extraHTTPHeaders: {} };
   }
 
-  if (await isStateFresh(statePath)) {
+  if (await stateExists(statePath)) {
     return { statePath, extraHTTPHeaders: {} };
   }
 
@@ -135,7 +137,7 @@ async function promptAuthMethod(auth, baseUrl, statePath) {
       };
 
       await writeStorageState(statePath, state);
-      console.log(`Auth saved. State cached for 30 min at ${path.relative(process.cwd(), statePath)}`);
+      console.log(`Auth saved to ${path.relative(process.cwd(), statePath)}`);
     }
   } finally {
     rl.close();

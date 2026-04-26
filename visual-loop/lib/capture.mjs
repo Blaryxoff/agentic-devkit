@@ -12,6 +12,13 @@ html {
 }
 `;
 
+export class AuthRedirectError extends Error {
+  constructor(from, to) {
+    super(`Auth required: navigating to "${from}" redirected to "${to}"`);
+    this.name = "AuthRedirectError";
+  }
+}
+
 export async function captureViewport({
   baseUrl,
   route,
@@ -25,6 +32,7 @@ export async function captureViewport({
   timeoutMs = 30000,
   storageStatePath = null,
   extraHTTPHeaders = {},
+  loginPath = null,
 }) {
   const browser = await chromium.launch({ headless: true });
   const contextOptions = {
@@ -59,6 +67,13 @@ export async function captureViewport({
       await page.waitForLoadState("networkidle", { timeout: 3000 });
     } catch {
       // Some pages maintain long-lived connections.
+    }
+
+    if (loginPath) {
+      const currentPath = new URL(page.url()).pathname;
+      if (currentPath.startsWith(loginPath)) {
+        throw new AuthRedirectError(route, currentPath);
+      }
     }
 
     await page.addStyleTag({ content: STABILIZE_STYLES });

@@ -6,11 +6,11 @@ import {
   loadPageMeta,
   getViewports,
 } from "../lib/config.mjs";
-import { captureViewport } from "../lib/capture.mjs";
+import { captureViewport, AuthRedirectError } from "../lib/capture.mjs";
 import { runDiff } from "../lib/diff.mjs";
 import { fileExists, writeJson } from "../lib/io.mjs";
 import { ensureServer } from "../lib/server.mjs";
-import { resolveAuth, ensureStorageState, authStatePath } from "../lib/auth.mjs";
+import { resolveAuth, ensureStorageState, authStatePath, clearStorageState } from "../lib/auth.mjs";
 
 export async function runVisualCheck({ page, viewport = null, projectRoot, configPath }) {
   if (!page) {
@@ -36,15 +36,23 @@ export async function runVisualCheck({ page, viewport = null, projectRoot, confi
   const thresholds = config.thresholds ?? { pass: 0.3, warn: 1.5 };
 
   const auth = resolveAuth(config.auth, pageMeta.auth);
-  let storageStatePath = null;
-  let extraHTTPHeaders = {};
-  if (auth) {
-    ({ statePath: storageStatePath, extraHTTPHeaders } = await ensureStorageState(
-      auth,
-      config.baseUrl,
-      authStatePath(paths.visualDir),
-    ));
+  const stateFilePath = authStatePath(paths.visualDir);
+  const loginPath = auth?.loginUrl ? new URL(auth.loginUrl, config.baseUrl).pathname : null;
+
+  async function resolveAuth_() {
+    let storageStatePath = null;
+    let extraHTTPHeaders = {};
+    if (auth) {
+      ({ statePath: storageStatePath, extraHTTPHeaders } = await ensureStorageState(
+        auth,
+        config.baseUrl,
+        stateFilePath,
+      ));
+    }
+    return { storageStatePath, extraHTTPHeaders };
   }
+
+  let { storageStatePath, extraHTTPHeaders } = await resolveAuth_();
 
   const serverProcess = await ensureServer(config, { cwd: projectRoot });
 
@@ -57,7 +65,7 @@ export async function runVisualCheck({ page, viewport = null, projectRoot, confi
       const currentDiffPath = getOutputPath(paths.outputDir, page, current.name, "diff.png");
       const currentReportPath = getOutputPath(paths.outputDir, page, current.name, "report.json");
 
-      await captureViewport({
+      const captureArgs = {
         baseUrl: config.baseUrl,
         route,
         viewport: current,
@@ -67,9 +75,18 @@ export async function runVisualCheck({ page, viewport = null, projectRoot, confi
         theme: pageMeta.theme ?? "light",
         locale: pageMeta.locale ?? "en",
         timezone: pageMeta.timezone ?? "UTC",
-        storageStatePath,
-        extraHTTPHeaders,
-      });
+        loginPath,
+      };
+
+      try {
+        await captureViewport({ ...captureArgs, storageStatePath, extraHTTPHeaders });
+      } catch (err) {
+        if (!(err instanceof AuthRedirectError) || !auth) throw err;
+        console.log("Auth token rejected by the app. Please provide a new token.");
+        await clearStorageState(stateFilePath);
+        ({ storageStatePath, extraHTTPHeaders } = await resolveAuth_());
+        await captureViewport({ ...captureArgs, storageStatePath, extraHTTPHeaders });
+      }
 
       const hasBaseline = await fileExists(currentBaselinePath);
       if (!hasBaseline) {
