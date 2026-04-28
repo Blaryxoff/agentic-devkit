@@ -33,6 +33,8 @@ Numbered **step batches**. Per batch: goal, expected success signals, rollback o
 - Commands must be **fully copy-pasteable**: no `<placeholders>`, no `# TODO`, no `$` prompts, no truncated flags.
 - Prefer `set -euo pipefail` in multi-line scripts; use `&&` when failure must abort the batch.
 - If output will be reused, capture: `VAR=$(...)` in the same session and say so in the [State block](#state-block) when the name holds a secret.
+- End every command batch with:
+  `echo "==================== END OF BATCH ===================="`
 - Each batch ends with: paste **full stdout, stderr, and exit code** back in the next message.
 
 **Batch sizing (speed vs. safety; default: merge when safe):**
