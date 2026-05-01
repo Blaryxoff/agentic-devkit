@@ -111,3 +111,47 @@ resolve_plugin_dirs() {
 toolkit_relpath() {
   python3 -c "import os.path; print(os.path.relpath('$TOOLKIT_ROOT', '$PROJECT_ROOT'))"
 }
+
+# Ensure a path entry is present in PROJECT_ROOT/.gitignore.
+# Only applies when PROJECT_ROOT is inside a git working tree.
+# Matches existing entries exactly (ignoring leading/trailing whitespace and
+# an optional leading "/"), so "/.claude" and ".claude" are treated the same.
+ensure_gitignore_entry() {
+  local entry="$1"
+  [ -n "$entry" ] || return 0
+
+  # Only act inside a git repo
+  if ! git -C "$PROJECT_ROOT" rev-parse --is-inside-work-tree &>/dev/null; then
+    return 0
+  fi
+
+  local gitignore="$PROJECT_ROOT/.gitignore"
+  local needle="${entry#/}"
+  needle="${needle%/}"
+
+  if [ -f "$gitignore" ]; then
+    # Check existing lines; normalise by stripping comments, whitespace,
+    # and leading/trailing slashes before comparing.
+    if awk -v n="$needle" '
+      {
+        line = $0
+        sub(/#.*/, "", line)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+        sub(/^\//, "", line)
+        sub(/\/$/, "", line)
+        if (line == n) found = 1
+      }
+      END { exit found ? 0 : 1 }
+    ' "$gitignore"; then
+      return 0
+    fi
+    # Ensure file ends with newline before appending
+    if [ -s "$gitignore" ] && [ "$(tail -c1 "$gitignore" | wc -l | tr -d ' ')" = "0" ]; then
+      printf '\n' >> "$gitignore"
+    fi
+    printf '%s\n' "$entry" >> "$gitignore"
+  else
+    printf '%s\n' "$entry" > "$gitignore"
+  fi
+  echo "    Updated: .gitignore (added $entry)"
+}

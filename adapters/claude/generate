@@ -34,6 +34,8 @@ echo ""
 plugin_index=$(_build_plugin_index)
 resolved_names=$(resolve_plugins)
 
+ensure_gitignore_entry ".claude/"
+
 # --- marketplace.json ---
 marketplace_dir="$PROJECT_ROOT/.claude-plugin"
 mkdir -p "$marketplace_dir"

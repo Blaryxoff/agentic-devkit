@@ -33,6 +33,8 @@ echo ""
 plugin_index=$(_build_plugin_index)
 resolved_names=$(resolve_plugins)
 
+ensure_gitignore_entry ".codex/"
+
 skills_dir="$PROJECT_ROOT/.codex/skills"
 mkdir -p "$skills_dir"
 

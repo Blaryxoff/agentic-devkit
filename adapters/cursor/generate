@@ -37,6 +37,8 @@ echo ""
 plugin_index=$(_build_plugin_index)
 resolved_names=$(resolve_plugins)
 
+ensure_gitignore_entry ".cursor/"
+
 rules_dir="$PROJECT_ROOT/.cursor/rules"
 skills_dir="$PROJECT_ROOT/.cursor/skills"
 mkdir -p "$rules_dir" "$skills_dir"
