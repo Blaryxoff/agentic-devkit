@@ -7,6 +7,7 @@
   "dependencies": ["devkit-core"],
   "paths": {
     "conduct": "./conduct",
-    "skills": "./skills"
+    "skills": "./skills",
+    "mcpServers": "./.mcp.json"
   }
 }
