@@ -1,17 +1,5 @@
 {
   "hooks": {
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "source \"$HOME/.nvm/nvm.sh\" 2>/dev/null; pnpm run --if-present lint; pnpm run --if-present typecheck",
-            "timeout": 60000
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit|MultiEdit",
