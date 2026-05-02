@@ -87,49 +87,22 @@ echo "$marketplace" | jq '.' > "$marketplace_file"
 jq -n --argjson plugins "$new_state" '{plugins: $plugins}' > "$state_file"
 echo "    Created: .claude-plugin/marketplace.json"
 
-# --- settings.json (merge permissions.deny) ---
+# --- settings.json (hooks only — plugin permissions.deny is NOT merged) ---
 settings_dir="$PROJECT_ROOT/.claude"
-mkdir -p "$settings_dir"
 settings_file="$settings_dir/settings.json"
 
-deny_list="[]"
-while IFS= read -r name; do
-  [ -z "$name" ] && continue
-  plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
-  plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
-  settings_path=$(echo "$plugin_data" | jq -r '.paths.settings // empty')
-
-  if [ -n "$settings_path" ] && [ -f "$plugin_dir/$settings_path" ]; then
-    plugin_deny=$(jq '[.permissions.deny[]? // empty | select(startswith("//") | not)]' "$plugin_dir/$settings_path" 2>/dev/null || echo "[]")
-    deny_list=$(echo "$deny_list" | jq --argjson new "$plugin_deny" '. + $new | unique')
-  fi
-done <<< "$resolved_names"
-
-# --- Merge hooks from resolved plugins ---
 merged_hooks=$(merge_plugin_hooks "$plugin_index" "$resolved_names")
 has_hooks=$(echo "$merged_hooks" | jq 'length > 0')
 
 if [ -f "$settings_file" ]; then
-  existing=$(cat "$settings_file")
-  updated=$(echo "$existing" | jq \
-    --argjson deny "$deny_list" \
-    '.permissions.deny = ((.permissions.deny // []) + $deny | unique)')
   if [ "$has_hooks" = "true" ]; then
-    updated=$(echo "$updated" | jq --argjson hooks "$merged_hooks" '.hooks = $hooks')
+    updated=$(jq --argjson hooks "$merged_hooks" '.hooks = $hooks' "$settings_file")
+    echo "$updated" | jq '.' > "$settings_file"
+    echo "    Updated: .claude/settings.json (hooks)"
   fi
-  echo "$updated" | jq '.' > "$settings_file"
-  echo "    Updated: .claude/settings.json (permissions.deny$([ "$has_hooks" = "true" ] && echo ", hooks"))"
-else
-  if [ "$has_hooks" = "true" ]; then
-    jq -n \
-      --argjson deny "$deny_list" \
-      --argjson hooks "$merged_hooks" \
-      '{permissions: {deny: $deny}, hooks: $hooks}' > "$settings_file"
-  else
-    jq -n \
-      --argjson deny "$deny_list" \
-      '{permissions: {deny: $deny}}' > "$settings_file"
-  fi
+elif [ "$has_hooks" = "true" ]; then
+  mkdir -p "$settings_dir"
+  jq -n --argjson hooks "$merged_hooks" '{hooks: $hooks}' > "$settings_file"
   echo "    Created: .claude/settings.json"
 fi
 
