@@ -112,15 +112,25 @@ ${SECTION_END}"
 
 if [ -f "$agents_file" ]; then
   if grep -q "$SECTION_START" "$agents_file"; then
-    # Replace existing section
-    python3 -c "
-import re, sys
-content = open('$agents_file').read()
-pattern = re.escape('$SECTION_START') + r'.*?' + re.escape('$SECTION_END')
-replacement = open('/dev/stdin').read()
-result = re.sub(pattern, replacement, content, flags=re.DOTALL)
-open('$agents_file', 'w').write(result)
-" <<< "$new_section"
+    # Replace existing section. Pass replacement via env var so we don't pick
+    # up the trailing newline that <<< (and most heredocs) append — that
+    # newline would accumulate one extra blank line per run.
+    DEVKIT_REPLACEMENT="$new_section" AGENTS_FILE="$agents_file" \
+      SECTION_START_RE="$SECTION_START" SECTION_END_RE="$SECTION_END" \
+      python3 -c '
+import os, re
+agents = os.environ["AGENTS_FILE"]
+start = os.environ["SECTION_START_RE"]
+end = os.environ["SECTION_END_RE"]
+replacement = os.environ["DEVKIT_REPLACEMENT"]
+with open(agents) as f:
+    content = f.read()
+pattern = re.escape(start) + r".*?" + re.escape(end)
+# Use a lambda so backslashes/group-refs in the replacement are not interpreted.
+result = re.sub(pattern, lambda _m: replacement, content, count=1, flags=re.DOTALL)
+with open(agents, "w") as f:
+    f.write(result)
+'
     echo "    Updated: AGENTS.md (devkit-toolkit section replaced)"
   else
     printf "\n%s\n" "$new_section" >> "$agents_file"
