@@ -33,13 +33,6 @@ Do not put heavy business logic directly in page templates or large UI component
 - keep route/query synchronization explicit and predictable.
 - SSR/CSR assumptions must be intentional (avoid accidental browser-only API usage on server).
 
-## BEM conventions
-
-- class naming: `block`, `block__element`, `block--modifier`.
-- one component = one primary block name.
-- avoid mixing unrelated blocks in the same component stylesheet.
-- keep modifiers semantic (`--active`, `--disabled`, `--error`), not presentational (`--red`).
-
 ## File and folder conventions
 
 - Vue components/pages: `PascalCase.vue`.
@@ -110,5 +103,4 @@ DO:
 DO NOT:
 - call APIs directly from many components with duplicated request logic
 - keep hidden mutable state in module globals
-- break BEM naming consistency
 - use browser-only APIs without SSR guards

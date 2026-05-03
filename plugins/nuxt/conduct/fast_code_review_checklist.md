@@ -1,6 +1,6 @@
 # Fast Code Review Checklist
 
-Use this checklist before commit/PR for Nuxt + TypeScript + BEM work.
+Use this checklist before commit/PR for Nuxt + TypeScript work.
 
 ## Architecture
 
@@ -19,12 +19,6 @@ Use this checklist before commit/PR for Nuxt + TypeScript + BEM work.
 - [ ] Loading, empty, and error states are implemented
 - [ ] URL/query sync is correct for filters/search/pagination
 - [ ] No obvious regressions in critical flows
-
-## BEM and styling
-
-- [ ] Class names follow BEM conventions
-- [ ] Modifier usage is semantic and consistent
-- [ ] No style leakage or conflicting block naming
 
 ## Error handling and logging
 

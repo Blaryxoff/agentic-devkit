@@ -8,7 +8,6 @@ Primary target stack in this repository:
 - Nuxt
 - Vue
 - TypeScript (strict)
-- BEM + SCSS
 
 ## Usage
 

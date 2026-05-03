@@ -1,6 +1,6 @@
 # Git Workflow
 
-This document defines git rules for Nuxt + TypeScript + BEM projects.
+This document defines git rules for Nuxt + TypeScript projects.
 
 ## Commits
 

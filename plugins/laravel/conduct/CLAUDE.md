@@ -25,7 +25,6 @@ Read the conduct documents in this order — each builds on the previous:
 - **[fast_code_review_checklist.md](./fast_code_review_checklist.md)** — pre-commit/PR review checklist
 - **[git.md](./git.md)** — branching strategy, commit conventions, merge requests, tagging
 - **[spec/spec.md](spec/spec.md)** — feature specification template
-- **[ownership-map.md](../../core/conduct/ownership-map.md)** — strict policy ownership map
 
 ## Key architectural rules
 

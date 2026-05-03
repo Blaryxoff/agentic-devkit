@@ -1,6 +1,6 @@
 # Specification Template
 
-LLM-ready specification template for Nuxt + TypeScript + BEM features.
+LLM-ready specification template for Nuxt + TypeScript features.
 
 ## 1. Discovery (required before writing)
 

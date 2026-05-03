@@ -1,6 +1,6 @@
 ---
 name: devkit-coder
-description: triggers when implementing new code, fixing bugs, or refactoring - applies Nuxt + TypeScript + BEM conventions during implementation
+description: triggers when implementing new code, fixing bugs, or refactoring - applies Nuxt + TypeScript conventions during implementation
 ---
 
 # Coder
@@ -38,13 +38,6 @@ You are acting as a senior frontend developer for a Nuxt codebase.
 - Prefer composable-local state for page/feature-scoped data.
 - Use composition API style (`setup` stores) with explicit typed state, actions, and getters.
 - Do not call APIs directly from stores — delegate to composables/services.
-
-## Styling standards (BEM-first)
-
-1. Follow existing BEM naming used in the project (`block`, `block__element`, `block--modifier`).
-2. Keep class naming stable and semantic; avoid ad-hoc one-off names.
-3. Reuse existing SCSS variables/mixins/placeholders if present.
-4. Keep styles local to component scope unless project conventions require global styles.
 
 ## Quality bar before finishing
 

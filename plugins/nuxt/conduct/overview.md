@@ -7,7 +7,6 @@ This document set defines architecture and development rules for Nuxt frontend a
 - **Runtime**: Nuxt
 - **Framework**: Vue
 - **Language**: TypeScript (strict)
-- **Styling**: BEM + SCSS
 - **Package manager**: pnpm
 - **Testing**: frontend unit/integration/e2e tooling configured in the target project
 

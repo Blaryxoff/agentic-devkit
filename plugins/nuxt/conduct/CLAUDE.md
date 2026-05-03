@@ -24,16 +24,11 @@ Read the conduct documents in this order — each builds on the previous:
 - **[fast_code_review_checklist.md](./fast_code_review_checklist.md)** — pre-commit/PR review checklist
 - **[git.md](./git.md)** — branching strategy, commit conventions, merge requests, tagging
 - **[spec/spec.md](spec/spec.md)** — feature specification template
-- **[inertia/overview.md](../../inertia/conduct/overview.md)** — Inertia-specific transport rules
-- **[vue/overview.md](../../vue/conduct/overview.md)** — Vue-specific conventions
-- **[tailwind/overview.md](../../tailwind/conduct/overview.md)** — Tailwind-specific conventions
-- **[ownership-map.md](../../core/conduct/ownership-map.md)** — strict policy ownership map
 
 ## Key architectural rules
 
 - **Layered architecture** (REQUIRED): business logic belongs in composables/services, while rendering stays in pages/components.
 - **Nuxt-first conventions** (REQUIRED): use Nuxt idioms for data fetching, routing, and runtime config.
-- **BEM-first styling flow** (REQUIRED): component and page styles follow project BEM naming consistently.
 - **DTO/Value object boundaries** (OPTIONAL but preferred): avoid passing raw arrays across layers when structure is stable; use typed objects or validated payloads.
 - **Mappers at every boundary**: request-to-domain, model-to-domain/view-model — avoid leaking transport-specific payloads into core business logic.
 
@@ -44,7 +39,6 @@ Read the conduct documents in this order — each builds on the previous:
 | Runtime | Nuxt |
 | Frontend framework | Vue |
 | Language | TypeScript |
-| UI styling | BEM + SCSS |
 | Data layer | HTTP APIs via composables/services |
 | Logging | Browser/client logging + remote sinks by project policy |
 | Testing | Frontend unit/integration/e2e tooling configured in repo |
