@@ -9,6 +9,7 @@
 #   devkit-resolve --adapter=claude    # Resolve + generate Claude Code config
 #   devkit-resolve --adapter=cursor    # Resolve + generate Cursor config
 #   devkit-resolve --adapter=codex     # Resolve + generate Codex config
+#   devkit-resolve --install-bin       # Add toolkit bin/ to shell PATH (idempotent)
 #
 # Environment:
 #   DEVKIT_PROJECT_ROOT  Override project root (default: CWD)
@@ -32,6 +33,7 @@ Usage:
   devkit-resolve --validate          Validate .devkit/toolkit.json only
   devkit-resolve --adapter=<name>    Resolve + generate config for an adapter
                                    Supported: claude, cursor, codex
+  devkit-resolve --install-bin       Add toolkit bin/ to your shell PATH (idempotent)
 
 Options:
   -h, --help      Show this help
@@ -63,6 +65,9 @@ for arg in "$@"; do
     --adapter=*)
       MODE="adapter"
       ADAPTER="${arg#--adapter=}"
+      ;;
+    --install-bin)
+      MODE="install-bin"
       ;;
     --project=*)
       export DEVKIT_PROJECT_ROOT="${arg#--project=}"
@@ -179,16 +184,72 @@ _init_toolkit() {
   local relpath
   relpath=$(toolkit_relpath)
   echo ""
-  echo "Next step: generate config for your IDE/tool:"
+  echo "Next steps:"
   echo ""
+  echo "  # Generate config for your IDE/tool:"
   echo "  $relpath/bin/devkit-resolve --adapter=claude"
   echo "  $relpath/bin/devkit-resolve --adapter=cursor"
   echo "  $relpath/bin/devkit-resolve --adapter=codex"
+  echo ""
+  echo "  # (Optional) Put devkit-* scripts on your PATH globally:"
+  echo "  $relpath/bin/devkit-resolve --install-bin"
+}
+
+_install_bin() {
+  local bin_dir="$TOOLKIT_ROOT/bin"
+  local shell_name rc marker line
+
+  shell_name="$(basename "${SHELL:-}")"
+  case "$shell_name" in
+    zsh)  rc="$HOME/.zshrc" ;;
+    bash) rc="$HOME/.bashrc" ;;
+    *)
+      echo "Unrecognized shell '$shell_name'. Add this to your shell rc manually:"
+      echo ""
+      echo "  export PATH=\"$bin_dir:\$PATH\""
+      return 0
+      ;;
+  esac
+
+  marker="# devkit-toolkit: PATH"
+  line="export PATH=\"$bin_dir:\$PATH\"  $marker"
+
+  if [[ -f "$rc" ]] && grep -Fq "$marker" "$rc"; then
+    local existing
+    existing=$(grep -F "$marker" "$rc" | head -n1)
+    if [[ "$existing" == *"$bin_dir"* ]]; then
+      echo "Already wired in $rc:"
+      echo "  $existing"
+      echo ""
+      echo "If devkit-plan-loop / devkit-resolve aren't on PATH yet, run:"
+      echo "  source $rc"
+      return 0
+    fi
+    echo "Found a devkit-toolkit PATH entry pointing elsewhere in $rc:"
+    echo "  $existing"
+    echo ""
+    echo "Edit it manually to point at: $bin_dir"
+    return 1
+  fi
+
+  {
+    printf '\n# devkit-toolkit: expose bin/ entry points (devkit-resolve, devkit-plan-loop, ...)\n'
+    printf '%s\n' "$line"
+  } >> "$rc"
+
+  echo "Added to $rc:"
+  echo "  $line"
+  echo ""
+  echo "Activate now:  source $rc"
+  echo "Then verify:   command -v devkit-resolve"
 }
 
 case "$MODE" in
   init)
     _init_toolkit
+    ;;
+  install-bin)
+    _install_bin
     ;;
   validate)
     resolved=$(resolve_plugins)
