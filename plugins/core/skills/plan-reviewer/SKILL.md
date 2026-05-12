@@ -264,6 +264,32 @@ If the plans diverge, identify which document should be corrected and why.
 
 ## Step 6 — Clarify ambiguities interactively
 
+### Convergence rule for subsequent passes
+
+Before collecting findings, infer whether this is a **first** review pass or a **subsequent** pass on the same plan.
+Signals that this is a subsequent pass:
+
+- The plan contains review-history notes, "previous iteration" sections, or accepted-update markers.
+- The plan is named with a date that is in the past and the file has been edited since.
+- Sibling files in the same `docs/plans/` directory reference prior review rounds for this plan.
+- The user states this is iteration N.
+
+On a **subsequent pass**, apply these rules to avoid re-litigating settled work:
+
+1. **Do not re-flag a finding whose underlying section is materially unchanged** from what a competent prior reviewer
+   would have read. If the section was good enough for the previous pass to accept (explicitly or by not flagging it),
+   it is good enough now unless the rules around it have changed.
+2. **Focus first on issues introduced by recent edits.** Edits to fix one problem often create new ones — those are the
+   highest-value findings.
+3. **Do not lower the bar.** As the obvious problems disappear it is tempting to start flagging "could be clearer"
+   items as Blocking — that is the path to infinite iteration. Hold the §7 Blocking definition strictly.
+4. **Bias toward `READY FOR HANDOFF` (§8 Outcome A).** When in doubt between "one more polish round" and "ship it",
+   choose ship.
+
+This rule does **not** apply on a first pass. On a first pass, review the plan as written without anchoring.
+
+### Collect ambiguities
+
 After completing all checks above, collect every ambiguity, missing behaviour, and unverifiable claim into a list.
 
 **Do NOT write plan updates yet.**
@@ -302,11 +328,34 @@ After all ambiguities are resolved, produce a structured list of proposed update
 Defect types: `MISSING` | `FORBIDDEN` | `VAGUE` | `INCONSISTENT` | `STALE` | `CROSS-PLAN CONFLICT` |
 `ALREADY IMPLEMENTED` | `STACK MISMATCH` | `RALPHEX FORMAT`
 
-Group findings by severity:
+Group findings by severity. **Apply these definitions strictly — do not inflate.**
 
-1. Blocking — the plan is not ready for handoff as written
-2. Significant — the plan is usable only with meaningful reviewer assumptions
-3. Minor — polish, consistency, or clarity improvements
+1. **Blocking** — a finding qualifies as Blocking **only** when at least one of these is true:
+    - The plan, as written, would cause an implementing engineer or agent to build the **wrong feature** (contradicts the
+      product plan, contradicts a cited source, or describes behaviour that does not match user intent).
+    - The plan, as written, would cause **material rework** because a key decision is missing or wrong (not merely
+      under-specified — *missing in a way that forces guessing on a load-bearing question*).
+    - The plan silently introduces a **product, UX, or architectural decision** that should have been explicit.
+    - The plan **violates an explicit project rule** (CLAUDE.md, AGENTS.md, conduct doc, repository rule) in a way that
+      will cause the implementation to be rejected.
+    - The plan is in **ralphex format** and fails a structural requirement that breaks the agent loop (missing
+      `## Validation Commands`, checkboxes outside task sections, missing `- [ ] Mark completed`, etc.).
+
+   The following are **NOT** Blocking (record as Significant or Minor instead):
+    - "Could be more specific" / "could be clearer" when a competent engineer would not make a materially different
+      decision.
+    - Missing edge cases when implementation is unambiguous without them.
+    - Wording inconsistencies, terminology polish, formatting nits.
+    - Absent optional sections (TOC, glossary, batching notes) when the plan is already readable without them.
+    - Subjective preferences about depth or structure when a local repository convention is already being followed.
+
+   **Hard cap:** report **at most 5 Blocking findings per pass**. If more than 5 candidates seem to qualify, you are
+   almost certainly inflating — re-read the definition above and demote the weakest until 5 remain. The reviewer's job
+   is to prioritize, not to enumerate.
+
+2. **Significant** — the plan is usable but a reviewer assumption is required to act on it. Worth fixing before handoff
+   but does not block.
+3. **Minor** — polish, consistency, or clarity improvements. Optional.
 
 ---
 
@@ -333,7 +382,37 @@ blocking findings.
 
 Append the Risk Probes block from `plugins/core/conduct/risk-probe-gate.md`.
 
-Then ask: **"Shall I write these updates to the plan file?"**
+### Terminal outcomes
+
+This step has **two** possible outcomes — pick the one that matches the evidence.
+
+**Outcome A — `READY FOR HANDOFF`** (terminal — the loop should stop here):
+
+Trigger this outcome when **all** of the following are true:
+
+- Every gate above is ✅.
+- Zero Blocking findings exist after applying the strict definition in §7.
+- No open question remains that would force an implementing engineer to guess on a load-bearing decision.
+
+When triggered, output exactly this block and **stop**. Do not produce a Proposed Updates section, do not ask to write
+updates, do not propose Significant or Minor polish as if it were required work:
+
+```
+## Review Outcome: READY FOR HANDOFF
+
+The plan passes every readiness gate with zero Blocking findings. No updates are required for handoff.
+
+Optional follow-ups (non-blocking, may be ignored):
+- <Significant or Minor item, if any — at most 3 bullets>
+```
+
+Surfacing optional follow-ups is allowed but they must be clearly labelled as non-blocking and capped at 3. Do **not**
+manufacture follow-ups to fill the list.
+
+**Outcome B — `UPDATES PROPOSED`** (continue the normal flow):
+
+Use this outcome only when at least one Blocking finding exists or at least one gate is ❌. Present the proposed updates
+from §7, then ask: **"Shall I write these updates to the plan file?"**
 
 Do not write to the file until the user confirms. When confirmed, apply all updates in a single pass.
 
