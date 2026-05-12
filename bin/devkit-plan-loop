@@ -47,7 +47,11 @@ fi
 command -v claude >/dev/null 2>&1 || { echo "devkit-plan-loop: 'claude' CLI not found in PATH" >&2; exit 1; }
 command -v codex  >/dev/null 2>&1 || { echo "devkit-plan-loop: 'codex' CLI not found in PATH" >&2; exit 1; }
 
-PROMPT="/plan-reviewer $PLAN"
+# Slash command form. Plugin skills are namespaced in both CLIs (e.g. /devkit-core:plan-reviewer).
+# The short /plan-reviewer only resolves via interactive typeahead, not when passed as initial prompt.
+# Override per-CLI with env vars if your project uses a different namespace.
+CLAUDE_CMD="${CLAUDE_PLAN_REVIEWER_CMD:-/devkit-core:plan-reviewer}"
+CODEX_CMD="${CODEX_PLAN_REVIEWER_CMD:-/devkit-core:plan-reviewer}"
 
 LOG_DIR=".devkit/plan-loop-logs"
 mkdir -p "$LOG_DIR"
@@ -65,10 +69,10 @@ run_reviewer() {
   printf '\n--- iter %d/%d  reviewer=%s  mode=%s ---\n' "$iter" "$TOTAL" "$reviewer" "$mode"
 
   case "$reviewer:$mode" in
-    claude:verified) claude "$PROMPT" ;;
-    claude:trusted)  claude -p "$PROMPT" --permission-mode acceptEdits 2>&1 | tee "$log" ;;
-    codex:verified)  codex "$PROMPT" ;;
-    codex:trusted)   codex exec --full-auto "$PROMPT" 2>&1 | tee "$log" ;;
+    claude:verified) claude "$CLAUDE_CMD $PLAN" ;;
+    claude:trusted)  claude -p "$CLAUDE_CMD $PLAN" --permission-mode acceptEdits 2>&1 | tee "$log" ;;
+    codex:verified)  codex "$CODEX_CMD $PLAN" ;;
+    codex:trusted)   codex exec --full-auto "$CODEX_CMD $PLAN" 2>&1 | tee "$log" ;;
   esac
 }
 
