@@ -76,29 +76,13 @@ run_reviewer() {
   esac
 }
 
-confirm_continue() {
-  local next="$1" stage="$2"
-  read -rp "Continue to ${stage} of iter ${next}/${TOTAL}? [Y/n] " ans
-  if [[ "$ans" =~ ^[Nn] ]]; then
-    echo "devkit-plan-loop: stopped by user."
-    exit 0
-  fi
-}
-
 for ((i = 1; i <= TOTAL; i++)); do
   if (( i <= VERIFIED )); then mode="verified"; else mode="trusted"; fi
 
   printf '\n=== iter %d/%d  mode=%s ===\n' "$i" "$TOTAL" "$mode"
 
   run_reviewer claude "$mode" "$i"
-  if [[ "$mode" == "verified" ]]; then
-    confirm_continue "$i" "codex"
-  fi
-
-  run_reviewer codex "$mode" "$i"
-  if [[ "$mode" == "verified" && $i -lt $TOTAL ]]; then
-    confirm_continue "$((i + 1))" "claude"
-  fi
+  run_reviewer codex  "$mode" "$i"
 done
 
 printf '\ndevkit-plan-loop: done. Logs in %s\n' "$LOG_DIR"
