@@ -1,6 +1,8 @@
 ---
 name: devkit-reviewer-business-logic-laravel
 description: review behavioural completeness for Laravel projects — entity lifecycles, state graphs, user-flow implementation, side-effects, time-triggers, and authorization per state
+claudeSubagent: true
+claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 ---
 
 # Business-logic reviewer (Laravel)

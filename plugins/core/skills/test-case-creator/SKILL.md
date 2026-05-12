@@ -4,6 +4,7 @@ description: >-
   design test cases from product/dev plans without implementing them. Produces
   structured test-case documents for current-stack features. Use when
   user asks to design tests or coverage before coding test files.
+claudeSubagent: true
 ---
 
 # Test Case Designer

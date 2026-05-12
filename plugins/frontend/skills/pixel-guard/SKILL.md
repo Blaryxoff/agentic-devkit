@@ -1,6 +1,7 @@
 ---
 name: devkit-pixel-guard
 description: modify frontend code safely with visual regression protection — uses visual-loop baselines as ground truth to catch unintended UI changes during refactoring, restyling, token extraction, or responsive fixes
+claudeSubagent: true
 ---
 
 # Pixel Guard — Safe Frontend Refactoring

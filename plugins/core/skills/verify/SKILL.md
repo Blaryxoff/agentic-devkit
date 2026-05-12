@@ -1,6 +1,8 @@
 ---
 name: devkit-verify
 description: run the verification loop (lint, typecheck, test, security) after implementation changes and report results
+claudeSubagent: true
+claudeSubagentTools: Read, Glob, Grep, Bash
 ---
 
 # Verification Loop Runner

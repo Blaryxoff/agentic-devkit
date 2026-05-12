@@ -1,6 +1,7 @@
 ---
 name: devkit-tester
 description: implement tests from existing test-case documents for Nuxt/TypeScript projects
+claudeSubagent: true
 ---
 
 # Tester

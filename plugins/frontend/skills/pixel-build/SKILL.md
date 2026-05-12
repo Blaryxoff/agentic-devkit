@@ -1,6 +1,7 @@
 ---
 name: devkit-pixel-build
 description: build or refine frontend UI to match a Figma design — reads Figma via MCP, implements code, then runs the visual-loop CLI to verify pixel-level fidelity across all viewports
+claudeSubagent: true
 ---
 
 # Pixel Build — Implement UI from Figma

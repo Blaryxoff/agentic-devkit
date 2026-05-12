@@ -1,6 +1,8 @@
 ---
 name: devkit-reviewer-business-logic-frontend
 description: review behavioural completeness for frontend projects — user-flow implementation, route reachability, store/composable state lifecycles, mandatory loading/error/empty/blocked/partial states, cache invalidation, and optimistic-update rollback paths
+claudeSubagent: true
+claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 ---
 
 # Business-logic reviewer (frontend)

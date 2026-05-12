@@ -1,6 +1,8 @@
 ---
 name: devkit-plan-reviewer
 description: review product or dev plans for completeness, correctness, and ralphex format compliance — compares against codebase and project rules, clarifies ambiguities interactively, and proposes ready-to-write plan updates
+claudeSubagent: true
+claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 ---
 
 # Plan Reviewer

@@ -4,6 +4,7 @@ description: >-
   implement tests from existing test-case documents for the current project stack.
   Writes PHPUnit and frontend test code only when requested, and does not design
   new test cases itself.
+claudeSubagent: true
 ---
 
 # Tester
