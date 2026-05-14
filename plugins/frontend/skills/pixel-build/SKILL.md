@@ -59,11 +59,14 @@ Use `get_design_context` with the extracted `fileKey` and `nodeId` to get code h
 
 Extract from the design:
 - Layout structure (flex/grid, direction, wrapping)
-- Spacing (gaps, padding, margins) — map to project design tokens where possible
+- **Spacing — measure every gap, padding, and margin in pixels.** Do not eyeball. Read auto-layout `itemSpacing`, `paddingLeft/Right/Top/Bottom`, and per-child margins from the Figma node data. Record them explicitly (e.g. "card: padding 24/20/24/20, gap 12"). Map to project design tokens only when the token value matches exactly; otherwise use the raw px value rather than the nearest token.
 - Typography (font family, size, weight, line-height, letter-spacing)
 - Colors and fills — use existing project tokens/variables, not raw hex
+- **Icons — for every icon node, record: name/asset, exact pixel size (width × height), stroke width, color/fill, and surrounding padding.** Do not substitute a similar-looking icon from the existing project icon set without confirming the glyph matches. If the icon is not present in the project, flag it and either export the SVG from Figma or ask the user which icon to use. Never replace a custom icon with a generic Lucide/Heroicons equivalent silently.
 - Component structure and variants (hover, active, disabled states)
 - Responsive behavior (auto-layout constraints, min/max widths)
+
+Before moving to Step 2, write out a short spec block listing the measured spacing values and the icon inventory. This becomes the checklist you verify against in Step 5.
 
 ## Step 2: Audit Existing Code
 
@@ -122,10 +125,30 @@ Address mismatches by hotspot priority:
 3. **Typography** — wrong font, size, weight, line-height
 4. **Sizing** — elements too wide/narrow/tall/short
 5. **Alignment** — off-center, wrong justify/align
+6. **Icons** — wrong glyph, size, stroke, or color
 
 Use `diff.png` to visually locate problem areas. Cross-reference with the Figma design to determine the correct fix.
 
 Prefer design token / layout fixes over one-off pixel hacks.
+
+### Mandatory spacing audit
+
+A "pass" status from the diff is not sufficient evidence that paddings are correct — subpixel anti-aliasing and background fills often hide real spacing errors. Before declaring the page done, walk through the spacing spec block from Step 1 and for each value:
+
+- Inspect the rendered element in code (the CSS class, Tailwind utility, or inline style actually applied).
+- Confirm the applied value equals the measured Figma value. If the design says `padding: 24px 20px` and the code says `p-4` (16px), that is a fail even if `diff.png` looks clean.
+- If a token was used, verify the token resolves to the exact Figma value. Do not accept "close enough."
+
+Report every spacing mismatch you find and fix it before iterating further.
+
+### Mandatory icon audit
+
+Diff images often score icons as "pass" because the glyph occupies few pixels relative to the page. Verify each icon explicitly:
+
+- Open the rendered page in the browser (or use the captured `actual.png`) and confirm each icon from the Step 1 inventory is present, in the right place, at the right size.
+- Compare glyph shape to the Figma screenshot side-by-side. A different chevron, a filled vs. outlined variant, or a rotated arrow all count as mismatches.
+- Verify stroke width and color match.
+- If the project does not have the exact icon, stop and ask the user — do not pick a near-match from the existing icon library.
 
 ## Step 6: Iterate
 
@@ -178,3 +201,4 @@ This copies `actual.png` to `baselines/<page>/<viewport>.png` for all viewports.
 - Do not silently update baseline files.
 - Do not introduce new dependencies without user approval.
 - If the design references components or tokens that do not exist in the project, flag this to the user rather than inventing replacements.
+- Spacing and icons must be verified against the Figma spec explicitly, not inferred from a green diff. A passing `mismatchPercent` does not absolve you from the Step 5 spacing and icon audits.
