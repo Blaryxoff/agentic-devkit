@@ -171,6 +171,10 @@ Every other `.md` file in a plugin's `conduct/` directory is plan-relevant and m
 - Ground in real inputs before drafting — see `plugins/core/conduct/inputs-grounding-gate.md`.
 - Resolve ambiguities via `plugins/core/conduct/clarification-protocol.md` (no `TBD`, no invented answers).
 - Pass `plugins/core/conduct/readiness-gate.md` before declaring the plan ready.
+- Use `plugins/core/conduct/risk-probe-gate.md` as a thinking tool only. Mentally run the probes (first-break, chaos,
+  user-assumption); when a probe surfaces a risk worth eliminating, fold the mitigation into normal plan content
+  (acceptance criteria, edge cases, task steps, or the Risks section). **Do not write a Risk Probes block into the
+  plan.**
 - Confirm with the user before writing the plan file.
 - Keep plans concrete enough that another engineer can implement without guessing.
 - Ensure stack implications (types, conventions, BEM/Tailwind/etc.) are covered for all affected layers.

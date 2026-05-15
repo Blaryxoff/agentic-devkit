@@ -374,13 +374,22 @@ Before presenting proposed updates, evaluate the plan against the readiness gate
 | Open questions            | Are all blocking open questions resolved?                                                                                                                                  |
 | Validation path           | For dev plans, are concrete validation commands and verification notes present?                                                                                            |
 | Ralphex format            | For dev plans: `### Task N:` / `### Iteration N:` headers, checkboxes only in task sections, `## Validation Commands` present, each task ends with `- [ ] Mark completed`? |
-| First-break               | Plan names most-likely failure with trigger and actor?                                                                                                                     |
-| User-assumption           | Plan flags every UI step that assumes prior knowledge?                                                                                                                     |
 
 Mark each gate ✅ or ❌. If any gate is ❌, the plan is **not ready for handoff** and the failing gates must appear in the
 blocking findings.
 
-Append the Risk Probes block from `plugins/core/conduct/risk-probe-gate.md`.
+### Risk probes — internal use only
+
+Mentally run the probes from `plugins/core/conduct/risk-probe-gate.md` (first-break, chaos, user-assumption) against the
+plan. **Do not require the plan to contain a Risk Probes block** and do not append one to the review output.
+
+Use the probes as a thinking tool:
+
+- If a probe surfaces a risk worth eliminating, fold the fix into the proposed updates (new acceptance criterion, edge
+  case, task step, or risks-section entry). Promote to Blocking only when the missing handling would cause material
+  rework or the wrong feature.
+- If a probe surfaces a risk not worth eliminating (low likelihood, low impact, or out of scope), drop it silently.
+- Never flag "missing Risk Probes block" as a defect.
 
 ### Terminal outcomes
 
@@ -435,8 +444,6 @@ A plan that passes this review should score 10/10 across:
 | Ralphex format      | Dev plans pass all structural requirements from the "Dev plan checks" section              |
 | Completeness        | No blocking open questions and no invented behaviour                                       |
 | Implementability    | Another engineer or agent can execute the plan without guessing the next step              |
-| First-break         | Most-likely failure named with trigger and actor                                           |
-| User-assumption     | Every UI step assuming prior knowledge is flagged                                          |
 
 ---
 
