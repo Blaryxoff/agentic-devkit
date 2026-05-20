@@ -153,20 +153,15 @@ Steps to verify the change works correctly.
 
 ## Pre-commit checks
 
-Run these checks before every commit. The recommended order:
+Recommended order:
 
 ```
-pint → lint → test → build
+fmt → lint → test → build
 ```
 
-Run the checks using project commands:
+The **exact commands** for each step live in the project's root `CLAUDE.md` / `AGENTS.md` (see `howto/project-test-rules.md` for the template). Test-execution policy (always / on-request / never) is also defined there — see [agent-test-restraint](../../../core/conduct/agent-test-restraint.md).
 
-```bash
-vendor/bin/pint --dirty
-pnpm exec eslint resources/js --ext .js,.vue
-php artisan test
-pnpm build
-```
+If the project file is silent, fall back to the project `Makefile` targets (`make fmt`, `make lint`, `make test`, `make build`) — see [makefile.md](./makefile.md).
 
 Additional checks before committing:
 
@@ -226,7 +221,7 @@ git push origin v1.2.3
 - rebase onto `main` before merging
 - delete branches after merging
 - use annotated tags for releases
-- run pre-commit checks (`pint`, `eslint`, `test`, `build`) before pushing
+- run the project's pre-commit checks (fmt, lint, test, build per project `CLAUDE.md` / `Makefile`) before pushing
 
 **DO NOT:**
 

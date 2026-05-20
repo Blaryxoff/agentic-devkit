@@ -40,10 +40,14 @@ Run static type analysis as resolved above. If the stack has no type checker con
 
 ### 3. Test
 
-Run the existing test suite **only if the user explicitly asked for verification that includes testing**.
+Test execution is governed by the **project's own rules**, not by this skill. Before touching the test suite:
 
-If the user did not ask for tests, skip this step and mark it as `⏭️ skipped — not requested`.
-Do not create new test files or write test code as part of verification.
+1. Read the project's root `CLAUDE.md` and `AGENTS.md` for a section about tests (run policy + command).
+2. If the policy says "run automatically", run the command the project file specifies.
+3. If the policy says "only on explicit request" (or the file is silent), and the user did not ask for tests in this turn, skip this step and mark it as `⏭️ skipped — not requested by project policy`.
+4. If the policy says "never automatically", skip and mark as `⏭️ skipped — disabled by project policy`.
+
+Never create new test files or write test code as part of verification. See [agent-test-restraint](../../conduct/agent-test-restraint.md) for the fallback default and the project-rule template at `howto/project-test-rules.md`.
 
 ### 4. Security spot-check
 
@@ -69,7 +73,7 @@ Run probes from `plugins/core/conduct/risk-probe-gate.md` against the diff. Appe
 |------------|--------|--------------------------------|
 | Lint       | ✅/❌  | <one-line summary or "passed"> |
 | Type check | ✅/⏭️  | <one-line summary or "skipped — not configured"> |
-| Test       | ✅/⏭️  | <one-line summary or "skipped — not requested"> |
+| Test       | ✅/⏭️  | <one-line summary or "skipped — per project policy"> |
 | Security   | ✅/⚠️  | <one-line summary or "no issues found"> |
 | Risk probe | ✅/⚠️  | <one-line summary> |
 ```
@@ -82,6 +86,5 @@ If any step failed, include the relevant error output below the table.
 - Do not run destructive commands (database wipes, force pushes, etc.).
 - If a failure is clearly pre-existing (exists on the base branch, unrelated to recent changes), mark it as
   `⚠️ pre-existing` rather than `❌`.
-- Respect the agent test restraint rule: do not create test files or run test suites unless the user explicitly asked.
-  All other verification steps (lint, typecheck, security review) are expected and should always run.
+- Respect the project's test rules in `CLAUDE.md` / `AGENTS.md` (see [agent-test-restraint](../../conduct/agent-test-restraint.md)). Never create test files as part of verification. All other steps (lint, typecheck, security review) are expected and should always run.
 - Group security spot-check issues by severity per `plugins/core/conduct/review-findings-format.md`.
