@@ -106,7 +106,8 @@ output structure. Cite the conduct section for every item.
       `.deploy/compose.env` (image refs + ports + hosts written by
       `bin/deploy.sh`) and `.env` (Laravel creds), so ad-hoc compose
       commands resolve substitution the same way.
-- E4. `env_file:` is documented as start-frozen; `make reload-env` exists.
+- E4. `env_file:` is documented as start-frozen;
+      `make reload-env-{test,prod}` exists.
 
 ### F. Healthchecks (§6)
 
@@ -145,25 +146,34 @@ output structure. Cite the conduct section for every item.
 The contract (commands + semantics) is what matters. Verify all are
 present and behave as documented.
 
-- H1. Deploy: `make deploy-test [force=true]`, `make deploy-prod [force=true]`,
-      `make build-images`. Each is one line: `gh workflow run … [-f force_recreate=true]`.
-- H2. Env: `make reload-env env=…`, `make sync-env env=… from=…`,
-      `make render-compose env=…`.
+- H0. **`-test` / `-prod` is always the suffix** for env-bound recipes.
+      No `env=…` parameter, no prefixed or mid-name env tokens. Each
+      env-bound recipe is a separate target ending in `-test` or `-prod`;
+      share bodies via a pattern rule or macro.
+- H1. Deploy: `make deploy-test`, `make deploy-prod`,
+      `make deploy-force-test`, `make deploy-force-prod`,
+      `make build-images`. Each is one line:
+      `gh workflow run … [-f force_recreate=true]`.
+- H2. Env: `make reload-env-{test,prod}`,
+      `make sync-env-{test,prod} from=…`,
+      `make render-compose-{test,prod}`.
 - H3. Smoke (local curl, no SSH): `make smoke-test`, `make smoke-prod`.
-- H4. Inspect: `make ps env=…`, `make logs env=… [service=…] [tail=…]`,
-      per-service `logs-backend / logs-frontend / logs-nginx / logs-worker
-      / logs-scheduler`.
-- H5. Container: `make shell env=…`, `make tinker env=…`,
-      `make artisan env=… cmd='about'`, `make migrate env=…`,
-      `make queue-restart env=…`, `make db-shell env=…`,
-      `make redis-shell env=…`, `make wait-healthy env=…`.
-- H6. Quality: `make pint`, `make pint-fix` (Laravel).
-- H7. Mechanics: `env` defaults to `test` with `require-env` guard;
-      hosts resolved via `APP_TEST_HOST` / `APP_PROD_HOST` overridable
-      in shell rc; SSH identity pinned to
-      `~/.ssh/<app>_deploy`; `-t` for log streaming, `-tt` for
-      shell/tinker/db-shell; `compose_body` sources both env files
-      (§E3).
+- H4. Inspect: `make ps-{test,prod}`,
+      `make logs-{test,prod} [service=…] [tail=…]`, per-service
+      `logs-backend-{test,prod} / logs-frontend-{test,prod} /
+      logs-nginx-{test,prod} / logs-worker-{test,prod} /
+      logs-scheduler-{test,prod}`.
+- H5. Container: `make shell-{test,prod}`, `make tinker-{test,prod}`,
+      `make artisan-{test,prod} cmd='about'`, `make migrate-{test,prod}`,
+      `make queue-restart-{test,prod}`, `make db-shell-{test,prod}`,
+      `make redis-shell-{test,prod}`, `make wait-healthy-{test,prod}`.
+- H6. Quality: `make pint`, `make pint-fix` (Laravel) — not env-bound, no
+      suffix.
+- H7. Mechanics: hosts resolved per target (`-prod` → `APP_PROD_HOST`,
+      `-test` → `APP_TEST_HOST`), each overridable in shell rc; SSH
+      identity pinned to `~/.ssh/<app>_deploy`; `-t` for log streaming,
+      `-tt` for `shell-*` / `tinker-*` / `db-shell-*`; `compose_body`
+      sources both env files (§E3).
 - H8. **No `docker compose restart` recipe anywhere**.
 
 ### I. Workflows — thin SSH orchestrators (§7.6, §7.7)

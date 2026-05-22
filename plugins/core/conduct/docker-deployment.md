@@ -302,8 +302,9 @@ tenant container can mint host IAM tokens and exfiltrate cloud resources.
 `env_file:` injects into the container's environment **once**, at start.
 Editing `/var/www/<app>/.env` on the host doesn't reach a running container.
 `docker compose restart` does **not** re-read `env_file`. Always recreate
-the affected services. Provide a `make reload-env env=<env>` target (see
-§7.5) so operators never reach for `docker compose restart` muscle-memory.
+the affected services. Provide `make reload-env-test` / `make reload-env-prod`
+targets (see §7.5) so operators never reach for `docker compose restart`
+muscle-memory.
 
 ### 5.2 `env_file:` doesn't populate compose's own substitution scope
 
@@ -349,7 +350,8 @@ pre-commit hook is preferable to discipline.
 
 `.env` lives on the host at `/var/www/<app>/.env`, mode `0640`, owned by
 the interactive operator account (see §7.1). One-time `scp` by hand on
-first provision; subsequent ops use `make sync-env env=… from=.env.test`.
+first provision; subsequent ops use
+`make sync-env-test from=.env.test` (or `-prod`).
 
 ---
 
@@ -483,8 +485,10 @@ their semantics are the contract; the implementation may differ slightly.
 
 | Make target | What it does | Underlying call |
 |---|---|---|
-| `make deploy-test [force=true]` | Trigger `deploy-test.yml`. | `gh workflow run deploy-test.yml [-f force_recreate=true]` |
-| `make deploy-prod [force=true]` | Trigger `deploy-prod.yml`. | `gh workflow run deploy-prod.yml [-f force_recreate=true]` |
+| `make deploy-test` | Trigger `deploy-test.yml`. | `gh workflow run deploy-test.yml` |
+| `make deploy-prod` | Trigger `deploy-prod.yml`. | `gh workflow run deploy-prod.yml` |
+| `make deploy-force-test` | Same, with `force_recreate=true`. | `gh workflow run deploy-test.yml -f force_recreate=true` |
+| `make deploy-force-prod` | Same, with `force_recreate=true`. | `gh workflow run deploy-prod.yml -f force_recreate=true` |
 | `make build-images` | Trigger image build. | `gh workflow run build-images.yml` |
 
 The deploy workflows are `workflow_dispatch` only (no auto-deploy on
@@ -504,9 +508,9 @@ sudo -u <ci-user> DEPLOY_ENV=test REGISTRY=ghcr.io/<owner> \
 
 | Make target | What it does |
 |---|---|
-| `make reload-env [env=test\|prod]` | `compose up -d --force-recreate --no-deps backend worker scheduler` so env_file is re-read (§5.1). |
-| `make sync-env env=… from=.env.test` | `scp` local env file to the host's `.env`, then `reload-env`. |
-| `make render-compose [env=…]` | `cat` the live compose file on the host. |
+| `make reload-env-test` / `make reload-env-prod` | `compose up -d --force-recreate --no-deps backend worker scheduler` so env_file is re-read (§5.1). |
+| `make sync-env-test from=.env.test` / `make sync-env-prod from=.env.prod` | `scp` local env file to the host's `.env`, then `reload-env-<env>`. |
+| `make render-compose-test` / `make render-compose-prod` | `cat` the live compose file on the host. |
 
 #### Smoke (local curl, no SSH)
 
@@ -517,38 +521,45 @@ sudo -u <ci-user> DEPLOY_ENV=test REGISTRY=ghcr.io/<owner> \
 
 #### Inspect / day-to-day (auto-SSH to env host)
 
+Every recipe below comes in a `-test` and a `-prod` variant. The suffix
+chooses the host; there is no `env=…` parameter.
+
 | Make target | Equivalent on the host |
 |---|---|
-| `make ps [env=…]` | `docker compose ps` |
-| `make logs [env=…] [service=backend] [tail=100]` | `docker compose logs -f --tail=$tail $service` |
-| `make logs-backend [env=…]` | `… logs -f backend` (shortcut) |
-| `make logs-frontend / -nginx / -worker / -scheduler [env=…]` | per-service shortcuts |
-| `make shell [env=…]` | `docker exec -it <app>-backend bash` |
-| `make tinker [env=…]` | `docker exec -it <app>-backend php artisan tinker` |
-| `make artisan [env=…] cmd='about'` | `docker exec -i <app>-backend php artisan $cmd` |
-| `make migrate [env=…]` | `docker exec -i <app>-backend php artisan migrate --force` |
-| `make queue-restart [env=…]` | `docker exec -i <app>-backend php artisan queue:restart` |
-| `make db-shell [env=…]` | `docker exec -it <app>-mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD"` |
-| `make redis-shell [env=…]` | `docker exec -it <app>-redis redis-cli` |
-| `make wait-healthy [env=…]` | poll `docker inspect --format '{{.State.Health.Status}}'` until healthy or 3 min. |
+| `make ps-test` / `make ps-prod` | `docker compose ps` |
+| `make logs-test [service=backend] [tail=100]` / `make logs-prod …` | `docker compose logs -f --tail=$tail $service` |
+| `make logs-backend-test` / `make logs-backend-prod` | `… logs -f backend` (shortcut) |
+| `make logs-frontend-{test,prod}` / `logs-nginx-{test,prod}` / `logs-worker-{test,prod}` / `logs-scheduler-{test,prod}` | per-service shortcuts |
+| `make shell-test` / `make shell-prod` | `docker exec -it <app>-backend bash` |
+| `make tinker-test` / `make tinker-prod` | `docker exec -it <app>-backend php artisan tinker` |
+| `make artisan-test cmd='about'` / `make artisan-prod cmd='about'` | `docker exec -i <app>-backend php artisan $cmd` |
+| `make migrate-test` / `make migrate-prod` | `docker exec -i <app>-backend php artisan migrate --force` |
+| `make queue-restart-test` / `make queue-restart-prod` | `docker exec -i <app>-backend php artisan queue:restart` |
+| `make db-shell-test` / `make db-shell-prod` | `docker exec -it <app>-mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD"` |
+| `make redis-shell-test` / `make redis-shell-prod` | `docker exec -it <app>-redis redis-cli` |
+| `make wait-healthy-test` / `make wait-healthy-prod` | poll `docker inspect --format '{{.State.Health.Status}}'` until healthy or 3 min. |
 
 Conventions:
 
-- `env` defaults to `test`; targets that take it have a `require-env` guard
-  that rejects anything other than `test|prod`.
-- The host is resolved by `host ?= $(if $(filter prod,$(env)),$(APP_PROD_HOST),$(APP_TEST_HOST))`,
-  each overridable via shell env. Set `APP_PROD_HOST` etc. in `~/.zshrc`,
-  not in the Makefile.
+- **`-test` / `-prod` is always the suffix.** No `env=…` parameter, no
+  prefixed or mid-name env tokens. Each env-bound recipe is a separate
+  target whose name ends in `-test` or `-prod`. Share implementation
+  bodies via a pattern rule or macro, not via a runtime `env` variable.
+- The host is resolved per target: `-prod` targets use `APP_PROD_HOST`,
+  `-test` targets use `APP_TEST_HOST`. Set `APP_PROD_HOST` etc. in
+  `~/.zshrc`, not in the Makefile.
 - SSH identity is pinned to a project-specific key
   (`ssh_key ?= $(HOME)/.ssh/<app>_deploy`) so behaviour doesn't depend on
   the user's `ssh-agent` state.
-- TTY flags: `-t` for log streaming (line-buffered), `-tt` for `shell` /
-  `tinker` / `db-shell` (real TTY).
+- TTY flags: `-t` for log streaming (line-buffered), `-tt` for
+  `shell-*` / `tinker-*` / `db-shell-*` (real TTY).
 - The `compose_body` macro sources `.deploy/compose.env` + `.env` so
   ad-hoc compose commands resolve substitution exactly the way `deploy.sh`
   does (§5.2).
 - One `pint` / `pint-fix` target (Laravel) for pre-push linting. Cheap
-  feedback before CI.
+  feedback before CI. Targets that aren't env-bound (`build-images`,
+  `pint`, `pint-fix`, `smoke-test`, `smoke-prod`) keep their natural
+  names.
 
 ### 7.6 Workflow shape — thin SSH orchestrators
 
