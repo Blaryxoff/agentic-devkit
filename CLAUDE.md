@@ -77,6 +77,45 @@ visual-loop/             Reusable visual screenshot-diff bootstrap tool
 - Transitive dependencies are auto-included.
 - Disabled plugins are excluded from all generated context.
 
+## Writing Skills, Conduct, and Rules
+
+The audience is an LLM. Optimise for signal density — every line spends context.
+
+### Structure
+
+- **Lead with the directive.** Sentence one of every section/bullet states what to do (or not do). Reasoning follows only when non-obvious.
+- **One rule per line.** Use bullets for unordered rules, numbered lists for ordered steps, tables for 3+ structured fields (commands, contracts, mappings).
+- **Imperative voice.** `Cite section numbers.` — not `Section numbers should be cited.`
+- **Cite, don't restate.** Reference `§7.5` or `path/to/file.md:42`; let the reader scroll. Never paraphrase what another section already says.
+- **Code blocks for exact shapes.** File paths, command names, config snippets, recipe names — anything that must match verbatim.
+- **No intro paragraphs** that restate the heading. No closing summaries that restate the bullets. Headings are the table of contents.
+
+### Frontmatter (skills)
+
+- `name`: kebab-case, prefixed (`devkit-…` / `ralphex-…`).
+- `description`: this is the trigger an LLM matches against — be specific about *when* to invoke. `bootstrap or audit a project's Docker deployment` beats `Docker helper`. Include the inputs/outputs and the situations that skip the skill.
+
+### Skill vs conduct division
+
+- **Conduct = canonical rules.** Long-form, numbered sections, exhaustive. The source of truth.
+- **Skill = workflow.** Short, action-oriented. Tells the agent *what to do, in what order, citing which conduct sections.* Never re-encode the rules — link.
+- One skill = one workflow. If two skills overlap, one delegates to the other.
+
+### Anti-patterns (don't do this)
+
+- Hedging language (`usually`, `might want to`, `consider`, `it's a good idea to`) when the rule is actually mandatory. State the rule; mark genuine exceptions with `unless …`.
+- Vague nouns (`approach`, `strategy`, `framework`, `proper handling`) without concrete content. Replace with the specific verb + object.
+- Multi-clause sentences when two short sentences are clearer.
+- Examples that restate the rule. Use examples only for ambiguity — and prefer a right/wrong pair over prose.
+- Project-specific codenames, hostnames, brand names, or org-specific port numbers. This toolkit is project-agnostic.
+- "As mentioned above." Restate the noun or cite the section.
+- Duplicating conduct content in a skill, or vice versa.
+
+### When to add vs edit
+
+- A new rule belongs in **conduct** (so core skills auto-discover it via `plugins/*/conduct/`). Skills change only when the *workflow* changes.
+- Before adding a new section, grep for the topic — extend the existing section instead of opening a parallel one.
+
 ## Common Commands
 
 ```bash
