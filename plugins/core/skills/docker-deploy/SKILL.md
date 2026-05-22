@@ -11,8 +11,7 @@ That document is the source of truth — read it before doing anything else.
 
 **Baseline assumption: single-node, two-environment (prod + test).**
 Multi-node / LB / brand-multiplexed setups are §14 of the conduct, an
-opt-in appendix. Don't push grow-place-style fleet machinery into a
-single-node project.
+opt-in appendix. Don't push fleet machinery into a single-node project.
 
 ## Modes
 
@@ -248,8 +247,7 @@ For a brand-new dockerization:
       `127.0.0.1` (D1), `external: true` for any shared network (D2).
    6. `bin/deploy.sh` — G3 algorithm. Write
       `.deploy/compose.env` at the end so the Makefile macros work.
-   7. `Makefile` — all of §H. Keep it under ~250 lines; copy the mgarant
-      shape.
+   7. `Makefile` — all of §H. Keep it under ~250 lines.
    8. `.github/workflows/deploy-test.yml`, `deploy-prod.yml`,
       `build-images.yml` — §I. Thin wrappers, no logic.
    9. `docker/INFRASTRUCTURE.md` — §M.

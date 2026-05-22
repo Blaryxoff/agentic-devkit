@@ -4,13 +4,11 @@ How dockerized projects in this org are built, deployed, and operated.
 
 The **baseline is single-node, two-environment** (prod + test), with the test
 env optionally on the same VM as prod. Most projects (Laravel API, optional
-Nuxt SSR, mysql, redis) fit this shape — `mgarant` and `ligacrm` are the
-reference implementations.
+Nuxt SSR, mysql, redis) fit this shape.
 
-The multi-node / load-balanced / brand-multiplexed shape (`grow-place`) is a
-separate appendix at the bottom (§14). **Do not pull those rules into a
-single-node setup** — they trade simplicity for resilience you don't need at
-one box.
+The multi-node / load-balanced / brand-multiplexed shape is a separate
+appendix at the bottom (§14). **Do not pull those rules into a single-node
+setup** — they trade simplicity for resilience you don't need at one box.
 
 Skill `devkit-docker-deploy` enforces this document when bootstrapping a new
 stack or auditing an existing one.
@@ -492,7 +490,7 @@ their semantics are the contract; the implementation may differ slightly.
 The deploy workflows are `workflow_dispatch` only (no auto-deploy on
 push), so a merge to `master` doesn't deploy until you explicitly say so.
 Optionally: `build-images.yml` auto-triggers `deploy-test.yml` on a
-successful `dev`-branch build (mgarant pattern), so test stays current.
+successful `dev`-branch build, so test stays current.
 
 SSH fallback when CI is broken:
 ```bash
@@ -931,8 +929,8 @@ Document this loudly in INFRASTRUCTURE.md.
 
 ### 14.8 Brand multiplexing (only if you actually need it)
 
-`grow-place` runs 7 brands on the same nodes via per-brand loopback ports
-(`8110`–`8116`) and per-brand compose projects (`docker compose -p <brand>`).
+A brand-multiplexed setup runs N brands on the same nodes via per-brand
+loopback ports and per-brand compose projects (`docker compose -p <brand>`).
 This is a real tax on operator UX (`brand=<brand>` on every command,
 per-brand env files, per-brand cert SANs). Don't replicate it unless the
 business actually demands it; a separate VM per brand is usually simpler.
