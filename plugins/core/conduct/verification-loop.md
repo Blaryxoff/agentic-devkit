@@ -13,6 +13,15 @@ After completing an implementation task (or a coherent subset), run these checks
 
 Do not run a separate build command. Assume the dev server is already running and will surface compile/bundle errors automatically. If the dev server reports errors, fix them.
 
+## Reproduce before fixing
+
+For any reported bug or regression, write a failing test that reproduces the defect *before* changing production code.
+
+- The test must fail on the current code for the reason in the bug report. A green test on the first run means it does not cover the bug — rewrite it.
+- The fix is complete only when that test passes and the rest of the suite stays green.
+- If the bug surface cannot be tested (UI glitch, infra, third-party flake), state explicitly why no test was added, then describe the manual reproduction steps you ran before and after the fix.
+- Do not skip this step because the fix "looks obvious". The test is what proves the diagnosis was correct, not just the patch.
+
 ## When to run
 
 - After completing each task in a dev plan.

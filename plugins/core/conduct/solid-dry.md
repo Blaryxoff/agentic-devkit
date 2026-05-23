@@ -5,3 +5,16 @@ Code must follow SOLID principles and DRY (Don't Repeat Yourself).
 - Always check new and changed code for duplication.
 - If code blocks differ only slightly, extract shared logic into a reusable function, class, or component.
 - Prefer composition over inheritance when reducing duplication.
+
+## When NOT to abstract
+
+SOLID/DRY enforces extraction of *real* repetition. It does not justify speculative abstraction. The two rules coexist; timing decides which applies.
+
+- No abstraction for code with a single call site. Inline it.
+- No strategy pattern, base class, or interface for one concrete implementation. Add it when the second case appears.
+- No configurability, hooks, or flags that no caller uses today.
+- Three similar lines beat a premature helper. Extract on the third *distinct* call site, not the second near-duplicate.
+- "Might be useful later" is not a reason. The next change is cheaper than the wrong abstraction.
+- If the implementation is 200 lines and the requirement could be met in 50, rewrite it. Length is a smell, not a goal.
+
+The DRY rule above targets duplication that already exists in the diff or the surrounding file. The rules in this section target duplication that does not yet exist. Do not pre-build for it.
