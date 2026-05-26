@@ -22,6 +22,11 @@ _check_jq() {
   fi
 }
 
+# Fail fast at source-time — _build_plugin_index and other helpers call jq
+# unconditionally, so leaving the check inside resolve_plugins() lets the
+# adapter spew a wall of "jq: command not found" before the real error fires.
+_check_jq
+
 _build_plugin_index() {
   local index="{}"
   for manifest in "$TOOLKIT_ROOT"/plugins/*/plugin.json; do
