@@ -1,6 +1,6 @@
 ---
-name: devkit-reviewer-deep
-description: deep review for current-stack projects covering architecture, security, data correctness, error handling, performance, and maintainability
+name: devkit-reviewer-deep-laravel
+description: deep review for Laravel projects covering architecture, security, data correctness, error handling, performance, and maintainability
 claudeSubagent: true
 claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 ---

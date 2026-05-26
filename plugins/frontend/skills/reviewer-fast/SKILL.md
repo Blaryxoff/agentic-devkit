@@ -1,5 +1,5 @@
 ---
-name: devkit-reviewer-fast
+name: devkit-reviewer-fast-frontend
 description: fast review focused on correctness, regressions, and major convention violations in the current frontend stack
 claudeSubagent: true
 claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch

@@ -1,6 +1,6 @@
 ---
-name: devkit-reviewer-fast
-description: fast review focused on correctness, regressions, and major convention violations in the current project stack
+name: devkit-reviewer-fast-laravel
+description: fast review focused on correctness, regressions, and major convention violations in the current Laravel project
 claudeSubagent: true
 claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 ---

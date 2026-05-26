@@ -1,24 +1,29 @@
 #!/usr/bin/env bash
 # devkit-toolkit: Claude Code adapter
 #
-# Generates Claude Code plugin marketplace and settings from resolved plugins.
+# Materialises resolved plugins into Claude Code's autodiscovered layout — no
+# /plugin install dance, no marketplace step. Skills, hooks, MCP servers, and
+# subagents land directly in the project's .claude/ tree where Claude Code
+# picks them up on session start (and live via the file watcher).
 #
 # Output (in PROJECT_ROOT):
-#   .claude-plugin/marketplace.json  — filtered marketplace for resolved plugins only
-#   .claude/settings.json            — merged permissions.deny + hooks from resolved plugins
+#   .claude/skills/<plugin>--<skill>/  — symlinks to each resolved plugin's skill dirs
+#   .claude/settings.json              — merged hooks from resolved plugins
+#   .claude/agents/*.md                — subagent wrappers for claudeSubagent: true skills
+#   .mcp.json                          — MCP servers upserted from resolved plugins
 #
 # Input config:
 #   .devkit/toolkit.json               — standard devkit project config
 #
 # Resolution logic:
 #   - Sources adapters/_lib/resolve.sh for plugin resolution
-#   - Each resolved plugin with paths.skills becomes a marketplace entry
-#   - source paths are relative from project root to the plugin directory
+#   - Skills are symlinked (not copied) so they stay in sync with the toolkit
 #   - Hooks from resolved plugins are merged into settings.json
 #   - MCP servers from resolved plugins are upserted into project-root .mcp.json
 #     (existing user-defined entries are preserved; plugin keys are overwritten)
 #   - LSP configs from resolved plugins are noted but not merged (manual step)
-#   - permissions.deny lists are merged from all resolved plugins' settings.json
+#   - Stale .claude-plugin/ marketplace artifacts from previous adapter versions
+#     are removed on each run.
 
 set -euo pipefail
 
@@ -38,56 +43,55 @@ resolved_names=$(resolve_plugins)
 
 ensure_gitignore_entry ".claude/"
 
-# --- marketplace.json ---
-marketplace_dir="$PROJECT_ROOT/.claude-plugin"
-mkdir -p "$marketplace_dir"
+# --- Clean up stale marketplace artifacts from previous adapter versions ---
+# Earlier versions of this adapter shipped a Claude Code plugin marketplace
+# manifest under .claude-plugin/ and expected the user to run /plugin install
+# inside Claude Code. The current adapter uses bare-file autodiscovery instead.
+# Remove the old artifacts so they can't drift out of sync with the new layout.
+legacy_marketplace_dir="$PROJECT_ROOT/.claude-plugin"
+if [ -d "$legacy_marketplace_dir" ]; then
+  rm -f "$legacy_marketplace_dir/marketplace.json" "$legacy_marketplace_dir/.devkit-state.json"
+  rmdir "$legacy_marketplace_dir" 2>/dev/null || true
+fi
 
-plugins_json="[]"
+# --- .claude/skills/<plugin>--<skill>/ (symlink resolved skills for autodiscovery) ---
+# Claude Code auto-discovers every SKILL.md under .claude/skills/*/ at session
+# start and live-reloads them when files change. Symlinking (instead of copying)
+# keeps the project tree in sync with the toolkit submodule.
+project_skills_dir="$PROJECT_ROOT/.claude/skills"
+mkdir -p "$project_skills_dir"
 
+# Remove devkit-managed symlinks from previous runs so renamed/removed skills
+# don't linger. Only touch entries that are symlinks AND named with the
+# <plugin>--<skill> convention — leaves user-authored skill directories alone.
+for entry in "$project_skills_dir"/devkit-*--*; do
+  [ -L "$entry" ] || continue
+  rm -f "$entry"
+done
+
+skill_link_count=0
 while IFS= read -r name; do
   [ -z "$name" ] && continue
   plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
-  plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
-  rel_source="$RELPATH/plugins/$(basename "$plugin_dir")"
-
-  version=$(echo "$plugin_data" | jq -r '.version')
-  desc=$(echo "$plugin_data" | jq -r '.description')
   has_skills=$(echo "$plugin_data" | jq 'has("paths") and (.paths | has("skills"))')
-
-  if [ "$has_skills" = "true" ]; then
-    plugins_json=$(echo "$plugins_json" | jq \
-      --arg name "$name" \
-      --arg source "./$rel_source" \
-      --arg desc "$desc" \
-      '. + [{name: $name, source: $source, description: $desc}]')
-  fi
-done <<< "$resolved_names"
-
-marketplace=$(jq -n \
-  --argjson plugins "$plugins_json" \
-  '{name: "devkit", owner: {name: "devkit"}, plugins: $plugins}')
-
-marketplace_file="$marketplace_dir/marketplace.json"
-state_file="$marketplace_dir/.devkit-state.json"
-
-prev_state="{}"
-if [ -f "$state_file" ]; then
-  prev_state=$(jq '.plugins // {}' "$state_file" 2>/dev/null || echo "{}")
-fi
-
-new_state="{}"
-while IFS= read -r name; do
-  [ -z "$name" ] && continue
-  pdata=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
-  has_skills=$(echo "$pdata" | jq 'has("paths") and (.paths | has("skills"))')
   [ "$has_skills" = "true" ] || continue
-  pver=$(echo "$pdata" | jq -r '.version')
-  new_state=$(echo "$new_state" | jq --arg n "$name" --arg v "$pver" '.[$n] = $v')
+
+  plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
+  skills_source="$plugin_dir/skills"
+  [ -d "$skills_source" ] || continue
+
+  for skill_dir in "$skills_source"/*/; do
+    [ -d "$skill_dir" ] || continue
+    skill_name=$(basename "$skill_dir")
+    skill_target="$project_skills_dir/${name}--${skill_name}"
+    ln -s "$(cd "$skill_dir" && pwd)" "$skill_target"
+    skill_link_count=$((skill_link_count + 1))
+  done
 done <<< "$resolved_names"
 
-echo "$marketplace" | jq '.' > "$marketplace_file"
-jq -n --argjson plugins "$new_state" '{plugins: $plugins}' > "$state_file"
-echo "    Created: .claude-plugin/marketplace.json"
+if [ "$skill_link_count" -gt 0 ]; then
+  echo "    Linked:  .claude/skills/devkit-*--* ($skill_link_count skill(s))"
+fi
 
 # --- settings.json (hooks only — plugin permissions.deny is NOT merged) ---
 settings_dir="$PROJECT_ROOT/.claude"
@@ -234,50 +238,6 @@ echo ""
 echo "Resolved plugins:"
 echo "$resolved_names" | while read -r name; do echo "  - $name"; done
 echo ""
-
-# Determine which plugins are new (need install) vs updated (need reinstall) vs unchanged
-new_plugins=$(jq -n --argjson prev "$prev_state" --argjson new "$new_state" \
-  '[$new | to_entries[] | select($prev[.key] == null) | .key]')
-updated_plugins=$(jq -n --argjson prev "$prev_state" --argjson new "$new_state" \
-  '[$new | to_entries[] | select($prev[.key] != null and $prev[.key] != .value) | .key]')
-removed_plugins=$(jq -n --argjson prev "$prev_state" --argjson new "$new_state" \
-  '[$prev | to_entries[] | select($new[.key] == null) | .key]')
-
-new_count=$(echo "$new_plugins" | jq 'length')
-updated_count=$(echo "$updated_plugins" | jq 'length')
-removed_count=$(echo "$removed_plugins" | jq 'length')
-
-if [ "$(echo "$prev_state" | jq 'length')" = "0" ]; then
-  echo "Done. Run these commands inside Claude Code:"
-  echo ""
-  echo "  /plugin marketplace add ./"
-  echo ""
-  echo "  For each install prompt, choose: Install for you, in this repo only (local scope)"
-  echo ""
-  echo "$new_state" | jq -r 'keys[]' | while read -r pname; do
-    echo "  /plugin install ${pname}@devkit"
-  done
-  echo "  /reload-plugins"
-elif [ "$new_count" = "0" ] && [ "$updated_count" = "0" ] && [ "$removed_count" = "0" ]; then
-  echo "Done. No plugin changes detected — nothing to install or update in Claude Code."
-else
-  echo "Done. Run these commands inside Claude Code:"
-  echo ""
-  echo "  /plugin marketplace update devkit"
-  if [ "$new_count" != "0" ]; then
-    echo "$new_plugins" | jq -r '.[]' | while read -r pname; do
-      echo "  /plugin install ${pname}@devkit"
-    done
-  fi
-  if [ "$updated_count" != "0" ]; then
-    echo "$updated_plugins" | jq -r '.[]' | while read -r pname; do
-      echo "  /plugin update ${pname}@devkit"
-    done
-  fi
-  if [ "$removed_count" != "0" ]; then
-    echo "$removed_plugins" | jq -r '.[]' | while read -r pname; do
-      echo "  /plugin uninstall ${pname}@devkit"
-    done
-  fi
-  echo "  /reload-plugins"
-fi
+echo "Done. Claude Code autodiscovers skills, hooks, agents, and MCP servers"
+echo "from the project's .claude/ tree on next session start (or live, via the"
+echo "file watcher). No /plugin install step is required."

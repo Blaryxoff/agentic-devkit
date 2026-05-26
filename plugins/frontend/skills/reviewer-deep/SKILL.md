@@ -1,5 +1,5 @@
 ---
-name: devkit-reviewer-deep
+name: devkit-reviewer-deep-frontend
 description: deep review for frontend projects covering architecture, security, data correctness, error handling, performance, and maintainability
 claudeSubagent: true
 claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
