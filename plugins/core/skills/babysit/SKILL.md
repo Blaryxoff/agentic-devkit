@@ -6,6 +6,8 @@ claudeSubagent: true
 
 # Babysit PR
 
+> Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
+
 Your job is to get this PR to a merge-ready state.
 
 Check PR status, comments, and latest CI and resolve any issues until the PR is ready to merge.

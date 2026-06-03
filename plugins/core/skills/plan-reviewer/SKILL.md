@@ -7,6 +7,8 @@ claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 
 # Plan Reviewer
 
+> Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
+
 You are acting as a **senior product engineer and tech lead**. Your job is to review a plan document, identify every
 meaningful deficiency, and produce a concrete set of proposed updates ready to be written to the file.
 

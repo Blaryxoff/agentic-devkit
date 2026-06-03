@@ -1,5 +1,42 @@
 # Migration Guide
 
+## From per-project submodule to a single global clone
+
+The toolkit used to be vendored as a git submodule at `toolkits/agentic-devkit` in every consuming project, with
+`.claude/skills/devkit-*--*` symlinks pointing into that in-project checkout. Editing one skill meant committing in the
+submodule and bumping the pinned SHA on every branch of every project. Now the toolkit lives in **one global clone** at
+`~/.claude/agentic-devkit` (`DEVKIT_HOME`); skills are edited once and picked up everywhere (daily auto-update).
+
+### One-time machine setup
+
+```bash
+git clone https://github.com/Blaryxoff/agentic-devkit.git ~/.claude/agentic-devkit
+~/.claude/agentic-devkit/bin/devkit-install
+```
+
+This symlinks core skills + the `devkit` router into `~/.claude/skills/`, installs core subagents into
+`~/.claude/agents/`, and adds a `SessionStart` auto-update hook to `~/.claude/settings.json`.
+
+### Per existing project
+
+```bash
+# 1. Drop the submodule (keep .devkit/toolkit.json — it stays as the per-repo stack selector)
+git submodule deinit -f toolkits/agentic-devkit
+git rm -f toolkits/agentic-devkit
+# remove the now-empty [submodule] block from .gitmodules if it lingers
+
+# 2. Delete the old per-project skill symlinks (the slim Claude adapter also reaps these)
+rm -f .claude/skills/devkit-*--*
+
+# 3. Regenerate only stack infra (subagents, hooks, MCP) — core/router are global now
+~/.claude/agentic-devkit/bin/devkit-install --claude --project=.
+# plus --cursor / --codex if the project uses those tools
+```
+
+What stays per-repo: `.devkit/toolkit.json` (commit it). What becomes global: core skills, the `devkit` stack-router,
+core subagents, and all conduct content. A logical project spanning two repos (backend + frontend) keeps a
+`.devkit/toolkit.json` in each; when both are open in one session the router unions their enabled plugins.
+
 ## From `claude-code/` marketplace to `plugins/` toolkit
 
 This documents breaking changes from the old Claude-Code-centric structure to the model-agnostic plugin toolkit.

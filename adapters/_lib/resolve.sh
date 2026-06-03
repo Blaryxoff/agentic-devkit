@@ -15,6 +15,16 @@ set -euo pipefail
 TOOLKIT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PROJECT_ROOT="${DEVKIT_PROJECT_ROOT:-$(pwd)}"
 
+# Absolute path to the active toolkit checkout (filesystem ops, symlink targets).
+toolkit_abspath() { printf '%s\n' "$TOOLKIT_ROOT"; }
+
+# Portable display root embedded in generated text (Cursor .mdc, Codex AGENTS.md).
+# Defaults to the conventional global clone location; the leading ~ is left
+# unexpanded so the same string works for every developer's $HOME. Override with
+# DEVKIT_HOME_REF when the clone lives elsewhere.
+DEVKIT_HOME_REF="${DEVKIT_HOME_REF:-~/.claude/agentic-devkit}"
+toolkit_home_ref() { printf '%s\n' "$DEVKIT_HOME_REF"; }
+
 _check_jq() {
   if ! command -v jq &>/dev/null; then
     echo "ERROR: jq is required but not found. Install it: https://jqlang.github.io/jq/download/" >&2
@@ -42,30 +52,58 @@ _build_plugin_index() {
   echo "$index"
 }
 
-resolve_plugins() {
-  _check_jq
+# Project roots to resolve. Multiple roots support a single logical project
+# split across repos (e.g. backend + frontend), each with its own
+# .devkit/toolkit.json. DEVKIT_PROJECT_ROOTS is a ':'-separated list; when unset
+# the single PROJECT_ROOT is used.
+_project_roots() {
+  if [ -n "${DEVKIT_PROJECT_ROOTS:-}" ]; then
+    printf '%s\n' "$DEVKIT_PROJECT_ROOTS" | tr ':' '\n' | while IFS= read -r r; do
+      [ -n "$r" ] && printf '%s\n' "$r"
+    done
+  else
+    printf '%s\n' "$PROJECT_ROOT"
+  fi
+}
 
-  local config="$PROJECT_ROOT/.devkit/toolkit.json"
-  if [ ! -f "$config" ]; then
+# Union the .enabled arrays from every project root's toolkit.json, de-duplicated
+# in discovery order. Errors only when NO root carries a config.
+_collect_enabled() {
+  local merged='[]'
+  local found=0
+  while IFS= read -r root; do
+    [ -n "$root" ] || continue
+    local config="$root/.devkit/toolkit.json"
+    [ -f "$config" ] || continue
+    found=1
+    local version
+    version=$(jq -r '.version' "$config")
+    if [ "$version" != "1" ]; then
+      echo "ERROR: Unsupported toolkit.json version: $version (expected 1) at $config" >&2
+      exit 1
+    fi
+    merged=$(jq -n --argjson a "$merged" --slurpfile c "$config" \
+      '($a + ($c[0].enabled // [])) | reduce .[] as $x ([]; if index($x) then . else . + [$x] end)')
+  done < <(_project_roots)
+
+  if [ "$found" -eq 0 ]; then
     local _hint
     _hint=$(python3 -c "import os.path; print(os.path.relpath('$TOOLKIT_ROOT', '$PROJECT_ROOT'))")
     echo "ERROR: No .devkit/toolkit.json found at $PROJECT_ROOT" >&2
     echo "Run:   $_hint/bin/devkit-resolve --init" >&2
     exit 1
   fi
+  echo "$merged"
+}
 
-  local version
-  version=$(jq -r '.version' "$config")
-  if [ "$version" != "1" ]; then
-    echo "ERROR: Unsupported toolkit.json version: $version (expected 1)" >&2
-    exit 1
-  fi
+resolve_plugins() {
+  _check_jq
 
   local plugin_index
   plugin_index=$(_build_plugin_index)
 
   local enabled_json
-  enabled_json=$(jq '.enabled' "$config")
+  enabled_json=$(_collect_enabled)
 
   echo "$plugin_index" | jq -r --argjson enabled "$enabled_json" '
     . as $plugins |

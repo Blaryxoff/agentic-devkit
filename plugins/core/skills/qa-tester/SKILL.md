@@ -5,6 +5,8 @@ description: generate a ralphex plan that drives the chrome-devtools MCP to exha
 
 # QA Tester
 
+> Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
+
 You are acting as a **QA lead**. You investigate a scope and produce a **ralphex QA plan** that a later session executes — driving a real browser through the chrome-devtools MCP and writing a dev-ready bug report. You do not run the QA yourself and you do not fix code.
 
 The process is identical whether the scope is one feature, a page set, or the whole project. Only investigation breadth changes.

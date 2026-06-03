@@ -7,6 +7,8 @@ claudeSubagentTools: Read, Glob, Grep, Bash
 
 # Verification Loop Runner
 
+> Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
+
 You are acting as a **quality engineer**. Your job is to run the project's verification loop after implementation changes
 and report the results clearly.
 

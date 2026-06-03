@@ -5,8 +5,10 @@ This file provides guidance to AI agents working with code in this repository.
 ## What This Repo Is
 
 A model-agnostic **plugin toolkit** for AI-assisted product development. It ships plugins that bundle skills, conduct
-docs, hooks, MCP/LSP configs, and shared coding standards. Included as a git submodule at `toolkits/agentic-devkit` in
-consuming projects.
+docs, hooks, MCP/LSP configs, and shared coding standards. Installed as a single **global clone** at
+`~/.claude/agentic-devkit` (`DEVKIT_HOME`) via `bin/devkit-install`; consuming projects keep only a per-repo
+`.devkit/toolkit.json` selecting their stack. Editing a skill in the clone propagates to every project (daily
+auto-update via a SessionStart hook).
 
 This is NOT an application project. It is a collection of Markdown-based skill definitions, JSON configs, shell scripts,
 and standards docs.
@@ -23,11 +25,14 @@ plugins/                 All plugins (convention: plugins/*/plugin.json)
   inertia/               Inertia.js transport rules
   tailwind/              Tailwind CSS conventions
 bin/
-  devkit-resolve           CLI entry point for resolution and adapter generation
+  devkit-install           Global installer: core skills + devkit router + core subagents + auto-update hook
+  devkit-update            Timestamp-guarded `git pull --ff-only` for the global clone (SessionStart hook)
+  devkit-resolve           CLI entry point for resolution and adapter generation (repeatable --project for multi-repo)
 adapters/
-  _lib/resolve.sh        Core resolution algorithm (bash + jq)
+  _lib/resolve.sh        Core resolution algorithm (bash + jq); multi-root union of enabled plugins
   _lib/hooks.sh          Shared hook merging + event translation (DRY adapter pattern)
-  claude/generate        Claude Code adapter
+  _lib/claude_agents.sh  Shared subagent generation (used by claude/generate + devkit-install)
+  claude/generate        Claude Code adapter (slim: per-project stack subagents, hooks, MCP — core is global)
   cursor/generate        Cursor IDE adapter
   codex/generate         OpenAI Codex adapter
 schemas/                 JSON schemas for toolkit.json and plugin.json
@@ -119,13 +124,20 @@ The audience is an LLM. Optimise for signal density — every line spends contex
 ## Common Commands
 
 ```bash
-# Resolve plugins for a project
-bin/devkit-resolve --validate
+# One-time global install (core skills + devkit router + core subagents + auto-update hook)
+bin/devkit-install
 
-# Generate configs
-bin/devkit-resolve --adapter=claude
-bin/devkit-resolve --adapter=cursor
-bin/devkit-resolve --adapter=codex
+# Update the global clone now (the SessionStart hook runs `--if-stale` daily)
+bin/devkit-update
+
+# Resolve plugins for a project (repeat --project for a multi-repo backend+frontend project)
+bin/devkit-resolve --validate
+bin/devkit-resolve --dirs --project=<backend> --project=<frontend>
+
+# Per-project adapter generation (stack infra; core/router are already global)
+bin/devkit-install --claude --project=.    # or: bin/devkit-resolve --adapter=claude
+bin/devkit-install --cursor --project=.
+bin/devkit-install --codex --project=.
 ```
 
 ## Adding a New Plugin

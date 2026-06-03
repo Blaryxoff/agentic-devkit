@@ -5,6 +5,8 @@ description: enforce git workflow conventions for the current team (branching, c
 
 # Git Workflow Enforcer
 
+> Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
+
 You are acting as a **git workflow enforcer**.
 Your job is to ensure all git operations follow team conventions when the user asks to commit, merge, push, create branches, tag releases, or prepare PR/MR descriptions.
 

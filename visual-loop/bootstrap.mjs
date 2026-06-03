@@ -4,12 +4,13 @@ import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+const VISUAL_LOOP_CLI = "~/.claude/agentic-devkit/visual-loop/cli.mjs";
 const PACKAGE_SCRIPTS = {
-  "ui:check": "node toolkits/agentic-devkit/visual-loop/cli.mjs check --project-root .",
-  "ui:loop": "node toolkits/agentic-devkit/visual-loop/cli.mjs loop --project-root .",
-  "ui:approve": "node toolkits/agentic-devkit/visual-loop/cli.mjs approve --project-root .",
-  "ui:figma-map": "node toolkits/agentic-devkit/visual-loop/cli.mjs figma-map --project-root .",
-  "ui:mcp-health": "node toolkits/agentic-devkit/visual-loop/cli.mjs mcp-health --project-root .",
+  "ui:check": `node ${VISUAL_LOOP_CLI} check --project-root .`,
+  "ui:loop": `node ${VISUAL_LOOP_CLI} loop --project-root .`,
+  "ui:approve": `node ${VISUAL_LOOP_CLI} approve --project-root .`,
+  "ui:figma-map": `node ${VISUAL_LOOP_CLI} figma-map --project-root .`,
+  "ui:mcp-health": `node ${VISUAL_LOOP_CLI} mcp-health --project-root .`,
 };
 
 async function exists(filePath) {
@@ -197,8 +198,8 @@ Scaffolded structure:
   <target>/visual/output/.gitkeep
 
 This command also:
-  1) installs visual-loop dependencies in toolkits/agentic-devkit/visual-loop
-  2) installs Playwright Chromium in toolkit-local cache
+  1) installs visual-loop dependencies in the global clone (~/.claude/agentic-devkit/visual-loop)
+  2) installs Playwright Chromium in the global clone's local cache
   3) injects ui:* scripts into parent package.json
   4) adds visual/ to parent .gitignore`,
   );

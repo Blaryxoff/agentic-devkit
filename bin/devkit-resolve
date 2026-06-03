@@ -35,7 +35,8 @@ Usage:
 
 Options:
   -h, --help      Show this help
-  --project=DIR   Override project root (default: CWD)
+  --project=DIR   Override project root (default: CWD). Repeatable: pass multiple
+                  --project=DIR to union plugins across repos (backend+frontend).
 
 Environment:
   DEVKIT_PROJECT_ROOT   Same as --project
@@ -65,7 +66,8 @@ for arg in "$@"; do
       ADAPTER="${arg#--adapter=}"
       ;;
     --project=*)
-      export DEVKIT_PROJECT_ROOT="${arg#--project=}"
+      _root="${arg#--project=}"
+      DEVKIT_PROJECT_ROOTS="${DEVKIT_PROJECT_ROOTS:+$DEVKIT_PROJECT_ROOTS:}$_root"
       ;;
     *)
       echo "Unknown option: $arg" >&2
@@ -73,6 +75,15 @@ for arg in "$@"; do
       ;;
   esac
 done
+
+# Repeated --project flags accumulate into DEVKIT_PROJECT_ROOTS (':'-separated)
+# so the resolver can union multiple repos (backend + frontend). The first root
+# is the primary PROJECT_ROOT used for error hints and per-project adapter output.
+if [ -n "${DEVKIT_PROJECT_ROOTS:-}" ]; then
+  export DEVKIT_PROJECT_ROOTS
+  PROJECT_ROOT="${DEVKIT_PROJECT_ROOTS%%:*}"
+  export DEVKIT_PROJECT_ROOT="$PROJECT_ROOT"
+fi
 
 _init_toolkit() {
   local config_dir="$PROJECT_ROOT/.devkit"

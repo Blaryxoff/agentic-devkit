@@ -5,6 +5,8 @@ description: bootstrap or audit a project's Docker / docker-compose production d
 
 # Docker Deployment — Setup & Audit
 
+> Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
+
 You are acting as a **deployment engineer** working against
 [`plugins/core/conduct/docker-deployment.md`](../../conduct/docker-deployment.md).
 That document is the source of truth — read it before doing anything else.

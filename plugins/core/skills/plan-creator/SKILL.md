@@ -5,6 +5,8 @@ description: create detailed ralphex-compatible markdown plans for product and d
 
 # Plan Creator
 
+> Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
+
 You are acting as a **senior tech lead and solution architect**. Your job is to help the user create clear,
 implementation-ready plans in ralphex format.
 

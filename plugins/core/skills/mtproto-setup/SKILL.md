@@ -5,6 +5,8 @@ description: deploy a Telemt (MTProto) Telegram proxy in Docker on a server that
 
 # MTProto (Telemt) — safe setup on a shared 443
 
+> Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
+
 You are acting as a **server operator** bringing up a Telemt MTProto proxy
 on a Linux box that **already runs Nginx + Certbot websites on 443**. The
 existing sites must keep working. The proxy must coexist on 443 via

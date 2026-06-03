@@ -27,7 +27,10 @@ ADAPTER_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$ADAPTER_DIR/../_lib/resolve.sh"
 source "$ADAPTER_DIR/../_lib/hooks.sh"
 
-RELPATH=$(toolkit_relpath)
+# Conduct paths embedded in generated .mdc use the stable global-clone reference
+# (e.g. ~/.claude/agentic-devkit) so output is identical regardless of where the
+# project sits on disk. Skills are still symlinked by absolute path below.
+DEVKIT_REF=$(toolkit_home_ref)
 
 echo "==> Cursor adapter: generating config..."
 echo "    Toolkit: $TOOLKIT_ROOT"
@@ -42,6 +45,12 @@ ensure_gitignore_entry ".cursor/"
 rules_dir="$PROJECT_ROOT/.cursor/rules"
 skills_dir="$PROJECT_ROOT/.cursor/skills"
 mkdir -p "$rules_dir" "$skills_dir"
+
+# Reap stale devkit skill symlinks (skills removed from a plugin, disabled plugins,
+# or links generated on another machine) before relinking the current resolved set.
+for _l in "$skills_dir"/devkit-*--*; do
+  [ -L "$_l" ] && rm -f "$_l"
+done
 
 # Glob patterns per plugin (used for rule activation)
 declare_globs() {
@@ -63,7 +72,7 @@ while IFS= read -r name; do
   plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
   plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
   plugin_basename=$(basename "$plugin_dir")
-  rel_plugin="$RELPATH/plugins/$plugin_basename"
+  rel_plugin="$DEVKIT_REF/plugins/$plugin_basename"
 
   has_conduct=$(echo "$plugin_data" | jq 'has("paths") and (.paths | has("conduct"))')
   has_skills=$(echo "$plugin_data" | jq 'has("paths") and (.paths | has("skills"))')

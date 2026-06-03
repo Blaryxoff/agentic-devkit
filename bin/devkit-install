@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+# devkit-install: set up the global devkit install for Claude Code.
+#
+# Usage:
+#   devkit-install              Install global pieces (core skills, core subagents,
+#                               router, daily auto-update hook).
+#   devkit-install --cursor     Also run the per-project Cursor adapter for CWD.
+#   devkit-install --codex      Also run the per-project Codex adapter for CWD.
+#   devkit-install --claude     Also run the per-project Claude stack adapter for CWD
+#                               (stack subagents, hooks, .mcp.json — core is global).
+#   devkit-install --project=DIR Target project for --cursor/--codex/--claude (default: CWD).
+#
+# Global layout (in $HOME/.claude):
+#   skills/devkit-core--<skill>/  symlinks to the global clone's core skills
+#   agents/<name>.md              core subagent wrappers (claudeSubagent skills)
+#   settings.json                 SessionStart hook → devkit-update --if-stale
+#
+# The global clone is the single source of truth. devkit-install runs from the
+# clone it lives in; if that is not the canonical location it bootstraps a clone
+# at ~/.claude/agentic-devkit (override with DEVKIT_HOME_DIR) from origin.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SELF_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+TARGET="${DEVKIT_HOME_DIR:-$HOME/.claude/agentic-devkit}"
+
+RUN_CURSOR=0
+RUN_CODEX=0
+RUN_CLAUDE=0
+PROJECT="$(pwd)"
+for arg in "$@"; do
+  case "$arg" in
+    --cursor)    RUN_CURSOR=1 ;;
+    --codex)     RUN_CODEX=1 ;;
+    --claude)    RUN_CLAUDE=1 ;;
+    --project=*) PROJECT="${arg#--project=}" ;;
+    -h|--help)
+      sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *) echo "Unknown option: $arg" >&2; exit 1 ;;
+  esac
+done
+
+# --- Resolve / bootstrap the global clone ---
+if [ "$SELF_ROOT" = "$TARGET" ]; then
+  DEVKIT_HOME="$SELF_ROOT"
+elif [ -d "$TARGET/.git" ]; then
+  echo "==> Using existing global clone at $TARGET"
+  DEVKIT_HOME="$TARGET"
+else
+  url=$(git -C "$SELF_ROOT" remote get-url origin 2>/dev/null || true)
+  if [ -z "$url" ]; then
+    echo "ERROR: no origin remote on $SELF_ROOT — clone devkit to $TARGET manually first." >&2
+    exit 1
+  fi
+  echo "==> Cloning devkit into $TARGET"
+  mkdir -p "$(dirname "$TARGET")"
+  git clone -q "$url" "$TARGET"
+  DEVKIT_HOME="$TARGET"
+fi
+
+source "$DEVKIT_HOME/adapters/_lib/resolve.sh"
+source "$DEVKIT_HOME/adapters/_lib/claude_agents.sh"
+
+echo "==> devkit-install"
+echo "    Clone:   $DEVKIT_HOME"
+
+CLAUDE_DIR="$HOME/.claude"
+SKILLS_DEST="$CLAUDE_DIR/skills"
+AGENTS_DEST="$CLAUDE_DIR/agents"
+SETTINGS="$CLAUDE_DIR/settings.json"
+mkdir -p "$SKILLS_DEST"
+
+# --- Symlink every core skill globally (universal + the devkit router) ---
+core_skills_src="$DEVKIT_HOME/plugins/core/skills"
+for entry in "$SKILLS_DEST"/devkit-core--*; do
+  [ -L "$entry" ] && rm -f "$entry"
+done
+skill_count=0
+for d in "$core_skills_src"/*/; do
+  [ -d "$d" ] || continue
+  n=$(basename "$d")
+  ln -s "$(cd "$d" && pwd)" "$SKILLS_DEST/devkit-core--$n"
+  skill_count=$((skill_count + 1))
+done
+echo "    Linked:  ~/.claude/skills/devkit-core--* ($skill_count skill(s))"
+
+# --- Core subagents → ~/.claude/agents (claudeSubagent skills keep isolation) ---
+plugin_index=$(_build_plugin_index)
+core_agents=()
+while IFS= read -r _a; do
+  [ -n "$_a" ] && core_agents+=("$_a")
+done < <(generate_subagents "$AGENTS_DEST" "$plugin_index" "devkit-core")
+if [ "${#core_agents[@]}" -gt 0 ]; then
+  echo "    Agents:  ~/.claude/agents/ (${#core_agents[@]} core subagent(s))"
+fi
+
+# --- SessionStart auto-update hook in ~/.claude/settings.json ---
+hook_cmd="$DEVKIT_HOME/bin/devkit-update --if-stale"
+if [ -f "$SETTINGS" ]; then
+  updated=$(jq --arg cmd "$hook_cmd" '
+    .hooks //= {} |
+    .hooks.SessionStart = (
+      ((.hooks.SessionStart // []) | map(select(
+        (.hooks // []) | any(.command == $cmd) | not
+      )))
+      + [ { hooks: [ { type: "command", command: $cmd } ] } ]
+    )
+  ' "$SETTINGS")
+  printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
+  echo "    Hook:    ~/.claude/settings.json (SessionStart auto-update)"
+else
+  jq -n --arg cmd "$hook_cmd" \
+    '{hooks: {SessionStart: [ { hooks: [ { type: "command", command: $cmd } ] } ]}}' > "$SETTINGS"
+  echo "    Hook:    ~/.claude/settings.json created (SessionStart auto-update)"
+fi
+
+# --- Optional per-project adapters ---
+if [ "$RUN_CURSOR" -eq 1 ]; then
+  echo ""
+  DEVKIT_PROJECT_ROOT="$PROJECT" bash "$DEVKIT_HOME/adapters/cursor/generate"
+fi
+if [ "$RUN_CODEX" -eq 1 ]; then
+  echo ""
+  DEVKIT_PROJECT_ROOT="$PROJECT" bash "$DEVKIT_HOME/adapters/codex/generate"
+fi
+if [ "$RUN_CLAUDE" -eq 1 ]; then
+  echo ""
+  DEVKIT_PROJECT_ROOT="$PROJECT" bash "$DEVKIT_HOME/adapters/claude/generate"
+fi
+
+echo ""
+echo "Done. Restart Claude Code (or start a new session) to load global skills + the daily auto-update hook."
+echo "Per project, keep .devkit/toolkit.json; the 'devkit' router loads stack skills + conduct on demand."

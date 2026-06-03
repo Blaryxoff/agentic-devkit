@@ -1,37 +1,32 @@
 #!/usr/bin/env bash
-# devkit-toolkit: Claude Code adapter
+# devkit-toolkit: Claude Code adapter (per-project stack infra)
 #
-# Materialises resolved plugins into Claude Code's autodiscovered layout — no
-# /plugin install dance, no marketplace step. Skills, hooks, MCP servers, and
-# subagents land directly in the project's .claude/ tree where Claude Code
-# picks them up on session start (and live via the file watcher).
+# In the global model, core skills + the `devkit` router live in ~/.claude
+# (installed once by bin/devkit-install). This adapter emits only the
+# stack-specific pieces that cannot be global, all referencing the global clone:
 #
 # Output (in PROJECT_ROOT):
-#   .claude/skills/<plugin>--<skill>/  — symlinks to each resolved plugin's skill dirs
-#   .claude/settings.json              — merged hooks from resolved plugins
-#   .claude/agents/*.md                — subagent wrappers for claudeSubagent: true skills
-#   .mcp.json                          — MCP servers upserted from resolved plugins
+#   .claude/settings.json   — merged hooks from resolved plugins
+#   .claude/agents/*.md      — subagent wrappers for stack claudeSubagent skills
+#   .mcp.json                — MCP servers upserted from resolved plugins
+#
+# It does NOT symlink skills: core skills are globally registered and stack
+# skills are loaded on demand by the `devkit` router. A cleanup pass removes any
+# .claude/skills/devkit-*--* symlinks left by older adapter versions.
 #
 # Input config:
-#   .devkit/toolkit.json               — standard devkit project config
+#   .devkit/toolkit.json     — standard devkit project config
 #
-# Resolution logic:
-#   - Sources adapters/_lib/resolve.sh for plugin resolution
-#   - Skills are symlinked (not copied) so they stay in sync with the toolkit
-#   - Hooks from resolved plugins are merged into settings.json
-#   - MCP servers from resolved plugins are upserted into project-root .mcp.json
-#     (existing user-defined entries are preserved; plugin keys are overwritten)
+# Notes:
 #   - LSP configs from resolved plugins are noted but not merged (manual step)
-#   - Stale .claude-plugin/ marketplace artifacts from previous adapter versions
-#     are removed on each run.
+#   - Stale .claude-plugin/ marketplace artifacts from previous versions are removed
 
 set -euo pipefail
 
 ADAPTER_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$ADAPTER_DIR/../_lib/resolve.sh"
 source "$ADAPTER_DIR/../_lib/hooks.sh"
-
-RELPATH=$(toolkit_relpath)
+source "$ADAPTER_DIR/../_lib/claude_agents.sh"
 
 echo "==> Claude Code adapter: generating config..."
 echo "    Toolkit: $TOOLKIT_ROOT"
@@ -54,43 +49,20 @@ if [ -d "$legacy_marketplace_dir" ]; then
   rmdir "$legacy_marketplace_dir" 2>/dev/null || true
 fi
 
-# --- .claude/skills/<plugin>--<skill>/ (symlink resolved skills for autodiscovery) ---
-# Claude Code auto-discovers every SKILL.md under .claude/skills/*/ at session
-# start and live-reloads them when files change. Symlinking (instead of copying)
-# keeps the project tree in sync with the toolkit submodule.
+# --- Cleanup: remove per-project skill symlinks from older adapter versions ---
+# Skills are no longer symlinked per project (core = global, stack = router).
+# Reap only symlinks named with the <plugin>--<skill> convention; leave
+# user-authored skill directories alone.
 project_skills_dir="$PROJECT_ROOT/.claude/skills"
-mkdir -p "$project_skills_dir"
-
-# Remove devkit-managed symlinks from previous runs so renamed/removed skills
-# don't linger. Only touch entries that are symlinks AND named with the
-# <plugin>--<skill> convention — leaves user-authored skill directories alone.
-for entry in "$project_skills_dir"/devkit-*--*; do
-  [ -L "$entry" ] || continue
-  rm -f "$entry"
-done
-
-skill_link_count=0
-while IFS= read -r name; do
-  [ -z "$name" ] && continue
-  plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
-  has_skills=$(echo "$plugin_data" | jq 'has("paths") and (.paths | has("skills"))')
-  [ "$has_skills" = "true" ] || continue
-
-  plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
-  skills_source="$plugin_dir/skills"
-  [ -d "$skills_source" ] || continue
-
-  for skill_dir in "$skills_source"/*/; do
-    [ -d "$skill_dir" ] || continue
-    skill_name=$(basename "$skill_dir")
-    skill_target="$project_skills_dir/${name}--${skill_name}"
-    ln -s "$(cd "$skill_dir" && pwd)" "$skill_target"
-    skill_link_count=$((skill_link_count + 1))
+if [ -d "$project_skills_dir" ]; then
+  reaped=0
+  for entry in "$project_skills_dir"/devkit-*--*; do
+    [ -L "$entry" ] || continue
+    rm -f "$entry"
+    reaped=$((reaped + 1))
   done
-done <<< "$resolved_names"
-
-if [ "$skill_link_count" -gt 0 ]; then
-  echo "    Linked:  .claude/skills/devkit-*--* ($skill_link_count skill(s))"
+  [ "$reaped" -gt 0 ] && echo "    Removed: $reaped stale .claude/skills/devkit-*--* symlink(s)"
+  rmdir "$project_skills_dir" 2>/dev/null || true
 fi
 
 # --- settings.json (hooks only — plugin permissions.deny is NOT merged) ---
@@ -102,7 +74,7 @@ has_hooks=$(echo "$merged_hooks" | jq 'length > 0')
 
 if [ -f "$settings_file" ]; then
   if [ "$has_hooks" = "true" ]; then
-    updated=$(jq --argjson hooks "$merged_hooks" '.hooks = $hooks' "$settings_file")
+    updated=$(jq --argjson hooks "$merged_hooks" '.hooks = ((.hooks // {}) + $hooks)' "$settings_file")
     echo "$updated" | jq '.' > "$settings_file"
     echo "    Updated: .claude/settings.json (hooks)"
   fi
@@ -139,104 +111,18 @@ if [ "$mcp_count" != "0" ]; then
   fi
 fi
 
-# --- .claude/agents/*.md (subagent wrappers for skills with claudeSubagent: true) ---
-# Each devkit-managed agent file carries a sentinel comment immediately after
-# the closing `---` of the frontmatter so we can safely delete only our
-# generated files and leave any user-authored agents untouched. The sentinel
-# must live *below* the frontmatter (not on line 1): Claude Code's frontmatter
-# parser requires the opening `---` on line 1, and a leading non-`---` line
-# silently breaks subagent auto-discovery in `claude -p`.
+# --- .claude/agents/*.md (subagent wrappers for STACK claudeSubagent skills) ---
+# Core subagents are installed globally by bin/devkit-install; this adapter emits
+# only the stack ones. Shared emit logic lives in adapters/_lib/claude_agents.sh.
 agents_dir="$PROJECT_ROOT/.claude/agents"
-agent_sentinel="<!-- devkit-managed: regenerated by adapters/claude/generate -->"
-
-if [ -d "$agents_dir" ]; then
-  for f in "$agents_dir"/*.md; do
-    [ -f "$f" ] || continue
-    # Whole-file grep so files written by older adapter versions (sentinel on
-    # line 1) are also reaped — those are otherwise invisible to Claude Code.
-    if grep -qF "$agent_sentinel" "$f" 2>/dev/null; then
-      rm -f "$f"
-    fi
-  done
-fi
-
-emit_subagent() {
-  local skill_file="$1"
-  awk -v sentinel="$agent_sentinel" -v out_dir="$agents_dir" '
-    BEGIN { depth=0; in_fm=0; subagent=0; collecting=""; cont="" }
-    /^---[[:space:]]*$/ {
-      depth++
-      if (depth==1) { in_fm=1; next }
-      if (depth==2) { in_fm=0; next }
-    }
-    in_fm && collecting != "" {
-      if ($0 ~ /^[A-Za-z_][A-Za-z0-9_]*:/) {
-        meta[collecting]=cont
-        collecting=""; cont=""
-        # fall through to process this line as a new key
-      } else {
-        line=$0
-        sub(/^[[:space:]]+/, "", line)
-        if (cont == "") cont=line; else cont=cont " " line
-        next
-      }
-    }
-    in_fm && /^claudeSubagent:[[:space:]]*true[[:space:]]*$/ { subagent=1; next }
-    in_fm && /^name:/ { v=$0; sub(/^name:[[:space:]]*/,"",v); meta["name"]=v; next }
-    in_fm && /^claudeSubagentTools:/ { v=$0; sub(/^claudeSubagentTools:[[:space:]]*/,"",v); meta["tools"]=v; next }
-    in_fm && /^description:/ {
-      v=$0; sub(/^description:[[:space:]]*/,"",v)
-      if (v ~ /^[>|][-+]?[[:space:]]*$/) { collecting="description"; cont=""; next }
-      meta["description"]=v; next
-    }
-    !in_fm { body = body $0 "\n" }
-    END {
-      if (collecting != "") meta[collecting]=cont
-      if (!subagent) exit 0
-      name=meta["name"]
-      if (name == "") exit 0
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", name)
-      desc=meta["description"]
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", desc)
-      tools=meta["tools"]
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", tools)
-      out=out_dir "/" name ".md"
-      printf "---\n" > out
-      printf "name: %s\n", name >> out
-      if (desc != "") printf "description: %s\n", desc >> out
-      if (tools != "") printf "tools: %s\n", tools >> out
-      printf "---\n" >> out
-      printf "%s\n", sentinel >> out
-      sub(/^\n+/, "", body)
-      printf "%s", body >> out
-      close(out)
-      print name
-    }
-  ' "$skill_file"
-}
+resolved_non_core=$(echo "$resolved_names" | grep -v '^devkit-core$' || true)
 
 written_agents=()
-while IFS= read -r name; do
-  [ -z "$name" ] && continue
-  pdata=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
-  skills_rel=$(echo "$pdata" | jq -r '.paths.skills // empty')
-  [ -n "$skills_rel" ] || continue
-  pdir=$(echo "$pdata" | jq -r '._dir')
-  skills_dir="$pdir/${skills_rel#./}"
-  [ -d "$skills_dir" ] || continue
-  for skill_md in "$skills_dir"/*/SKILL.md; do
-    [ -f "$skill_md" ] || continue
-    if ! grep -q "^claudeSubagent:[[:space:]]*true" "$skill_md"; then
-      continue
-    fi
-    mkdir -p "$agents_dir"
-    emitted=$(emit_subagent "$skill_md")
-    [ -n "$emitted" ] && written_agents+=("$emitted")
-  done
-done <<< "$resolved_names"
-
+while IFS= read -r _a; do
+  [ -n "$_a" ] && written_agents+=("$_a")
+done < <(generate_subagents "$agents_dir" "$plugin_index" "$resolved_non_core")
 if [ "${#written_agents[@]}" -gt 0 ]; then
-  echo "    Generated: .claude/agents/ (${#written_agents[@]} subagent(s))"
+  echo "    Generated: .claude/agents/ (${#written_agents[@]} stack subagent(s))"
   for a in "${written_agents[@]}"; do echo "      - $a"; done
 fi
 
@@ -244,6 +130,7 @@ echo ""
 echo "Resolved plugins:"
 echo "$resolved_names" | while read -r name; do echo "  - $name"; done
 echo ""
-echo "Done. Claude Code autodiscovers skills, hooks, agents, and MCP servers"
-echo "from the project's .claude/ tree on next session start (or live, via the"
-echo "file watcher). No /plugin install step is required."
+echo "Done. Stack hooks, agents, and MCP servers are written under the project's"
+echo ".claude/ tree. Core skills + the 'devkit' router are global (bin/devkit-install);"
+echo "stack skills load on demand via the router. Re-run only when the plugin set"
+echo "or infra files change — skill/conduct edits propagate live from the clone."

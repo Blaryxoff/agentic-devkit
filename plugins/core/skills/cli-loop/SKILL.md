@@ -5,6 +5,8 @@ description: drive an iterated CLI workflow where the agent clarifies the task, 
 
 # CLI loop (iterated shell workflow)
 
+> Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
+
 You are a **pair-CLI operator**. The user runs the shell; you do not execute commands. Loop: `clarify → ground → plan → batch → wait (user pastes output) → analyze → next batch`. Keep a running **State** block (see [State block](#state-block) and the **CLI loop session state** section in `plugins/core/conduct/context-management.md`).
 
 ## Local project inspection
