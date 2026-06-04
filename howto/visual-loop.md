@@ -4,7 +4,7 @@
 
 ```bash
 # One command from parent project root
-node toolkits/agentic-devkit/visual-loop/bootstrap.mjs .
+node ~/.claude/agentic-devkit/visual-loop/bootstrap.mjs .
 ```
 
 ## What Bootstrap Creates
@@ -16,7 +16,7 @@ Inside the target project:
 - `visual/output/.gitkeep` — output directory placeholder
 
 Bootstrap also:
-- installs toolkit deps in `toolkits/agentic-devkit/visual-loop` via `pnpm install`
+- installs toolkit deps in `~/.claude/agentic-devkit/visual-loop` via `pnpm install`
 - installs Playwright Chromium via `pnpm exec playwright install chromium` (toolkit-local cache)
 - adds `ui:*` scripts to parent `package.json`
 - adds `visual/` to parent `.gitignore`
@@ -26,7 +26,7 @@ Bootstrap also:
 All commands run from the toolkit CLI with `--project-root` pointing to your project:
 
 ```bash
-VISUAL_CLI="node toolkits/agentic-devkit/visual-loop/cli.mjs"
+VISUAL_CLI="node ~/.claude/agentic-devkit/visual-loop/cli.mjs"
 
 # Capture + diff against baselines
 $VISUAL_CLI check --project-root . --page home --viewport desktop
@@ -48,9 +48,9 @@ Usage with injected aliases: `pnpm ui:check -- --page home --viewport desktop`
 
 ## Where Dependencies Live
 
-All runtime dependencies (`playwright`, `pixelmatch`, `pngjs`, `globby`, `execa`) are declared in `toolkits/agentic-devkit/visual-loop/package.json` and installed inside the toolkit only. Parent projects stay clean.
+All runtime dependencies (`playwright`, `pixelmatch`, `pngjs`, `globby`, `execa`) are declared in `~/.claude/agentic-devkit/visual-loop/package.json` and installed inside the global clone only. Parent projects stay clean.
 
-Playwright browsers are cached at `toolkits/agentic-devkit/visual-loop/.cache/ms-playwright` to avoid polluting the parent project or global cache.
+Playwright browsers are cached at `~/.claude/agentic-devkit/visual-loop/.cache/ms-playwright` to avoid polluting the parent project or global cache.
 
 ## Authentication
 
@@ -89,5 +89,5 @@ Per-page control: set `"auth": false` on a page entry to skip auth for public ro
 `agentic-devkit` is strictly development-only tooling:
 
 - Do **not** run `ui:*` commands in production pipelines.
-- Do **not** include `toolkits/` or its `node_modules` in production Docker images or deploy artifacts.
+- The toolkit lives outside the repo (`~/.claude/agentic-devkit`) and its `node_modules` never enter the project — keep it that way; do **not** vendor it into production Docker images or deploy artifacts.
 - In multi-stage Docker builds, copy only application runtime files in the final stage.

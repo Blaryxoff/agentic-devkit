@@ -141,7 +141,7 @@ output is identical regardless of where the project lives on disk. Disabled plug
 ## Claude Code Setup
 
 Core skills and the `devkit` stack-router are installed globally by `devkit-install` (symlinked into `~/.claude/skills/`),
-so Claude Code auto-discovers them in every project — no `/plugin install` step. Core skills auto-match natively; the
+so Claude Code auto-discovers them in every project. Core skills auto-match natively; the
 `devkit` router reads `.devkit/toolkit.json` and loads the matching stack skill + conduct on demand from the global clone.
 
 Run the per-project Claude adapter only when a stack ships subagents, hooks, or MCP servers:
