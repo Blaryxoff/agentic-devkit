@@ -65,6 +65,17 @@ output structure. Cite the conduct section for every item.
       Registry hardcoded lowercase (`ghcr.io/<lowercase-owner>`).
 - A6. Base images pinned (`php:8.4-fpm-alpine`, not `latest`).
 - A7. Runtime stage strips dev-only files; no `.env` copied into image.
+- A8. Asset stage sets `NODE_OPTIONS=--max-old-space-size=…`; test builds
+      gate minify off via build-arg; build stage uses `node:<LTS>-slim`. (§1.8)
+- A9. **Build-host swap.** If the deploy path builds the image **on the
+      serving node** (e.g. `bin/deploy.sh` / `bin/gp.sh` runs `docker build`
+      / `buildx build` on the same host it deploys to), that host MUST have
+      swap, or the Vite heap spike can freeze a memory-oversubscribed box
+      (§1.8). This is host state, not a repo file — **verify it live**:
+      `ssh <build-host> 'swapon --show; free -h'`. Empty `swapon` output on a
+      build-on-serving node is a **critical** finding. Recommend a persistent
+      `/swapfile` (fstab + `vm.swappiness=10`) sized to overcommit-gap + build
+      heap, or moving the build off-box.
 
 ### B. Volumes (§2)
 
@@ -298,6 +309,10 @@ For a brand-new dockerization:
    - **B1** — non-leaf volume mount.
    - **C** — log fragmentation; nginx logs going to stdout while PHP logs
      go to `storage/logs`, so log-viewer only sees half the story.
+   - **A9** — build-on-serving node with no swap. Detect it: grep the deploy
+     path (`bin/deploy.sh`, `bin/gp.sh`, Makefile) for a `docker build` /
+     `buildx build` that runs on the deploy host rather than CI; if found,
+     `ssh <build-host> 'swapon --show'` and flag empty output as critical.
 4. Group findings by severity, then by section. Don't reorder by file.
 5. Use the format from
    [`review-findings-format`](../../conduct/review-findings-format.md).

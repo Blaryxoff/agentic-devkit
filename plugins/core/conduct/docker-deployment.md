@@ -107,6 +107,71 @@ RUN rm -rf tests/ node_modules/ .git/ docker/ docs/ toolkits/ visual/ \
 
 Never copy `.env` or any secret material into the image.
 
+### 1.8 Asset-build stage — heap ceiling, memory headroom, where it runs
+
+A non-trivial Vite/webpack bundle exceeds Node's default old-space heap
+(~1.5–2 GB). The asset stage must raise it explicitly:
+
+```dockerfile
+RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm run build
+```
+
+This is a **V8-internal** ceiling for the single build process. If live heap
+exceeds it, Node aborts with `JavaScript heap out of memory` *before* the host
+ever swaps — so it is **not** interchangeable with host swap (below). Don't
+lower it without first confirming the bundle shrank; raising it only helps if
+the build is GC-thrashing near the ceiling (measure peak heap first:
+`/usr/bin/time -v` → "Maximum resident set size").
+
+**Where the build runs matters.** If `deploy.sh` builds the image **on the
+serving node** (common on single-node test envs), the build's multi-GB heap
+lands on top of the running container set. On a memory-**oversubscribed** box
+(Σ container `mem_limit` > physical RAM) with **no swap**, the spike drives the
+host to zero free RAM → kernel direct-reclaim stall → freeze requiring a manual
+reboot (you won't see a clean global OOM line — the box freezes first; the
+leading edge is memcg `CONSTRAINT_MEMCG` kills of innocent containers). Two
+mitigations, in order:
+
+1. **Provision swap on any build-on-serving node.** Size it to the
+   *overcommit gap + build heap* (e.g. ~2 GB structural overcommit + 4 GB build
+   heap ≈ 8 GB) — **not** "swap = RAM", a hibernation-era heuristic irrelevant
+   to a non-hibernating server. Make it persistent (`/swapfile` in `/etc/fstab`)
+   and lower `vm.swappiness` to 10 via `/etc/sysctl.d/`. Swap turns a freeze
+   into a slowdown; it does **not** replace the heap flag (different layer).
+2. **Better: build off the serving node** (CI runner or a dedicated builder), so
+   the heap spike never touches the box serving traffic. Prefer this when tight.
+
+**Trim build peak RSS on test.** On test images, JS/CSS minification buys
+nothing (unminified assets are harmless in a test env) but costs CPU and
+~0.5 GB peak RSS. Gate it behind a build-arg so prod still minifies:
+
+```dockerfile
+ARG DISABLE_MINIFY=0
+RUN DISABLE_MINIFY=$DISABLE_MINIFY NODE_OPTIONS="--max-old-space-size=4096" pnpm run build
+```
+```js
+// vite.config.js
+minify:    process.env.DISABLE_MINIFY === '1' ? false : 'esbuild',
+cssMinify: process.env.DISABLE_MINIFY === '1' ? false : 'lightningcss',
+reportCompressedSize: false,   // all envs — gzip-sizing every chunk is wasted CPU/RAM
+```
+
+`reportCompressedSize: false` is safe everywhere; the minify flag is a
+**memory-headroom** lever, not primarily a speed one. Measure before assuming a
+setting speeds the build — most "speed" wins here are actually RAM-headroom.
+
+**Base-image choice is a real (modest) speed lever for the asset stage.** The
+build stage is discarded, so its base-image *size* is irrelevant — pick for
+build speed. A newer Node major on a **glibc** base beats an older one on
+**musl/alpine**: one measured project saw the Vite compile drop ~15%
+(`node:20-alpine` 136 s → `node:24-slim` 116 s; `node:22-slim` 121 s), cold
+`pnpm install` ~10 s on all three. The win conflates Node version + libc; to
+attribute precisely you'd add a `node:24-alpine` run, but the actionable result
+is consistent: prefer `node:<latest-LTS>-slim` for the **build** stage (keep the
+**runtime** stage alpine for size). Verify the built `manifest.json` / asset
+hashes are unchanged after the bump — esbuild/lightningcss are lockfile-pinned,
+so only the JS engine differs and output should be byte-identical.
+
 ---
 
 ## 2. Volumes — mount-safety
@@ -617,7 +682,17 @@ Builds + pushes `<app>-backend`, `<app>-frontend`, `<app>-nginx` to GHCR.
   `${env}-latest` (rolling, what deploy pulls).
 - `env` is `prod` on `master` pushes, `test` on `dev` pushes.
 - `cache-to: type=registry,mode=max` so every layer is cached across
-  runs/branches.
+  runs/branches. **Caveat**: `mode=max` exports all intermediate image
+  *layers*, but **not** the contents of `RUN --mount=type=cache` dirs (the
+  package-manager store) — that data is builder-local and GC-eligible
+  (moby/buildkit #2370). The dependency-**install layer** is still reused via
+  layer cache (keyed on the lockfile `COPY`), so a code-only change skips
+  install entirely; only a *lockfile change*, or eviction of the store mount,
+  forces a re-download. Don't set `docker buildx prune --reserved-space` so
+  tight that the store is evicted every cleanup; grow the disk instead. (Cold
+  install is often cheap anyway — ~10 s on the project above — so a
+  `pnpm fetch`-style restructure to "fix" store caching is usually not worth
+  the deploy-path risk.)
 - On successful `dev` build, optionally `workflow_dispatch` `deploy-test.yml`
   via `gh api /repos/.../actions/workflows/.../dispatches`. Keeps test
   current without manual ops.
@@ -799,6 +874,14 @@ it. With it, anyone with SSH can.
 - ❌ Local-only backups (§10.2).
 - ❌ `${{ github.repository_owner }}` in image tags — uppercase breaks GHCR
   (§1.6).
+- ❌ Building the asset image **on the serving node** with **no swap** on a
+  memory-oversubscribed box — the Vite build's multi-GB heap freezes the host
+  (§1.8). Add swap, or build off-box.
+- ❌ Lowering `--max-old-space-size` to "save memory", or treating host swap as
+  a substitute for it — they're different layers; V8 aborts before swapping
+  (§1.8).
+- ❌ Relying on `cache-to,mode=max` to preserve a `--mount=type=cache`
+  dependency store — it doesn't; the store is builder-local (§7.7).
 
 ---
 
@@ -814,6 +897,10 @@ single-node project. Each item maps to a section above.
 - [ ] Image tags: `${env}-${sha}` immutable + `${env}-latest` rolling;
       digest markers under `/var/www/<app>/.deploy/`; registry hardcoded
       lowercase in workflow. (§1.5, §1.6)
+- [ ] Asset stage sets `--max-old-space-size`; if it builds on the serving
+      node, that box has persistent swap (sized to overcommit gap + build
+      heap); test builds disable minify via build-arg; `reportCompressedSize:
+      false`; build stage uses `node:<LTS>-slim`. (§1.8)
 - [ ] Every volume mount is a **leaf** path. (§2.1)
 - [ ] `app-logs` shared across app/worker/scheduler/nginx; PHP / PHP-FPM
       / nginx all `error_log` into `storage/logs/`. (§3.1)
