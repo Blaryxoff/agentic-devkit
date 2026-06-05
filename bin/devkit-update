@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# devkit-update: fast-forward the global devkit clone.
+# devkit-update: fast-forward the global devkit clone (+ project submodule when present).
 #
 # Usage:
 #   devkit-update             Always pull (git pull --ff-only).
 #   devkit-update --if-stale  Pull only if the last successful pull was > 24h ago.
-#                             Used by the SessionStart hook installed by devkit-install.
+#                             Used by SessionStart / workspaceOpen hooks.
 #
-# Operates on the clone this script lives in. Never fails the caller (always
-# exits 0) so a SessionStart hook can't break a Claude session. Prints one
-# status line.
+# Updates ~/.claude/agentic-devkit (or the clone this script lives in) and, when
+# DEVKIT_PROJECT_ROOT or CWD contains toolkits/agentic-devkit, fast-forwards that
+# submodule too. Never fails the caller (always exits 0). Prints status lines.
 
 set -uo pipefail
 
@@ -30,26 +30,81 @@ if [ "$if_stale" -eq 1 ] && [ -f "$STATE_FILE" ]; then
   fi
 fi
 
+_upstream_ref() {
+  local repo="$1"
+  local sym
+  sym=$(git -C "$repo" symbolic-ref -q refs/remotes/origin/HEAD 2>/dev/null || true)
+  if [ -n "$sym" ]; then
+    printf '%s\n' "$sym"
+    return 0
+  fi
+  for candidate in origin/master origin/main; do
+    if git -C "$repo" rev-parse --verify -q "$candidate" >/dev/null 2>&1; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+_pull_ff() {
+  local repo="$1"
+  local label="$2"
+
+  if ! git -C "$repo" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    return 0
+  fi
+
+  local upstream before after
+  upstream=$(_upstream_ref "$repo") || {
+    echo "devkit: $label has no origin/HEAD — skipping update in $repo"
+    return 1
+  }
+
+  before=$(git -C "$repo" rev-parse --short HEAD 2>/dev/null || echo "?")
+  git -C "$repo" fetch -q origin 2>/dev/null || true
+
+  after=$(git -C "$repo" rev-parse --short "$upstream" 2>/dev/null || echo "?")
+  if [ "$before" = "$after" ]; then
+    echo "devkit: $label up to date ($after)"
+    return 0
+  fi
+
+  if git -C "$repo" symbolic-ref -q HEAD >/dev/null 2>&1 \
+    && git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
+    if git -C "$repo" pull --ff-only -q 2>/dev/null; then
+      after=$(git -C "$repo" rev-parse --short HEAD 2>/dev/null || echo "?")
+      echo "devkit: $label updated $before..$after"
+      return 0
+    fi
+  elif git -C "$repo" merge-base --is-ancestor HEAD "$upstream" 2>/dev/null; then
+    if git -C "$repo" checkout --detach "$upstream" -q 2>/dev/null; then
+      after=$(git -C "$repo" rev-parse --short HEAD 2>/dev/null || echo "?")
+      echo "devkit: $label updated $before..$after"
+      return 0
+    fi
+    echo "devkit: $label fast-forward blocked (local changes?) in $repo"
+    return 1
+  fi
+
+  local behind
+  behind=$(git -C "$repo" rev-list --count HEAD.."$upstream" 2>/dev/null || echo "?")
+  echo "devkit: $label $behind behind $upstream — fast-forward failed, resolve manually in $repo"
+  return 1
+}
+
 if ! git -C "$DEVKIT_HOME" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "devkit: $DEVKIT_HOME is not a git repo (skipping update)"
   exit 0
 fi
 
-before=$(git -C "$DEVKIT_HOME" rev-parse --short HEAD 2>/dev/null)
-git -C "$DEVKIT_HOME" fetch -q 2>/dev/null
+_pull_ff "$DEVKIT_HOME" "global"
+printf '%s' "$now" > "$STATE_FILE" 2>/dev/null || true
 
-if git -C "$DEVKIT_HOME" pull --ff-only -q 2>/dev/null; then
-  after=$(git -C "$DEVKIT_HOME" rev-parse --short HEAD 2>/dev/null)
-  printf '%s' "$now" > "$STATE_FILE" 2>/dev/null || true
-  if [ "$before" = "$after" ]; then
-    echo "devkit: up to date ($after)"
-  else
-    echo "devkit: updated $before..$after"
-  fi
-else
-  behind=$(git -C "$DEVKIT_HOME" rev-list --count HEAD..@{u} 2>/dev/null || echo "?")
-  echo "devkit: $behind behind upstream — fast-forward failed, resolve manually in $DEVKIT_HOME"
-  printf '%s' "$now" > "$STATE_FILE" 2>/dev/null || true  # don't nag every session
+project_root="${DEVKIT_PROJECT_ROOT:-${PWD:-}}"
+submodule_path="$project_root/toolkits/agentic-devkit"
+if [ -n "$project_root" ] && [ "$submodule_path" != "$DEVKIT_HOME" ] && git -C "$submodule_path" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  _pull_ff "$submodule_path" "submodule"
 fi
 
 exit 0

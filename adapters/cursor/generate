@@ -142,17 +142,24 @@ done <<< "$resolved_names"
 # --- Merge and translate hooks ---
 merged_hooks=$(merge_plugin_hooks "$plugin_index" "$resolved_names")
 cursor_hooks=$(translate_hooks_to_cursor "$merged_hooks")
-has_hooks=$(echo "$cursor_hooks" | jq 'length > 0')
 
-if [ "$has_hooks" = "true" ]; then
-  hooks_dir="$PROJECT_ROOT/.cursor/hooks"
-  mkdir -p "$hooks_dir"
-  hooks_file="$hooks_dir/hooks.json"
+# Auto-update global clone (+ project submodule) on workspace open and agent session start.
+update_cmd="${HOME}/.claude/agentic-devkit/bin/devkit-update --if-stale"
+cursor_hooks=$(echo "$cursor_hooks" | jq --arg cmd "$update_cmd" '
+  def ensure_event($event):
+    .[$event] = (
+      (.[$event] // [])
+      | map(select((.hooks // []) | any(.command == $cmd) | not))
+    ) + [{ "hooks": [{ "type": "command", "command": $cmd, "timeout": 60000 }] }];
+  ensure_event("sessionStart") | ensure_event("workspaceOpen")
+')
 
-  echo "$cursor_hooks" | jq '.' > "$hooks_file"
-  hook_count=$(echo "$cursor_hooks" | jq '[.[] | length] | add // 0')
-  echo "    Created: .cursor/hooks/hooks.json ($hook_count hook(s) from resolved plugins)"
-fi
+hooks_dir="$PROJECT_ROOT/.cursor/hooks"
+mkdir -p "$hooks_dir"
+hooks_file="$hooks_dir/hooks.json"
+echo "$cursor_hooks" | jq '.' > "$hooks_file"
+hook_count=$(echo "$cursor_hooks" | jq '[.[] | length] | add // 0')
+echo "    Created: .cursor/hooks/hooks.json ($hook_count hook(s), incl. devkit auto-update)"
 
 echo ""
 echo "Done. Cursor will pick up rules, skills, and hooks automatically."
