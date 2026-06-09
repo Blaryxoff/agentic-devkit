@@ -31,3 +31,4 @@ If the project uses the devkit toolkit, read `.devkit/toolkit.json` to identify 
 
 - Ground in real inputs (active plugin conduct, log call sites): `plugins/core/conduct/inputs-grounding-gate.md`.
 - Emit findings using `plugins/core/conduct/review-findings-format.md`.
+- After your own findings are complete, cross-check in Codex per `plugins/core/conduct/cross-agent-review.md`, using Codex skill slug `devkit-core--reviewer-logging`. Merge kept findings tagged `(via Codex)`. Skip silently when the gating conditions there are not met.

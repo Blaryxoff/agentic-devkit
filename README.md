@@ -25,8 +25,6 @@ cd my-project
 ~/.claude/agentic-devkit/bin/devkit-install --cursor         # .cursor/ rules + skills + hooks
 ~/.claude/agentic-devkit/bin/devkit-install --codex          # AGENTS.md + .codex/ skills
 ~/.claude/agentic-devkit/bin/devkit-install --claude         # .claude/ stack subagents, hooks, .mcp.json
-
-node ~/.claude/agentic-devkit/visual-loop/bootstrap.mjs .
 ```
 
 For Claude Code, the core skills + `devkit` router are already global after `devkit-install`; the per-project
@@ -179,7 +177,6 @@ adapters/
 schemas/              JSON schemas for toolkit and plugin manifests
 examples/             Starter .devkit/toolkit.json presets
 howto/                Developer guides (Russian)
-visual-loop/          Visual screenshot-diff bootstrap tool
 ```
 
 ## Extending the Toolkit

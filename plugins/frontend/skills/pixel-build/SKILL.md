@@ -1,15 +1,17 @@
 ---
 name: devkit-pixel-build
-description: build or refine frontend UI to match a Figma design — reads Figma via MCP, implements code, then runs the visual-loop CLI to verify pixel-level fidelity across all viewports
+description: build or refine frontend UI to match a Figma design — reads Figma via MCP, implements code, then verifies pixel-level fidelity across all viewports via chrome-devtools MCP screenshots compared against the Figma reference
 claudeSubagent: true
 ---
 
 # Pixel Build — Implement UI from Figma
 
 You are acting as a **senior frontend developer with pixel-perfect attention to detail**.
-Your job is to translate a Figma design into production-ready code, then verify it visually using the visual-loop CLI.
+Your job is to translate a Figma design into production-ready code, then verify it visually using chrome-devtools MCP.
 
 The Figma design is the source of truth. Your goal is to make the rendered UI match it across all configured viewports.
+
+Visual verification rules: `plugins/frontend/conduct/visual-implementation.md`. Browser session rules: `plugins/core/conduct/browser-qa.md` §6.
 
 ## Stack context
 
@@ -25,12 +27,13 @@ Apply all loaded conduct rules throughout the implementation.
 
 ## Prerequisites
 
-- Visual-loop CLI is bootstrapped (`visual/config.json` exists in the project root).
-- Dev server is running (`pnpm dev`).
-- Figma MCP server is connected (for `get_design_context`).
-- For authenticated routes: `auth` block configured in `visual/config.json` with login URL, field selectors, and credentials (or leave credentials empty to be prompted).
+Run `visual-implementation.md` §1. Additionally:
 
-If any prerequisite is missing, tell the user what to set up before proceeding. See `plugins/core/conduct/inputs-grounding-gate.md` for the general grounding rule.
+- Dev server is running (`pnpm dev`).
+- Figma MCP server is connected.
+- chrome-devtools MCP is connected.
+
+If any prerequisite is missing, tell the user what to set up before proceeding. See `plugins/core/conduct/inputs-grounding-gate.md`.
 
 ## Workflow
 
@@ -42,9 +45,9 @@ Pixel Build Progress:
 - [ ] Step 1: Read Figma — extract design specs
 - [ ] Step 2: Audit existing code — find reusable components/tokens
 - [ ] Step 3: Implement — write or update code
-- [ ] Step 4: Check — run visual-loop to capture and diff
-- [ ] Step 5: Fix — resolve mismatches by hotspot priority
-- [ ] Step 6: Iterate — repeat check/fix until all viewports pass
+- [ ] Step 4: Capture — screenshot every viewport via chrome-devtools MCP
+- [ ] Step 5: Compare — diff live UI against Figma; fix by priority
+- [ ] Step 6: Iterate — re-capture and re-compare until all viewports pass
 - [ ] Step 7: Report — summarize changes and final state
 ```
 
@@ -96,29 +99,22 @@ Reuse what exists. Only create new abstractions when nothing suitable is found.
 
 - Follow the project's existing patterns and conventions.
 - Use design tokens and theme variables instead of hardcoded values.
-- Ensure the page key exists in `visual/config.json` under `pages`. If not, add it with the correct `route`.
+- Ensure the page key exists in `visual/config.json` under `pages` when that file is used. Add it with the correct `route`.
 
-## Step 4: Check
+## Step 4: Capture
 
-Run the visual check to capture screenshots and diff against baselines:
+For every configured viewport, follow `visual-implementation.md` §3:
 
-```bash
-pnpm ui:check -- --page <page>
-```
+1. Set viewport (`emulate` or `resize_page`).
+2. Navigate to the page route.
+3. Authenticate if required (`visual-implementation.md` §3.6).
+4. Stabilize and `take_screenshot` → `visual/output/<page>/<viewport>/actual.png`.
 
-If this is the first time checking this page (no baselines exist), expect 100% mismatch. This is normal — you will approve baselines after confirming the implementation looks correct.
+Capture all viewports before comparing.
 
-Read the report for each viewport:
+## Step 5: Compare and Fix
 
-```
-visual/output/<page>/<viewport>/report.json
-```
-
-The report contains: `mismatchPercent`, `status` (`pass`/`warn`/`fail`), `hotspots` (regions with highest diff), and file paths to `actual.png`, `diff.png`, `baseline.png`.
-
-## Step 5: Fix
-
-Address mismatches by hotspot priority:
+For each viewport, compare `actual.png` against the Figma reference (`get_screenshot` or the screenshot from Step 1). Apply `visual-implementation.md` §4.3 fix priority:
 
 1. **Layout** — wrong structure, missing elements, collapsed containers
 2. **Spacing** — incorrect gaps, padding, margins
@@ -127,72 +123,48 @@ Address mismatches by hotspot priority:
 5. **Alignment** — off-center, wrong justify/align
 6. **Icons** — wrong glyph, size, stroke, or color
 
-Use `diff.png` to visually locate problem areas. Cross-reference with the Figma design to determine the correct fix.
-
-Prefer design token / layout fixes over one-off pixel hacks.
+Cross-reference with the Figma design to determine the correct fix. Prefer design token / layout fixes over one-off pixel hacks.
 
 ### Mandatory spacing audit
 
-A "pass" status from the diff is not sufficient evidence that paddings are correct — subpixel anti-aliasing and background fills often hide real spacing errors. Before declaring the page done, walk through the spacing spec block from Step 1 and for each value:
+A visually similar screenshot is not sufficient evidence that paddings are correct. Walk through the spacing spec block from Step 1 and for each value:
 
 - Inspect the rendered element in code (the CSS class, Tailwind utility, or inline style actually applied).
-- Confirm the applied value equals the measured Figma value. If the design says `padding: 24px 20px` and the code says `p-4` (16px), that is a fail even if `diff.png` looks clean.
+- Confirm the applied value equals the measured Figma value. If the design says `padding: 24px 20px` and the code says `p-4` (16px), that is a fail even if the screenshot looks close.
 - If a token was used, verify the token resolves to the exact Figma value. Do not accept "close enough."
-
-Report every spacing mismatch you find and fix it before iterating further.
 
 ### Mandatory icon audit
 
-Diff images often score icons as "pass" because the glyph occupies few pixels relative to the page. Verify each icon explicitly:
+Verify each icon explicitly:
 
-- Open the rendered page in the browser (or use the captured `actual.png`) and confirm each icon from the Step 1 inventory is present, in the right place, at the right size.
-- Compare glyph shape to the Figma screenshot side-by-side. A different chevron, a filled vs. outlined variant, or a rotated arrow all count as mismatches.
+- Confirm each icon from the Step 1 inventory is present, in the right place, at the right size.
+- Compare glyph shape to the Figma screenshot side-by-side.
 - Verify stroke width and color match.
 - If the project does not have the exact icon, stop and ask the user — do not pick a near-match from the existing icon library.
 
 ## Step 6: Iterate
 
-After fixing, re-run the check:
+After fixing, re-capture every affected viewport (`visual-implementation.md` §5.1).
 
-```bash
-pnpm ui:check -- --page <page>
-```
+Repeat until all viewports pass Figma comparison.
 
-Alternatively, use the loop command which watches for file changes and re-checks automatically:
-
-```bash
-pnpm ui:loop -- --page <page>
-```
-
-Repeat until all viewports report `pass` status.
-
-To check a single viewport during iteration:
-
-```bash
-pnpm ui:check -- --page <page> --viewport <name>
-```
+To speed iteration, re-check only the viewport you are actively fixing; run the full viewport set before declaring done.
 
 ## Step 7: Report
 
 When all viewports pass, summarize:
 
 - Files created or modified
-- Final mismatch percentage per viewport
+- Per-viewport comparison result (pass / remaining deltas)
 - Any remaining deltas and why they are acceptable
 - Components or tokens that were reused vs. newly created
 - Follow-up suggestions (e.g., missing states, responsive edge cases, accessibility)
 
 ## Baseline Approval
 
-**Never approve baselines without explicit user confirmation.**
+**Never save baselines without explicit user confirmation.**
 
-When the user confirms the UI is correct and ready to become the new baseline:
-
-```bash
-pnpm ui:approve -- --page <page>
-```
-
-This copies `actual.png` to `baselines/<page>/<viewport>.png` for all viewports.
+When the user confirms the UI is correct and wants to keep regression baselines, follow `visual-implementation.md` §6.3 for each viewport.
 
 ## Rules
 
@@ -200,5 +172,6 @@ This copies `actual.png` to `baselines/<page>/<viewport>.png` for all viewports.
 - Keep all configured viewports passing; do not optimize for only one breakpoint.
 - Do not silently update baseline files.
 - Do not introduce new dependencies without user approval.
+- Do not use Playwright, Chromium, or visual-loop CLI commands.
 - If the design references components or tokens that do not exist in the project, flag this to the user rather than inventing replacements.
-- Spacing and icons must be verified against the Figma spec explicitly, not inferred from a green diff. A passing `mismatchPercent` does not absolve you from the Step 5 spacing and icon audits.
+- Spacing and icons must be verified against the Figma spec explicitly, not inferred from a passing screenshot.

@@ -46,7 +46,7 @@ Discover everything below from the codebase before testing or planning.
 
 4.5. **Permission matrix**: each role × each entity/resource type.
 
-4.6. **Viewport breakpoints** — from project CSS/Tailwind config; fall back to `visual-loop` defaults (mobile 390×844, tablet 768×1024, desktop 1440×1200).
+4.6. **Viewport breakpoints** — from project CSS/Tailwind config or `visual/config.json`; fall back to `plugins/frontend/conduct/visual-implementation.md` defaults (mobile 390×844, tablet 768×1024, desktop 1440×1200).
 
 4.7. **Regression surface** — adjacent behaviour reachable from in-scope navigation; discover from routing, not from memory.
 

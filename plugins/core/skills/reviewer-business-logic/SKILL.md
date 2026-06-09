@@ -21,7 +21,8 @@ This is **complementary** to `devkit-reviewer-deep` and `devkit-reviewer-fast`. 
    - **Frontend variant** (`devkit-reviewer-business-logic-frontend`, at `plugins/frontend/skills/reviewer-business-logic/SKILL.md`) — when any frontend stack plugin is enabled (`devkit-frontend`, `devkit-nuxt`, `devkit-vue`, `devkit-inertia`).
 3. Dispatch the applicable variants. If your harness exposes subagents (e.g. Claude Code's Agent tool with `subagent_type`), invoke each variant as a subagent so its large context — walking many files and conduct docs — stays out of this orchestrator's context. When both variants apply, dispatch them **in parallel** in a single tool-call batch and only synthesize after both reports return. If subagents are not available, invoke each variant skill sequentially.
 4. Present each variant's report unchanged, under a heading: `## Laravel — Business-logic review` and `## Frontend — Business-logic review`. Reports are **sequential and clearly separated** — do not merge findings, do not produce a cross-wire pairing section.
-5. If neither side is active, stop and tell the user no compatible stack plugin is enabled and which plugins this skill supports.
+5. **Cross-check in Codex.** Once the variant reports are assembled, run the cross-agent cross-check per `plugins/core/conduct/cross-agent-review.md`, using Codex skill slug `devkit-core--reviewer-business-logic`. Merge kept findings into the matching stack section, tagged `(via Codex)`. Skip silently when the gating conditions there are not met.
+6. If neither side is active, stop and tell the user no compatible stack plugin is enabled and which plugins this skill supports.
 
 When both variants run, ask the user upfront whether to scope each side to the same entity/flow set or audit them independently.
 
