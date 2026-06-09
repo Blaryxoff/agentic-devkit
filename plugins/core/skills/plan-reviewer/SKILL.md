@@ -361,6 +361,16 @@ Group findings by severity. **Apply these definitions strictly — do not inflat
 
 ---
 
+## Step 7.5 — Cross-check in Codex
+
+After drafting the proposed updates in §7, run the cross-agent cross-check per `plugins/core/conduct/cross-agent-review.md`, using Codex skill slug `devkit-core--plan-reviewer` and the reviewed plan file as the scope. Codex runs read-only and non-interactively — it will not resolve ambiguities (that is already done in §6), so analyze its output, not its process.
+
+Merge only Codex findings that pass the conduct doc's discard filter **and** the strict §7 Blocking definition — drop duplicates, items already resolved via §6 clarification, out-of-scope, or claims that are factually wrong against the plan/codebase. Merged findings count toward the **5-Blocking cap**; demote or drop the weakest if it is exceeded. Tag merged items `(via Codex)`, then run §8 against the merged set.
+
+If a kept Codex finding raises a genuine new product/UX/architectural ambiguity, loop back to §6 to clarify before finalizing — never invent the answer. Skip the cross-check silently when the conduct doc's gating conditions are not met.
+
+---
+
 ## Step 8 — Readiness assessment
 
 Before presenting proposed updates, evaluate the plan against the readiness gate:

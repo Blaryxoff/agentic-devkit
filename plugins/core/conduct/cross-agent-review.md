@@ -4,7 +4,7 @@ Shared protocol for any review skill: run the review in the calling agent first,
 
 ## When this applies
 
-Apply in any review skill (deep, fast, business-logic, logging) after it has produced its own findings, and only when **all** of these hold:
+Apply in any review skill (deep, fast, business-logic, logging, plan) after it has produced its own findings, and only when **all** of these hold:
 
 1. You are **Claude Code** (not Codex, Cursor, or any other agent).
 2. You are the **top-level review invocation** — the skill the user (or a non-review caller) invoked directly. Skip the cross-check when you were dispatched as a subagent/variant by a review orchestrator; return your report to the orchestrator and let it run the cross-check once.
@@ -25,7 +25,7 @@ If any condition fails, skip the cross-check silently and present only your own 
    ```
 
    - `<codex-skill-slug>` is this skill's Codex symlink under `.codex/skills/` (e.g. `devkit-core--reviewer-fast`). Each skill names its own slug where it cites this protocol.
-   - `<scope description>` is the exact change set you reviewed (working-tree diff, branch diff, or the named files), so both agents review the same thing.
+   - `<scope description>` is the exact thing you reviewed (working-tree diff, branch diff, named files, or the plan document), so both agents review the same thing.
    - If the run fails, times out, or returns nothing, note `Codex cross-check: skipped (unavailable)` and present your own findings unchanged.
 3. **Analyze Codex's findings — do not trust them blindly.** For each Codex finding, verify against the actual code before accepting it:
    - **Discard** findings that are duplicates of yours (same `file:line` + same defect), out of scope, unevidenced/speculative, or factually wrong when you check the cited code.
