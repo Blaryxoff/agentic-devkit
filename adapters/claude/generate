@@ -6,13 +6,16 @@
 # stack-specific pieces that cannot be global, all referencing the global clone:
 #
 # Output (in PROJECT_ROOT):
-#   .claude/settings.json   — merged hooks from resolved plugins
-#   .claude/agents/*.md      — subagent wrappers for stack claudeSubagent skills
-#   .mcp.json                — MCP servers upserted from resolved plugins
+#   .claude/settings.json    — merged hooks from resolved plugins
+#   .claude/agents/*.md       — subagent wrappers for stack claudeSubagent skills
+#   .claude/skills/devkit-*   — symlinks to inline (non-subagent) stack skills
+#   .mcp.json                 — MCP servers upserted from resolved plugins
 #
-# It does NOT symlink skills: core skills are globally registered and stack
-# skills are loaded on demand by the `devkit` router. A cleanup pass removes any
-# .claude/skills/devkit-*--* symlinks left by older adapter versions.
+# Core skills stay globally registered (bin/devkit-install). Stack skills split by
+# kind: isolation skills (claudeSubagent: true) become subagents; inline skills
+# (coder, css-*) are symlinked into .claude/skills so they auto-match natively
+# instead of relying on the `devkit` router. The router remains the fallback for
+# multi-repo unions and frontmatter-name collisions.
 #
 # Input config:
 #   .devkit/toolkit.json     — standard devkit project config
@@ -35,6 +38,7 @@ echo ""
 
 plugin_index=$(_build_plugin_index)
 resolved_names=$(resolve_plugins)
+resolved_non_core=$(echo "$resolved_names" | grep -v '^devkit-core$' || true)
 
 ensure_gitignore_entry ".claude/"
 
@@ -49,21 +53,57 @@ if [ -d "$legacy_marketplace_dir" ]; then
   rmdir "$legacy_marketplace_dir" 2>/dev/null || true
 fi
 
-# --- Cleanup: remove per-project skill symlinks from older adapter versions ---
-# Skills are no longer symlinked per project (core = global, stack = router).
-# Reap only symlinks named with the <plugin>--<skill> convention; leave
-# user-authored skill directories alone.
+# --- .claude/skills/*: symlink INLINE stack skills (non-subagent) ---
+# Isolation skills (claudeSubagent: true) become real subagents below; they must
+# NOT also be registered as skills. Inline skills (e.g. coder, css-*) edit code in
+# the main context, so they can't be subagents — without native registration they
+# rely on the `devkit` router remembering to load them. Symlink them per project
+# so they auto-match like native skills; the symlink points into the global clone,
+# so skill edits still propagate live. Only resolved non-core plugins are linked,
+# so unrelated projects stay clean. Re-run the adapter when the plugin set changes.
 project_skills_dir="$PROJECT_ROOT/.claude/skills"
+# Reap any devkit-managed symlinks first (clean slate; handles disabled plugins
+# and skills promoted to subagents), leaving user-authored skill dirs alone.
 if [ -d "$project_skills_dir" ]; then
-  reaped=0
   for entry in "$project_skills_dir"/devkit-*--*; do
-    [ -L "$entry" ] || continue
-    rm -f "$entry"
-    reaped=$((reaped + 1))
+    [ -L "$entry" ] && rm -f "$entry"
   done
-  [ "$reaped" -gt 0 ] && echo "    Removed: $reaped stale .claude/skills/devkit-*--* symlink(s)"
-  rmdir "$project_skills_dir" 2>/dev/null || true
 fi
+
+# Track linked frontmatter names as a newline-delimited set (bash 3.2 — no assoc arrays).
+_seen_skill_names=""
+linked_skills=0
+while IFS= read -r name; do
+  [ -z "$name" ] && continue
+  pdata=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
+  skills_rel=$(echo "$pdata" | jq -r '.paths.skills // empty')
+  [ -n "$skills_rel" ] || continue
+  pdir=$(echo "$pdata" | jq -r '._dir')
+  skills_src="$pdir/${skills_rel#./}"
+  [ -d "$skills_src" ] || continue
+  for skill_dir in "$skills_src"/*/; do
+    [ -d "$skill_dir" ] || continue
+    skill_md="$skill_dir/SKILL.md"
+    [ -f "$skill_md" ] || continue
+    # Skip isolation skills — they are emitted as subagents, not skills.
+    grep -q "^claudeSubagent:[[:space:]]*true" "$skill_md" && continue
+    # Collision guard: two plugins can share a frontmatter name (laravel & nuxt
+    # both define devkit-coder). Registering both makes the skill ambiguous, so
+    # link the first and warn on the rest rather than create a broken pair.
+    fm_name=$(grep -m1 '^name:' "$skill_md" | sed 's/^name:[[:space:]]*//;s/[[:space:]]*$//')
+    if printf '%s\n' "$_seen_skill_names" | grep -qxF "$fm_name"; then
+      echo "    WARN: skill name '$fm_name' (from $name) collides with an earlier plugin — not linked (use the 'devkit' router for it)"
+      continue
+    fi
+    _seen_skill_names="$_seen_skill_names$fm_name
+"
+    mkdir -p "$project_skills_dir"
+    ln -s "$(cd "$skill_dir" && pwd)" "$project_skills_dir/${name}--$(basename "$skill_dir")"
+    linked_skills=$((linked_skills + 1))
+  done
+done <<< "$resolved_non_core"
+[ "$linked_skills" -gt 0 ] && echo "    Linked:  .claude/skills/devkit-*--* ($linked_skills inline stack skill(s))"
+rmdir "$project_skills_dir" 2>/dev/null || true
 
 # --- settings.json (hooks only — plugin permissions.deny is NOT merged) ---
 settings_dir="$PROJECT_ROOT/.claude"
@@ -115,7 +155,6 @@ fi
 # Core subagents are installed globally by bin/devkit-install; this adapter emits
 # only the stack ones. Shared emit logic lives in adapters/_lib/claude_agents.sh.
 agents_dir="$PROJECT_ROOT/.claude/agents"
-resolved_non_core=$(echo "$resolved_names" | grep -v '^devkit-core$' || true)
 
 written_agents=()
 while IFS= read -r _a; do
@@ -130,7 +169,9 @@ echo ""
 echo "Resolved plugins:"
 echo "$resolved_names" | while read -r name; do echo "  - $name"; done
 echo ""
-echo "Done. Stack hooks, agents, and MCP servers are written under the project's"
-echo ".claude/ tree. Core skills + the 'devkit' router are global (bin/devkit-install);"
-echo "stack skills load on demand via the router. Re-run only when the plugin set"
-echo "or infra files change — skill/conduct edits propagate live from the clone."
+echo "Done. Stack hooks, agents, MCP servers, and inline-skill symlinks are written"
+echo "under the project's .claude/ tree. Core skills + the 'devkit' router are global"
+echo "(bin/devkit-install); isolation stack skills are subagents and inline stack skills"
+echo "are .claude/skills symlinks — the router is the fallback for multi-repo unions and"
+echo "name collisions. Re-run only when the plugin set or infra files change — skill/"
+echo "conduct edits propagate live from the clone."

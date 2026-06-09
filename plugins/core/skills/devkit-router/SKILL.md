@@ -8,6 +8,13 @@ description: dispatch to the project's stack-specific devkit skills and conduct 
 Single entrypoint for **stack-specific** devkit capabilities. Stack skills are not globally registered (they would
 wrongly offer themselves in unrelated projects), so this skill matches the request against them and loads the right one.
 
+**When the router is needed (vs. native registration):** the Claude adapter already registers single-root stack skills
+natively — isolation skills become subagents (`.claude/agents/`) and inline skills become per-project symlinks
+(`.claude/skills/devkit-<plugin>--<skill>`). Prefer those native entries. Fall back to this router only when native
+registration cannot cover the request: (a) a **multi-repo** project whose plugin set is the union of several
+`.devkit/toolkit.json` roots, or (b) an inline skill **skipped due to a frontmatter-name collision** (e.g. laravel and
+nuxt both define `devkit-coder` — only the first is linked, the rest route through here).
+
 `DEVKIT_HOME` = the global clone, default `~/.claude/agentic-devkit`. All `plugins/...` paths below resolve under it. If
 `$DEVKIT_HOME/bin/devkit-resolve` is missing, resolve this skill's own symlink (`~/.claude/skills/devkit-core--devkit-router`)
 to find the clone root.
