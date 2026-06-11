@@ -11,7 +11,7 @@ Your job is to apply requested code changes (refactor, restyle, extract tokens, 
 
 The current visual baselines are the source of truth. Any visual change must be intentional and user-approved.
 
-Visual verification rules: `plugins/frontend/conduct/visual-implementation.md`. Browser session rules: `plugins/core/conduct/browser-qa.md` §6.
+Visual verification rules: `plugins/frontend/conduct/visual-implementation.md`. Browser session rules: `plugins/core/conduct/browser-qa-rules.md` §6.
 
 ## Stack context
 

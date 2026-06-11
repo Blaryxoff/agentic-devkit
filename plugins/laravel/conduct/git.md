@@ -159,7 +159,7 @@ Recommended order:
 fmt → lint → test → build
 ```
 
-The **exact commands** for each step live in the project's root `CLAUDE.md` / `AGENTS.md` (see `howto/project-test-rules.md` for the template). Test-execution policy (always / on-request / never) is also defined there — see [agent-test-restraint](../../../core/conduct/agent-test-restraint.md).
+The **exact commands** for each step live in the project's root `CLAUDE.md` / `AGENTS.md` (see `howto/project-test-rules.md` for the template). Test-execution policy (always / on-request / never) is also defined there — see [agent-test-restraint](../../core/conduct/agent-test-restraint.md).
 
 If the project file is silent, fall back to the project `Makefile` targets (`make fmt`, `make lint`, `make test`, `make build`) — see [makefile.md](./makefile.md).
 

@@ -26,4 +26,4 @@ This document set defines architecture and development rules for Nuxt frontend a
 - **[Makefile](./makefile.md)** - standard build and automation targets.
 - **[Anti-patterns](./anti_patterns.md)** - common mistakes with bad/good examples.
 - **[Git Workflow](./git.md)** - branching, commits, and PR flow.
-- **[Feature Spec Template](../spec/spec.md)** - feature spec template before implementation.
+- **[Feature Spec Template](./spec/spec.md)** - feature spec template before implementation.

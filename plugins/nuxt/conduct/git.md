@@ -48,7 +48,7 @@ PR body should include:
 
 Recommended order: `fmt → lint → typecheck → test → build`.
 
-The **exact commands** live in the project's root `CLAUDE.md` / `AGENTS.md` (see `howto/project-test-rules.md` for the template). Test-execution policy (always / on-request / never) is defined there too — see [agent-test-restraint](../../../core/conduct/agent-test-restraint.md).
+The **exact commands** live in the project's root `CLAUDE.md` / `AGENTS.md` (see `howto/project-test-rules.md` for the template). Test-execution policy (always / on-request / never) is defined there too — see [agent-test-restraint](../../core/conduct/agent-test-restraint.md).
 
 If the project file is silent, fall back to the project `Makefile` or `package.json` scripts.
 

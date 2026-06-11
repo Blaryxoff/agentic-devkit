@@ -66,7 +66,7 @@ Write the spec using [code conduct rules](../) and the template below.
 | Block | When to include | Template |
 |---|---|---|
 | **Core** — Laravel Feature / API | Always — every feature has a backend core in Laravel | Below |
-| **+ Inertia UI layer** | Includes or changes Inertia pages, Vue components, and Tailwind UI behavior | [spec-inertia-ui.md](spec-inertia-ui.md) |
+| **+ Inertia UI layer** | Includes or changes Inertia pages, Vue components, and Tailwind UI behavior | [spec-inertia-ui.md](../../../inertia/conduct/spec/spec-inertia-ui.md) |
 | **+ Jobs / Scheduler layer** | Uses queue workers, queued jobs, listeners, or scheduled commands | [spec-jobs-scheduler.md](spec-jobs-scheduler.md) |
 | **+ Events / Messaging layer** | Produces or consumes domain events, broadcasts, notifications, or queue payloads | [spec-events-messaging.md](spec-events-messaging.md) |
 | **+ Database layer** | Owns schema changes, data migrations, or query/index changes | [spec-database.md](spec-database.md) |

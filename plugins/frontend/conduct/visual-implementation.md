@@ -61,7 +61,7 @@ async () => {
 
 3.9. `take_screenshot` with `filePath` for every page × viewport check. Save captures under `visual/output/<page>/<viewport>/actual.png`.
 
-3.10. Apply `plugins/core/conduct/browser-qa.md` §6.1–6.3 for general session discipline.
+3.10. Apply `plugins/core/conduct/browser-qa-rules.md` §6.1–6.3 for general session discipline.
 
 ## 4. Comparison
 

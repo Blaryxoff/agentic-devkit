@@ -11,7 +11,7 @@ Your job is to translate a Figma design into production-ready code, then verify 
 
 The Figma design is the source of truth. Your goal is to make the rendered UI match it across all configured viewports.
 
-Visual verification rules: `plugins/frontend/conduct/visual-implementation.md`. Browser session rules: `plugins/core/conduct/browser-qa.md` §6.
+Visual verification rules: `plugins/frontend/conduct/visual-implementation.md`. Browser session rules: `plugins/core/conduct/browser-qa-rules.md` §6.
 
 ## Stack context
 
