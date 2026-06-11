@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # devkit-toolkit: Codex (OpenAI) adapter
 #
-# Generates Codex skill symlinks and AGENTS.md conduct references from resolved plugins.
+# Generates AGENTS.md conduct references from resolved plugins.
+# Devkit skills are installed globally by bin/devkit-install.
 #
 # Output (in PROJECT_ROOT):
-#   .codex/skills/devkit-<plugin>--<skill>/  — symlinks to resolved plugins' skill dirs
-#   AGENTS.md                              — appends/updates ## devkit-toolkit section
-#                                            (includes conduct references and hook instructions)
+#   AGENTS.md — appends/updates ## devkit-toolkit section
+#               (includes conduct references and hook instructions)
 #
 # Input config:
 #   .devkit/toolkit.json                     — standard devkit project config
 #
 # Resolution logic:
 #   - Sources adapters/_lib/resolve.sh for plugin resolution
-#   - Skills are symlinked (not copied) to keep them in sync
+#   - Skills are global in ~/.codex/skills/devkit-*--* (created by devkit-install)
 #   - AGENTS.md gets a managed section listing conduct doc paths
 #   - Plugin hooks are described in AGENTS.md as instructions (Codex lacks native hook support)
 
@@ -25,7 +25,7 @@ source "$ADAPTER_DIR/../_lib/hooks.sh"
 
 # Conduct paths embedded in AGENTS.md use the stable global-clone reference
 # (e.g. ~/.claude/agentic-devkit) so the committed file is portable across
-# machines. Skills are still symlinked by absolute path below.
+# machines. Skills are installed globally by bin/devkit-install.
 DEVKIT_REF=$(toolkit_home_ref)
 
 echo "==> Codex adapter: generating config..."
@@ -36,16 +36,22 @@ echo ""
 plugin_index=$(_build_plugin_index)
 resolved_names=$(resolve_plugins)
 
-ensure_gitignore_entry ".codex/"
-
+# Reap stale per-project devkit skill symlinks from older adapter versions.
+# Codex now discovers devkit skills globally from ~/.codex/skills, while this
+# project adapter keeps only project-specific conduct in AGENTS.md. Leave
+# user-authored .codex content alone.
 skills_dir="$PROJECT_ROOT/.codex/skills"
-mkdir -p "$skills_dir"
-
-# Reap stale devkit skill symlinks (skills removed from a plugin, disabled plugins,
-# or links generated on another machine) before relinking the current resolved set.
-for _l in "$skills_dir"/devkit-*--*; do
-  [ -L "$_l" ] && rm -f "$_l"
-done
+if [ -d "$skills_dir" ]; then
+  reaped=0
+  for _l in "$skills_dir"/devkit-*--*; do
+    [ -L "$_l" ] || continue
+    rm -f "$_l"
+    reaped=$((reaped + 1))
+  done
+  [ "$reaped" -gt 0 ] && echo "    Removed: $reaped stale .codex/skills/devkit-*--* symlink(s)"
+  rmdir "$skills_dir" 2>/dev/null || true
+  rmdir "$PROJECT_ROOT/.codex" 2>/dev/null || true
+fi
 
 agents_file="$PROJECT_ROOT/AGENTS.md"
 conduct_lines=""
@@ -58,22 +64,6 @@ while IFS= read -r name; do
   rel_plugin="$DEVKIT_REF/plugins/$plugin_basename"
 
   has_conduct=$(echo "$plugin_data" | jq 'has("paths") and (.paths | has("conduct"))')
-  has_skills=$(echo "$plugin_data" | jq 'has("paths") and (.paths | has("skills"))')
-
-  # --- Symlink skills ---
-  if [ "$has_skills" = "true" ]; then
-    skills_source="$plugin_dir/skills"
-    if [ -d "$skills_source" ]; then
-      for skill_dir in "$skills_source"/*/; do
-        [ -d "$skill_dir" ] || continue
-        skill_name=$(basename "$skill_dir")
-        skill_target="$skills_dir/${name}--${skill_name}"
-        rm -rf "$skill_target"
-        ln -s "$(cd "$skill_dir" && pwd)" "$skill_target"
-      done
-      echo "    Linked:  .codex/skills/${name}--* ($(ls -d "$skills_source"/*/ 2>/dev/null | wc -l | tr -d ' ') skills)"
-    fi
-  fi
 
   # --- Collect conduct references ---
   if [ "$has_conduct" = "true" ]; then
@@ -151,7 +141,7 @@ else
 fi
 
 echo ""
-echo "Done. Codex will discover skills and conduct references automatically."
+echo "Done. Codex will discover global devkit skills; AGENTS.md carries project conduct references."
 echo ""
 echo "Resolved plugins:"
 echo "$resolved_names" | while read -r name; do echo "  - $name"; done

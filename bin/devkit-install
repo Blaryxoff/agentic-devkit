@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
-# devkit-install: set up the global devkit install for Claude Code.
+# devkit-install: set up global devkit installs for Claude Code and Codex CLI.
 #
 # Usage:
-#   devkit-install              Install global pieces (core skills, core subagents,
-#                               router, daily auto-update hook).
+#   devkit-install              Install global pieces (Claude core skills/subagents,
+#                               Codex devkit skills, daily auto-update hook).
 #   devkit-install --cursor     Also run the per-project Cursor adapter for CWD.
 #   devkit-install --codex      Also run the per-project Codex adapter for CWD.
 #   devkit-install --claude     Also run the per-project Claude stack adapter for CWD
 #                               (stack subagents, hooks, .mcp.json — core is global).
 #   devkit-install --project=DIR Target project for --cursor/--codex/--claude (default: CWD).
 #
-# Global layout (in $HOME/.claude):
-#   skills/devkit-core--<skill>/  symlinks to the global clone's core skills
-#   agents/<name>.md              core subagent wrappers (claudeSubagent skills)
-#   settings.json                 SessionStart hook → devkit-update --if-stale
+# Global layout:
+#   $HOME/.claude/skills/devkit-core--<skill>/     symlinks to core skills for Claude
+#   $HOME/.claude/agents/<name>.md                 core subagent wrappers
+#   $HOME/.claude/settings.json                    SessionStart hook → devkit-update --if-stale
+#   $HOME/.codex/skills/devkit-<plugin>--<skill>/  symlinks to devkit skills for Codex
 #
 # The global clone is the single source of truth. devkit-install runs from the
 # clone it lives in; if that is not the canonical location it bootstraps a clone
@@ -71,7 +72,9 @@ CLAUDE_DIR="$HOME/.claude"
 SKILLS_DEST="$CLAUDE_DIR/skills"
 AGENTS_DEST="$CLAUDE_DIR/agents"
 SETTINGS="$CLAUDE_DIR/settings.json"
-mkdir -p "$SKILLS_DEST"
+CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
+CODEX_SKILLS_DEST="$CODEX_DIR/skills"
+mkdir -p "$SKILLS_DEST" "$CODEX_SKILLS_DEST"
 
 # --- Symlink every core skill globally (universal + the devkit router) ---
 core_skills_src="$DEVKIT_HOME/plugins/core/skills"
@@ -86,6 +89,32 @@ for d in "$core_skills_src"/*/; do
   skill_count=$((skill_count + 1))
 done
 echo "    Linked:  ~/.claude/skills/devkit-core--* ($skill_count skill(s))"
+
+# --- Symlink every devkit skill globally for Codex CLI ---
+# Codex already has global system skills under ~/.codex/skills/.system. Keep
+# devkit-managed links namespaced as devkit-<plugin>--<skill> and reap only
+# those links, never .system or user-authored skills. Codex has no devkit router
+# equivalent, so global installation exposes all plugin skills; per-project
+# AGENTS.md still carries the project-specific conduct references.
+for entry in "$CODEX_SKILLS_DEST"/devkit-*--*; do
+  [ -L "$entry" ] && rm -f "$entry"
+done
+codex_skill_count=0
+for plugin_dir in "$DEVKIT_HOME"/plugins/*/; do
+  [ -d "$plugin_dir" ] || continue
+  manifest="$plugin_dir/plugin.json"
+  [ -f "$manifest" ] || continue
+  plugin_name=$(jq -r '.name' "$manifest")
+  skills_src="$plugin_dir/skills"
+  [ -d "$skills_src" ] || continue
+  for d in "$skills_src"/*/; do
+    [ -d "$d" ] || continue
+    n=$(basename "$d")
+    ln -s "$(cd "$d" && pwd)" "$CODEX_SKILLS_DEST/${plugin_name}--$n"
+    codex_skill_count=$((codex_skill_count + 1))
+  done
+done
+echo "    Linked:  ~/.codex/skills/devkit-*--* ($codex_skill_count skill(s))"
 
 # --- Core subagents → ~/.claude/agents (claudeSubagent skills keep isolation) ---
 plugin_index=$(_build_plugin_index)
@@ -132,5 +161,5 @@ if [ "$RUN_CLAUDE" -eq 1 ]; then
 fi
 
 echo ""
-echo "Done. Restart Claude Code (or start a new session) to load global skills + the daily auto-update hook."
-echo "Per project, keep .devkit/toolkit.json; the 'devkit' router loads stack skills + conduct on demand."
+echo "Done. Restart Claude Code / Codex (or start a new session) to load global skills + the daily auto-update hook."
+echo "Per project, keep .devkit/toolkit.json; adapters write project conduct/agents/MCP only — skills live globally."

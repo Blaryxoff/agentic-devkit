@@ -14,7 +14,7 @@ Canonical rules for browser-based QA skills (`devkit-qa-tester`, `devkit-qa-test
 
 2.1. Verify chrome-devtools MCP is reachable (`list_pages`).
 
-2.2. Verify the dev server is up; discover base URL from env, README, or project config.
+2.2. Verify the dev server is up; discover base URL from env, README, or project config. If it is not up, start only the minimal required local server(s) using existing project/dev-runtime commands, wait for a real HTTP readiness signal, and record exactly what this QA pass started. During cleanup, stop only those recorded processes/sessions; if the environment was already running (for example on the user's Mac), leave it running.
 
 2.3. Verify DB or test-DB access and at least one usable seeder/factory path.
 
@@ -22,15 +22,19 @@ Canonical rules for browser-based QA skills (`devkit-qa-tester`, `devkit-qa-test
 
 2.5. Missing prerequisite → stop via `plugins/core/conduct/clarification-protocol.md`. Never test against an unverified environment.
 
+2.6. Do not use Playwright as a second browser layer for devkit QA. The browser authority is chrome-devtools MCP; lifecycle helpers are limited to starting/stopping local dev servers.
+
 ## 3. Seed strategy
 
 3.1. Discover existing seeders; prefer dev/test fixture sets.
 
-3.2. Use **append-only** seeding or a **separate test DB** — record exact command(s).
+3.2. Use **append-only** seeding or a **separate test DB** — record exact command(s). Creating new test users, registering through the UI, logging in as seeded users, and mutating clearly-marked test records is allowed when needed to exercise real flows.
 
 3.3. **Forbidden** against the real DB: `migrate:fresh`, `migrate:refresh`, `migrate:reset`, `db:wipe`, `RefreshDatabase`, truncate, drop.
 
 3.4. Discover credentials from seeders or env examples — never invent secrets.
+
+3.5. Prefer realistic fixtures over toy placeholders: enough roles, statuses, dates, permissions, files, and related entities to make the UI stateful and clickable.
 
 ## 4. QA surface map
 
