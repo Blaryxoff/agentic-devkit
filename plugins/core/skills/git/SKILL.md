@@ -14,6 +14,10 @@ Your job is to ensure all git operations follow team conventions when the user a
 
 If the project uses the devkit toolkit, read `.devkit/toolkit.json` to identify enabled plugins. For each active plugin, read its conduct docs (`plugins/<plugin>/conduct/`) for git-related rules. Apply those standards alongside the conventions below.
 
+## Commit workflow (canonical)
+
+When the user asks to commit, follow `plugins/core/conduct/git-commit-workflow.md` exactly — the safety protocol, amend rules, ordered commit steps, and HEREDOC message formatting live there.
+
 ## Conventions
 
 - **Commits**: Conventional Commits (`feat:`, `fix:`, `refactor:`, etc.), imperative mood, one logical change per commit.

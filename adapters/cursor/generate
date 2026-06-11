@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # devkit-toolkit: Cursor adapter
 #
-# Generates Cursor rules (.mdc), skill symlinks, and merged hooks from resolved plugins.
+# Generates Cursor rules (.mdc) and merged hooks from resolved plugins.
+# Devkit skills are installed globally by bin/devkit-install (~/.cursor/skills).
 #
 # Output (in PROJECT_ROOT):
 #   .cursor/rules/devkit-<plugin>.mdc  — one rule file per resolved plugin with conduct
-#   .cursor/skills/devkit-<plugin>/    — symlinks to each resolved plugin's skill dirs
 #   .cursor/hooks/hooks.json           — merged hooks translated to Cursor event names
 #
 # Input config:
@@ -16,7 +16,7 @@
 #   - For each resolved plugin with conduct, generates an .mdc rule that
 #     instructs Cursor to read the conduct docs on demand
 #   - devkit-core.mdc is always generated with alwaysApply: true
-#   - Skills are symlinked (not copied) to keep them in sync with the toolkit
+#   - Skills are global in ~/.cursor/skills/devkit-*--* (created by devkit-install)
 #   - Hooks from resolved plugins are merged and translated to Cursor event names
 #     (DRY adapter pattern: plugins define hooks once in Claude Code format,
 #      each adapter translates to its target tool's event model)
@@ -43,14 +43,23 @@ resolved_names=$(resolve_plugins)
 ensure_gitignore_entry ".cursor/"
 
 rules_dir="$PROJECT_ROOT/.cursor/rules"
-skills_dir="$PROJECT_ROOT/.cursor/skills"
-mkdir -p "$rules_dir" "$skills_dir"
+mkdir -p "$rules_dir"
 
-# Reap stale devkit skill symlinks (skills removed from a plugin, disabled plugins,
-# or links generated on another machine) before relinking the current resolved set.
-for _l in "$skills_dir"/devkit-*--*; do
-  [ -L "$_l" ] && rm -f "$_l"
-done
+# Reap stale per-project devkit skill symlinks from older adapter versions.
+# Cursor now discovers devkit skills globally from ~/.cursor/skills; this project
+# adapter keeps only project-specific rules and hooks. Leave user-authored
+# .cursor/skills content alone.
+skills_dir="$PROJECT_ROOT/.cursor/skills"
+if [ -d "$skills_dir" ]; then
+  reaped=0
+  for _l in "$skills_dir"/devkit-*--*; do
+    [ -L "$_l" ] || continue
+    rm -f "$_l"
+    reaped=$((reaped + 1))
+  done
+  [ "$reaped" -gt 0 ] && echo "    Removed: $reaped stale .cursor/skills/devkit-*--* symlink(s)"
+  rmdir "$skills_dir" 2>/dev/null || true
+fi
 
 # Glob patterns per plugin (used for rule activation)
 declare_globs() {
@@ -75,7 +84,6 @@ while IFS= read -r name; do
   rel_plugin="$DEVKIT_REF/plugins/$plugin_basename"
 
   has_conduct=$(echo "$plugin_data" | jq 'has("paths") and (.paths | has("conduct"))')
-  has_skills=$(echo "$plugin_data" | jq 'has("paths") and (.paths | has("skills"))')
 
   # --- Generate .mdc rule ---
   if [ "$has_conduct" = "true" ]; then
@@ -117,26 +125,6 @@ while IFS= read -r name; do
     echo "    Created: .cursor/rules/${name}.mdc"
   fi
 
-  # --- Symlink skills ---
-  if [ "$has_skills" = "true" ]; then
-    skills_source="$plugin_dir/skills"
-    target_dir="$skills_dir/$name"
-
-    rm -rf "$target_dir"
-
-    # Create skill symlinks per skill subdirectory
-    if [ -d "$skills_source" ]; then
-      for skill_dir in "$skills_source"/*/; do
-        [ -d "$skill_dir" ] || continue
-        skill_name=$(basename "$skill_dir")
-        skill_target="$skills_dir/${name}--${skill_name}"
-        rm -rf "$skill_target"
-        ln -s "$(cd "$skill_dir" && pwd)" "$skill_target"
-      done
-      echo "    Linked:  .cursor/skills/${name}--* ($(ls -d "$skills_source"/*/ 2>/dev/null | wc -l | tr -d ' ') skills)"
-    fi
-  fi
-
 done <<< "$resolved_names"
 
 # --- Merge and translate hooks ---
@@ -162,7 +150,7 @@ hook_count=$(echo "$cursor_hooks" | jq '[.[] | length] | add // 0')
 echo "    Created: .cursor/hooks/hooks.json ($hook_count hook(s), incl. devkit auto-update)"
 
 echo ""
-echo "Done. Cursor will pick up rules, skills, and hooks automatically."
+echo "Done. Cursor discovers global devkit skills; project rules + hooks generated here."
 echo ""
 echo "Resolved plugins:"
 echo "$resolved_names" | while read -r name; do echo "  - $name"; done

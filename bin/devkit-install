@@ -15,6 +15,7 @@
 #   $HOME/.claude/agents/<name>.md                 core subagent wrappers
 #   $HOME/.claude/settings.json                    SessionStart hook → devkit-update --if-stale
 #   $HOME/.codex/skills/devkit-<plugin>--<skill>/  symlinks to devkit skills for Codex
+#   $HOME/.cursor/skills/devkit-<plugin>--<skill>/ symlinks to devkit skills for Cursor
 #
 # The global clone is the single source of truth. devkit-install runs from the
 # clone it lives in; if that is not the canonical location it bootstraps a clone
@@ -74,7 +75,9 @@ AGENTS_DEST="$CLAUDE_DIR/agents"
 SETTINGS="$CLAUDE_DIR/settings.json"
 CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
 CODEX_SKILLS_DEST="$CODEX_DIR/skills"
-mkdir -p "$SKILLS_DEST" "$CODEX_SKILLS_DEST"
+CURSOR_DIR="${CURSOR_HOME:-$HOME/.cursor}"
+CURSOR_SKILLS_DEST="$CURSOR_DIR/skills"
+mkdir -p "$SKILLS_DEST" "$CODEX_SKILLS_DEST" "$CURSOR_SKILLS_DEST"
 
 # --- Symlink every core skill globally (universal + the devkit router) ---
 core_skills_src="$DEVKIT_HOME/plugins/core/skills"
@@ -90,16 +93,19 @@ for d in "$core_skills_src"/*/; do
 done
 echo "    Linked:  ~/.claude/skills/devkit-core--* ($skill_count skill(s))"
 
-# --- Symlink every devkit skill globally for Codex CLI ---
-# Codex already has global system skills under ~/.codex/skills/.system. Keep
-# devkit-managed links namespaced as devkit-<plugin>--<skill> and reap only
-# those links, never .system or user-authored skills. Codex has no devkit router
-# equivalent, so global installation exposes all plugin skills; per-project
-# AGENTS.md still carries the project-specific conduct references.
-for entry in "$CODEX_SKILLS_DEST"/devkit-*--*; do
-  [ -L "$entry" ] && rm -f "$entry"
+# --- Symlink every devkit skill globally for Codex CLI and Cursor ---
+# Neither Codex nor Cursor has a devkit-router equivalent, so global installation
+# exposes all plugin skills; their per-project adapters still carry the
+# project-specific conduct references (AGENTS.md / .cursor/rules). Links are
+# namespaced as devkit-<plugin>--<skill> and only those links are reaped — never
+# Codex's .system skills nor user-authored skills (e.g. ~/.cursor/skills without
+# the devkit- prefix).
+for dest in "$CODEX_SKILLS_DEST" "$CURSOR_SKILLS_DEST"; do
+  for entry in "$dest"/devkit-*--*; do
+    [ -L "$entry" ] && rm -f "$entry"
+  done
 done
-codex_skill_count=0
+global_skill_count=0
 for plugin_dir in "$DEVKIT_HOME"/plugins/*/; do
   [ -d "$plugin_dir" ] || continue
   manifest="$plugin_dir/plugin.json"
@@ -110,11 +116,14 @@ for plugin_dir in "$DEVKIT_HOME"/plugins/*/; do
   for d in "$skills_src"/*/; do
     [ -d "$d" ] || continue
     n=$(basename "$d")
-    ln -s "$(cd "$d" && pwd)" "$CODEX_SKILLS_DEST/${plugin_name}--$n"
-    codex_skill_count=$((codex_skill_count + 1))
+    abs="$(cd "$d" && pwd)"
+    ln -s "$abs" "$CODEX_SKILLS_DEST/${plugin_name}--$n"
+    ln -s "$abs" "$CURSOR_SKILLS_DEST/${plugin_name}--$n"
+    global_skill_count=$((global_skill_count + 1))
   done
 done
-echo "    Linked:  ~/.codex/skills/devkit-*--* ($codex_skill_count skill(s))"
+echo "    Linked:  ~/.codex/skills/devkit-*--*  ($global_skill_count skill(s))"
+echo "    Linked:  ~/.cursor/skills/devkit-*--* ($global_skill_count skill(s))"
 
 # --- Core subagents → ~/.claude/agents (claudeSubagent skills keep isolation) ---
 plugin_index=$(_build_plugin_index)
@@ -161,5 +170,5 @@ if [ "$RUN_CLAUDE" -eq 1 ]; then
 fi
 
 echo ""
-echo "Done. Restart Claude Code / Codex (or start a new session) to load global skills + the daily auto-update hook."
+echo "Done. Restart Claude Code / Codex / Cursor (or start a new session) to load global skills + the daily auto-update hook."
 echo "Per project, keep .devkit/toolkit.json; adapters write project conduct/agents/MCP only — skills live globally."
