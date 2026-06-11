@@ -142,9 +142,11 @@ mcp_count=$(echo "$plugin_mcp" | jq 'length')
 if [ "$mcp_count" != "0" ]; then
   mcp_file="$PROJECT_ROOT/.mcp.json"
   if [ -f "$mcp_file" ]; then
-    updated=$(jq --argjson s "$plugin_mcp" '.mcpServers = ((.mcpServers // {}) * $s)' "$mcp_file")
+    # Add plugin-declared servers without clobbering project-specific server
+    # customisations (for example a per-project chrome-devtools userDataDir).
+    updated=$(jq --argjson s "$plugin_mcp" '.mcpServers = ($s * (.mcpServers // {}))' "$mcp_file")
     echo "$updated" | jq '.' > "$mcp_file"
-    echo "    Updated: .mcp.json ($mcp_count server(s) upserted)"
+    echo "    Updated: .mcp.json ($mcp_count server(s) merged)"
   else
     jq -n --argjson s "$plugin_mcp" '{mcpServers: $s}' > "$mcp_file"
     echo "    Created: .mcp.json ($mcp_count server(s))"
