@@ -105,6 +105,8 @@ SECTION_END="<!-- devkit-toolkit:end -->"
 new_section="${SECTION_START}
 ## devkit-toolkit
 
+$(cat "$ADAPTER_DIR/../../plugins/core/hooks/skill-eval.txt")
+
 Read and apply the following conduct documents for this project:
 $(echo -e "$conduct_lines")$(echo -e "$hook_instructions")
 ${SECTION_END}"

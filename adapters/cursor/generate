@@ -112,6 +112,10 @@ while IFS= read -r name; do
       echo ""
       echo "# $name"
       echo ""
+      if [ "$name" = "devkit-core" ]; then
+        cat "$ADAPTER_DIR/../../plugins/core/hooks/skill-eval.txt"
+        echo ""
+      fi
       echo "Read and apply the following conduct documents for this project:"
       echo ""
       # List all .md files in the conduct directory
