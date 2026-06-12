@@ -24,6 +24,7 @@ When the user asks to commit, follow `plugins/core/conduct/git-commit-workflow.m
 - **Branches**: `<type>/<ticket-or-scope>` format, short-lived, rebased regularly.
 - **PR/MR title**: mirrors the logical change and commit style.
 - **PR/MR body**: includes Problem, Solution, Risks, and Verification steps.
+- **Wording**: write commit messages and PR/MR text per `plugins/core/conduct/communication-style.md` — direct, brief, no AI-speak.
 - **Tagging**: semantic versioning (`vMAJOR.MINOR.PATCH`), annotated tags for releases.
 - **Hygiene**: never force-push shared main branch; keep history clean; avoid unrelated file churn.
 - **Forbidden**: committing secrets (`.env`, credentials, tokens), generated noise, or local machine artifacts.

@@ -26,6 +26,7 @@ Your job is to produce a deep review of newly created project code. Inspect:
 ## Shared protocols
 
 - Load conduct from `.devkit/toolkit.json` enabled plugins before reviewing.
+- Apply the stack-agnostic checklist in `plugins/core/conduct/code-smells.md` (which pulls in `code-comments.md`).
 - Ground in real inputs: `plugins/core/conduct/inputs-grounding-gate.md`.
 - Emit findings using `plugins/core/conduct/review-findings-format.md`.
 - Pass `plugins/core/conduct/readiness-gate.md` before declaring the review complete.

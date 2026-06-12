@@ -155,6 +155,22 @@ else
   echo "    Hook:    ~/.claude/settings.json created (SessionStart auto-update)"
 fi
 
+# --- UserPromptSubmit skill-eval hook in ~/.claude/settings.json ---
+# Forces the model to evaluate/activate relevant skills before implementing.
+# Instruction-only (no permissions). Installed globally, mirroring the router's reach.
+skilleval_cmd="sh $DEVKIT_HOME/plugins/core/hooks/skill-eval.sh"
+updated=$(jq --arg cmd "$skilleval_cmd" '
+  .hooks //= {} |
+  .hooks.UserPromptSubmit = (
+    ((.hooks.UserPromptSubmit // []) | map(select(
+      (.hooks // []) | any(.command == $cmd) | not
+    )))
+    + [ { hooks: [ { type: "command", command: $cmd } ] } ]
+  )
+' "$SETTINGS")
+printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
+echo "    Hook:    ~/.claude/settings.json (UserPromptSubmit skill-eval)"
+
 # --- Optional per-project adapters ---
 if [ "$RUN_CURSOR" -eq 1 ]; then
   echo ""
