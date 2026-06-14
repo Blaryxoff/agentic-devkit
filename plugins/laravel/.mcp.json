@@ -13,5 +13,11 @@
     "url": "http://localhost:8080/mcp",
     "_comment": "HTTP transport: connects to a running MCP server over HTTP"
   },
-  "mcpServers": {}
+  "mcpServers": {
+    "laravel-boost": {
+      "type": "stdio",
+      "command": "php",
+      "args": ["artisan", "boost:mcp"]
+    }
+  }
 }
