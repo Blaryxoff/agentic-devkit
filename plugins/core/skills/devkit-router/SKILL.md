@@ -13,7 +13,7 @@ natively — isolation skills become subagents (`.claude/agents/`) and inline sk
 (`.claude/skills/devkit-<plugin>--<skill>`). Prefer those native entries. Fall back to this router only when native
 registration cannot cover the request: (a) a **multi-repo** project whose plugin set is the union of several
 `.devkit/toolkit.json` roots, or (b) an inline skill **skipped due to a frontmatter-name collision** (e.g. laravel and
-nuxt both define `devkit-coder` — only the first is linked, the rest route through here).
+nuxt both define `devkit-tester` — only the first is linked, the rest route through here).
 
 `DEVKIT_HOME` = the global clone, default `~/.claude/agentic-devkit`. All `plugins/...` paths below resolve under it. If
 `$DEVKIT_HOME/bin/devkit-resolve` is missing, resolve this skill's own symlink (`~/.claude/skills/devkit-core--devkit-router`)
