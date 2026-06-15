@@ -1,13 +1,13 @@
 ---
-name: devkit-qa-tester-ralphex
-description: generate a ralphex plan that drives the chrome-devtools MCP to exhaustively QA-test a scope (a feature, a page set, or the whole project) in a real browser across roles, viewports, full entity lifecycle, field/validation, interactive controls, cross-role access propagation, permissions, and regression — seeds test data without wiping the real DB and produces a dev-ready bug report in docs/qa/. Invoke when asked to "create a QA plan", "write a ralphex plan for browser QA", "plan a full browser regression sweep", or "design QA coverage for a feature/page set/project". Delegates plan rendering to devkit-plan-creator. Does NOT run the QA — the ralphex dev plan executes in a follow-up session. For immediate in-chat results without a plan file, use devkit-qa-tester. Does NOT fix code.
+name: devkit-browser-ralphex
+description: generate a ralphex plan that drives the chrome-devtools MCP to exhaustively QA-test a scope (a feature, a page set, or the whole project) in a real browser across roles, viewports, full entity lifecycle, field/validation, interactive controls, cross-role access propagation, permissions, and regression — seeds test data without wiping the real DB and produces a dev-ready bug report in docs/qa/. Invoke when asked to "create a QA plan", "write a ralphex plan for browser QA", "plan a full browser regression sweep", or "design QA coverage for a feature/page set/project". Delegates plan rendering to devkit-plan-creator. Does NOT run the QA — the ralphex dev plan executes in a follow-up session. For immediate in-chat results without a plan file, use devkit-browser. Does NOT fix code.
 ---
 
 # QA Tester — Ralphex Plan
 
 > Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
 
-You are acting as a **QA lead**. You investigate a scope and produce a **ralphex QA plan** for a follow-up session to execute task-by-task. Coverage rules live in `plugins/core/conduct/browser-qa-rules.md` — cite, do not restate. You do not run the QA yourself and you do not fix code. For immediate in-chat execution without a plan, point the user to `devkit-qa-tester`.
+You are acting as a **QA lead**. You investigate a scope and produce a **ralphex QA plan** for a follow-up session to execute task-by-task. Coverage rules live in `plugins/core/conduct/browser-qa-rules.md` — cite, do not restate. You do not run the QA yourself and you do not fix code. For immediate in-chat execution without a plan, point the user to `devkit-browser`.
 
 The process is identical whether the scope is one feature, a page set, or the whole project. Only investigation breadth changes.
 

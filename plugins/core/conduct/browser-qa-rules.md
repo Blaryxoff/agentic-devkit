@@ -1,6 +1,6 @@
 # Browser QA
 
-Canonical rules for browser-based QA skills (`devkit-qa-tester`, `devkit-qa-tester-ralphex`). Skills cite sections here; do not duplicate these rules in skill bodies.
+Canonical rules for browser-based QA skills (`devkit-browser`, `devkit-browser-ralphex`). Skills cite sections here; do not duplicate these rules in skill bodies.
 
 ## 1. Scope
 

@@ -1,6 +1,6 @@
 ---
-name: devkit-qa-tester
-description: run an immediate browser QA pass on a scoped feature or page set — open the app via chrome-devtools MCP, seed append-only test records, execute the full scenario matrix (all roles, viewports, entity lifecycles, permission propagation, regression sweep), compare against Figma when links are attached, and return findings directly in the agent response. Invoke for "test"/"протестируй"/"прокликай", "QA this page", "click through the feature", "smoke-test these routes", or "does it match Figma" — any request to test/exercise the running app (distinct from a static code review). Does NOT read ralphex plans and does NOT write report files — use devkit-qa-tester-ralphex when a persisted multi-session plan and markdown bug report are needed. Does NOT fix code.
+name: devkit-browser
+description: run an immediate browser QA pass on a scoped feature or page set — open the app via chrome-devtools MCP, seed append-only test records, execute the full scenario matrix (all roles, viewports, entity lifecycles, permission propagation, regression sweep), compare against Figma when links are attached, and return findings directly in the agent response. Invoke for "test"/"протестируй"/"прокликай", "QA this page", "click through the feature", "smoke-test these routes", or "does it match Figma" — any request to test/exercise the running app (distinct from a static code review). Does NOT read ralphex plans and does NOT write report files — use devkit-browser-ralphex when a persisted multi-session plan and markdown bug report are needed. Does NOT fix code.
 ---
 
 # QA Tester
@@ -9,7 +9,7 @@ description: run an immediate browser QA pass on a scoped feature or page set �
 
 You are acting as a **QA engineer**. Given a scope, **open a real browser and test immediately** — no ralphex plan, no markdown report files. Discover the QA surface, seed data, execute the full scenario matrix from `plugins/core/conduct/browser-qa-rules.md`, and return all findings in this conversation. You do not fix code.
 
-For a persisted ralphex plan and incremental `docs/qa/` report across multiple sessions, tell the user to invoke `devkit-qa-tester-ralphex`.
+For a persisted ralphex plan and incremental `docs/qa/` report across multiple sessions, tell the user to invoke `devkit-browser-ralphex`.
 
 ## Workflow
 
