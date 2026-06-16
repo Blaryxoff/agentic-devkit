@@ -171,6 +171,23 @@ updated=$(jq --arg cmd "$skilleval_cmd" '
 printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
 echo "    Hook:    ~/.claude/settings.json (UserPromptSubmit skill-eval)"
 
+# --- PreToolUse coder-gate hook in ~/.claude/settings.json ---
+# Hard-gates the first code edit per session (exit 2) so the comment/surgical conduct is
+# in context before any code lands — closing the "advisory but unenforced" gap. The
+# blocked first edit is re-issued automatically by the model; fires once per session.
+codergate_cmd="sh $DEVKIT_HOME/plugins/core/hooks/coder-gate.sh"
+updated=$(jq --arg cmd "$codergate_cmd" '
+  .hooks //= {} |
+  .hooks.PreToolUse = (
+    ((.hooks.PreToolUse // []) | map(select(
+      (.hooks // []) | any(.command == $cmd) | not
+    )))
+    + [ { matcher: "Edit|Write|MultiEdit", hooks: [ { type: "command", command: $cmd } ] } ]
+  )
+' "$SETTINGS")
+printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
+echo "    Hook:    ~/.claude/settings.json (PreToolUse coder-gate)"
+
 # --- Optional per-project adapters ---
 if [ "$RUN_CURSOR" -eq 1 ]; then
   echo ""

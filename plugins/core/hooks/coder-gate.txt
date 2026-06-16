@@ -1,0 +1,10 @@
+[devkit coder-gate] First code edit this session — apply coding-conduct BEFORE writing, then re-issue the edit.
+
+You reached Edit/Write/MultiEdit without the coding-conduct in context. Apply now:
+
+- Comments: comment the WHY, not the what. No comment that restates obvious code. No change-narration (`// now we…`, `// было X, стало Y`, `// added`). A comment must read the same whether written today or in three years.
+- Public-API docs stay: keep PHPDoc/JSDoc on public classes/methods/functions where the contract is non-obvious — that is required, not optional. The ban is on noise, not on contracts.
+- Surgical scope: change only what the task needs. Do not add or reformat comments on lines you did not otherwise have to touch.
+- Stack rules: invoke the `devkit-coder` skill — it loads the active plugins' conduct (Laravel `php.md`/`documentation.md`, Vue, etc.) for the current project.
+
+Source of truth: plugins/core/conduct/code-comments.md, surgical-changes.md. This gate fires once per session. Re-issue your edit now.
