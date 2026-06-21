@@ -15,6 +15,8 @@ Read inputs before editing per `plugins/core/conduct/inputs-grounding-gate.md`: 
 
 Match the conventions of the surrounding code: naming, file layout, error handling, comment style.
 
+When the change uses a third-party library/framework API whose current signature you are not certain of, fetch up-to-date docs first per `plugins/core/conduct/library-docs.md` (Context7 when available) — do not rely on training-cutoff memory.
+
 ## Step 2 — Apply core coding-conduct (every edit, every stack)
 
 These govern *how* you change code regardless of language. Read and obey them:
