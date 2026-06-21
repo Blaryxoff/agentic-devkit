@@ -39,6 +39,7 @@ New conduct files added later are read by default (only the named skips are excl
 
 ## Step 4 — Quality bar before finishing
 
+- For a multi-step change, pair each implementation step with a verification step in the todo list (lint/typecheck for logic, a rendered screenshot for UI). Do not start the next step until the current one passes the `readiness-gate.md` gate.
 - Edits are minimal and reversible; every changed line traces to the task.
 - Code matches local conventions in sibling files; no DRY/SOLID violations introduced.
 - No secrets, tokens, or environment-specific values hardcoded.

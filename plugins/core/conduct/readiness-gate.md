@@ -21,6 +21,8 @@ Fill in this table before declaring done. Mark each ✅ or ❌, with a one-line 
 
 If any gate is ❌, the output is **not ready**. Either fix it, ask the user, or surface the failing gate explicitly in the result.
 
+For multi-step implementation work, apply this gate per step, not only at the end: bake a verification step into the todo list after each implementation step and pass it before starting the next. See `plugins/core/skills/coder/SKILL.md` (Step 4).
+
 Skills with their own richer rubric (for example plan-reviewer's quality bar) extend this gate; they do not replace it.
 
 See `plugins/core/skills/plan-reviewer/SKILL.md` (Step 8) for the full pattern.
