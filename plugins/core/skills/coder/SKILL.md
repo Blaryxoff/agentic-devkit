@@ -7,8 +7,6 @@ description: triggers when writing, editing, or refactoring code (any stack) —
 
 > Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
 
-You write production-ready code that follows team conventions **from the first line**, not code that gets fixed up later in review. This skill front-loads the standards the implementation loop otherwise never sees.
-
 ## Step 1 — Ground before writing
 
 Read inputs before editing per `plugins/core/conduct/inputs-grounding-gate.md`: the active plan (if the task is non-trivial), sibling code in the same module, and the relevant schema. If a required input is missing, stop and ask — do not guess.
@@ -32,7 +30,8 @@ Determine the stack, then read its rules so the edit is stack-correct:
 
 1. Read `.devkit/toolkit.json` to get `enabled` plugins. Add their transitive `dependencies` (from each `plugins/<p>/plugin.json`) and always include `devkit-core`.
 2. For each **non-core** enabled plugin, read from its `conduct/` directory:
-   - **always:** `architecture.md`, `anti_patterns.md` — the stack backbone.
+   - **always:** `anti_patterns.md` — the stack backbone that applies to any edit.
+   - **when the change adds/moves files, introduces a module, or alters cross-layer structure:** `architecture.md`. Skip it for an in-place edit to existing code — Step 1's sibling-code grounding already supplies the local pattern.
    - **on-demand by what the change touches:** e.g. `stores.md` (Pinia), `php.md` / `documentation.md` (PHP, comments/PHPDoc), `security.md` (auth/input/secrets), `error_handling.md`, `database-safety.md`, `configs.md`, `logging.md`, `enums.md`, `thin_controller_model.md`, `cmd.md`.
    - **skip:** `README.md`, `CLAUDE.md`, `fast_code_review_checklist.md`, `git.md`, `makefile.md`, `observability.md`, and the `spec/` and `testing/` directories — those belong to plan/review/QA/ops phases, not the implementation edit.
 3. A conduct rule that conflicts with a project-level rule (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules/`) loses — prefer the project rule and note the exception.
