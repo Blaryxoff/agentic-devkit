@@ -28,19 +28,21 @@ Canonical rules for visual frontend skills (`devkit-pixel-build`, `devkit-pixel-
 
 3.1. Start from the browser tab already open when one exists; do not navigate away unless the task requires it.
 
-3.2. `take_snapshot` before acting on each page.
+3.2. Each project uses an isolated Chrome profile (`.cursor/chrome-profile/` via per-project `.cursor/mcp.json`). Tabs and logins from other projects are not shared.
 
-3.3. `list_pages` → `select_page` or `new_page` as needed.
+3.3. `take_snapshot` before acting on each page.
 
-3.4. Set viewport per check: `emulate` with `viewport: "<width>x<height>"` or `resize_page`.
+3.4. `list_pages` → `select_page` or `new_page` as needed.
 
-3.5. Navigate with `navigate_page` to `<baseUrl><route>`.
+3.5. Set viewport per check: `emulate` with `viewport: "<width>x<height>"` or `resize_page`.
 
-3.6. Authenticated routes: `navigate_page` to login URL → `take_snapshot` → `fill_form` → submit → `wait_for` confirmation. Discover credentials from `visual/config.json`, seeders, or env examples — never invent secrets.
+3.6. Navigate with `navigate_page` to `<baseUrl><route>`.
 
-3.7. Wait for page readiness: `wait_for` with expected text, or `evaluate_script` checking `document.fonts.ready`.
+3.7. Authenticated routes: `navigate_page` to login URL → `take_snapshot` → `fill_form` → submit → `wait_for` confirmation. Discover credentials from `visual/config.json`, seeders, or env examples — never invent secrets.
 
-3.8. Stabilize before screenshot — inject via `evaluate_script`:
+3.8. Wait for page readiness: `wait_for` with expected text, or `evaluate_script` checking `document.fonts.ready`.
+
+3.9. Stabilize before screenshot — inject via `evaluate_script`:
 
 ```js
 async () => {
@@ -59,7 +61,7 @@ async () => {
 }
 ```
 
-3.9. `take_screenshot` with `filePath` for every page × viewport check. Save captures under `visual/output/<page>/<viewport>/actual.png`.
+3.10. `take_screenshot` with `filePath` for every page × viewport check. Save captures under `visual/output/<page>/<viewport>/actual.png`.
 
 3.10. Apply `plugins/core/conduct/browser-qa-rules.md` §6.1–6.3 for general session discipline.
 

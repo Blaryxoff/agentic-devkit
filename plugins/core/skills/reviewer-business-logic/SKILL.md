@@ -1,6 +1,7 @@
 ---
 name: devkit-reviewer-business-logic
-description: orchestrate behavioural-completeness / business-rule-correctness review across the active stack — dispatches to laravel and frontend variants and presents their reports sequentially. Run alongside devkit-reviewer-deep when reviewing code or a whole branch ("поревьюй ветку/изменения", "review the branch/code") — the two cover different axes and should both run for a full code review. Routing policy: plugins/core/conduct/review-routing.md.
+description: >-
+  orchestrate behavioural-completeness / business-rule-correctness review across the active stack — dispatches to laravel and frontend variants and presents their reports sequentially. Run alongside devkit-reviewer-deep when reviewing code or a whole branch ("поревьюй ветку/изменения", "review the branch/code") — the two cover different axes and should both run for a full code review. Routing policy: plugins/core/conduct/review-routing.md.
 ---
 
 # Business-logic reviewer (orchestrator)

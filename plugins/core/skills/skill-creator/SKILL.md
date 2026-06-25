@@ -58,6 +58,13 @@ claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 
 Descriptions are routing metadata. They must say **when to use** the skill, not just what it is called.
 
+Codex uses a strict YAML frontmatter parser. If `description` contains `:` followed by a space (e.g. `Routing policy:`, `misaligned:`), use a folded block scalar — not a bare inline string:
+
+```yaml
+description: >-
+  …text with Routing policy: plugins/core/conduct/foo.md.
+```
+
 Bad:
 
 ```yaml

@@ -1,6 +1,7 @@
 ---
 name: devkit-reviewer-deep
-description: orchestrate deep code-quality review across the active stack (architecture, security, data correctness, performance) — dispatches to laravel and frontend variants and presents their reports sequentially. Use when the user asks to review code, a code change, or a whole branch ("поревьюй ветку/изменения", "review the branch/code"). Run TOGETHER with devkit-reviewer-business-logic for a full branch/code review. For plan/spec-only changes use devkit-plan-reviewer; for a quick regression-only pass use devkit-reviewer-fast. Routing policy: plugins/core/conduct/review-routing.md.
+description: >-
+  orchestrate deep code-quality review across the active stack (architecture, security, data correctness, performance) — dispatches to laravel and frontend variants and presents their reports sequentially. Use when the user asks to review code, a code change, or a whole branch ("поревьюй ветку/изменения", "review the branch/code"). Run TOGETHER with devkit-reviewer-business-logic for a full branch/code review. For plan/spec-only changes use devkit-plan-reviewer; for a quick regression-only pass use devkit-reviewer-fast. Routing policy: plugins/core/conduct/review-routing.md.
 ---
 
 # Deep reviewer (orchestrator)

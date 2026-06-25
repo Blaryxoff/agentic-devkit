@@ -29,6 +29,7 @@ set -euo pipefail
 ADAPTER_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$ADAPTER_DIR/../_lib/resolve.sh"
 source "$ADAPTER_DIR/../_lib/hooks.sh"
+source "$ADAPTER_DIR/../_lib/mcp.sh"
 source "$ADAPTER_DIR/../_lib/claude_agents.sh"
 
 echo "==> Claude Code adapter: generating config..."
@@ -125,31 +126,25 @@ elif [ "$has_hooks" = "true" ]; then
 fi
 
 # --- .mcp.json (upsert plugin-declared MCP servers, preserve user entries) ---
-plugin_mcp="{}"
-while IFS= read -r name; do
-  [ -z "$name" ] && continue
-  pdata=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
-  mcp_rel=$(echo "$pdata" | jq -r '.paths.mcpServers // empty')
-  [ -n "$mcp_rel" ] || continue
-  pdir=$(echo "$pdata" | jq -r '._dir')
-  mcp_path="$pdir/${mcp_rel#./}"
-  [ -f "$mcp_path" ] || continue
-  servers=$(jq '.mcpServers // {}' "$mcp_path")
-  plugin_mcp=$(echo "$plugin_mcp" | jq --argjson s "$servers" '. * $s')
-done <<< "$resolved_names"
+plugin_mcp=$(merge_plugin_mcp_servers "$plugin_index" "$resolved_names")
+chrome_profile="$PROJECT_ROOT/.cursor/chrome-profile"
 
 mcp_count=$(echo "$plugin_mcp" | jq 'length')
 if [ "$mcp_count" != "0" ]; then
+  ensure_gitignore_entry ".cursor/chrome-profile/"
   mcp_file="$PROJECT_ROOT/.mcp.json"
   if [ -f "$mcp_file" ]; then
-    # Add plugin-declared servers without clobbering project-specific server
-    # customisations (for example a per-project chrome-devtools userDataDir).
-    updated=$(jq --argjson s "$plugin_mcp" '.mcpServers = ($s * (.mcpServers // {}))' "$mcp_file")
+    existing=$(jq '.mcpServers // {}' "$mcp_file")
+    plugin_mcp=$(echo "$plugin_mcp" | jq --argjson e "$existing" '. * $e')
+  fi
+  plugin_mcp=$(apply_chrome_devtools_profile "$plugin_mcp" "$chrome_profile")
+  if [ -f "$mcp_file" ]; then
+    updated=$(jq --argjson s "$plugin_mcp" '.mcpServers = $s' "$mcp_file")
     echo "$updated" | jq '.' > "$mcp_file"
-    echo "    Updated: .mcp.json ($mcp_count server(s) merged)"
+    echo "    Updated: .mcp.json ($mcp_count server(s) merged, per-project chrome profile)"
   else
     jq -n --argjson s "$plugin_mcp" '{mcpServers: $s}' > "$mcp_file"
-    echo "    Created: .mcp.json ($mcp_count server(s))"
+    echo "    Created: .mcp.json ($mcp_count server(s), per-project chrome profile)"
   fi
 fi
 

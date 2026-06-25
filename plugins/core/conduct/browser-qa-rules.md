@@ -24,6 +24,8 @@ Canonical rules for browser-based QA skills (`devkit-browser`, `devkit-browser-r
 
 2.6. Do not use Playwright as a second browser layer for devkit QA. The browser authority is chrome-devtools MCP; lifecycle helpers are limited to starting/stopping local dev servers.
 
+2.7. chrome-devtools MCP: per-project `.cursor/mcp.json` (from `devkit-install --cursor`) overrides global `~/.cursor/mcp.json` and uses an isolated profile at `.cursor/chrome-profile/`. Projects without local config fall back to the global entry.
+
 ## 3. Seed strategy
 
 3.1. Discover existing seeders; prefer dev/test fixture sets.

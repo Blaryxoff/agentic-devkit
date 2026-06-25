@@ -6,6 +6,7 @@
 #
 # Output (in PROJECT_ROOT):
 #   .cursor/rules/devkit-<plugin>.mdc  — one rule file per resolved plugin with conduct
+#   .cursor/mcp.json                   — MCP servers with per-project chrome-devtools profile
 #   .cursor/hooks/hooks.json           — merged hooks translated to Cursor event names
 #
 # Input config:
@@ -26,6 +27,7 @@ set -euo pipefail
 ADAPTER_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$ADAPTER_DIR/../_lib/resolve.sh"
 source "$ADAPTER_DIR/../_lib/hooks.sh"
+source "$ADAPTER_DIR/../_lib/mcp.sh"
 
 # Conduct paths embedded in generated .mdc use the stable global-clone reference
 # (e.g. ~/.claude/agentic-devkit) so output is identical regardless of where the
@@ -153,8 +155,33 @@ echo "$cursor_hooks" | jq '.' > "$hooks_file"
 hook_count=$(echo "$cursor_hooks" | jq '[.[] | length] | add // 0')
 echo "    Created: .cursor/hooks/hooks.json ($hook_count hook(s), incl. devkit auto-update)"
 
+# --- .cursor/mcp.json (per-project MCP servers; overrides global ~/.cursor/mcp.json) ---
+plugin_mcp=$(merge_plugin_mcp_servers "$plugin_index" "$resolved_names")
+chrome_profile='${workspaceFolder}/.cursor/chrome-profile'
+
+mcp_count=$(echo "$plugin_mcp" | jq 'length')
+if [ "$mcp_count" != "0" ]; then
+  ensure_gitignore_entry ".cursor/chrome-profile/"
+  cursor_dir="$PROJECT_ROOT/.cursor"
+  mkdir -p "$cursor_dir"
+  mcp_file="$cursor_dir/mcp.json"
+  if [ -f "$mcp_file" ]; then
+    existing=$(jq '.mcpServers // {}' "$mcp_file")
+    plugin_mcp=$(echo "$plugin_mcp" | jq --argjson e "$existing" '. * $e')
+  fi
+  plugin_mcp=$(apply_chrome_devtools_profile "$plugin_mcp" "$chrome_profile")
+  if [ -f "$mcp_file" ]; then
+    updated=$(jq --argjson s "$plugin_mcp" '.mcpServers = $s' "$mcp_file")
+    echo "$updated" | jq '.' > "$mcp_file"
+    echo "    Updated: .cursor/mcp.json ($mcp_count server(s), per-project chrome profile)"
+  else
+    jq -n --argjson s "$plugin_mcp" '{mcpServers: $s}' > "$mcp_file"
+    echo "    Created: .cursor/mcp.json ($mcp_count server(s), per-project chrome profile)"
+  fi
+fi
+
 echo ""
-echo "Done. Cursor discovers global devkit skills; project rules + hooks generated here."
+echo "Done. Cursor discovers global devkit skills; project rules, MCP, and hooks generated here."
 echo ""
 echo "Resolved plugins:"
 echo "$resolved_names" | while read -r name; do echo "  - $name"; done

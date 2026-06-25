@@ -7,7 +7,7 @@ Adapters translate the resolved plugin set into tool-specific configuration. Eac
 | Adapter | Target Tool | Output |
 |---------|-------------|--------|
 | `claude` | Claude Code | `.claude-plugin/marketplace.json`, `.claude/settings.json` (permissions + hooks) |
-| `cursor` | Cursor IDE | `.cursor/rules/devkit-*.mdc`, `.cursor/skills/devkit-*--*/`, `.cursor/hooks/hooks.json` |
+| `cursor` | Cursor IDE | `.cursor/rules/devkit-*.mdc`, `.cursor/mcp.json`, `.cursor/hooks/hooks.json` |
 | `codex` | OpenAI Codex | `.codex/skills/devkit-*--*/`, `AGENTS.md` section (conduct + hook instructions) |
 
 ## Usage

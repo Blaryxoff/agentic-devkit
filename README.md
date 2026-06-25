@@ -130,7 +130,7 @@ Resolves: `core -> laravel`
 | Adapter  | Generated files                                                                                                        |
 |----------|------------------------------------------------------------------------------------------------------------------------|
 | `claude` | `.claude/settings.json` (hooks), `.claude/agents/*.md` (stack subagents), `.mcp.json` — core skills + router are global |
-| `cursor` | `.cursor/rules/devkit-*.mdc`, `.cursor/skills/devkit-*--*/` (symlinks), `.cursor/hooks/hooks.json`                     |
+| `cursor` | `.cursor/rules/devkit-*.mdc`, `.cursor/mcp.json` (per-project chrome profile), `.cursor/hooks/hooks.json`                     |
 | `codex`  | `.codex/skills/devkit-*--*/` (symlinks), managed `devkit-toolkit` section in `AGENTS.md` (conduct + hook instructions) |
 
 Generated text (conduct paths in `.mdc` / `AGENTS.md`) references the global clone at `~/.claude/agentic-devkit`, so
