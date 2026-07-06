@@ -23,9 +23,11 @@ Apply in any review skill (deep, fast, business-logic, logging, plan) after it h
    codex exec --sandbox read-only --skip-git-repo-check \
      "Use the <codex-skill-slug> skill to review the same scope: <scope description>. \
       Review only — do not modify code. Output findings only, in the devkit review-findings-format \
-      (defect type, finding, evidence as file:line, suggested fix), grouped by Blocking/Significant/Minor."
+      (defect type, finding, evidence as file:line, suggested fix), grouped by Blocking/Significant/Minor." \
+     < /dev/null
    ```
 
+   - Always end the invocation with `< /dev/null`. `codex exec` reads stdin to append a `<stdin>` block even when the prompt is a positional arg, so an inherited open pipe (common when launching in the background) never closes and codex blocks forever on "Reading additional input from stdin…"; `/dev/null` gives immediate EOF.
    - `<codex-skill-slug>` is this skill's Codex symlink under `.codex/skills/` (e.g. `devkit-core--reviewer-fast`). Each skill names its own slug where it cites this protocol.
    - `<scope description>` is the exact thing you reviewed (working-tree diff, branch diff, named files, or the plan document), so both agents review the same thing.
    - If the run fails, times out, or returns nothing, note `Codex cross-check: skipped (unavailable)` and present your own findings unchanged.
