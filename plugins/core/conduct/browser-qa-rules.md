@@ -34,7 +34,7 @@ Canonical rules for browser-based QA skills (`devkit-browser`, `devkit-browser-r
 
 3.3. **Forbidden** against the real DB: `migrate:fresh`, `migrate:refresh`, `migrate:reset`, `db:wipe`, `RefreshDatabase`, truncate, drop.
 
-3.4. Discover credentials from seeders or env examples — never invent secrets.
+3.4. For **existing/real accounts**, discover credentials from seeders or env examples — never invent or reset their secrets. For records you create **solely for testing**, you may set a known password (seed one, or register through the UI with a password you choose) so you can log in — mark them clearly as test-only and keep seeding append-only.
 
 3.5. Prefer realistic fixtures over toy placeholders: enough roles, statuses, dates, permissions, files, and related entities to make the UI stateful and clickable.
 
