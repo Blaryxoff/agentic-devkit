@@ -29,20 +29,23 @@ merge_plugin_mcp_servers() {
   echo "$plugin_mcp"
 }
 
-# Patch chrome-devtools args so each project/session gets its own Chrome profile.
-# $1 — mcpServers JSON object; $2 — profile directory (absolute or ${workspaceFolder}/…).
+# Force chrome-devtools onto an isolated, ephemeral Chrome profile so concurrent
+# sessions (multiple terminals, worktrees, sibling repos) never contend on a
+# profile lock: --isolated gives each server instance a throwaway user-data-dir
+# that Chrome auto-cleans on exit. --experimentalPageIdRouting routes tool calls
+# by page ID, which upstream recommends for concurrent agent sessions.
+# $2 is accepted for call-site compatibility but intentionally unused now that the
+# profile is ephemeral rather than a fixed per-project directory.
 apply_chrome_devtools_profile() {
   local servers_json="$1"
-  local profile_dir="$2"
 
-  echo "$servers_json" | jq --arg dir "$profile_dir" '
+  echo "$servers_json" | jq '
     if .["chrome-devtools"] then
       .["chrome-devtools"].args = [
         "-y",
         "chrome-devtools-mcp@latest",
         "--experimentalPageIdRouting",
-        "--userDataDir",
-        $dir
+        "--isolated"
       ]
     else
       .
