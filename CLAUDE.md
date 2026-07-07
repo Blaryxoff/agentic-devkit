@@ -17,7 +17,7 @@ and standards docs.
 
 ```
 plugins/                 All plugins (convention: plugins/*/plugin.json)
-  core/                  Always-on shared standards (git, plan, test-case, review)
+  core/                  Always-on shared standards (git, plan, test-case, review) + output-styles/
   frontend/              Generic frontend architecture + CSS
   laravel/               Laravel framework skills + conduct
   nuxt/                  Nuxt framework skills + conduct
@@ -25,7 +25,7 @@ plugins/                 All plugins (convention: plugins/*/plugin.json)
   inertia/               Inertia.js transport rules
   tailwind/              Tailwind CSS conventions
 bin/
-  devkit-install           Global installer: core skills + devkit router + core subagents + auto-update hook
+  devkit-install           Global installer: core skills + devkit router + core subagents + output styles + auto-update hook
   devkit-update            Timestamp-guarded `git pull --ff-only` for the global clone (SessionStart hook)
   devkit-resolve           CLI entry point for resolution and adapter generation (repeatable --project for multi-repo)
 adapters/

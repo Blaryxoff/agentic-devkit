@@ -188,6 +188,36 @@ updated=$(jq --arg cmd "$codergate_cmd" '
 printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
 echo "    Hook:    ~/.claude/settings.json (PreToolUse coder-gate)"
 
+# --- Output styles → ~/.claude/output-styles (symlinks) + default selection ---
+# Ships the terse RU output style «Laconica RU» (replaces the English-only caveman plugin).
+# keep-coding-instructions:true inside the style file preserves Claude Code's coding behaviour.
+OUTPUT_STYLES_SRC="$DEVKIT_HOME/plugins/core/output-styles"
+OUTPUT_STYLES_DEST="$CLAUDE_DIR/output-styles"
+if [ -d "$OUTPUT_STYLES_SRC" ]; then
+  mkdir -p "$OUTPUT_STYLES_DEST"
+  # Reap only symlinks that point back into this clone; never touch user-authored styles.
+  for entry in "$OUTPUT_STYLES_DEST"/*; do
+    [ -L "$entry" ] || continue
+    case "$(readlink "$entry")" in
+      "$DEVKIT_HOME"/*) rm -f "$entry" ;;
+    esac
+  done
+  os_count=0
+  for f in "$OUTPUT_STYLES_SRC"/*.md; do
+    [ -f "$f" ] || continue
+    ln -s "$f" "$OUTPUT_STYLES_DEST/$(basename "$f")"
+    os_count=$((os_count + 1))
+  done
+  echo "    Linked:  ~/.claude/output-styles/*.md ($os_count style(s))"
+
+  # Make «Laconica RU» the default, but only when the user has not set one — an explicit
+  # outputStyle wins. The value must match the style file's frontmatter name.
+  style_default="Laconica RU"
+  updated=$(jq --arg s "$style_default" '.outputStyle //= $s' "$SETTINGS")
+  printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
+  echo "    Style:   ~/.claude/settings.json (default outputStyle → $style_default, if unset)"
+fi
+
 # --- Optional per-project adapters ---
 if [ "$RUN_CURSOR" -eq 1 ]; then
   echo ""
