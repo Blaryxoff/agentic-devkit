@@ -30,7 +30,7 @@ QA objective, scope/non-scope, acceptance = "every matrix scenario in `browser-q
 ### Dev (ralphex) plan — tasks as browser actions using chrome-devtools MCP tool names from `browser-qa-rules.md` §8
 
 - `## Validation Commands` (environment readiness): seed command; dev-server check; MCP health (`navigate_page` to base URL + `take_snapshot`).
-- **Task 1 — Set up environment + report file:** run append/test-DB seeders (verify row counts; assert no destructive command); create `docs/qa/YYYYMMDD-<scope>-report.md` with header + summary-table skeleton.
+- **Task 1 — Set up environment + report file:** identify this pass's Chrome profile (`browser-qa-rules.md` §2.8, snapshot before the first chrome-devtools call) and write the exact path into the report header — cleanup runs in a later session and must not read it from shared `$TMPDIR`; run append/test-DB seeders (verify row counts; assert no destructive command); create `docs/qa/YYYYMMDD-<scope>-report.md` with header + summary-table skeleton.
 - **Task 2 — Unauthed sweep of protected routes:** `browser-qa-rules.md` §5.1 per route; append findings.
 - **Task 3 — Unauthed sweep of public routes:** `browser-qa-rules.md` §5.2 per route; append findings.
 - **Tasks 4…N — per role:** login (`browser-qa-rules.md` §5.3); per page × viewport (`§5.4`): lifecycle (`§5.5`), validation (`§5.6`), interaction depth (`§5.7`), console/network (`§5.11`).
@@ -39,6 +39,7 @@ QA objective, scope/non-scope, acceptance = "every matrix scenario in `browser-q
 - **Regression tasks:** `browser-qa-rules.md` §5.10.
 - **Figma tasks** (when URLs in scope): `browser-qa-rules.md` §5.12 per linked frame × viewport.
 - **Incremental reporting:** every test task's penultimate checkbox is `- [ ] Append findings from this task to docs/qa/YYYYMMDD-<scope>-report.md`. Final task compiles summary table and dedupes — never authors findings from memory.
+- **Final task — Cleanup:** `browser-qa-rules.md` §10 — stop only what the plan started, then close this pass's Chrome by the exact `--user-data-dir` path read from the report header (§10.3); never glob-kill (§10.4). Record the outcome in the report.
 - Finding format: `browser-qa-rules.md` §7. Screenshots under `docs/qa/screenshots/`.
 - Checkboxes only inside `### Task N:`; each task ends with `- [ ] Mark completed`.
 
