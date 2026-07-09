@@ -20,7 +20,7 @@ For a persisted ralphex plan and incremental `docs/qa/` report across multiple s
 5. **Log in.** `browser-qa-rules.md` §3.6–§3.7 — password `asdasdasd` on every account this pass creates. Blocked at login? Walk the ladder (discover → register → create → unblock → reset a test-only account) instead of re-submitting the form. Two failures on the same credentials = next rung.
 6. **Test.** `browser-qa-rules.md` §5–§6 — drive chrome-devtools MCP through the full matrix yourself; do not skip dimensions. Prefer real user flows over synthetic DOM poking: navigate, fill, click, submit, re-login, and verify rendered state.
 7. **Figma.** When URLs attached: `browser-qa-rules.md` §5.12 per page × viewport.
-8. **Cleanup.** `browser-qa-rules.md` §10 — stop only what this pass started, leave seeded records, and close this pass's Chrome by its exact `--user-data-dir` (§10.3). Never glob-kill Chrome (§10.4).
+8. **Cleanup.** `browser-qa-rules.md` §10 — stop only what this pass started, leave seeded records, and close this pass's Chrome by its exact `--user-data-dir` (§10.3). Never glob-kill Chrome (§10.4). Browser hung or `browser is already running`? `§11` — never kill by profile name; it takes the MCP server down with it.
 9. **Report in chat.** Emit every finding inline per `browser-qa-rules.md` §7. Do not create or append `docs/qa/*.md` or any other report file.
 
 ## Output

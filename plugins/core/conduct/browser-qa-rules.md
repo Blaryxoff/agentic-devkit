@@ -24,7 +24,7 @@ Canonical rules for browser-based QA skills (`devkit-browser`, `devkit-browser-r
 
 2.6. Do not use Playwright as a second browser layer for devkit QA. The browser authority is chrome-devtools MCP; lifecycle helpers are limited to starting/stopping local dev servers.
 
-2.7. chrome-devtools MCP: per-project `.cursor/mcp.json` (from `devkit-install --cursor`) overrides global `~/.cursor/mcp.json` and uses an isolated profile at `.cursor/chrome-profile/`. Projects without local config fall back to the global entry.
+2.7. chrome-devtools MCP: per-project `.mcp.json` / `.cursor/mcp.json` (from `devkit-install --claude|--cursor`) overrides the global entry. Current adapters pass `--isolated`, giving every server a throwaway profile. Configs generated before that change pin a fixed `--userDataDir=~/.cache/chrome-devtools-mcp/profiles/<project>`; two sessions on such a project collide on the profile lock (§11). Regenerate them rather than working around the collision.
 
 2.8. Identify this pass's Chrome profile, so §10.3 can close exactly that instance. Run step 1 before the first chrome-devtools call of the pass; run step 2 immediately after it. The one new directory is this pass's profile — `--isolated` places it at `$TMPDIR/puppeteer_dev_chrome_profile-<random>`, and Chrome runs with it as `--user-data-dir`.
 
@@ -198,3 +198,15 @@ After the kill, call no chrome-devtools tool: the server's `getContext()` relaun
 10.5. When the §2.8 delta is not exactly one path, kill nothing. Empty means Chrome belongs to an earlier pass in the same MCP server, or the project is on a shared non-isolated profile (`~/.cache/chrome-devtools-mcp/…`) that other sessions may attach to; two or more paths mean a concurrent session raced the §2.8 window and ownership is ambiguous. Report that the browser was left running and why. For the shared-profile case, tell the user to regenerate the MCP config (`bin/devkit-install --claude --project=.`) to get `--isolated`.
 
 10.6. Report the cleanup outcome in the QA summary: which servers were stopped, which Chrome profile was killed (or why not).
+
+## 11. Stuck browser
+
+11.1. `The browser is already running for <dir>. Use --isolated to run multiple browser instances.` means a **live** MCP server from another session already owns that fixed profile. It is not a stale lock, and the browser is not yours. Kill nothing.
+
+11.2. Recover by config, not by signals. Regenerate the project's MCP config so chrome-devtools runs with `--isolated` (`bin/devkit-install --claude --project=.`, plus `--cursor` when the project has `.cursor/mcp.json`), then restart the session's MCP connection. Until that lands, drive the browser that is already running (`list_pages` → `select_page`) instead of forcing a second one.
+
+11.3. Never kill by profile name. Under a fixed profile the path sits in the MCP server's **own** arguments — `npm exec chrome-devtools-mcp@latest --userDataDir=<path>` — so `pkill -f <profile-name>` kills the server, every browser tool dies for the rest of the session, and only a manual `/mcp` reconnect restores them. Chrome's own flag is spelled `--user-data-dir=`; that spelling plus the §10.3 executable check is the only selector that cannot hit the server.
+
+11.4. Never `kill -9` a browser. SIGTERM is sufficient (§10.3) and lets Chrome flush profile state; SIGKILL leaves `SingletonLock`, `SingletonSocket`, and `SingletonCookie` pointing at a dead PID. Chrome clears those on the next launch, so a stale lock is never the cause of §11.1 — do not delete lock files to "fix" it.
+
+11.5. When the browser tools are already gone because a server was killed, stop. Do not respawn chrome-devtools by hand and do not fall back to Playwright (§2.6). Report the loss and tell the user to reconnect via `/mcp`.
