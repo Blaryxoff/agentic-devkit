@@ -59,6 +59,17 @@ A concurrent session that launches Chrome between the two steps also lands in th
 
 3.5. Prefer realistic fixtures over toy placeholders: enough roles, statuses, dates, permissions, files, and related entities to make the UI stateful and clickable.
 
+3.6. **Test password.** Every account this pass creates gets the password `asdasdasd`. This is a devkit convention, not a project secret — do not discover it and do not vary it per project. When the app's password policy rejects it, derive the shortest compliant variant (`Asdasdasd1!`) and carry the exact string forward. Report the identifier and password of every test-created account with the seed command, marked test-only.
+
+3.7. **Login ladder.** Never loop on the login form. Two failed submits with the same credentials mean that rung is dead — move to the next rung. Stop at the first rung that authenticates, and record which rung was used.
+
+1. **Discover.** Read credentials from seeders, factories, `.env.example`, `.env.testing`, `docs/`, README. Use them verbatim.
+2. **Register.** When public registration exists, sign up through the UI as a new test-only user with the §3.6 password.
+3. **Create.** Otherwise create a test-only user through the project's own path — factory, seeder, `tinker`, or a user-create console command — with the §3.6 password and the roles the scenario needs.
+4. **Unblock.** Make that account loginable: set `email_verified_at`, clear lockout/throttle state, disable 2FA, set the `active`/`status` column to its enabled value. Apply only to accounts this pass created, or to accounts matching rung 5's pattern.
+5. **Reset.** Set the §3.6 password on an existing account **only** when its identifier matches an obvious test-only pattern (`qa-…`, `test…`, `demo…`, or a seeder fixture). Every other account is a real account: never reset it, never guess its password (§3.4).
+6. **Stop.** No rung authenticates → `plugins/core/conduct/clarification-protocol.md`. Report the ladder rungs tried.
+
 ## 4. QA surface map
 
 Discover everything below from the codebase before testing or planning.
@@ -85,7 +96,7 @@ Full coverage requires all dimensions below. Neither skill may skip a dimension 
 
 5.2. **Unauthed public routes** — load anonymously; probe IDOR, exposed data, missing auth on actions/links, reflected input.
 
-5.3. **Per role** — login via real form (`navigate_page` → `fill_form` → submit → `wait_for`).
+5.3. **Per role** — login via real form (`navigate_page` → `fill_form` → submit → `wait_for`). Login fails twice with the same credentials → walk the §3.7 ladder; never re-submit the same form a third time.
 
 5.4. **Per page × viewport** — `resize_page`/`emulate`; `take_snapshot` + `take_screenshot`; check adaptive layout.
 
