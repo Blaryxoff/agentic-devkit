@@ -1,6 +1,6 @@
 ---
 name: devkit-coder
-description: triggers when writing, editing, or refactoring code (any stack) — loads the core coding-conduct AND the active plugins' stack conduct before the first line, so edits follow team standards (comments, surgical scope, architecture, anti-patterns) from the start. Use for any implementation/bugfix/refactor turn. Do NOT use for reviewing code (devkit-reviewer-deep/-business-logic), reviewing plans (devkit-plan-reviewer), or browser QA (devkit-browser) — those are separate, post-hoc skills.
+description: triggers when writing, editing, or refactoring code (any stack) — loads the core coding-conduct AND the active plugins' stack conduct before the first line, so edits follow team standards (comments, surgical scope, architecture, anti-patterns) from the start. Use for any implementation/bugfix/refactor turn. Do NOT use for reviewing code (devkit-reviewer-deep/-business-logic), reviewing ralphex plans (devkit-plan-reviewer), or browser QA (devkit-browser) — those are separate, post-hoc skills.
 ---
 
 # Coder

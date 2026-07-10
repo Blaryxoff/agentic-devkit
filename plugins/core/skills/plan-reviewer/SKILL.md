@@ -1,7 +1,7 @@
 ---
 name: devkit-plan-reviewer
 description: >-
-  review product or dev plans for completeness, correctness, and ralphex format compliance — compares against codebase and project rules, clarifies ambiguities interactively, and proposes ready-to-write plan updates. Use when the user asks to "review"/"поревьюй" and the target (or the diff) is PLAN or SPEC documents only — docs/plans/**, *plan*.md, PRD/spec markdown — not code. For code changes use devkit-reviewer-deep + devkit-reviewer-business-logic. Routing policy: plugins/core/conduct/review-routing.md.
+  review a plan document for completeness, correctness, and ralphex format compliance — compares against codebase and project rules, clarifies ambiguities interactively, and proposes ready-to-write plan updates. Invoke ONLY when the user explicitly writes "ralphex", or when the review target is a file under `docs/plans/**`. Do NOT invoke for Claude Code's built-in plan mode (`/plan`), for PRD/spec markdown outside `docs/plans/**` when "ralphex" was not written, or for code — code review is devkit-reviewer-deep + devkit-reviewer-business-logic. Routing policy: plugins/core/conduct/review-routing.md.
 claudeSubagent: true
 claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 ---
