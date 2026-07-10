@@ -13,6 +13,14 @@ implementation-ready plans in ralphex format.
 
 **Before writing anything**, conduct a structured interview.
 
+## Plan language
+
+Write every plan file — product plan and dev plan — in **Russian**, regardless of the language the user writes in. This is the one artifact exempt from mirroring the user's language.
+
+Keep verbatim in the original: file paths, identifiers, commands, code blocks, error strings, and section keys of the ralphex format (`## Overview`, `## Context`, `## Validation Commands`, …).
+
+Conduct the interview and answer the user in the user's language; write the files in Russian.
+
 ## File naming
 
 All plan files **must** be named using the format `YYYYMMDD-kebab-case-title.md` where the date is today's date.

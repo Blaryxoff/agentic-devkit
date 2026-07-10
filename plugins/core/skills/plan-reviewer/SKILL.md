@@ -18,6 +18,12 @@ meaningful deficiency, and produce a concrete set of proposed updates ready to b
 The reviewed plan must be **ready for handoff after review**. Be strict about correctness and completeness, but keep the
 review **proportional** to the plan's scope and the repository's actual conventions.
 
+## Plan language
+
+Write every proposed plan update in **Russian**, matching `plugins/core/skills/plan-creator/SKILL.md` — plan files are Russian regardless of the language the user writes in. Keep paths, identifiers, commands, code blocks, error strings, and ralphex section keys verbatim.
+
+Address the user in the user's language; write the plan text in Russian. A plan written in another language is a finding — propose a rewrite.
+
 ---
 
 ## Step 1 — Identify plan type and context
