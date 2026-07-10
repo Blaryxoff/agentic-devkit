@@ -28,7 +28,7 @@ Canonical rules for visual frontend skills (`devkit-pixel-build`, `devkit-pixel-
 
 3.1. Start from the browser tab already open when one exists; do not navigate away unless the task requires it.
 
-3.2. Each project uses an isolated Chrome profile (`.cursor/chrome-profile/` via per-project `.cursor/mcp.json`). Tabs and logins from other projects are not shared.
+3.2. Each chrome-devtools MCP server runs a throwaway profile under `--isolated` (`plugins/core/conduct/browser-qa-rules.md` §2.7). Tabs and logins from other projects and other sessions are not shared.
 
 3.3. `take_snapshot` before acting on each page.
 
@@ -38,7 +38,7 @@ Canonical rules for visual frontend skills (`devkit-pixel-build`, `devkit-pixel-
 
 3.6. Navigate with `navigate_page` to `<baseUrl><route>`.
 
-3.7. Authenticated routes: `navigate_page` to login URL → `take_snapshot` → `fill_form` → submit → `wait_for` confirmation. Discover credentials from `visual/config.json`, seeders, or env examples — never invent secrets.
+3.7. Authenticated routes: `navigate_page` to login URL → `take_snapshot` → `fill_form` → submit → `wait_for` confirmation. Read credentials from `visual/config.json` first, then authenticate per `plugins/core/conduct/browser-qa-rules.md` §3.6–§3.8. A redirect to the login page is the cue to authenticate; it never blocks the visual check.
 
 3.8. Wait for page readiness: `wait_for` with expected text, or `evaluate_script` checking `document.fonts.ready`.
 
@@ -63,7 +63,7 @@ async () => {
 
 3.10. `take_screenshot` with `filePath` for every page × viewport check. Save captures under `visual/output/<page>/<viewport>/actual.png`.
 
-3.10. Apply `plugins/core/conduct/browser-qa-rules.md` §6.1–6.3 for general session discipline.
+3.11. Apply `plugins/core/conduct/browser-qa-rules.md` §6.1–6.3 for general session discipline.
 
 ## 4. Comparison
 

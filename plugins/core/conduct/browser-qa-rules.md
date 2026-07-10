@@ -61,7 +61,7 @@ A concurrent session that launches Chrome between the two steps also lands in th
 
 3.6. **Test password.** Every account this pass creates gets the password `asdasdasd`. This is a devkit convention, not a project secret — do not discover it and do not vary it per project. When the app's password policy rejects it, derive the shortest compliant variant (`Asdasdasd1!`) and carry the exact string forward. Report the identifier and password of every test-created account with the seed command, marked test-only.
 
-3.7. **Login ladder.** Never loop on the login form. Two failed submits with the same credentials mean that rung is dead — move to the next rung. Stop at the first rung that authenticates, and record which rung was used.
+3.7. **Login ladder.** A redirect to a login page is the cue to authenticate, never a blocker — walk the ladder before calling anything blocked. Rung 6 is the only legitimate stop. Never loop on the login form: two failed submits with the same credentials mean that rung is dead — move to the next rung. Stop at the first rung that authenticates, and record which rung was used.
 
 1. **Discover.** Read credentials from seeders, factories, `.env.example`, `.env.testing`, `docs/`, README. Use them verbatim.
 2. **Register.** When public registration exists, sign up through the UI as a new test-only user with the §3.6 password.
@@ -69,6 +69,8 @@ A concurrent session that launches Chrome between the two steps also lands in th
 4. **Unblock.** Make that account loginable: set `email_verified_at`, clear lockout/throttle state, disable 2FA, set the `active`/`status` column to its enabled value. Apply only to accounts this pass created, or to accounts matching rung 5's pattern.
 5. **Reset.** Set the §3.6 password on an existing account **only** when its identifier matches an obvious test-only pattern (`qa-…`, `test…`, `demo…`, or a seeder fixture). Every other account is a real account: never reset it, never guess its password (§3.4).
 6. **Stop.** No rung authenticates → `plugins/core/conduct/clarification-protocol.md`. Report the ladder rungs tried.
+
+3.8. **Light rungs for code-editing skills.** Skills that edit code (`devkit-coder`, `devkit-pixel-build`, `devkit-pixel-guard`) walk rungs 1–2 only: discover credentials, or register a test-only user with the §3.6 password. Rungs 3–5 create, unblock, or reset accounts — safe only under the seed rules (§3.2–§3.3) those skills do not load. Both light rungs failing → stop via `plugins/core/conduct/clarification-protocol.md`: report that the route needs auth setup, and which rungs were tried. This is a legitimate stop; giving up before rung 1 is not (§3.7).
 
 ## 4. QA surface map
 

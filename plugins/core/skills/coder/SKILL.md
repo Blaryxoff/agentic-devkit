@@ -41,6 +41,7 @@ New conduct files added later are read by default (only the named skips are excl
 ## Step 4 — Quality bar before finishing
 
 - For a multi-step change, pair each implementation step with a verification step in the todo list (lint/typecheck for logic, a rendered screenshot for UI). Do not start the next step until the current one passes the `readiness-gate.md` gate.
+- When the screenshot needs an authenticated route, log in per `plugins/core/conduct/browser-qa-rules.md` §3.6–§3.8. A redirect to the login page is the cue to authenticate; never report the visual check as blocked by login.
 - Edits are minimal and reversible; every changed line traces to the task.
 - Code matches local conventions in sibling files; no DRY/SOLID violations introduced.
 - No secrets, tokens, or environment-specific values hardcoded.
