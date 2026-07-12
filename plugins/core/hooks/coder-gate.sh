@@ -1,5 +1,5 @@
 #!/bin/sh
-# coder-gate.sh — PreToolUse hook for Claude Code (Edit | Write | MultiEdit).
+# coder-gate.sh — PreToolUse hook for Claude Code and Codex code edits.
 #
 # Hard-gates the FIRST code edit of a session: blocks once (exit 2), surfaces the
 # core comment/surgical rules + the instruction to load devkit-coder, then lets the
@@ -17,7 +17,7 @@ command -v jq >/dev/null 2>&1 || exit 0
 
 tool=$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null)
 case "$tool" in
-  Edit | Write | MultiEdit) ;;
+  Edit | Write | MultiEdit | apply_patch) ;;
   *) exit 0 ;;
 esac
 

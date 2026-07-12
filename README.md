@@ -23,7 +23,7 @@ cd my-project
 ~/.claude/agentic-devkit/bin/devkit-resolve --init          # write .devkit/toolkit.json
 
 ~/.claude/agentic-devkit/bin/devkit-install --cursor         # .cursor/ rules + skills + hooks
-~/.claude/agentic-devkit/bin/devkit-install --codex          # AGENTS.md + .codex/ skills
+~/.claude/agentic-devkit/bin/devkit-install --codex          # AGENTS.md + native coder-gate hook
 ~/.claude/agentic-devkit/bin/devkit-install --claude         # .claude/ stack subagents, hooks, .mcp.json
 ```
 
@@ -135,6 +135,10 @@ Resolves: `core -> laravel`
 
 Generated text (conduct paths in `.mdc` / `AGENTS.md`) references the global clone at `~/.claude/agentic-devkit`, so
 output is identical regardless of where the project lives on disk. Disabled plugins do not enter generated AI context.
+
+The global install also merges a native Codex `PreToolUse` coder gate into `~/.codex/hooks.json`. On the first
+`apply_patch` edit in a session it blocks once and instructs Codex to load `devkit-coder`, which pulls in the core and
+active-stack conduct before the edit is retried. Review and trust the hook with `/hooks` after installation or changes.
 
 ## Claude Code Setup
 

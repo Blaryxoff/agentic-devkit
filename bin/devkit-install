@@ -15,6 +15,7 @@
 #   $HOME/.claude/agents/<name>.md                 core subagent wrappers
 #   $HOME/.claude/settings.json                    SessionStart hook → devkit-update --if-stale
 #   $HOME/.codex/skills/devkit-<plugin>--<skill>/  symlinks to devkit skills for Codex
+#   $HOME/.codex/hooks.json                        PreToolUse hook → coder-gate.sh
 #   $HOME/.cursor/skills/devkit-<plugin>--<skill>/ symlinks to devkit skills for Cursor
 #
 # The global clone is the single source of truth. devkit-install runs from the
@@ -75,6 +76,7 @@ AGENTS_DEST="$CLAUDE_DIR/agents"
 SETTINGS="$CLAUDE_DIR/settings.json"
 CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
 CODEX_SKILLS_DEST="$CODEX_DIR/skills"
+CODEX_HOOKS="$CODEX_DIR/hooks.json"
 CURSOR_DIR="${CURSOR_HOME:-$HOME/.cursor}"
 CURSOR_SKILLS_DEST="$CURSOR_DIR/skills"
 mkdir -p "$SKILLS_DEST" "$CODEX_SKILLS_DEST" "$CURSOR_SKILLS_DEST"
@@ -187,6 +189,31 @@ updated=$(jq --arg cmd "$codergate_cmd" '
 ' "$SETTINGS")
 printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
 echo "    Hook:    ~/.claude/settings.json (PreToolUse coder-gate)"
+
+# --- PreToolUse coder-gate hook in ~/.codex/hooks.json ---
+# Codex reports file edits as apply_patch, while Edit and Write are supported matcher
+# aliases. The shared hook understands both Codex and Claude tool names.
+if [ ! -f "$CODEX_HOOKS" ]; then
+  printf '{"hooks":{}}\n' > "$CODEX_HOOKS"
+fi
+updated=$(jq --arg cmd "$codergate_cmd" '
+  .hooks //= {} |
+  .hooks.PreToolUse = (
+    ((.hooks.PreToolUse // []) | map(select(
+      (.hooks // []) | any(.command == $cmd) | not
+    )))
+    + [ {
+      matcher: "apply_patch|Edit|Write",
+      hooks: [ {
+        type: "command",
+        command: $cmd,
+        statusMessage: "Loading coding conduct"
+      } ]
+    } ]
+  )
+' "$CODEX_HOOKS")
+printf '%s\n' "$updated" | jq '.' > "$CODEX_HOOKS"
+echo "    Hook:    ~/.codex/hooks.json (PreToolUse coder-gate; review with /hooks)"
 
 # --- Output styles → ~/.claude/output-styles (symlinks) + default selection ---
 # Ships the terse RU output style «Laconica RU» (replaces the English-only caveman plugin).
