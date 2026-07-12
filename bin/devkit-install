@@ -2,8 +2,8 @@
 # devkit-install: set up global devkit installs for Claude Code and Codex CLI.
 #
 # Usage:
-#   devkit-install              Install global pieces (Claude core skills/subagents,
-#                               Codex devkit skills, daily auto-update hook).
+#   devkit-install              Install global pieces (Claude/Codex core skills,
+#                               Claude subagents, daily auto-update hook).
 #   devkit-install --cursor     Also run the per-project Cursor adapter for CWD.
 #   devkit-install --codex      Also run the per-project Codex adapter for CWD.
 #   devkit-install --claude     Also run the per-project Claude stack adapter for CWD
@@ -14,7 +14,7 @@
 #   $HOME/.claude/skills/devkit-core--<skill>/     symlinks to core skills for Claude
 #   $HOME/.claude/agents/<name>.md                 core subagent wrappers
 #   $HOME/.claude/settings.json                    SessionStart hook → devkit-update --if-stale
-#   $HOME/.codex/skills/devkit-<plugin>--<skill>/  symlinks to devkit skills for Codex
+#   $HOME/.codex/skills/devkit-core--<skill>/      symlinks to core skills for Codex
 #   $HOME/.codex/hooks.json                        PreToolUse hook → coder-gate.sh
 #   $HOME/.cursor/skills/devkit-<plugin>--<skill>/ symlinks to devkit skills for Cursor
 #
@@ -86,28 +86,29 @@ core_skills_src="$DEVKIT_HOME/plugins/core/skills"
 for entry in "$SKILLS_DEST"/devkit-core--*; do
   [ -L "$entry" ] && rm -f "$entry"
 done
+# Reap non-core links left by installs that exposed every plugin globally.
+for entry in "$CODEX_SKILLS_DEST"/devkit-*--*; do
+  [ -L "$entry" ] && rm -f "$entry"
+done
 skill_count=0
 for d in "$core_skills_src"/*/; do
   [ -d "$d" ] || continue
   n=$(basename "$d")
-  ln -s "$(cd "$d" && pwd)" "$SKILLS_DEST/devkit-core--$n"
+  abs="$(cd "$d" && pwd)"
+  ln -s "$abs" "$SKILLS_DEST/devkit-core--$n"
+  ln -s "$abs" "$CODEX_SKILLS_DEST/devkit-core--$n"
   skill_count=$((skill_count + 1))
 done
 echo "    Linked:  ~/.claude/skills/devkit-core--* ($skill_count skill(s))"
+echo "    Linked:  ~/.codex/skills/devkit-core--*  ($skill_count skill(s))"
 
-# --- Symlink every devkit skill globally for Codex CLI and Cursor ---
-# Neither Codex nor Cursor has a devkit-router equivalent, so global installation
-# exposes all plugin skills; their per-project adapters still carry the
-# project-specific conduct references (AGENTS.md / .cursor/rules). Links are
-# namespaced as devkit-<plugin>--<skill> and only those links are reaped — never
-# Codex's .system skills nor user-authored skills (e.g. ~/.cursor/skills without
-# the devkit- prefix).
-for dest in "$CODEX_SKILLS_DEST" "$CURSOR_SKILLS_DEST"; do
-  for entry in "$dest"/devkit-*--*; do
-    [ -L "$entry" ] && rm -f "$entry"
-  done
+# --- Symlink every devkit skill globally for Cursor ---
+# Links are namespaced as devkit-<plugin>--<skill> and only those links are
+# reaped — never user-authored skills without the devkit- prefix.
+for entry in "$CURSOR_SKILLS_DEST"/devkit-*--*; do
+  [ -L "$entry" ] && rm -f "$entry"
 done
-global_skill_count=0
+cursor_skill_count=0
 for plugin_dir in "$DEVKIT_HOME"/plugins/*/; do
   [ -d "$plugin_dir" ] || continue
   manifest="$plugin_dir/plugin.json"
@@ -119,13 +120,11 @@ for plugin_dir in "$DEVKIT_HOME"/plugins/*/; do
     [ -d "$d" ] || continue
     n=$(basename "$d")
     abs="$(cd "$d" && pwd)"
-    ln -s "$abs" "$CODEX_SKILLS_DEST/${plugin_name}--$n"
     ln -s "$abs" "$CURSOR_SKILLS_DEST/${plugin_name}--$n"
-    global_skill_count=$((global_skill_count + 1))
+    cursor_skill_count=$((cursor_skill_count + 1))
   done
 done
-echo "    Linked:  ~/.codex/skills/devkit-*--*  ($global_skill_count skill(s))"
-echo "    Linked:  ~/.cursor/skills/devkit-*--* ($global_skill_count skill(s))"
+echo "    Linked:  ~/.cursor/skills/devkit-*--* ($cursor_skill_count skill(s))"
 
 # --- Core subagents → ~/.claude/agents (claudeSubagent skills keep isolation) ---
 plugin_index=$(_build_plugin_index)
@@ -260,5 +259,5 @@ if [ "$RUN_CLAUDE" -eq 1 ]; then
 fi
 
 echo ""
-echo "Done. Restart Claude Code / Codex / Cursor (or start a new session) to load global skills + the daily auto-update hook."
-echo "Per project, keep .devkit/toolkit.json; adapters write project conduct/agents/MCP only — skills live globally."
+echo "Done. Restart Claude Code / Codex / Cursor (or start a new session) to load skills + the daily auto-update hook."
+echo "Per project, keep .devkit/toolkit.json; the Codex adapter writes resolved skills under .codex/skills/."

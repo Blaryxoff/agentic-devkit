@@ -23,7 +23,7 @@ cd my-project
 ~/.claude/agentic-devkit/bin/devkit-resolve --init          # write .devkit/toolkit.json
 
 ~/.claude/agentic-devkit/bin/devkit-install --cursor         # .cursor/ rules + skills + hooks
-~/.claude/agentic-devkit/bin/devkit-install --codex          # AGENTS.md + native coder-gate hook
+~/.claude/agentic-devkit/bin/devkit-install --codex          # .codex/ resolved skills + AGENTS.md
 ~/.claude/agentic-devkit/bin/devkit-install --claude         # .claude/ stack subagents, hooks, .mcp.json
 ```
 
@@ -135,6 +135,12 @@ Resolves: `core -> laravel`
 
 Generated text (conduct paths in `.mdc` / `AGENTS.md`) references the global clone at `~/.claude/agentic-devkit`, so
 output is identical regardless of where the project lives on disk. Disabled plugins do not enter generated AI context.
+
+`devkit-install` keeps only `devkit-core` skills (including the `devkit` router) in `~/.codex/skills/` and removes stale
+global non-core devkit symlinks from older installs. The Codex adapter rebuilds `.codex/skills/` from the project's
+resolved plugin graph, including transitive dependencies; plugins such as `devkit-css` stay absent unless explicitly
+enabled. Re-run the adapter after changing `.devkit/toolkit.json`, then start a new Codex session to refresh its skill
+catalog.
 
 The global install also merges a native Codex `PreToolUse` coder gate into `~/.codex/hooks.json`. On the first
 `apply_patch` edit in a session it blocks once and instructs Codex to load `devkit-coder`, which pulls in the core and
