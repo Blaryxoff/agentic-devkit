@@ -74,6 +74,7 @@ CLAUDE_DIR="$HOME/.claude"
 SKILLS_DEST="$CLAUDE_DIR/skills"
 AGENTS_DEST="$CLAUDE_DIR/agents"
 SETTINGS="$CLAUDE_DIR/settings.json"
+CLAUDE_GUIDANCE="$CLAUDE_DIR/CLAUDE.md"
 CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
 CODEX_SKILLS_DEST="$CODEX_DIR/skills"
 CODEX_HOOKS="$CODEX_DIR/hooks.json"
@@ -156,26 +157,62 @@ else
   echo "    Hook:    ~/.claude/settings.json created (SessionStart auto-update)"
 fi
 
-# --- UserPromptSubmit skill-eval hook in ~/.claude/settings.json ---
-# Forces the model to evaluate/activate relevant skills before implementing.
-# Instruction-only (no permissions). Installed globally, mirroring the router's reach.
+# --- Static skill policy in ~/.claude/CLAUDE.md ---
+# Anthropic recommends CLAUDE.md for instructions that do not change. Keep one
+# managed section globally instead of injecting the same policy on every prompt.
+policy_start="<!-- devkit-skill-policy:start -->"
+policy_end="<!-- devkit-skill-policy:end -->"
+policy_section="${policy_start}
+## devkit skill policy
+
+$(cat "$DEVKIT_HOME/plugins/core/hooks/skill-eval.txt")
+${policy_end}"
+
+if [ -f "$CLAUDE_GUIDANCE" ]; then
+  if grep -qF "$policy_start" "$CLAUDE_GUIDANCE"; then
+    DEVKIT_REPLACEMENT="$policy_section" CLAUDE_GUIDANCE_FILE="$CLAUDE_GUIDANCE" \
+      POLICY_START="$policy_start" POLICY_END="$policy_end" \
+      python3 -c '
+import os, re
+path = os.environ["CLAUDE_GUIDANCE_FILE"]
+start = os.environ["POLICY_START"]
+end = os.environ["POLICY_END"]
+replacement = os.environ["DEVKIT_REPLACEMENT"]
+with open(path) as f:
+    content = f.read()
+pattern = re.escape(start) + r".*?" + re.escape(end)
+updated, count = re.subn(pattern, lambda _m: replacement, content, count=1, flags=re.DOTALL)
+if count != 1:
+    raise SystemExit("managed devkit skill policy is malformed")
+with open(path, "w") as f:
+    f.write(updated)
+'
+  else
+    printf '\n\n%s\n' "$policy_section" >> "$CLAUDE_GUIDANCE"
+  fi
+else
+  printf '%s\n' "$policy_section" > "$CLAUDE_GUIDANCE"
+fi
+echo "    Guidance: ~/.claude/CLAUDE.md (managed devkit skill policy)"
+
+# Remove the legacy per-prompt injection hook after migrating its static policy.
 skilleval_cmd="sh $DEVKIT_HOME/plugins/core/hooks/skill-eval.sh"
 updated=$(jq --arg cmd "$skilleval_cmd" '
   .hooks //= {} |
-  .hooks.UserPromptSubmit = (
-    ((.hooks.UserPromptSubmit // []) | map(select(
-      (.hooks // []) | any(.command == $cmd) | not
-    )))
-    + [ { hooks: [ { type: "command", command: $cmd } ] } ]
-  )
+  ((.hooks.UserPromptSubmit // []) | map(
+    .hooks = ((.hooks // []) | map(select(.command != $cmd))) |
+    select((.hooks | length) > 0)
+  )) as $kept |
+  if ($kept | length) == 0
+  then del(.hooks.UserPromptSubmit)
+  else .hooks.UserPromptSubmit = $kept
+  end
 ' "$SETTINGS")
 printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
-echo "    Hook:    ~/.claude/settings.json (UserPromptSubmit skill-eval)"
+echo "    Hook:    ~/.claude/settings.json (removed legacy UserPromptSubmit skill-eval)"
 
 # --- PreToolUse coder-gate hook in ~/.claude/settings.json ---
-# Hard-gates the first code edit per session (exit 2) so the comment/surgical conduct is
-# in context before any code lands — closing the "advisory but unenforced" gap. The
-# blocked first edit is re-issued automatically by the model; fires once per session.
+# Hard-gates code edits until the coder skill is recorded in the session transcript.
 codergate_cmd="sh $DEVKIT_HOME/plugins/core/hooks/coder-gate.sh"
 updated=$(jq --arg cmd "$codergate_cmd" '
   .hooks //= {} |

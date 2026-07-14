@@ -42,9 +42,14 @@ skill_snapshot() {
 home="$TMP_DIR/home"
 codex_home="$home/.codex"
 cursor_home="$home/.cursor"
-mkdir -p "$codex_home/skills" "$cursor_home/skills"
+claude_home="$home/.claude"
+mkdir -p "$codex_home/skills" "$cursor_home/skills" "$claude_home"
 ln -s "$ROOT/plugins/css/skills/css-a11y" "$codex_home/skills/devkit-css--css-a11y"
 ln -s "$ROOT/plugins/core/skills/coder" "$codex_home/skills/user-skill"
+printf '%s\n' 'personal global guidance' > "$claude_home/CLAUDE.md"
+legacy_skill_eval="sh $ROOT/plugins/core/hooks/skill-eval.sh"
+jq -n --arg legacy "$legacy_skill_eval" '{hooks:{UserPromptSubmit:[{hooks:[{type:"command",command:$legacy},{type:"command",command:"custom-prompt-hook"}]}]}}' \
+  > "$claude_home/settings.json"
 
 HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home" DEVKIT_HOME_DIR="$ROOT" \
   bash "$ROOT/bin/devkit-install" >/dev/null
@@ -55,6 +60,16 @@ assert_absent "$codex_home/skills/devkit-css--css-a11y"
 assert_absent "$codex_home/skills/devkit-laravel--architect"
 assert_link "$codex_home/skills/user-skill" "$ROOT/plugins/core/skills/coder"
 assert_link "$cursor_home/skills/devkit-laravel--architect" "$ROOT/plugins/laravel/skills/architect"
+assert_contains "$claude_home/CLAUDE.md" 'personal global guidance'
+assert_contains "$claude_home/CLAUDE.md" '<!-- devkit-skill-policy:start -->'
+assert_contains "$claude_home/CLAUDE.md" 'Skill selection starts from the catalog metadata.'
+assert_not_contains "$claude_home/settings.json" 'skill-eval.sh'
+assert_contains "$claude_home/settings.json" 'custom-prompt-hook'
+
+first_claude_guidance=$(cksum < "$claude_home/CLAUDE.md")
+HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home" DEVKIT_HOME_DIR="$ROOT" \
+  bash "$ROOT/bin/devkit-install" >/dev/null
+[ "$first_claude_guidance" = "$(cksum < "$claude_home/CLAUDE.md")" ] || fail "global CLAUDE.md generation is not idempotent"
 
 project="$TMP_DIR/project"
 mkdir -p "$project/.devkit" "$project/.codex/skills/custom-skill"
