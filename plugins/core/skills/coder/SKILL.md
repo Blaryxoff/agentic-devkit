@@ -1,49 +1,55 @@
 ---
 name: devkit-coder
-description: triggers when writing, editing, or refactoring code (any stack) — loads the core coding-conduct AND the active plugins' stack conduct before the first line, so edits follow team standards (comments, surgical scope, architecture, anti-patterns) from the start. Use for any implementation/bugfix/refactor turn. Do NOT use for reviewing code (devkit-reviewer-deep/-business-logic), reviewing ralphex plans (devkit-plan-reviewer), or browser QA (devkit-browser) — those are separate, post-hoc skills.
+description: >-
+  implement, fix, build, change, add, remove, or refactor code in any stack. Use before the first edit for every implementation, bugfix, or refactor request. Applies the core coding baseline and loads only the active-stack conduct required by the touched files and risks. Do not use for code review, ralphex plan review, or browser QA.
 ---
 
 # Coder
 
 > Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
 
-## Step 1 — Ground before writing
+## Step 1 — Start with the target, not the documentation
 
-Read inputs before editing per `plugins/core/conduct/inputs-grounding-gate.md`: the active plan (if the task is non-trivial), sibling code in the same module, and the relevant schema. If a required input is missing, stop and ask — do not guess.
+Read the user's target and the smallest useful source slice first: the named file/symbol, sibling code in the same module, relevant tests, and schema or contract when the change depends on one. Read an active plan only when the task points to one or the change is genuinely multi-step. If a required input is missing, stop and ask rather than guessing.
 
 Match the conventions of the surrounding code: naming, file layout, error handling, comment style.
 
 When the change uses a third-party library/framework API whose current signature you are not certain of, fetch up-to-date docs first per `plugins/core/conduct/library-docs.md` (Context7 when available) — do not rely on training-cutoff memory.
 
+Do not inventory conduct directories or read documents speculatively. Every conduct file opened must answer a concrete question raised by the target code.
+
 ## Step 2 — Apply core coding-conduct (every edit, every stack)
 
-These govern *how* you change code regardless of language. Read and obey them:
+These rules are complete enough for a local in-place edit. Apply them directly; open the referenced core conduct files only when an edge case needs the fuller rule:
 
-- `plugins/core/conduct/surgical-changes.md` — change only what the task requires. Do not "improve" adjacent code, reformat, or touch comments on lines you did not otherwise have to edit. Remove only orphans **your** change created.
-- `plugins/core/conduct/code-comments.md` — comment the *why*, not the *what*. One line where intent is non-obvious. No change-narration (`// now we…`, `// вместо X возвращаем Y`), no multi-line essays restating the diff, no PR-description prose in code.
-- `plugins/core/conduct/communication-style.md` — no meta-commentary in comments.
-- `plugins/core/conduct/code-smells.md` and `solid-dry.md` — no duplication, no responsibility leaks, reuse existing utilities before adding abstractions.
+- Change only what the task requires. Do not improve adjacent code or reformat untouched regions. Remove only orphans created by this change (`surgical-changes.md`).
+- Comments explain non-obvious intent, never the edit history or the next obvious line. Preserve required public API documentation (`code-comments.md`).
+- Match sibling abstractions and error handling. Reuse an existing utility when it already fits; do not create abstractions or configurability for one use (`solid-dry.md`).
+- Never hardcode secrets or environment-specific credentials. Do not add dependencies without explicit approval.
 
 ## Step 3 — Load the active stack's conduct
 
-Determine the stack, then read its rules so the edit is stack-correct:
+Resolve the active plugins, identify which layers the target actually touches, then load only their relevant rules:
 
 1. Read `.devkit/toolkit.json` to get `enabled` plugins. Add their transitive `dependencies` (from each `plugins/<p>/plugin.json`) and always include `devkit-core`.
-2. For each **non-core** enabled plugin, read from its `conduct/` directory:
-   - **always:** `anti_patterns.md` — the stack backbone that applies to any edit.
-   - **when the change adds/moves files, introduces a module, or alters cross-layer structure:** `architecture.md`. Skip it for an in-place edit to existing code — Step 1's sibling-code grounding already supplies the local pattern.
-   - **on-demand by what the change touches:** e.g. `stores.md` (Pinia), `php.md` / `documentation.md` (PHP, comments/PHPDoc), `security.md` (auth/input/secrets), `error_handling.md`, `database-safety.md`, `configs.md`, `logging.md`, `enums.md`, `thin_controller_model.md`, `cmd.md`.
-   - **skip:** `README.md`, `CLAUDE.md`, `fast_code_review_checklist.md`, `git.md`, `makefile.md`, `observability.md`, and the `spec/` and `testing/` directories — those belong to plan/review/QA/ops phases, not the implementation edit.
-3. A conduct rule that conflicts with a project-level rule (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules/`) loses — prefer the project rule and note the exception.
-
-New conduct files added later are read by default (only the named skips are excluded), so adding a `.md` to a plugin's `conduct/` extends this skill with no edit here.
+2. Map the changed paths and symbols to touched layers. Ignore enabled plugins that the change does not touch.
+3. Read `overview.md` for each touched non-core plugin when it exists, then add only the risk-specific documents needed:
+   - new/moved files, cross-layer flow, or changed responsibility → `architecture.md`, `anti_patterns.md`, and layering documents such as `thin_controller_model.md`;
+   - PHP/public APIs/comments → `php.md`, `documentation.md`;
+   - authentication, authorization, external input, secrets → `security.md`;
+   - migrations, queries, transactions, models, schema assumptions → `database-safety.md` or `database_safety.md`, `database_snapshot.md`, `enums.md`;
+   - exceptions, retries, fallbacks → `error_handling.md`;
+   - configuration or dependencies → `configs.md`, `dependencies.md`;
+   - logs/metrics → `logging.md`, `observability.md`;
+   - Pinia/Nuxt state → `stores.md`;
+   - CLI commands → `cmd.md`.
+4. Skip review, planning, git, Makefile, and testing documents unless the requested change directly targets those artifacts.
+5. Project-level rules (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules/`) override devkit conduct; note any applied exception.
 
 ## Step 4 — Quality bar before finishing
 
-- For a multi-step change, pair each implementation step with a verification step in the todo list (lint/typecheck for logic, a rendered screenshot for UI). Do not start the next step until the current one passes the `readiness-gate.md` gate.
-- When the screenshot needs an authenticated route, log in per `plugins/core/conduct/browser-qa-rules.md` §3.6–§3.8. A redirect to the login page is the cue to authenticate; never report the visual check as blocked by login.
+- For a multi-step change, pair each implementation step with its smallest relevant verification. Run focused checks first; expand only when risk or failures justify it.
+- For a visual behavior change, verify the affected route at the relevant viewport. Load `browser-qa-rules.md` only when browser authentication or QA mechanics are actually needed.
 - Edits are minimal and reversible; every changed line traces to the task.
 - Code matches local conventions in sibling files; no DRY/SOLID violations introduced.
-- No secrets, tokens, or environment-specific values hardcoded.
 - The stack's lint and typecheck pass (use the project's own commands — do not hardcode them here).
-- Do not introduce dependencies unless explicitly approved.

@@ -1,18 +1,16 @@
 #!/bin/sh
 # coder-gate.sh — PreToolUse hook for Claude Code and Codex code edits.
 #
-# Hard-gates the FIRST code edit of a session: blocks once (exit 2), surfaces the
-# core comment/surgical rules + the instruction to load devkit-coder, then lets the
-# retried edit through — so the rules are in context BEFORE any code lands. Fires once
-# per session via a marker file keyed on session_id. Payload text lives in
-# coder-gate.txt (one source, editable without touching this script).
+# Hard-gates code edits until the session transcript shows that devkit-coder was
+# activated. Once detected, a marker keyed on session_id avoids rescanning the
+# transcript on every subsequent edit. Payload text lives in coder-gate.txt.
 #
 # Fail-open by design: if jq is missing or the input is unparseable, allow the edit
 # rather than block every write. Adapted alongside skill-eval.sh.
 
 input=$(cat)
 
-# Without jq we cannot reliably read tool_name/session_id — never block blindly.
+# Without jq we cannot reliably inspect the hook payload or transcript.
 command -v jq >/dev/null 2>&1 || exit 0
 
 tool=$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null)
@@ -21,11 +19,47 @@ case "$tool" in
   *) exit 0 ;;
 esac
 
-sid=$(printf '%s' "$input" | jq -r '.session_id // "nosession"' 2>/dev/null)
-marker="${TMPDIR:-/tmp}/devkit-coder-gate-$sid"
-[ -f "$marker" ] && exit 0
-: > "$marker"
+sid=$(printf '%s' "$input" | jq -r '.session_id // empty' 2>/dev/null)
+transcript=$(printf '%s' "$input" | jq -r '.transcript_path // empty' 2>/dev/null)
+[ -n "$sid" ] && [ -r "$transcript" ] || exit 0
 
-dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+safe_sid=$(printf '%s' "$sid" | tr -c 'A-Za-z0-9._-' '_')
+marker="${TMPDIR:-/tmp}/devkit-coder-active-$safe_sid"
+[ -f "$marker" ] && exit 0
+
+# Claude records successful Skill tool calls. Codex records the tool call that
+# reads the selected SKILL.md. Match only outer transcript events so quoted log
+# output or the initial skill catalog cannot create a false positive.
+if jq -e '
+  select(
+    (
+      .message.content? != null
+      and any(
+        .message.content[]?;
+        .type == "tool_use"
+        and .name == "Skill"
+        and (
+          .input.skill == "devkit-core--coder"
+          or .input.skill == "devkit-coder"
+        )
+      )
+    )
+    or
+    (
+      .type == "response_item"
+      and .payload.type == "custom_tool_call"
+      and (
+        (.payload.input // "")
+        | test("(devkit-core--coder|plugins/core/skills/coder)/SKILL\\.md")
+      )
+    )
+  )
+  | true
+' "$transcript" 2>/dev/null | grep -q '^true$'; then
+  : > "$marker"
+  exit 0
+fi
+
+dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 cat "$dir/coder-gate.txt" >&2
 exit 2
