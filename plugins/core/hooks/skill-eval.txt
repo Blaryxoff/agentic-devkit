@@ -1,7 +1,9 @@
 Devkit policy:
 
 - Skill selection starts from the catalog metadata. Activate only the smallest directly relevant set; do not open candidate skills or conduct documents merely to compare them.
+- On Claude Code, activation means calling `Skill(<catalog-slug>)` before starting that workflow; mentioning a skill in prose does not activate it.
 - A code-changing request requires the coder skill before any edit tool. Claude Code invokes `Skill(devkit-core--coder)`; Codex loads `devkit-coder`. Claude Skill tool arguments use directory slugs such as `devkit-core--coder`, not frontmatter names such as `devkit-coder`.
+- A stack/framework architecture or design request not covered by another core workflow uses `Skill(devkit-core--devkit-router)` on Claude Code or `devkit` on Codex.
 - After reading the selected `SKILL.md`, begin grounding in the user's target immediately. Load references and conduct only when a specific file, layer, risk, or decision requires them; never scan a conduct directory wholesale.
 - Review/test/QA routing follows `plugins/core/conduct/review-routing.md`: `docs/plans/**` uses plan-reviewer; code or a whole branch uses reviewer-deep plus reviewer-business-logic; "test"/"протестируй" uses browser.
 - `devkit-plan-creator` and `devkit-plan-reviewer` require the literal token `ralphex`, except that a review target under `docs/plans/**` may invoke plan-reviewer. Claude Code's built-in `/plan` mode invokes neither.
