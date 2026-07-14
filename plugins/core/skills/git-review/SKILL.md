@@ -80,6 +80,6 @@ No stdout → review complete. Tell the user.
 
 - `python3`
 - tmux, kitty, or wezterm (for the editor overlay)
-- `$EDITOR` set (defaults to `micro`)
+- `$EDITOR` set (defaults to `vi`; multi-word values such as `emacsclient -c` are supported)
 - git
 - kitty users: `kitty.conf` needs `allow_remote_control yes` and `listen_on unix:/tmp/kitty-$KITTY_PID`

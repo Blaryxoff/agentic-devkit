@@ -21,7 +21,7 @@ and returns `git diff` output showing what the user changed.
 
 requirements:
     - tmux, kitty, or wezterm terminal (tmux tried first, then kitty, then wezterm)
-    - $EDITOR set (defaults to micro)
+    - $EDITOR set (defaults to vi)
     - git
     - kitty users: kitty.conf must have allow_remote_control and listen_on configured
 """
@@ -254,16 +254,33 @@ def setup_review_repo(review_dir: Path, content: str) -> None:
     )
 
 
+def build_editor_cmd(editor: str) -> str:
+    """build a safe shell command from a possibly multi-word $EDITOR value.
+
+    Resolve the executable before launching an overlay because its shell may have
+    a smaller PATH. Empty or malformed values fall back to POSIX-standard vi.
+    """
+    try:
+        parts = shlex.split(editor) or ["vi"]
+    except ValueError:
+        parts = ["vi"]
+    resolved = shutil.which(parts[0])
+    if resolved:
+        parts[0] = resolved
+    return " ".join(shlex.quote(part) for part in parts)
+
+
 def open_editor(filepath: Path) -> int:
     """open file in $EDITOR via tmux popup, kitty overlay, or wezterm split-pane, blocking until editor closes.
     tries tmux first (if $TMUX is set), then kitty, then wezterm. returns non-zero if none is available."""
-    editor = os.environ.get("EDITOR", "micro")
+    editor_cmd = build_editor_cmd(os.environ.get("EDITOR", "vi"))
 
     # tmux: display-popup -E blocks until the command exits, no sentinel needed
     if os.environ.get("TMUX") and shutil.which("tmux"):
         result = subprocess.run(
             ["tmux", "display-popup", "-E", "-w", "90%", "-h", "90%",
-             "-T", " Git Review ", "--", editor, str(filepath)],
+             "-T", " Git Review ", "--", "sh", "-c",
+             f"{editor_cmd} {shlex.quote(str(filepath))}"],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         return result.returncode
@@ -278,7 +295,7 @@ def open_editor(filepath: Path) -> int:
         os.close(fd)
         os.unlink(sentinel_path)
         sentinel = Path(sentinel_path)
-        wrapper = f'{shlex.quote(editor)} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
+        wrapper = f'{editor_cmd} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
         cmd = ["kitty", "@", "--to", kitty_sock, "launch", "--type=overlay",
                f"--title=Git Review: {filepath.name}"]
         # target the kitty window where claude is running, not the active one
@@ -299,7 +316,7 @@ def open_editor(filepath: Path) -> int:
         os.close(fd)
         os.unlink(sentinel_path)
         sentinel = Path(sentinel_path)
-        wrapper = f'{shlex.quote(editor)} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
+        wrapper = f'{editor_cmd} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
         subprocess.run(
             ["wezterm", "cli", "split-pane", "--bottom", "--percent", "80",
              "--pane-id", wezterm_pane, "--", "sh", "-c", wrapper],
@@ -506,12 +523,33 @@ def run_tests() -> None:
             finally:
                 shutil.rmtree(test_dir, ignore_errors=True)
 
+    class TestBuildEditorCmd(unittest.TestCase):
+        def test_single_word_resolves_to_absolute_path(self) -> None:
+            result = build_editor_cmd("sh")
+            self.assertTrue(result.startswith("/"))
+            self.assertTrue(result.endswith("sh"))
+
+        def test_unknown_binary_is_preserved(self) -> None:
+            self.assertEqual(build_editor_cmd("editor-not-on-path-zzz"), "editor-not-on-path-zzz")
+
+        def test_multi_word_editor_preserves_arguments(self) -> None:
+            result = build_editor_cmd("editor-not-on-path-zzz -c -a ''")
+            self.assertEqual(result, "editor-not-on-path-zzz -c -a ''")
+
+        def test_empty_editor_falls_back_to_vi(self) -> None:
+            self.assertIn("vi", build_editor_cmd(""))
+
+        def test_malformed_editor_falls_back_to_vi(self) -> None:
+            result = build_editor_cmd('emacs "')
+            self.assertIn("vi", result)
+            self.assertNotIn("emacs", result)
+
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
     for tc in [TestDetectDefaultBranch, TestGetProjectName, TestGetCurrentBranch,
                TestGetReviewDir, TestGenerateCleanDiff, TestHasUncommittedChanges,
                TestGetFileStatus, TestMakeHeader, TestSetupReviewRepo,
-               TestGetUntrackedFiles, TestGenerateUntrackedDiff]:
+               TestGetUntrackedFiles, TestGenerateUntrackedDiff, TestBuildEditorCmd]:
         suite.addTests(loader.loadTestsFromTestCase(tc))
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)

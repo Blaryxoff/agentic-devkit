@@ -195,21 +195,18 @@ else
 fi
 echo "    Guidance: ~/.claude/CLAUDE.md (managed devkit skill policy)"
 
-# Remove the legacy per-prompt injection hook after migrating its static policy.
+# Reassert the compact activation gate on each prompt. The full policy remains in
+# CLAUDE.md; this hook is intentionally one line to avoid prompt bloat.
 skilleval_cmd="sh $DEVKIT_HOME/plugins/core/hooks/skill-eval.sh"
 updated=$(jq --arg cmd "$skilleval_cmd" '
   .hooks //= {} |
-  ((.hooks.UserPromptSubmit // []) | map(
+  .hooks.UserPromptSubmit = (((.hooks.UserPromptSubmit // []) | map(
     .hooks = ((.hooks // []) | map(select(.command != $cmd))) |
     select((.hooks | length) > 0)
-  )) as $kept |
-  if ($kept | length) == 0
-  then del(.hooks.UserPromptSubmit)
-  else .hooks.UserPromptSubmit = $kept
-  end
+  )) + [ { hooks: [ { type: "command", command: $cmd } ] } ])
 ' "$SETTINGS")
 printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
-echo "    Hook:    ~/.claude/settings.json (removed legacy UserPromptSubmit skill-eval)"
+echo "    Hook:    ~/.claude/settings.json (UserPromptSubmit skill activation gate)"
 
 # --- PreToolUse coder-gate hook in ~/.claude/settings.json ---
 # Hard-gates code edits until the coder skill is recorded in the session transcript.
@@ -252,7 +249,7 @@ printf '%s\n' "$updated" | jq '.' > "$CODEX_HOOKS"
 echo "    Hook:    ~/.codex/hooks.json (PreToolUse coder-gate; review with /hooks)"
 
 # --- Output styles → ~/.claude/output-styles (symlinks) + default selection ---
-# Ships the terse RU output style «Laconica RU» (replaces the English-only caveman plugin).
+# Ships the terse, language-mirroring «Laconica» output style.
 # keep-coding-instructions:true inside the style file preserves Claude Code's coding behaviour.
 OUTPUT_STYLES_SRC="$DEVKIT_HOME/plugins/core/output-styles"
 OUTPUT_STYLES_DEST="$CLAUDE_DIR/output-styles"
@@ -273,12 +270,17 @@ if [ -d "$OUTPUT_STYLES_SRC" ]; then
   done
   echo "    Linked:  ~/.claude/output-styles/*.md ($os_count style(s))"
 
-  # Make «Laconica RU» the default, but only when the user has not set one — an explicit
-  # outputStyle wins. The value must match the style file's frontmatter name.
-  style_default="Laconica RU"
-  updated=$(jq --arg s "$style_default" '.outputStyle //= $s' "$SETTINGS")
+  # Make «Laconica» the default when unset and migrate the previous devkit-managed name.
+  # Any other explicit outputStyle remains untouched.
+  style_default="Laconica"
+  updated=$(jq --arg s "$style_default" '
+    if .outputStyle == null or .outputStyle == "Laconica RU"
+    then .outputStyle = $s
+    else .
+    end
+  ' "$SETTINGS")
   printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
-  echo "    Style:   ~/.claude/settings.json (default outputStyle → $style_default, if unset)"
+  echo "    Style:   ~/.claude/settings.json (default outputStyle → $style_default)"
 fi
 
 # --- Optional per-project adapters ---

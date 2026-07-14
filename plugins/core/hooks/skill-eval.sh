@@ -1,9 +1,10 @@
 #!/bin/sh
 # skill-eval.sh — UserPromptSubmit hook for Claude Code.
 #
-# Emits the shared skill-activation instruction. The canonical text lives in
-# skill-eval.txt — the same snippet the Codex/Cursor adapters embed (one source).
+# Reasserts the small per-turn activation gate. The durable routing policy lives
+# in ~/.claude/CLAUDE.md; this reminder keeps it salient in long sessions.
 # Adapted from umputun/cc-thingz (MIT). Instruction only — no permissions, no writes.
 
-dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-cat "$dir/skill-eval.txt"
+cat <<'EOF'
+DEVKIT TURN GATE: Before responding or calling any non-Skill tool, compare the request with available skill descriptions. If any match, first call Skill(<catalog-slug>) for the smallest directly relevant set. Mentioning a skill is not activation. If none match, proceed directly.
+EOF

@@ -63,13 +63,25 @@ assert_link "$cursor_home/skills/devkit-laravel--architect" "$ROOT/plugins/larav
 assert_contains "$claude_home/CLAUDE.md" 'personal global guidance'
 assert_contains "$claude_home/CLAUDE.md" '<!-- devkit-skill-policy:start -->'
 assert_contains "$claude_home/CLAUDE.md" 'Skill selection starts from the catalog metadata.'
-assert_not_contains "$claude_home/settings.json" 'skill-eval.sh'
+assert_contains "$claude_home/settings.json" 'skill-eval.sh'
 assert_contains "$claude_home/settings.json" 'custom-prompt-hook'
+[ "$(jq '[.hooks.UserPromptSubmit[]?.hooks[]? | select(.command | contains("skill-eval.sh"))] | length' "$claude_home/settings.json")" = "1" ] \
+  || fail "expected one skill-eval hook"
+assert_link "$claude_home/output-styles/laconica.md" "$ROOT/plugins/core/output-styles/laconica.md"
+assert_absent "$claude_home/output-styles/laconica-ru.md"
+[ "$(jq -r '.outputStyle' "$claude_home/settings.json")" = "Laconica" ] \
+  || fail "expected Laconica default output style"
 
 first_claude_guidance=$(cksum < "$claude_home/CLAUDE.md")
+jq '.outputStyle = "Laconica RU"' "$claude_home/settings.json" > "$claude_home/settings.json.tmp"
+mv "$claude_home/settings.json.tmp" "$claude_home/settings.json"
 HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home" DEVKIT_HOME_DIR="$ROOT" \
   bash "$ROOT/bin/devkit-install" >/dev/null
 [ "$first_claude_guidance" = "$(cksum < "$claude_home/CLAUDE.md")" ] || fail "global CLAUDE.md generation is not idempotent"
+[ "$(jq '[.hooks.UserPromptSubmit[]?.hooks[]? | select(.command | contains("skill-eval.sh"))] | length' "$claude_home/settings.json")" = "1" ] \
+  || fail "skill-eval hook installation is not idempotent"
+[ "$(jq -r '.outputStyle' "$claude_home/settings.json")" = "Laconica" ] \
+  || fail "legacy Laconica RU output style was not migrated"
 
 project="$TMP_DIR/project"
 mkdir -p "$project/.devkit" "$project/.codex/skills/custom-skill"
