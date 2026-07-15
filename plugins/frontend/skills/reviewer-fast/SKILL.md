@@ -9,7 +9,9 @@ claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 
 ## Stack context
 
-Read `.devkit/toolkit.json` and load conduct for all active plugins — `plugins/frontend/conduct/` is always included. If toolkit.json is absent, detect the stack from `package.json` and read conduct from matching plugin directories.
+Follow `plugins/core/conduct/conduct-loading.md`. Read `plugins/frontend/conduct/overview.md`, then load only conduct
+matching the changed paths and the regression risks below. Read a framework or styling plugin's `overview.md` only when
+the reviewed code uses it. If `.devkit/toolkit.json` is absent, detect the touched stack from `package.json`.
 
 Apply all loaded conduct rules when evaluating conventions, patterns, and anti-patterns.
 

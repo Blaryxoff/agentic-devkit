@@ -40,10 +40,10 @@ to find the clone root.
 4. **Match the request** against those descriptions. Pick the best-fitting child skill. If several fit, prefer the most
    specific; if none fit, fall back to handling the request directly with the active plugins' conduct.
 
-5. **Load and apply the child.** Read the matched child skill's full `SKILL.md` body and follow it. Load the conduct it
-   cites from the same plugin's `conduct/` directory (and any cross-plugin conduct it references — e.g. Laravel → Vue).
-   Skill and conduct content always come from `$DEVKIT_HOME`, never from the repos, so cross-plugin references resolve
-   regardless of which repo triggered the request.
+5. **Load and apply the child.** Read the matched child skill's full `SKILL.md` body and follow it. Apply
+   `plugins/core/conduct/conduct-loading.md`: load only conduct cited by the child or required by a concrete touched
+   layer or risk; never scan a conduct directory wholesale. Skill and conduct content always come from `$DEVKIT_HOME`,
+   never from the repos, so cross-plugin references resolve regardless of which repo triggered the request.
 
 ## Notes
 

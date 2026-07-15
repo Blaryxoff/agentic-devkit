@@ -45,21 +45,25 @@ cursor_home="$home/.cursor"
 claude_home="$home/.claude"
 mkdir -p "$codex_home/skills" "$cursor_home/skills" "$claude_home"
 ln -s "$ROOT/plugins/css/skills/css-a11y" "$codex_home/skills/devkit-css--css-a11y"
+ln -s "$ROOT/plugins/laravel/skills/architect" "$cursor_home/skills/devkit-laravel--architect"
 ln -s "$ROOT/plugins/core/skills/coder" "$codex_home/skills/user-skill"
 printf '%s\n' 'personal global guidance' > "$claude_home/CLAUDE.md"
 legacy_skill_eval="sh $ROOT/plugins/core/hooks/skill-eval.sh"
 jq -n --arg legacy "$legacy_skill_eval" '{hooks:{UserPromptSubmit:[{hooks:[{type:"command",command:$legacy},{type:"command",command:"custom-prompt-hook"}]}]}}' \
   > "$claude_home/settings.json"
 
-HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home" DEVKIT_HOME_DIR="$ROOT" \
-  bash "$ROOT/bin/devkit-install" >/dev/null
+install_output=$(HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home" DEVKIT_HOME_DIR="$ROOT" \
+  bash "$ROOT/bin/devkit-install")
 
 assert_link "$codex_home/skills/devkit-core--coder" "$ROOT/plugins/core/skills/coder"
 assert_link "$codex_home/skills/devkit-core--devkit-router" "$ROOT/plugins/core/skills/devkit-router"
 assert_absent "$codex_home/skills/devkit-css--css-a11y"
 assert_absent "$codex_home/skills/devkit-laravel--architect"
 assert_link "$codex_home/skills/user-skill" "$ROOT/plugins/core/skills/coder"
-assert_link "$cursor_home/skills/devkit-laravel--architect" "$ROOT/plugins/laravel/skills/architect"
+assert_link "$cursor_home/skills/devkit-core--coder" "$ROOT/plugins/core/skills/coder"
+assert_absent "$cursor_home/skills/devkit-laravel--architect"
+[[ "$install_output" == *"Cursor stack skills are now project-scoped"* ]] \
+  || fail "Cursor project-skill migration notice was not emitted"
 assert_contains "$claude_home/CLAUDE.md" 'personal global guidance'
 assert_contains "$claude_home/CLAUDE.md" '<!-- devkit-skill-policy:start -->'
 assert_contains "$claude_home/CLAUDE.md" 'Skill selection starts from the catalog metadata.'
@@ -84,14 +88,14 @@ HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home" DEVKIT_HOME_DIR
   || fail "legacy Laconica RU output style was not migrated"
 
 project="$TMP_DIR/project"
-mkdir -p "$project/.devkit" "$project/.codex/skills/custom-skill"
+mkdir -p "$project/.devkit" "$project/.codex/skills/custom-skill" "$project/.cursor/skills/custom-skill"
 printf '%s\n' '{"version":1,"enabled":["devkit-laravel","devkit-vue","devkit-inertia","devkit-tailwind"]}' \
   > "$project/.devkit/toolkit.json"
 ln -s "$ROOT/plugins/css/skills/css-a11y" "$project/.codex/skills/devkit-css--css-a11y"
 
 DEVKIT_PROJECT_ROOT="$project" bash "$ROOT/adapters/codex/generate" >/dev/null
 
-assert_link "$project/.codex/skills/devkit-core--coder" "$ROOT/plugins/core/skills/coder"
+assert_absent "$project/.codex/skills/devkit-core--coder"
 assert_link "$project/.codex/skills/devkit-frontend--pixel-build" "$ROOT/plugins/frontend/skills/pixel-build"
 assert_link "$project/.codex/skills/devkit-laravel--architect" "$ROOT/plugins/laravel/skills/architect"
 assert_absent "$project/.codex/skills/devkit-css--css-a11y"
@@ -103,6 +107,26 @@ assert_contains "$project/AGENTS.md" '### devkit-inertia'
 assert_contains "$project/AGENTS.md" '### devkit-laravel'
 assert_contains "$project/AGENTS.md" '### devkit-tailwind'
 assert_not_contains "$project/AGENTS.md" '### devkit-css'
+assert_contains "$project/AGENTS.md" 'plugins/core/conduct/overview.md'
+assert_contains "$project/AGENTS.md" 'plugins/laravel/conduct/overview.md'
+assert_not_contains "$project/AGENTS.md" 'plugins/core/conduct/docker-deployment.md'
+assert_not_contains "$project/AGENTS.md" 'plugins/laravel/conduct/architecture.md'
+
+DEVKIT_PROJECT_ROOT="$project" bash "$ROOT/adapters/cursor/generate" >/dev/null
+assert_absent "$project/.cursor/skills/devkit-core--coder"
+assert_link "$project/.cursor/skills/devkit-frontend--pixel-build" "$ROOT/plugins/frontend/skills/pixel-build"
+assert_link "$project/.cursor/skills/devkit-laravel--architect" "$ROOT/plugins/laravel/skills/architect"
+[ -d "$project/.cursor/skills/custom-skill" ] || fail "custom Cursor skill directory was removed"
+assert_contains "$project/.cursor/rules/devkit-core.mdc" 'plugins/core/conduct/overview.md'
+assert_contains "$project/.cursor/rules/devkit-laravel.mdc" 'plugins/laravel/conduct/overview.md'
+assert_not_contains "$project/.cursor/rules/devkit-core.mdc" 'plugins/core/conduct/docker-deployment.md'
+assert_not_contains "$project/.cursor/rules/devkit-laravel.mdc" 'plugins/laravel/conduct/architecture.md'
+
+first_cursor_skills=$(skill_snapshot "$project/.cursor/skills")
+first_cursor_core_rule=$(cksum < "$project/.cursor/rules/devkit-core.mdc")
+DEVKIT_PROJECT_ROOT="$project" bash "$ROOT/adapters/cursor/generate" >/dev/null
+[ "$first_cursor_skills" = "$(skill_snapshot "$project/.cursor/skills")" ] || fail "Cursor skill regeneration is not idempotent"
+[ "$first_cursor_core_rule" = "$(cksum < "$project/.cursor/rules/devkit-core.mdc")" ] || fail "Cursor rule regeneration is not idempotent"
 
 first_skills=$(skill_snapshot "$project/.codex/skills")
 first_agents=$(cksum < "$project/AGENTS.md")
@@ -112,6 +136,7 @@ DEVKIT_PROJECT_ROOT="$project" bash "$ROOT/adapters/codex/generate" >/dev/null
 
 printf '%s\n' '{"version":1,"enabled":["devkit-css"]}' > "$project/.devkit/toolkit.json"
 DEVKIT_PROJECT_ROOT="$project" bash "$ROOT/adapters/codex/generate" >/dev/null
+DEVKIT_PROJECT_ROOT="$project" bash "$ROOT/adapters/cursor/generate" >/dev/null
 
 assert_link "$project/.codex/skills/devkit-css--css-a11y" "$ROOT/plugins/css/skills/css-a11y"
 assert_absent "$project/.codex/skills/devkit-frontend--pixel-build"
@@ -119,5 +144,30 @@ assert_absent "$project/.codex/skills/devkit-laravel--architect"
 assert_contains "$project/AGENTS.md" '### devkit-css'
 assert_not_contains "$project/AGENTS.md" '### devkit-laravel'
 [ -d "$project/.codex/skills/custom-skill" ] || fail "custom skill directory was removed"
+assert_link "$project/.cursor/skills/devkit-css--css-a11y" "$ROOT/plugins/css/skills/css-a11y"
+assert_absent "$project/.cursor/skills/devkit-frontend--pixel-build"
+assert_absent "$project/.cursor/skills/devkit-laravel--architect"
+[ -d "$project/.cursor/skills/custom-skill" ] || fail "custom Cursor skill directory was removed"
+assert_contains "$project/.cursor/rules/devkit-core.mdc" 'plugins/core/conduct/overview.md'
+assert_contains "$project/.cursor/rules/devkit-css.mdc" 'plugins/css/conduct/overview.md'
+for disabled_rule in frontend inertia laravel tailwind vue; do
+  assert_absent "$project/.cursor/rules/devkit-${disabled_rule}.mdc"
+done
+
+collision_project="$TMP_DIR/collision-project"
+mkdir -p "$collision_project/.devkit" \
+  "$collision_project/.codex/skills/devkit-css--css-a11y" \
+  "$collision_project/.cursor/skills/devkit-css--css-a11y"
+printf '%s\n' '{"version":1,"enabled":["devkit-css"]}' > "$collision_project/.devkit/toolkit.json"
+if DEVKIT_PROJECT_ROOT="$collision_project" bash "$ROOT/adapters/codex/generate" >/dev/null 2>&1; then
+  fail "Codex adapter accepted an occupied enabled-skill destination"
+fi
+if DEVKIT_PROJECT_ROOT="$collision_project" bash "$ROOT/adapters/cursor/generate" >/dev/null 2>&1; then
+  fail "Cursor adapter accepted an occupied enabled-skill destination"
+fi
+[ -d "$collision_project/.codex/skills/devkit-css--css-a11y" ] \
+  || fail "Codex collision path was mutated"
+[ -d "$collision_project/.cursor/skills/devkit-css--css-a11y" ] \
+  || fail "Cursor collision path was mutated"
 
 echo "codex adapter tests passed"

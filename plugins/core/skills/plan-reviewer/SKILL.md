@@ -93,103 +93,14 @@ not a defect.
 
 ---
 
-### Product plan checks
+### Plan-type checks
 
-A product plan describes **user-visible behaviour and business intent**. It is the source of truth for what should
-happen, not how code should be written.
+Load the reference for every plan being reviewed:
 
-**Avoid or flag when unnecessary:**
+- Product plan → `references/product-plan-checks.md`
+- Dev plan → `references/dev-plan-checks.md`
 
-- Deep implementation detail that is not needed to explain user-visible behaviour
-- SQL, migration steps, framework internals, or code snippets
-- File paths, class names, method names, route names, or internal enum/storage details that do not materially clarify
-  the feature
-- Invented behaviour that is not traceable to a source
-
-Do **not** auto-flag a technical anchor if it is brief, clearly justified, and improves precision for stakeholders.
-
-**Required baseline content — aligned with `ralphex-plan-creator`:**
-
-1. **Problem statement / summary** — what is being changed.
-2. **User value / motivation** — why the change matters.
-3. **Scope / non-scope** — what is included and explicitly excluded.
-4. **Acceptance criteria** — explicit pass/fail expectations. Prose, bullets, or Given/When/Then are all acceptable. Do
-   **not** require markdown checkboxes.
-5. **UX notes** — user-flow notes, design references, or UI constraints when relevant.
-
-**Required when applicable:**
-
-- **Status header** — when the repository uses plan maturity states or review workflow states.
-- **Table of contents** — for long plans (roughly 150+ lines) unless the structure is already easy to scan.
-- **Terminology / glossary** — when the same concept could be named in multiple ways.
-- **Source references** — parent TZ, predecessor plan, ticket, or design source when the plan derives from earlier work.
-- **Conflict resolution rule** — when multiple sources can disagree (for example spec vs design vs accepted legacy
-  behaviour).
-- **Edge cases** — for non-trivial flows, especially empty, blocked, repeat, partial-data, and failure cases.
-- **Loading / error states** — when the feature includes data loading, submission, asynchronous work, or recoverable
-  failure.
-- **Exact copy** — modal titles, button labels, empty-state text, and similar copy only when the plan changes visible
-  text or copy precision matters for acceptance.
-- **Iterative plan extras** — summary table, previous-iteration notes, priority labels, or definition of done when the
-  document is an iterative fix plan.
-
-If the plan uses priorities, check that they are internally consistent and not inflated.
-
----
-
-### Dev plan checks — ralphex format
-
-A dev plan translates a product plan into an **executable implementation sequence**. Dev plans **must** follow the
-ralphex plan file format so the agent can track progress automatically.
-
-#### Structural requirements
-
-1. **Plan title** — first line must be `# Plan: <Title>`.
-2. **`## Overview` section** — what is being implemented and why. **No checkboxes.**
-3. **`## Context` section** (when applicable) — current codebase state, assumptions, constraints. **No checkboxes.**
-4. **`## Validation Commands` section** — concrete shell commands to run after implementation (test, lint, build). No
-   vague "run the tests." **No checkboxes.**
-5. **Source reference** — link to the product plan when one exists.
-6. **Technical approach** — covered across Overview, Context, or task descriptions:
-    - affected files/modules
-    - API/data-layer impacts
-    - state/service/data-flow strategy where relevant
-    - rollout notes and risks where relevant
-
-#### Task structure requirements
-
-7. **Task headers** — ordered dependency-first, using `### Task N: <title>` or `### Iteration N: <title>`.
-    - N can be an integer or non-integer (e.g. `2.5`, `2a`).
-    - No other header formats for executable work items.
-8. **Per-task file list** — `**Files:**` with `Create / Modify / Read / Delete` targets.
-9. **Task-local checkbox steps** — each task contains `- [ ]` items describing concrete implementation steps.
-10. **Checkbox placement** — checkboxes (`- [ ]` / `- [x]`) appear **only** inside `### Task N:` or `### Iteration N:`
-    sections. Checkboxes in Overview, Context, Validation Commands, Success criteria, Verification notes, or Risks
-    sections cause extra agent loop iterations and are a format violation.
-11. **Task completion marker** — each task ends with `- [ ] Mark completed`.
-12. **Checkbox state** — all checkboxes in a new plan must be `- [ ]` (unchecked). Use `- [x]` only when documenting
-    already completed work.
-
-#### Closing sections
-
-13. **Verification notes / QA checklist** — plain prose or bullets, **no markdown checkboxes**.
-14. **Risks / open questions** — present explicitly, **no checkboxes**. A plan with unresolved open questions is not
-    ready for implementation handoff.
-
-#### Additional requirements when applicable
-
-- **Out-of-scope / deferred block** — when implementation boundaries are easy to misread.
-- **Codebase map** — when the plan touches many files or multiple layers.
-- **Dependency graph / ordering note** — when task ordering is not obvious, especially for plans with 5+ tasks or
-  cross-cutting dependencies.
-- **Batching notes** — when multiple tasks touch the same files and should be implemented together.
-- **Conflict resolution notes** — when product spec, design, legacy behaviour, or external constraints conflict.
-
-**Forbidden in dev plans:**
-
-- Invented behaviour not traceable to the product plan or an approved clarification
-- Business/product decisions silently introduced during implementation planning
-- Checkboxes outside `### Task` or `### Iteration` sections
+When reviewing a paired product + dev plan, load both references.
 
 ---
 
@@ -219,24 +130,28 @@ Flag stack-specific contradictions as `STACK MISMATCH` and cite the supporting r
 
 ## Step 3.6 — Enforce active plugin conduct rules
 
-Read `.devkit/toolkit.json` to identify enabled plugins. For each active plugin that has a `conduct/` directory, read all
-conduct docs in that directory **except** the files in the skip list below.
+Resolve the eligible plugin set first: read `.devkit/toolkit.json` from each active project root, expand only the enabled
+plugins' transitive `dependencies` from their `plugin.json` manifests, and include default-enabled plugins such as
+`devkit-core`. Then follow `plugins/core/conduct/conduct-loading.md` and infer the affected subset from requested
+behaviour, affected files, repository evidence, expected responsibilities, and stated risks—not only from concerns the
+plan already mentions.
 
-### Conduct files to skip
-
-`logging.md`, `observability.md`, `git.md`, `cmd.md`, `makefile.md`, `documentation.md`, `php.md`,
-`fast_code_review_checklist.md`, `README.md`, `CLAUDE.md`.
-
-Every other `.md` file in a plugin's `conduct/` directory is plan-relevant and must be read.
+- Read `overview.md` for every plugin used by the affected implementation surface.
+- For dev plans, read architecture rules for each changed implementation layer; add anti-pattern rules when the plan
+  introduces files, responsibilities, or cross-layer flow.
+- Read only the specification documents governing behaviour or contracts in the plan.
+- Load database, security, configuration, dependency, state, testing, deployment, or other specialist rules when the
+  behaviour or affected artifacts imply that concern. Missing coverage is itself a trigger to load the rule.
+- Do not load logging, git, CLI, Makefile, documentation, or language-style rules unless the plan directly changes them.
 
 ### How to verify
 
-1. Read the plan-relevant conduct files from each active plugin's `conduct/` directory.
+1. Read the mandatory baseline and risk-specific conduct selected by repository evidence and expected responsibilities.
 2. Verify the plan does not violate any architecture rule, anti-pattern, or convention defined in those docs.
 3. For dev plans: verify that task steps follow the patterns prescribed in conduct docs and avoid the red-flag
    anti-patterns. Flag violations as `STACK MISMATCH` with evidence citing the specific conduct doc filename and rule.
-4. If a conduct doc rule conflicts with a project-level rule file (`.cursor/rules/`, `CLAUDE.md`, `AGENTS.md`), prefer
-   the project-level rule and note the exception.
+4. If conduct conflicts with a project-level rule file (`.cursor/rules/`, `CLAUDE.md`, `AGENTS.md`), apply the precedence
+   and safety boundary in `conduct-loading.md` and note the exception.
 
 ---
 
@@ -275,27 +190,8 @@ If the plans diverge, identify which document should be corrected and why.
 
 ### Convergence rule for subsequent passes
 
-Before collecting findings, infer whether this is a **first** review pass or a **subsequent** pass on the same plan.
-Signals that this is a subsequent pass:
-
-- The plan contains review-history notes, "previous iteration" sections, or accepted-update markers.
-- The plan is named with a date that is in the past and the file has been edited since.
-- Sibling files in the same `docs/plans/` directory reference prior review rounds for this plan.
-- The user states this is iteration N.
-
-On a **subsequent pass**, apply these rules to avoid re-litigating settled work:
-
-1. **Do not re-flag a finding whose underlying section is materially unchanged** from what a competent prior reviewer
-   would have read. If the section was good enough for the previous pass to accept (explicitly or by not flagging it),
-   it is good enough now unless the rules around it have changed.
-2. **Focus first on issues introduced by recent edits.** Edits to fix one problem often create new ones — those are the
-   highest-value findings.
-3. **Do not lower the bar.** As the obvious problems disappear it is tempting to start flagging "could be clearer"
-   items as Blocking — that is the path to infinite iteration. Hold the §7 Blocking definition strictly.
-4. **Bias toward `READY FOR HANDOFF` (§8 Outcome A).** When in doubt between "one more polish round" and "ship it",
-   choose ship.
-
-This rule does **not** apply on a first pass. On a first pass, review the plan as written without anchoring.
+If the plan or user indicates a prior review round, load and apply `references/subsequent-pass.md`. Otherwise treat this
+as a first pass and do not load that reference.
 
 ### Collect ambiguities
 

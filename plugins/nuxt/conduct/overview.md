@@ -10,20 +10,19 @@ This document set defines architecture and development rules for Nuxt frontend a
 - **Package manager**: pnpm
 - **Testing**: frontend unit/integration/e2e tooling configured in the target project
 
-## Reading order
+## Conduct routing
 
-1. **[Architecture](./architecture.md)** - component boundaries, composable/service layering, and folder structure.
-2. **[Configuration](./configs.md)** - environment usage boundaries and runtime config conventions.
-3. **[Error Handling](./error_handling.md)** - error taxonomy and user-facing failure behavior.
-4. **[Logging](./logging.md)** - structured logs, redaction rules, and signal quality.
-5. **[State Management](./stores.md)** - Pinia store rules, when to use stores vs composables.
-6. **[Dependencies](./dependencies.md)** - approved package strategy and dependency hygiene.
-7. **[Documentation](./documentation.md)** - docs standards and update workflow.
+Open only documents matching the current target; do not read this directory as a sequence.
 
-## Reference documents
-
-- **[Security](./security.md)** - XSS/input/auth/session/cors security rules.
-- **[Makefile](./makefile.md)** - standard build and automation targets.
-- **[Anti-patterns](./anti_patterns.md)** - common mistakes with bad/good examples.
-- **[Git Workflow](./git.md)** - branching, commits, and PR flow.
-- **[Feature Spec Template](./spec/spec.md)** - feature spec template before implementation.
+| Target or risk | Documents |
+|---|---|
+| New files, component responsibility, composables, or cross-layer flow | [architecture.md](./architecture.md), [anti_patterns.md](./anti_patterns.md) |
+| Runtime configuration or packages | [configs.md](./configs.md), [dependencies.md](./dependencies.md) |
+| Exceptions, failed requests, or user-facing fallbacks | [error_handling.md](./error_handling.md) |
+| Authentication, external input, session data, or XSS | [security.md](./security.md) |
+| Pinia or shared state | [stores.md](./stores.md) |
+| Logs, metrics, or tracing | [logging.md](./logging.md), [observability.md](./observability.md) |
+| Public APIs or documentation | [documentation.md](./documentation.md) |
+| Tests or test-case design | [testing/test-cases.md](./testing/test-cases.md) |
+| Product/dev specifications | Relevant files under [spec/](./spec/) only |
+| CLI, Make targets, review checklist, or git workflow | [cmd.md](./cmd.md), [makefile.md](./makefile.md), [fast_code_review_checklist.md](./fast_code_review_checklist.md), [git.md](./git.md) |

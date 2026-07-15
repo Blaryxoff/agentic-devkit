@@ -13,40 +13,20 @@ This document set defines the architecture, conventions, and development rules f
 - **CLI / tooling**: Artisan, Composer
 - **Testing**: PHPUnit feature + unit tests
 
-## Reading order
+## Conduct routing
 
-Read the documents in this order — each one builds on knowledge from the previous:
+Open only documents matching the current target; do not read this directory as a sequence.
 
-1. **[Architecture](./architecture.md)** — start here. Core design rules: layered Laravel architecture (domain, application, infrastructure boundaries), DDD-inspired modeling when needed (entities, value objects, aggregates), request/action/service separation, naming conventions, and project folder structure with annotated directory trees.
-
-2. **[PHP](./php.md)** — PHP-specific conventions: naming, typing, class design, control flow, error handling, Laravel integration patterns.
-
-3. **[Configuration](./configs.md)** — Laravel config conventions: `config/*.php` ownership, environment variable naming, `.env` usage boundaries, config caching, and runtime validation strategy.
-
-4. **[CMD / Wiring](./cmd.md)** — the application composition root: service provider wiring, container bindings, route/middleware registration, queue worker lifecycle, and deployment-aware bootstrap flow.
-
-5. **[Error Handling](./error_handling.md)** — exception taxonomy, domain/application exception mapping, validation and authorization failure handling, global render/report strategy, and fail-safe policy.
-
-6. **[Logging](./logging.md)** — Laravel/Monolog-based logging: channel strategy, contextual logging, per-component naming, log levels, and what to log vs redact.
-
-7. **[Observability](./observability.md)** — tracing and metrics strategy: request/job span conventions, RED metrics, application and infrastructure metrics, Telescope usage, logs-to-traces correlation, and OTEL Collector integration where used.
-
-8. **[Dependencies](./dependencies.md)** — approved third-party packages by concern. Use these first — only propose an alternative if there is a clear reason.
-
-9. **[Documentation](./documentation.md)** — documentation conventions: PHPDoc and JSDoc expectations, architecture decision notes, what to document and what not to, and docs update workflow.
-
-## Reference documents
-
-These documents are not required for initial reading but should be consulted when relevant:
-
-- **[Security](./security.md)** — security rules across all layers: request validation, CSRF/XSS prevention, auth/session hardening, SQL injection prevention, Nginx/Laravel headers, CORS, rate limiting, dependency vulnerability scanning.
-
-- **[Makefile](./makefile.md)** — standard build and automation targets: install, lint, test, assets, migrations, deploy steps. Every project must follow these conventions.
-
-- **[Anti-patterns](./anti_patterns.md)** — common mistakes with ❌/✅ code examples. Covers architecture violations, Eloquent/query misuse, error handling mistakes, logging pitfalls, and testing errors. Use as a self-check.
-
-- **[Fast Code Review Checklist](./fast_code_review_checklist.md)** — checklist to run before committing or reviewing PRs. Covers architecture, validation/authorization, data access, error handling, logging, testing, and deployment safety.
-
-- **[Git Workflow](./git.md)** — branching strategy, commit message conventions, merge request process, tagging, and pre-commit checks.
-
-- **[Feature Spec Template](./spec/spec.md)** — template for writing feature specifications before implementation. Fill out and attach as context when starting a new feature with an AI agent.
+| Target or risk | Documents |
+|---|---|
+| New files, changed responsibilities, or cross-layer flow | [architecture.md](./architecture.md), [anti_patterns.md](./anti_patterns.md), [thin_controller_model.md](./thin_controller_model.md) |
+| PHP APIs, typing, comments, or documentation | [php.md](./php.md), [documentation.md](./documentation.md) |
+| Configuration or packages | [configs.md](./configs.md), [dependencies.md](./dependencies.md) |
+| Artisan commands, providers, queues, or scheduling | [cmd.md](./cmd.md) |
+| Exceptions, retries, validation failures, or fallbacks | [error_handling.md](./error_handling.md) |
+| Authentication, authorization, external input, or secrets | [security.md](./security.md) |
+| Migrations, queries, models, transactions, or schema assumptions | [database-safety.md](./database-safety.md), [database_snapshot.md](./database_snapshot.md), [enums.md](./enums.md) |
+| Logs, metrics, or tracing | [logging.md](./logging.md), [observability.md](./observability.md) |
+| Tests or test-case design | [testing/php-testing.md](./testing/php-testing.md), [testing/test-cases.md](./testing/test-cases.md) |
+| Product/dev specifications | Relevant files under [spec/](./spec/) only |
+| Make targets, review checklist, or git workflow | [makefile.md](./makefile.md), [fast_code_review_checklist.md](./fast_code_review_checklist.md), [git.md](./git.md) |

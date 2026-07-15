@@ -16,7 +16,7 @@
 #   $HOME/.claude/settings.json                    SessionStart hook → devkit-update --if-stale
 #   $HOME/.codex/skills/devkit-core--<skill>/      symlinks to core skills for Codex
 #   $HOME/.codex/hooks.json                        PreToolUse hook → coder-gate.sh
-#   $HOME/.cursor/skills/devkit-<plugin>--<skill>/ symlinks to devkit skills for Cursor
+#   $HOME/.cursor/skills/devkit-core--<skill>/     symlinks to core skills for Cursor
 #
 # The global clone is the single source of truth. devkit-install runs from the
 # clone it lives in; if that is not the canonical location it bootstraps a clone
@@ -103,29 +103,31 @@ done
 echo "    Linked:  ~/.claude/skills/devkit-core--* ($skill_count skill(s))"
 echo "    Linked:  ~/.codex/skills/devkit-core--*  ($skill_count skill(s))"
 
-# --- Symlink every devkit skill globally for Cursor ---
-# Links are namespaced as devkit-<plugin>--<skill> and only those links are
-# reaped — never user-authored skills without the devkit- prefix.
+# --- Symlink core skills globally for Cursor ---
+# Stack skills are linked per project by adapters/cursor/generate so unrelated
+# projects do not carry their catalog metadata.
+cursor_migrated_skill_count=0
 for entry in "$CURSOR_SKILLS_DEST"/devkit-*--*; do
-  [ -L "$entry" ] && rm -f "$entry"
+  [ -L "$entry" ] || continue
+  case "$(basename "$entry")" in
+    devkit-core--*) ;;
+    *) cursor_migrated_skill_count=$((cursor_migrated_skill_count + 1)) ;;
+  esac
+  rm -f "$entry"
 done
 cursor_skill_count=0
-for plugin_dir in "$DEVKIT_HOME"/plugins/*/; do
-  [ -d "$plugin_dir" ] || continue
-  manifest="$plugin_dir/plugin.json"
-  [ -f "$manifest" ] || continue
-  plugin_name=$(jq -r '.name' "$manifest")
-  skills_src="$plugin_dir/skills"
-  [ -d "$skills_src" ] || continue
-  for d in "$skills_src"/*/; do
-    [ -d "$d" ] || continue
-    n=$(basename "$d")
-    abs="$(cd "$d" && pwd)"
-    ln -s "$abs" "$CURSOR_SKILLS_DEST/${plugin_name}--$n"
-    cursor_skill_count=$((cursor_skill_count + 1))
-  done
+for d in "$core_skills_src"/*/; do
+  [ -d "$d" ] || continue
+  n=$(basename "$d")
+  abs="$(cd "$d" && pwd)"
+  ln -s "$abs" "$CURSOR_SKILLS_DEST/devkit-core--$n"
+  cursor_skill_count=$((cursor_skill_count + 1))
 done
-echo "    Linked:  ~/.cursor/skills/devkit-*--* ($cursor_skill_count skill(s))"
+echo "    Linked:  ~/.cursor/skills/devkit-core--* ($cursor_skill_count skill(s))"
+if [ "$cursor_migrated_skill_count" -gt 0 ]; then
+  echo "    NOTICE: Cursor stack skills are now project-scoped; $cursor_migrated_skill_count old global link(s) were removed."
+  echo "            Regenerate each Cursor project with: DEVKIT_PROJECT_ROOT=/path/to/project $DEVKIT_HOME/adapters/cursor/generate"
+fi
 
 # --- Core subagents → ~/.claude/agents (claudeSubagent skills keep isolation) ---
 plugin_index=$(_build_plugin_index)

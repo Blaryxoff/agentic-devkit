@@ -130,17 +130,17 @@ Resolves: `core -> laravel`
 | Adapter  | Generated files                                                                                                        |
 |----------|------------------------------------------------------------------------------------------------------------------------|
 | `claude` | `.claude/settings.json` (hooks), `.claude/agents/*.md` (stack subagents), `.mcp.json` — core skills + router are global |
-| `cursor` | `.cursor/rules/devkit-*.mdc`, `.cursor/mcp.json` (per-project chrome profile), `.cursor/hooks/hooks.json`                     |
-| `codex`  | `.codex/skills/devkit-*--*/` (symlinks), managed `devkit-toolkit` section in `AGENTS.md` (conduct + hook instructions) |
+| `cursor` | `.cursor/skills/devkit-*--*/`, compact conduct-index rules, MCP config, and hooks                                   |
+| `codex`  | `.codex/skills/devkit-*--*/` for non-core plugins and compact conduct indexes in `AGENTS.md`                     |
 
 Generated text (conduct paths in `.mdc` / `AGENTS.md`) references the global clone at `~/.claude/agentic-devkit`, so
 output is identical regardless of where the project lives on disk. Disabled plugins do not enter generated AI context.
 
-`devkit-install` keeps only `devkit-core` skills (including the `devkit` router) in `~/.codex/skills/` and removes stale
-global non-core devkit symlinks from older installs. The Codex adapter rebuilds `.codex/skills/` from the project's
-resolved plugin graph, including transitive dependencies; plugins such as `devkit-css` stay absent unless explicitly
-enabled. Re-run the adapter after changing `.devkit/toolkit.json`, then start a new Codex session to refresh its skill
-catalog.
+`devkit-install` keeps only `devkit-core` skills globally for Codex and Cursor and removes stale global non-core links.
+Their project adapters link only resolved non-core skills, including transitive dependencies; plugins such as
+`devkit-css` stay absent unless explicitly enabled. Generated `AGENTS.md` / `.mdc` rules point to one conduct index per
+plugin and require scope-driven loading instead of listing the full conduct corpus. Re-run the adapter after changing
+`.devkit/toolkit.json`, then start a new agent session to refresh its skill catalog.
 
 The global install also merges a native Codex `PreToolUse` coder gate into `~/.codex/hooks.json`. On the first
 `apply_patch` edit in a session it blocks once and instructs Codex to load `devkit-coder`, which pulls in the core and

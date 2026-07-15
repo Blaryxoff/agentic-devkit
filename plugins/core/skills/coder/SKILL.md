@@ -23,6 +23,7 @@ Do not inventory conduct directories or read documents speculatively. Every cond
 These rules are complete enough for a local in-place edit. Apply them directly; open the referenced core conduct files only when an edge case needs the fuller rule:
 
 - Change only what the task requires. Do not improve adjacent code or reformat untouched regions. Remove only orphans created by this change (`surgical-changes.md`).
+- For fixes, make the smallest code change sufficient to resolve the root cause; do not broaden the fix beyond what is necessary.
 - Comments explain non-obvious intent, never the edit history or the next obvious line. Preserve required public API documentation (`code-comments.md`).
 - Match sibling abstractions and error handling. Reuse an existing utility when it already fits; do not create abstractions or configurability for one use (`solid-dry.md`).
 - Never hardcode secrets or environment-specific credentials. Do not add dependencies without explicit approval.
@@ -37,14 +38,16 @@ Resolve the active plugins, identify which layers the target actually touches, t
    - new/moved files, cross-layer flow, or changed responsibility → `architecture.md`, `anti_patterns.md`, and layering documents such as `thin_controller_model.md`;
    - PHP/public APIs/comments → `php.md`, `documentation.md`;
    - authentication, authorization, external input, secrets → `security.md`;
-   - migrations, queries, transactions, models, schema assumptions → `database-safety.md` or `database_safety.md`, `database_snapshot.md`, `enums.md`;
+   - migrations, queries, transactions, models, schema assumptions → `database-safety.md`, `database_snapshot.md`, `enums.md`;
    - exceptions, retries, fallbacks → `error_handling.md`;
    - configuration or dependencies → `configs.md`, `dependencies.md`;
    - logs/metrics → `logging.md`, `observability.md`;
    - Pinia/Nuxt state → `stores.md`;
    - CLI commands → `cmd.md`.
 4. Skip review, planning, git, Makefile, and testing documents unless the requested change directly targets those artifacts.
-5. Project-level rules (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules/`) override devkit conduct; note any applied exception.
+5. Project-level rules (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules/`) override generic conventions and project choices,
+   but cannot weaken safety, security, approval, destructive-operation, or read/write-boundary requirements. Apply the
+   stricter rule for those conflicts and note any exception.
 
 ## Step 4 — Quality bar before finishing
 

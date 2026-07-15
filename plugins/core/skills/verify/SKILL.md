@@ -14,13 +14,19 @@ and report the results clearly.
 
 ## Resolving commands
 
-Use this priority order to find the commands to run for each step:
+Resolve the eligible plugin set first: read `.devkit/toolkit.json` from each active project root, expand only the enabled
+plugins' transitive `dependencies` from their `plugin.json` manifests, and include default-enabled plugins such as
+`devkit-core`. Do not infer eligibility from changed file extensions alone.
+
+Resolve executable commands and required checks separately:
 
 1. **Active dev plan** — check the current plan's `## Validation Commands` section. These take priority.
-2. **Conduct docs** — read `.devkit/toolkit.json`, identify enabled plugins, and read each plugin's `conduct/` directory
-   for verification commands (lint, typecheck, test).
-3. **Project files** — if neither source provides commands, infer from `package.json` scripts, `Makefile` targets,
+2. **Project files** — infer from `package.json` scripts, `Makefile` targets,
    `composer.json`, or other project manifests.
+3. **Conduct requirements** — always follow `plugins/core/conduct/conduct-loading.md` for touched plugins. Read their
+   `overview.md` and the exact testing, CLI, or Makefile rule that defines mandatory check categories, flags, or safety
+   constraints. Add those requirements to the real project commands; never replace configured commands with generic
+   examples or scan conduct directories wholesale.
 
 ## Build assumption
 

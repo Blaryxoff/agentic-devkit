@@ -5,7 +5,7 @@
 # resolved plugins. Core skills remain globally installed by bin/devkit-install.
 #
 # Output (in PROJECT_ROOT):
-#   .codex/skills/devkit-*--*/ — symlinks for resolved plugins
+#   .codex/skills/devkit-*--*/ — symlinks for resolved non-core plugins
 #   AGENTS.md                   — appends/updates ## devkit-toolkit section
 #                                 (includes conduct references and hook instructions)
 #
@@ -15,8 +15,8 @@
 # Resolution logic:
 #   - Sources adapters/_lib/resolve.sh for plugin resolution
 #   - Core skills are global in ~/.codex/skills/devkit-core--*
-#   - Resolved plugin skills are linked under PROJECT_ROOT/.codex/skills
-#   - AGENTS.md gets a managed section listing conduct doc paths
+#   - Resolved non-core plugin skills are linked under PROJECT_ROOT/.codex/skills
+#   - AGENTS.md gets a managed section listing one conduct index per plugin
 #   - Plugin hooks are described in AGENTS.md as instructions (Codex lacks native hook support)
 
 set -euo pipefail
@@ -37,10 +37,32 @@ echo ""
 
 plugin_index=$(_build_plugin_index)
 resolved_names=$(resolve_plugins)
+resolved_non_core=$(printf '%s\n' "$resolved_names" | grep -v '^devkit-core$' || true)
+
+skills_dir="$PROJECT_ROOT/.codex/skills"
+
+# Fail before rebuilding links when a user-authored path occupies a required
+# managed destination. Continuing would leave the enabled skill unavailable.
+collision=0
+while IFS= read -r name; do
+  [ -z "$name" ] && continue
+  plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
+  plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
+  skills_src="$plugin_dir/skills"
+  [ -d "$skills_src" ] || continue
+  for skill_dir in "$skills_src"/*/; do
+    [ -d "$skill_dir" ] || continue
+    skill_dest="$skills_dir/${name}--$(basename "$skill_dir")"
+    if { [ -e "$skill_dest" ] || [ -L "$skill_dest" ]; } && [ ! -L "$skill_dest" ]; then
+      echo "ERROR: enabled skill destination is occupied by a non-symlink: $skill_dest" >&2
+      collision=1
+    fi
+  done
+done <<< "$resolved_non_core"
+[ "$collision" -eq 0 ] || exit 1
 
 # Rebuild only managed links so disabled plugins disappear while user-authored
 # .codex content remains untouched.
-skills_dir="$PROJECT_ROOT/.codex/skills"
 mkdir -p "$skills_dir"
 reaped=0
 for _l in "$skills_dir"/devkit-*--*; do
@@ -60,11 +82,12 @@ while IFS= read -r name; do
   for skill_dir in "$skills_src"/*/; do
     [ -d "$skill_dir" ] || continue
     skill_name=$(basename "$skill_dir")
-    ln -s "$(cd "$skill_dir" && pwd)" "$skills_dir/${name}--${skill_name}"
+    skill_dest="$skills_dir/${name}--${skill_name}"
+    ln -s "$(cd "$skill_dir" && pwd)" "$skill_dest"
     linked=$((linked + 1))
   done
-done <<< "$resolved_names"
-echo "    Linked:  .codex/skills/devkit-*--* ($linked resolved skill(s))"
+done <<< "$resolved_non_core"
+echo "    Linked:  .codex/skills/devkit-*--* ($linked resolved non-core skill(s))"
 
 agents_file="$PROJECT_ROOT/AGENTS.md"
 conduct_lines=""
@@ -84,10 +107,12 @@ while IFS= read -r name; do
     conduct_rel="$rel_plugin/conduct"
     if [ -d "$conduct_abs" ]; then
       conduct_lines="${conduct_lines}\n### ${name}\n"
-      while IFS= read -r md; do
-        rel_md="$conduct_rel/$(python3 -c "import os.path; print(os.path.relpath('$md', '$conduct_abs'))")"
-        conduct_lines="${conduct_lines}\n- ${rel_md}"
-      done < <(find "$conduct_abs" -name "*.md" -type f | sort)
+      if [ -f "$conduct_abs/overview.md" ]; then
+        conduct_lines="${conduct_lines}\n- ${conduct_rel}/overview.md"
+      else
+        echo "ERROR: conduct directory has no overview.md index: $conduct_abs" >&2
+        exit 1
+      fi
       conduct_lines="${conduct_lines}\n"
     fi
   fi
@@ -120,7 +145,9 @@ new_section="${SECTION_START}
 
 $(cat "$ADAPTER_DIR/../../plugins/core/hooks/skill-eval.txt")
 
-Read and apply the following conduct documents for this project:
+Enabled plugins define eligible conduct, not mandatory context. Follow the loading policy below only when the task
+touches that plugin. Start from its index and open further documents only for concrete layers or risks; never read a
+conduct directory wholesale.
 $(echo -e "$conduct_lines")$(echo -e "$hook_instructions")
 ${SECTION_END}"
 

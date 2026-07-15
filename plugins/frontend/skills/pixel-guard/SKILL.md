@@ -15,13 +15,15 @@ Visual verification rules: `plugins/frontend/conduct/visual-implementation.md`. 
 
 ## Stack context
 
-Before starting, detect the active stack and load the applicable conduct rules.
+Follow `plugins/core/conduct/conduct-loading.md`. Always read `plugins/frontend/conduct/overview.md` and
+`plugins/frontend/conduct/visual-implementation.md`.
 
 **Primary — `.devkit/toolkit.json`:**
-Read the `enabled` list. For each active plugin that has a `conduct/` directory, read all docs in it. Focus on architecture, patterns, conventions, and anti-patterns docs; skip ops/infra docs (git workflow, logging, deployment commands). `plugins/frontend/conduct/` is always read.
+Read the `enabled` list, identify the framework and styling plugins used by the affected pages, and read only their
+`overview.md` plus rules required by the changed components, state, responsive behaviour, or accessibility.
 
 **Fallback — `package.json`:**
-If `.devkit/toolkit.json` is absent, read `package.json` (dependencies + devDependencies). Identify the core technologies in use, then read the conduct docs from the matching `plugins/<technology>/conduct/` directory.
+If `.devkit/toolkit.json` is absent, read `package.json` and identify only the technologies used by the affected pages.
 
 Apply all loaded conduct rules throughout the implementation.
 
@@ -43,7 +45,7 @@ Copy this checklist and track progress:
 
 ```
 Pixel Guard Progress:
-- [ ] Step 0: Load stack context — detect active plugins and read their conduct
+- [ ] Step 0: Load stack context — select conduct for the affected pages
 - [ ] Step 1: Verify baselines — capture and compare current state
 - [ ] Step 2: Plan changes — identify scope and risk
 - [ ] Step 3: Apply changes — implement the refactoring

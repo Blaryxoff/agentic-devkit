@@ -2,10 +2,11 @@
 # devkit-toolkit: Cursor adapter
 #
 # Generates Cursor rules (.mdc) and merged hooks from resolved plugins.
-# Devkit skills are installed globally by bin/devkit-install (~/.cursor/skills).
+# Core skills are installed globally; resolved non-core skills are linked per project.
 #
 # Output (in PROJECT_ROOT):
-#   .cursor/rules/devkit-<plugin>.mdc  — one rule file per resolved plugin with conduct
+#   .cursor/skills/devkit-*--*/        — symlinks for resolved non-core plugins
+#   .cursor/rules/devkit-<plugin>.mdc  — one compact conduct-index rule per resolved plugin
 #   .cursor/mcp.json                   — MCP servers with per-project chrome-devtools profile
 #   .cursor/hooks/hooks.json           — merged hooks translated to Cursor event names
 #
@@ -15,9 +16,9 @@
 # Resolution logic:
 #   - Sources adapters/_lib/resolve.sh for plugin resolution
 #   - For each resolved plugin with conduct, generates an .mdc rule that
-#     instructs Cursor to read the conduct docs on demand
+#     routes Cursor through one index and scope-driven loading
 #   - devkit-core.mdc is always generated with alwaysApply: true
-#   - Skills are global in ~/.cursor/skills/devkit-*--* (created by devkit-install)
+#   - Core skills are global; non-core skills are project-scoped
 #   - Hooks from resolved plugins are merged and translated to Cursor event names
 #     (DRY adapter pattern: plugins define hooks once in Claude Code format,
 #      each adapter translates to its target tool's event model)
@@ -41,27 +42,71 @@ echo ""
 
 plugin_index=$(_build_plugin_index)
 resolved_names=$(resolve_plugins)
+resolved_non_core=$(printf '%s\n' "$resolved_names" | grep -v '^devkit-core$' || true)
+
+skills_dir="$PROJECT_ROOT/.cursor/skills"
+
+# Fail before generating any project output when an enabled skill cannot be
+# linked. A successful partial catalog is more dangerous than a clear failure.
+collision=0
+while IFS= read -r name; do
+  [ -z "$name" ] && continue
+  plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
+  plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
+  skills_src="$plugin_dir/skills"
+  [ -d "$skills_src" ] || continue
+  for skill_dir in "$skills_src"/*/; do
+    [ -d "$skill_dir" ] || continue
+    skill_dest="$skills_dir/${name}--$(basename "$skill_dir")"
+    if { [ -e "$skill_dest" ] || [ -L "$skill_dest" ]; } && [ ! -L "$skill_dest" ]; then
+      echo "ERROR: enabled skill destination is occupied by a non-symlink: $skill_dest" >&2
+      collision=1
+    fi
+  done
+done <<< "$resolved_non_core"
+[ "$collision" -eq 0 ] || exit 1
 
 ensure_gitignore_entry ".cursor/"
 
 rules_dir="$PROJECT_ROOT/.cursor/rules"
 mkdir -p "$rules_dir"
 
-# Reap stale per-project devkit skill symlinks from older adapter versions.
-# Cursor now discovers devkit skills globally from ~/.cursor/skills; this project
-# adapter keeps only project-specific rules and hooks. Leave user-authored
-# .cursor/skills content alone.
-skills_dir="$PROJECT_ROOT/.cursor/skills"
-if [ -d "$skills_dir" ]; then
-  reaped=0
-  for _l in "$skills_dir"/devkit-*--*; do
-    [ -L "$_l" ] || continue
-    rm -f "$_l"
-    reaped=$((reaped + 1))
+reaped_rules=0
+for _rule in "$rules_dir"/devkit-*.mdc; do
+  if [ -e "$_rule" ] || [ -L "$_rule" ]; then
+    rm -f "$_rule"
+    reaped_rules=$((reaped_rules + 1))
+  fi
+done
+[ "$reaped_rules" -gt 0 ] && echo "    Removed: $reaped_rules stale .cursor/rules/devkit-*.mdc rule(s)"
+
+# Rebuild project-scoped non-core skill links. Core skills remain global; stack
+# skills are exposed only in projects whose toolkit resolves them.
+mkdir -p "$skills_dir"
+reaped=0
+for _l in "$skills_dir"/devkit-*--*; do
+  [ -L "$_l" ] || continue
+  rm -f "$_l"
+  reaped=$((reaped + 1))
+done
+[ "$reaped" -gt 0 ] && echo "    Removed: $reaped stale .cursor/skills/devkit-*--* symlink(s)"
+
+linked=0
+while IFS= read -r name; do
+  [ -z "$name" ] && continue
+  plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
+  plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
+  skills_src="$plugin_dir/skills"
+  [ -d "$skills_src" ] || continue
+  for skill_dir in "$skills_src"/*/; do
+    [ -d "$skill_dir" ] || continue
+    skill_dest="$skills_dir/${name}--$(basename "$skill_dir")"
+    ln -s "$(cd "$skill_dir" && pwd)" "$skill_dest"
+    linked=$((linked + 1))
   done
-  [ "$reaped" -gt 0 ] && echo "    Removed: $reaped stale .cursor/skills/devkit-*--* symlink(s)"
-  rmdir "$skills_dir" 2>/dev/null || true
-fi
+done <<< "$resolved_non_core"
+[ "$linked" -gt 0 ] && echo "    Linked:  .cursor/skills/devkit-*--* ($linked resolved non-core skill(s))"
+rmdir "$skills_dir" 2>/dev/null || true
 
 # Glob patterns per plugin (used for rule activation)
 declare_globs() {
@@ -118,14 +163,16 @@ while IFS= read -r name; do
         cat "$ADAPTER_DIR/../../plugins/core/hooks/skill-eval.txt"
         echo ""
       fi
-      echo "Read and apply the following conduct documents for this project:"
+      echo "Enabled plugins define eligible conduct, not mandatory context. Open this index only when the task touches"
+      echo "the plugin, then load further documents only for concrete layers or risks. Never read the directory wholesale."
       echo ""
-      # List all .md files in the conduct directory
       if [ -d "$conduct_abs" ]; then
-        find "$conduct_abs" -name "*.md" -type f | sort | while read -r md; do
-          rel_md="$conduct_rel/$(python3 -c "import os.path; print(os.path.relpath('$md', '$conduct_abs'))")"
-          echo "- $rel_md"
-        done
+        if [ -f "$conduct_abs/overview.md" ]; then
+          echo "- $conduct_rel/overview.md"
+        else
+          echo "ERROR: conduct directory has no overview.md index: $conduct_abs" >&2
+          exit 1
+        fi
       fi
     } > "$mdc_file"
     echo "    Created: .cursor/rules/${name}.mdc"
@@ -181,7 +228,7 @@ if [ "$mcp_count" != "0" ]; then
 fi
 
 echo ""
-echo "Done. Cursor discovers global devkit skills; project rules, MCP, and hooks generated here."
+echo "Done. Cursor discovers global core skills plus project-scoped resolved stack skills; project rules, MCP, and hooks generated here."
 echo ""
 echo "Resolved plugins:"
 echo "$resolved_names" | while read -r name; do echo "  - $name"; done

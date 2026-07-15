@@ -156,23 +156,27 @@ cause extra agent loop iterations.
 
 ## Stack-specific rules from active plugins
 
-Read `.devkit/toolkit.json` to identify enabled plugins. For each active plugin that has a `conduct/` directory, read all
-conduct docs in that directory **except** the files in the skip list below.
+Resolve the eligible plugin set before selecting conduct: read `.devkit/toolkit.json` from each active project root,
+expand only the enabled plugins' transitive `dependencies` from their `plugin.json` manifests, and include default-enabled
+plugins such as `devkit-core`. Then follow `plugins/core/conduct/conduct-loading.md` and infer the affected subset,
+layers, contracts, and risks from the requested behaviour, repository evidence, and expected responsibilities—not only
+from concerns already written into the draft.
 
-### Conduct files to skip
-
-`logging.md`, `observability.md`, `git.md`, `cmd.md`, `makefile.md`, `documentation.md`, `php.md`,
-`fast_code_review_checklist.md`, `README.md`, `CLAUDE.md`.
-
-Every other `.md` file in a plugin's `conduct/` directory is plan-relevant and must be read.
+- Read `overview.md` for every plugin used by the affected implementation surface.
+- For the dev plan, read architecture rules for each changed implementation layer; add anti-pattern rules when the plan
+  introduces files, responsibilities, or cross-layer flow.
+- Read only the relevant specification documents for contracts or behaviour covered by the plan.
+- Load database, security, configuration, dependency, state, testing, deployment, or other specialist rules when the
+  requested behaviour or affected artifacts imply that concern, even if the user or draft omitted it.
+- Do not load logging, git, CLI, Makefile, documentation, or language-style rules unless the plan directly changes them.
 
 ### How to apply
 
 - Task steps must follow the architecture patterns defined in active plugins' conduct docs.
 - Red-flag patterns listed in conduct docs must be avoided in generated task steps.
 - If a conduct doc defines a correct task step shape (e.g. Action extraction pattern), use that shape.
-- If a conduct doc rule conflicts with a project-level rule file (`.cursor/rules/`, `CLAUDE.md`, `AGENTS.md`), prefer
-  the project-level rule and note the exception.
+- If conduct conflicts with a project-level rule file (`.cursor/rules/`, `CLAUDE.md`, `AGENTS.md`), apply the precedence
+  and safety boundary in `conduct-loading.md` and note the exception.
 
 ---
 
@@ -190,4 +194,3 @@ Every other `.md` file in a plugin's `conduct/` directory is plan-relevant and m
 - Keep plans concrete enough that another engineer can implement without guessing.
 - Ensure stack implications (types, conventions, BEM/Tailwind/etc.) are covered for all affected layers.
 - Optimize for first-pass acceptance by ralphex: task-based format, explicit files, checkbox traceability.
-

@@ -17,8 +17,12 @@ Behavioural-completeness only — for code quality use `devkit-reviewer-deep` or
 
 ## Step 1 — Stack context and conduct loading
 
-- Read `.devkit/toolkit.json`. Always load `plugins/frontend/conduct/`. Additionally load conduct from each enabled stack plugin: `plugins/nuxt/conduct/`, `plugins/vue/conduct/`, `plugins/inertia/conduct/`, `plugins/tailwind/conduct/`, `plugins/css/conduct/`.
-- If `.devkit/toolkit.json` is absent, detect the stack from `package.json` and load matching plugin conduct.
+- Follow `plugins/core/conduct/conduct-loading.md`. Read `plugins/frontend/conduct/overview.md`, then load only rules
+  needed by the confirmed flows and stateful views.
+- Read framework `overview.md` files only for frameworks used by those targets. Add state/store rules for stores,
+  Inertia contract rules for page props/navigation, Nuxt rules for SSR/hydration, and styling rules only for rendered
+  state or accessibility findings.
+- If `.devkit/toolkit.json` is absent, detect the touched stack from `package.json`.
 - Load any project-level guidance: `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/`.
 
 ---

@@ -62,10 +62,10 @@ howto/                   Developer guides (Russian)
 - Each plugin may have a `conduct/` directory with Markdown standards docs.
 - Conduct is the canonical source of truth; skills summarize and enforce conduct.
 - Cross-plugin references use relative paths (e.g. `../../vue/conduct/overview.md`).
-- **Conduct docs are the extension mechanism for core skills.** Core skills (plan-reviewer, plan-creator, git, etc.)
-  automatically discover and enforce conduct rules from all active plugins by reading `.devkit/toolkit.json` and
-  scanning each plugin's `conduct/` directory. To add a new rule that core skills should enforce, add a `.md` file to
-  the appropriate plugin's `conduct/` directory -- no skill changes needed.
+- **Conduct docs are loaded progressively.** Enabling a plugin makes its rules eligible; it does not make every document
+  mandatory context. Skills follow `plugins/core/conduct/conduct-loading.md`: start from the target and plugin
+  `overview.md`, then open only documents required by the touched layers and risks. Never scan a conduct directory
+  wholesale.
 
 ### Plugin Manifests
 
@@ -117,7 +117,8 @@ The audience is an LLM. Optimise for signal density — every line spends contex
 
 ### When to add vs edit
 
-- A new rule belongs in **conduct** (so core skills auto-discover it via `plugins/*/conduct/`). Skills change only when the *workflow* changes.
+- A new rule belongs in **conduct**. Add it to the owning plugin's `overview.md` routing when agents must discover it;
+  change a skill only when its workflow or routing triggers change.
 - Before adding a new section, grep for the topic — extend the existing section instead of opening a parallel one.
 
 ## Common Commands

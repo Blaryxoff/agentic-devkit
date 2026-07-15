@@ -78,7 +78,7 @@ Check `database/schema.snapshot.json` first as the primary source of truth (see 
 - **Locking**: for high-concurrency operations, choose correct locking/unique keys to avoid races.
 - **JSON columns**: do not hide critical fields in JSON without strong justification.
 - **Column types**: always specify types and lengths (e.g. `string('type', 32)`).
-- **Migrations**: follow zero-downtime discipline (see `database_safety.md`).
+- **Migrations**: follow zero-downtime discipline (see `database-safety.md`).
 
 ## Response format
 
