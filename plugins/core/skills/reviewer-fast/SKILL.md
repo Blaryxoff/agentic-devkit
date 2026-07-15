@@ -23,6 +23,9 @@ Fast review focuses on correctness, regressions, and major convention violations
 3. Dispatch the applicable variants. If your harness exposes subagents (e.g. Claude Code's Agent tool with `subagent_type`), invoke each variant as a subagent so its context stays out of this orchestrator's context. When both variants apply, dispatch them **in parallel** in a single tool-call batch and only synthesize after both reports return. If subagents are not available, invoke each variant skill sequentially.
 4. Present each variant's report unchanged, under a heading: `## Laravel — Fast review` and `## Frontend — Fast review`. Reports are **sequential and clearly separated** — do not merge findings, do not produce a cross-wire pairing section.
 5. **Cross-check in Codex.** Once the variant reports are assembled, run the cross-agent cross-check per `plugins/core/conduct/cross-agent-review.md`, using Codex skill slug `devkit-core--reviewer-fast`. Merge kept findings into the matching stack section, tagged `(via Codex)`. **This step is mandatory when the gate holds** — run `command -v codex`, do not treat it as optional or proportional, and state the gate outcome explicitly. Skip only when a gating condition genuinely fails, naming which.
-6. If neither side is active, stop and tell the user no compatible stack plugin is enabled and which plugins this skill supports.
+6. Apply the review completion gate in `plugins/core/conduct/review-findings-format.md` to the combined current pass.
+7. If neither side is active, stop and tell the user no compatible stack plugin is enabled and which plugins this skill supports.
+
+Return findings and the pass outcome. This reviewer never repairs findings or invokes `devkit-coder`.
 
 **NEVER change code, ONLY review it.**

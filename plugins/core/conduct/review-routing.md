@@ -31,3 +31,5 @@ Run `git diff --name-only <base>` (or scope to the named files/branch) and class
 - **Mixed diff (`docs/plans/**` AND code):** run the code reviewers **and** `devkit-plan-reviewer`.
 - **Fast vs deep:** only use `devkit-reviewer-fast` when the user signals speed ("quick", "fast", "just regressions"). Default code review is deep + business-logic.
 - **Test ≠ review:** "test/QA/протестируй" never means a static reviewer — it means `devkit-browser` (drives the running app).
+- **Reviewers never repair:** a plain review returns findings and stops after one complete pass. Only an explicit fix/repair request authorizes a separate repair workflow to invoke the coder skill.
+- **Repair/recheck loops are finite:** apply `review-findings-format.md`'s completion gate. Blocking/Critical findings fail; Significant findings require impact-based adjudication; Minor findings pass. Explicit repair loops stop after at most 5 complete review passes.
