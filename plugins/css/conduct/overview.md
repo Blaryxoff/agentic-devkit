@@ -12,6 +12,7 @@ Modern CSS conventions and anti-patterns. Apply these rules whenever writing or 
 
 - Tailwind-specific conventions are owned by `devkit-tailwind` conduct.
 - Generic CSS token discipline is owned by `devkit-frontend` conduct.
+- Projects using BEM naming also apply [bem.md](./bem.md).
 
 ## Core principles
 

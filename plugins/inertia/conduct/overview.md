@@ -14,6 +14,10 @@ This section contains Inertia-specific conventions only.
 - Do not duplicate Laravel or Vue policy that is owned elsewhere.
 - Reference `plugins/core/conduct/ownership-map.md` when in doubt.
 
+## Routing
+
+- Product/dev planning for Inertia page props, navigation, forms, and UI states → [spec/spec-inertia-ui.md](./spec/spec-inertia-ui.md).
+
 ## Page props contract
 
 Props passed from a controller to an Inertia page are a **public API**. Changing the prop shape is a breaking change.

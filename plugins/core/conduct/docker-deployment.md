@@ -888,7 +888,9 @@ it. With it, anyone with SSH can.
 ## 13. Quick checklist — single-node baseline
 
 Use this when bootstrapping or auditing the **standard** Laravel + Nuxt
-single-node project. Each item maps to a section above.
+single-node project. This is the exhaustive mandatory baseline: when a new
+single-node MUST rule is added to §§1–11, add its compact check here too.
+Each item maps to a source section above.
 
 - [ ] Multi-stage Dockerfile (node → composer → fpm + nginx stage); mlocati
       installer; non-root uid 1000; nginx stage has uid 1000 too. (§1.1–§1.3)
@@ -897,44 +899,72 @@ single-node project. Each item maps to a section above.
 - [ ] Image tags: `${env}-${sha}` immutable + `${env}-latest` rolling;
       digest markers under `/var/www/<app>/.deploy/`; registry hardcoded
       lowercase in workflow. (§1.5, §1.6)
+- [ ] Runtime image excludes dev-only files and never contains `.env` or
+      other secrets; base images are version-pinned, never `latest`. (§1.7,
+      §9.4)
 - [ ] Asset stage sets `--max-old-space-size`; if it builds on the serving
       node, that box has persistent swap (sized to overcommit gap + build
       heap); test builds disable minify via build-arg; `reportCompressedSize:
       false`; build stage uses `node:<LTS>-slim`. (§1.8)
 - [ ] Every volume mount is a **leaf** path. (§2.1)
+- [ ] nginx mounts public uploaded storage read-only; production has no
+      source-code bind mounts. (§2.2, §2.4)
 - [ ] `app-logs` shared across app/worker/scheduler/nginx; PHP / PHP-FPM
       / nginx all `error_log` into `storage/logs/`. (§3.1)
 - [ ] Per-service `logging:` with `max-size`/`max-file`. (§3.2)
+- [ ] Failed deploy healthchecks capture recent container logs under
+      `storage/logs/container/`; application file logs have rotation or
+      cleanup. (§3.3)
 - [ ] Host ports bind `127.0.0.1`; mysql/redis never `0.0.0.0`. (§4.1)
 - [ ] `REDIS_HOST` pinned in service `environment:` if redis is on a
-      shared network. (§4.2, §4.3)
+      shared network, and that host-level network is declared external.
+      (§4.2, §4.3)
+- [ ] Shared Redis keys are namespaced per application and purpose with
+      `REDIS_PREFIX` / cache prefixes such as `<app>-database-` and
+      `<app>-cache-`. (§4.3)
 - [ ] (Cloud only) IMDS blocked from containers. (§4.4)
 - [ ] `env_file:` documented as start-frozen; `reload-env` target exists.
       (§5.1, §7.5)
+- [ ] Secret files are gitignored; host `.env` distribution and permissions
+      follow §5.3–§5.4.
 - [ ] `bin/deploy.sh` sources `$ENV_FILE` before `compose up` on stateful
       services with creds in `environment:`. (§5.2)
 - [ ] Healthcheck on every service; `start_period` set; FPM image has
       `apk add fcgi`; `/up` (and `/healthz` if used) wired. (§6)
+- [ ] Boot dependencies use `condition: service_healthy`; one-shot migration
+      dependencies use `service_completed_successfully`. (§6.3)
 - [ ] `bin/deploy.sh` is the single source of truth; Makefile + workflows
       are thin wrappers. (§7.1)
 - [ ] Two-account host model (`user` for ops, `deploy` for CI). (§7.2)
 - [ ] Deploy script: flock, idempotent digest markers, source env, pre-
       flight migrate one-shot, force-recreate flag, post-deploy
       `queue:restart`. (§7.3)
+- [ ] Rollback from the previous immutable image tag is documented and
+      operator-tested. (§7.4)
 - [ ] Makefile commands match §7.5 catalogue (deploy-test/prod,
       reload-env, sync-env, render-compose, smoke-test/prod, ps, logs,
       per-service logs, shell, tinker, artisan, migrate, queue-restart,
       db-shell, redis-shell, wait-healthy).
+- [ ] Environment-bound Make targets use only `-test` / `-prod` suffixes
+      and their matching `APP_TEST_HOST` / `APP_PROD_HOST`; SSH uses the
+      project key, interactive/streaming commands use the required TTY
+      flags, and `compose_body` sources both deploy and app env files. (§7.5)
 - [ ] Workflow shape per §7.6: `workflow_dispatch`, `concurrency.group =
       deploy-<env>` with `cancel-in-progress: false`, `environment: <env>`,
       `install -m … /dev/stdin` for atomic file rewrite.
+- [ ] Deploy workflows declare `DEPLOY_<ENV>_SSH_PRIVATE_KEY`, `_SSH_USER`,
+      `_HOST`, `_API_HOST`, `_FRONTEND_HOST`, optional `_HTTP_PORT`, and
+      registry credentials; permissions are `contents: read` and
+      `packages: read`; each deploy job has a 20–30 minute timeout. (§7.6)
 - [ ] `build-images.yml` uses paths-filter; backend change triggers nginx
       rebuild; two tags per image; registry-mode cache. (§7.7)
 - [ ] TLS terminated on the host (Caddy preferred). (§8)
 - [ ] `restart: unless-stopped`; resource limits set; base images pinned;
       no docker.sock exposure. (§9)
+- [ ] Read-only filesystems and explicit `tmpfs` are enabled where the
+      service permits them. (§9.3)
 - [ ] Backups to off-host S3, gated to `APP_ENV=production`, retention +
-      cap, restore drill scheduled. (§10)
+      cap, restore drill scheduled, and backup failure alerts wired. (§10)
 - [ ] `docker/INFRASTRUCTURE.md` exists and covers all §11 sections.
 
 ---

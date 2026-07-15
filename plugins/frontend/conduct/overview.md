@@ -14,6 +14,10 @@ This section contains tool-agnostic frontend architecture and generic CSS best p
 - Do not include tool-specific rules here (Nuxt, Inertia, Vue internals, Tailwind internals).
 - Reference `plugins/core/conduct/ownership-map.md` when in doubt.
 
+## Routing
+
+- Visual implementation, screenshot comparison, and baseline approval → [visual-implementation.md](./visual-implementation.md).
+
 ## Architecture
 
 - Keep rendering concerns in UI layers and business logic in reusable abstractions (composables, services, utils).

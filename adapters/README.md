@@ -7,7 +7,7 @@ Adapters translate the resolved plugin set into tool-specific configuration. Eac
 | Adapter | Target Tool | Output |
 |---------|-------------|--------|
 | `claude` | Claude Code | `.claude-plugin/marketplace.json`, `.claude/settings.json` (permissions + hooks) |
-| `cursor` | Cursor IDE | `.cursor/rules/devkit-*.mdc`, `.cursor/mcp.json`, `.cursor/hooks/hooks.json` |
+| `cursor` | Cursor IDE | `.cursor/skills/devkit-*--*/`, `.cursor/rules/devkit-*.mdc`, `.cursor/mcp.json`, `.cursor/hooks/hooks.json` |
 | `codex` | OpenAI Codex | `.codex/skills/devkit-*--*/`, `AGENTS.md` section (conduct + hook instructions) |
 
 ## Usage
@@ -18,6 +18,9 @@ toolkits/agentic-devkit/bin/devkit-resolve --adapter=claude
 toolkits/agentic-devkit/bin/devkit-resolve --adapter=cursor
 toolkits/agentic-devkit/bin/devkit-resolve --adapter=codex
 ```
+
+Cursor core skills are installed globally. Stack skills are project-scoped; after upgrading from an older global-skill
+installation, rerun the Cursor adapter in each project to create its resolved `.cursor/skills/devkit-*--*` links.
 
 ## Adding a New Adapter
 
