@@ -8,6 +8,7 @@ This section contains tool-agnostic frontend architecture and generic CSS best p
 - Reuse and abstraction policy
 - Data contract stability
 - Generic CSS conventions (non-Tailwind)
+- Visual design quality and motion decisions
 
 ## Boundaries
 
@@ -16,6 +17,8 @@ This section contains tool-agnostic frontend architecture and generic CSS best p
 
 ## Routing
 
+- Visual direction, redesign preservation, hierarchy, and anti-slop review → [design-quality.md](./design-quality.md).
+- Animation purpose, timing, physicality, interruption, and reduced-motion behavior → [motion.md](./motion.md).
 - Visual implementation, screenshot comparison, and baseline approval → [visual-implementation.md](./visual-implementation.md).
 
 ## Architecture
