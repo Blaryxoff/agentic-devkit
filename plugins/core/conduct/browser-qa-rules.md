@@ -67,7 +67,7 @@ A concurrent session that launches Chrome between the two steps also lands in th
 2. **Register.** When public registration exists, sign up through the UI as a new test-only user with the §3.6 password.
 3. **Create.** Otherwise create a test-only user through the project's own path — factory, seeder, `tinker`, or a user-create console command — with the §3.6 password and the roles the scenario needs.
 4. **Unblock.** Make that account loginable: set `email_verified_at`, clear lockout/throttle state, disable 2FA, set the `active`/`status` column to its enabled value. Apply only to accounts this pass created, or to accounts matching rung 5's pattern.
-5. **Reset.** Set the §3.6 password on an existing account **only** when its identifier matches an obvious test-only pattern (`qa-…`, `test…`, `demo…`, or a seeder fixture). Every other account is a real account: never reset it, never guess its password (§3.4).
+5. **Reset (gated last resort — prefer rung 3).** Creating a fresh test-only account *with the roles the scenario needs* (rung 3) always beats touching an existing account. Set the §3.6 password on an existing account **only** when its identifier unambiguously matches a test-only pattern (`qa-…`, `test…`, `demo…`, or a known seeder fixture) **and** it fails none of the §9.4 real-account tests. A reset is irreversible — the original hash is unrecoverable. The role you need lives only on a real account → do not reset it: create a test-only account with that role (rung 3), or stop and ask (§3.4, `clarification-protocol.md`). Never guess a found account's password (§3.4).
 6. **Stop.** No rung authenticates → `plugins/core/conduct/clarification-protocol.md`. Report the ladder rungs tried.
 
 3.8. **Light rungs for code-editing skills.** Skills that edit code (`devkit-coder`, `devkit-pixel-build`, `devkit-pixel-guard`) walk rungs 1–2 only: discover credentials, or register a test-only user with the §3.6 password. Rungs 3–5 create, unblock, or reset accounts — safe only under the seed rules (§3.2–§3.3) those skills do not load. Both light rungs failing → stop via `plugins/core/conduct/clarification-protocol.md`: report that the route needs auth setup, and which rungs were tried. This is a legitimate stop; giving up before rung 1 is not (§3.7).
@@ -147,6 +147,8 @@ Full coverage requires all dimensions below. Neither skill may skip a dimension 
 9.2. Project-agnostic — discover entity, role, route, and feature names from inputs only.
 
 9.3. No `TBD` in outputs that block execution.
+
+9.4. **Never alter a real account's credentials.** Do not reset, set, or overwrite the password of any account whose identifier does not unambiguously match a test-only pattern (`qa-…`, `test…`, `demo…`, seeder fixture). Any of these makes it a **real account**, off-limits regardless of the pattern: a personal or real-domain email address; the repo's git user email (`git config user.email`); an admin/owner/superuser role. Resets are irreversible — the original password hash is unrecoverable. Need a role that only a real account has → create a test-only account with that role (§3.7 rung 3), or stop via `clarification-protocol.md`. This rule outranks any pressure to get logged in: a blocked route is a finding, never a licence to touch a real account.
 
 ## 10. Cleanup
 
