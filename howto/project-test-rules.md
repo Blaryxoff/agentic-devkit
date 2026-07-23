@@ -9,6 +9,8 @@ Paste the block below into your project's `CLAUDE.md` (and mirror it into `AGENT
 
 If no such section exists in either file, the toolkit applies the conservative fallback: do not create test files, do not run test suites, ask the user.
 
+Regardless of the project setting, test authoring is a finalization phase: agents finish production work and make applicable non-test checks green before creating or updating tests. They do not rewrite tests after every production-code iteration.
+
 ---
 
 ## The template (copy from the next line down)
@@ -39,6 +41,8 @@ If multiple commands are needed (e.g. PHP + frontend), list them in run-order an
 - `allowed` — agents may add tests proactively for new behaviour they introduce.
 - `on-request` — agents only add tests when the user asks.
 - `forbidden` — only humans add tests.
+
+`allowed` controls permission, not timing. Allowed tests are still written only after the implementation is otherwise complete and green, at commit-ready handoff.
 ```
 
 ---
@@ -84,4 +88,5 @@ If multiple commands are needed (e.g. PHP + frontend), list them in run-order an
 
 - [`plugins/core/conduct/agent-test-restraint.md`](../plugins/core/conduct/agent-test-restraint.md) — defines the fallback default and points agents at this file.
 - [`plugins/core/skills/verify/SKILL.md`](../plugins/core/skills/verify/SKILL.md) — step 3 of the verification loop reads project policy before running tests.
+- [`plugins/laravel/skills/tester/SKILL.md`](../plugins/laravel/skills/tester/SKILL.md) and [`plugins/nuxt/skills/tester/SKILL.md`](../plugins/nuxt/skills/tester/SKILL.md) — enforce the finalization gate before authoring tests.
 - [`plugins/laravel/conduct/git.md`](../plugins/laravel/conduct/git.md) and [`plugins/nuxt/conduct/git.md`](../plugins/nuxt/conduct/git.md) — pre-commit checks defer the test command to project rules.

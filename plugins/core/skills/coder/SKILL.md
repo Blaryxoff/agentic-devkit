@@ -27,6 +27,7 @@ These rules are complete enough for a local in-place edit. Apply them directly; 
 - Comments explain non-obvious intent, never the edit history or the next obvious line. Preserve required public API documentation (`code-comments.md`).
 - Match sibling abstractions and error handling. Reuse an existing utility when it already fits; do not create abstractions or configurability for one use (`solid-dry.md`).
 - Never hardcode secrets or environment-specific credentials. Do not add dependencies without explicit approval.
+- Treat tests as the final coding phase: do not create or update them during continuous production-code iterations. Finish the requested implementation and make non-test checks green first; only then author intended, project-permitted tests in one commit-ready pass (`agent-test-restraint.md`).
 
 ## Step 3 — Load the active stack's conduct
 
@@ -56,3 +57,4 @@ Resolve the active plugins, identify which layers the target actually touches, t
 - Edits are minimal and reversible; every changed line traces to the task.
 - Code matches local conventions in sibling files; no DRY/SOLID violations introduced.
 - The stack's lint and typecheck pass (use the project's own commands — do not hardcode them here).
+- If tests are intended and permitted by project policy, create or update them only after every preceding implementation and non-test verification item is complete and green, then run the eligible focused tests.
