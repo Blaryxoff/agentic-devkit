@@ -1,6 +1,7 @@
 ---
 name: devkit-mtproto-setup
-description: deploy a Telemt (MTProto) Telegram proxy in Docker on a server that already serves websites on port 443, using nginx stream SNI routing to share the port without breaking existing vhosts or SSL. Use when the user wants to add a Telegram MTProto proxy to a Linux box without losing their web sites.
+description: >-
+  deploy a Telemt (MTProto) Telegram proxy in Docker on a server that already serves websites on port 443, using nginx stream SNI routing to share the port without breaking existing vhosts or SSL. Also use when Telegram egress must traverse AmneziaWG because the hosting provider blocks direct Telegram traffic.
 ---
 
 # MTProto (Telemt) — safe setup on a shared 443
@@ -25,6 +26,10 @@ existing sites must keep working. The proxy must coexist on 443 via
 5. When in doubt, run read-only commands first.
 6. **No fabrication.** Don't invent flags, paths, package names, or
    service names. If unsure, run a probe or ask.
+7. **Middle-End identity must match egress.** If Telegram traffic exits
+   through a tunnel but STUN/HTTP probes exit directly, do not rely on
+   automatic NAT discovery. Pin Telemt to the tunnel exit's stable public
+   IP and verify the ME handshake before rollout.
 
 ## Phase 0 — Choose execution mode
 
@@ -174,6 +179,39 @@ Substitutions:
 - `public_host` ← proxy domain from State.
 - `tls_domain` ← FakeTLS domain (default `mail.ru`).
 - `access.users.main` ← `$TG_USER_SECRET`.
+
+### Selective Telegram egress through AmneziaWG
+
+Use this when the host provider blocks direct Telegram egress and only
+Telegram CIDRs are routed through a tunnel. First verify the route and the
+tunnel exit read-only:
+
+```bash
+ip route get 149.154.175.100
+ip route get 91.108.4.180
+awg show 2>/dev/null || true
+```
+
+Determine the tunnel exit's **stable public IPv4** from the exit server or
+provider configuration. A normal `curl https://api.ipify.org` on the proxy
+node is insufficient when only Telegram CIDRs use the tunnel: it will report
+the proxy node's direct public IP.
+
+Add these settings under `[general]`:
+
+```toml
+use_middle_proxy = true
+middle_proxy_nat_ip = "<TUNNEL_EXIT_PUBLIC_IPV4>"
+middle_proxy_nat_probe = true
+me2dc_fallback = true
+```
+
+`middle_proxy_nat_ip` must be the public IP that Telegram Middle-End sees for
+the ME TCP connection, not the proxy node's direct public IP or the tunnel's
+private address. If the exit IP is dynamic, stop: use a stable exit, place the
+MTProxy ingress on the exit host, or use a supported SOCKS5 upstream that
+reports a correct bind address. Shadowsocks requires direct mode and is not a
+replacement for this ME setup.
 
 ## Phase 6 — docker-compose for Telemt
 
@@ -341,15 +379,17 @@ curl -s http://127.0.0.1:19091/v1/users
 ```
 
 If the API returns `forbidden`, the whitelist blocked the local fetch.
-Temporarily widen it:
+Do **not** temporarily expose it with `0.0.0.0/0`. The host-side request can
+arrive at the container from the Compose bridge gateway rather than
+`127.0.0.1`. Query from the container's network namespace instead:
 
-```toml
-whitelist = ["0.0.0.0/0", "::/0"]
+```bash
+pid=$(docker inspect -f '{{.State.Pid}}' telemt-proxy)
+sudo nsenter -t "$pid" -n curl -fsS http://127.0.0.1:9091/v1/users
 ```
 
-Restart Telemt (`docker compose restart telemt`), grab the link, **then
-restore** the original whitelist and restart again. Do not leave the API
-open.
+Alternatively inspect the actual Compose subnet and add only that subnet to
+the whitelist. Keep the published API port bound to host loopback.
 
 ## Phase 9 — Verify
 
@@ -370,6 +410,34 @@ vhost.
 - Disable auto-switch during the test.
 - Verify text, images, video, and media in a large public channel.
 
+**Middle-End runtime:**
+
+```bash
+pid=$(docker inspect -f '{{.State.Pid}}' telemt-proxy)
+for path in \
+  /v1/runtime/gates \
+  /v1/runtime/initialization \
+  /v1/runtime/me_pool_state \
+  /v1/runtime/me-selftest \
+  /v1/stats/summary; do
+  sudo nsenter -t "$pid" -n curl -fsS "http://127.0.0.1:9091$path"
+  echo
+done
+```
+
+Require all of the following before rollout:
+
+- `route_mode` is `middle` and `me_runtime_ready` is `true`.
+- initialization is `ready` with `degraded=false`.
+- ME writers are healthy and KDF error counters remain zero.
+- logs contain `RPC handshake OK` and show the expected tunnel-exit IP as
+  `local_addr_nat`.
+- real client connections and transferred octets increase.
+
+For multiple nodes, change one node or a dedicated hostname first. Preserve a
+timestamped config backup, keep `me2dc_fallback=true`, verify an account/client
+that reproduced the failure, then roll the remaining nodes one at a time.
+
 ## Phase 10 — Quick diagnostics
 
 ```bash
@@ -384,6 +452,13 @@ Common failures:
 - **`proxy unavailable`** — wrong `server` in the link, proxy DNS not
   pointing to this host, or `tls_domain` mismatched with the stream
   `map`.
+- **Telegram says the proxy is incorrectly configured and will be disabled** —
+  Telegram Android raises this after backend error `-444`; it is not merely a
+  local link-format or FakeTLS check. Confirm the saved secret, then inspect ME
+  readiness, NAT identity, and whether the session fell back to direct DC.
+- **ME handshakes fail while STUN reports the proxy node's IP** — selective
+  tunnel routing caused split NAT identity. Set `middle_proxy_nat_ip` to the
+  tunnel exit's stable public IP and canary again.
 - **`non-standard DC ... fallback` or broken large-channel media** —
   ensure `dc_overrides` contains at least `201` and `203`.
 - **Telegram handshake timeout** — flaky route to Telegram DC; keep
