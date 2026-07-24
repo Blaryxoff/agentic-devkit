@@ -1,6 +1,6 @@
 ---
 name: devkit-changelog-generator
-description: turn git history into concise human-facing changelogs or release notes for the current project. Use when asked for "what changed", release notes, weekly/monthly update summaries, PR/MR summaries, or customer-readable changelog entries. Reads real git commits/diffs/tags; filters internal noise; does not invent product impact.
+description: turn git history into concise human-facing changelogs or release notes for the current project. Use when asked for "what changed", release notes, weekly/monthly update summaries, PR/MR summaries, or customer-readable changelog entries. Reads real git commits/diffs/tags; filters internal noise; does not invent product impact. For a Russian chat-ready release post grouped into emoji-headed product sections use devkit-release-notes instead.
 ---
 
 # Changelog Generator
