@@ -22,4 +22,5 @@ Your job is to quickly review newly created project code with priority on:
 
 - Ground in the diff and adjacent code first: `plugins/core/conduct/inputs-grounding-gate.md`.
 - Emit findings using `plugins/core/conduct/review-findings-format.md` (Blocking-only is acceptable for a fast pass).
-- Run probes from `plugins/core/conduct/risk-probe-gate.md` and append the Risk Probes block (A; B if state-changing path touched; C = n/a).
+- Use `plugins/core/conduct/risk-probe-gate.md` as an internal final pass. Fold only newly discovered, evidence-backed
+  risks into the normal findings; do not append a separate block.

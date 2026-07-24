@@ -70,7 +70,8 @@ This is a quick review, not a full audit. Report findings inline with the other 
 
 ### 5. Risk probe
 
-Run probes from `plugins/core/conduct/risk-probe-gate.md` against the diff. Append the Risk Probes block. Surface only Blocking-grade items here.
+Use `plugins/core/conduct/risk-probe-gate.md` as an internal final pass against the diff. Report only newly discovered,
+evidence-backed Blocking-grade risks below the verification table; otherwise emit nothing for this step.
 
 ## Output format
 
@@ -83,7 +84,6 @@ Run probes from `plugins/core/conduct/risk-probe-gate.md` against the diff. Appe
 | Type check | ✅/⏭️  | <one-line summary or "skipped — not configured"> |
 | Test       | ✅/⏭️  | <one-line summary or "skipped — per project policy"> |
 | Security   | ✅/⚠️  | <one-line summary or "no issues found"> |
-| Risk probe | ✅/⚠️  | <one-line summary> |
 ```
 
 If any step failed, include the relevant error output below the table.

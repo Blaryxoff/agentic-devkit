@@ -37,4 +37,5 @@ NEVER change code, ONLY review it.
 - Apply the stack-agnostic checklist in `plugins/core/conduct/code-smells.md` (which pulls in `code-comments.md`).
 - Emit findings using `plugins/core/conduct/review-findings-format.md`.
 - Pass `plugins/core/conduct/readiness-gate.md` before declaring the review complete.
-- Run probes from `plugins/core/conduct/risk-probe-gate.md` and append the Risk Probes block (A, B, C).
+- Use `plugins/core/conduct/risk-probe-gate.md` as an internal final pass. Fold only newly discovered, evidence-backed
+  risks into the normal findings; do not append a separate block.
