@@ -10,6 +10,10 @@ Canonical rules for browser-based QA skills (`devkit-browser`, `devkit-browser-r
 
 1.3. Apply `plugins/core/conduct/inputs-grounding-gate.md` before mapping the QA surface.
 
+1.4. Classify the pass before preflight. **Targeted** means the user explicitly says `smoke`, `only`, incremental, or names a regression/route/viewport to check while work is still changing. **Exhaustive** means the user says `full`, `e2e`, `exhaustive`, `final`, requests the whole project, or asks for feature QA without a narrower boundary.
+
+1.5. A targeted pass verifies every explicitly selected matrix cell plus its directly adjacent regression path, reports every omitted dimension, and never claims final acceptance. Run the exhaustive pass once the implementation is stable; do not repeat the whole matrix after each intermediate fix.
+
 ## 2. Preflight
 
 2.1. Snapshot the Chrome profile directories per §2.8 **first** — the reachability call below launches Chrome. Then verify chrome-devtools MCP is reachable (`list_pages`), and immediately take the §2.8 delta.
@@ -92,7 +96,7 @@ Discover everything below from the codebase before testing or planning.
 
 ## 5. Scenario matrix
 
-Full coverage requires all dimensions below. Neither skill may skip a dimension to save time.
+Exhaustive coverage requires all dimensions below; neither skill may skip a dimension to save time. A targeted pass executes the cells selected under §1.4–§1.5 and reports the remaining dimensions as untested.
 
 5.1. **Unauthed protected routes** — `navigate_page`; assert redirect/403.
 
@@ -125,6 +129,12 @@ Full coverage requires all dimensions below. Neither skill may skip a dimension 
 6.2. `take_snapshot` before acting on each page.
 
 6.3. `take_screenshot` on every finding and at least once per page × viewport.
+
+6.4. Reuse a `take_snapshot` result until navigation, submission, modal state, role, viewport, or another DOM-changing action invalidates it. Do not snapshot unchanged state before consecutive read-only assertions.
+
+6.5. Batch independent MCP reads in one tool-call batch when the harness supports it. Prefer one `evaluate_script` call for multiple read-only DOM assertions; never replace a user interaction or server-side permission check with synthetic DOM mutation.
+
+6.6. Capture one screenshot for multiple assertions against the same unchanged page state. Keep the mandatory evidence from §6.3; remove only redundant captures.
 
 ## 7. Finding format
 

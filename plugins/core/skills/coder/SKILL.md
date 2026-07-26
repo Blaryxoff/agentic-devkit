@@ -53,7 +53,8 @@ Resolve the active plugins, identify which layers the target actually touches, t
 ## Step 4 — Quality bar before finishing
 
 - For a multi-step change, pair each implementation step with its smallest relevant verification. Run focused checks first; expand only when risk or failures justify it.
-- For a visual behavior change, verify the affected route at the relevant viewport. Load `browser-qa-rules.md` only when browser authentication or QA mechanics are actually needed.
+- For a visual behavior change, verify the affected route at the relevant viewport. During iteration, run only the targeted route/viewport/regression cells needed by the change; reserve one exhaustive `devkit-browser` pass for the stable, final implementation. Load `browser-qa-rules.md` only when browser authentication or QA mechanics are actually needed.
+- Before handing a long implementation thread to exhaustive browser QA, emit a compact handoff with scope, acceptance criteria, changed files, routes, roles, seed/login paths, and known risks so QA can start in a fresh session without rediscovering implementation history. Keep small related fixes in the current thread.
 - Edits are minimal and reversible; every changed line traces to the task.
 - Code matches local conventions in sibling files; no DRY/SOLID violations introduced.
 - The stack's lint and typecheck pass (use the project's own commands — do not hardcode them here).
