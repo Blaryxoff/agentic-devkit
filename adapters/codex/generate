@@ -39,6 +39,8 @@ plugin_index=$(_build_plugin_index)
 resolved_names=$(resolve_plugins)
 resolved_non_core=$(printf '%s\n' "$resolved_names" | grep -v '^devkit-core$' || true)
 
+ensure_gitignore_entry ".codex/"
+
 skills_dir="$PROJECT_ROOT/.codex/skills"
 
 # Fail before rebuilding links when a user-authored path occupies a required

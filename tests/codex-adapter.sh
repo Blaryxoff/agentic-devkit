@@ -98,12 +98,16 @@ HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home" DEVKIT_HOME_DIR
 
 project="$TMP_DIR/project"
 mkdir -p "$project/.devkit" "$project/.codex/skills/custom-skill" "$project/.cursor/skills/custom-skill"
+git -C "$project" init -q
+printf '%s\n' 'project-local-entry' > "$project/.gitignore"
 printf '%s\n' '{"version":1,"enabled":["devkit-laravel","devkit-vue","devkit-inertia","devkit-tailwind"]}' \
   > "$project/.devkit/toolkit.json"
 ln -s "$ROOT/plugins/css/skills/css-a11y" "$project/.codex/skills/devkit-css--css-a11y"
 
 DEVKIT_PROJECT_ROOT="$project" bash "$ROOT/adapters/codex/generate" >/dev/null
 
+assert_contains "$project/.gitignore" 'project-local-entry'
+assert_contains "$project/.gitignore" '.codex/'
 assert_absent "$project/.codex/skills/devkit-core--coder"
 assert_link "$project/.codex/skills/devkit-frontend--pixel-build" "$ROOT/plugins/frontend/skills/pixel-build"
 assert_link "$project/.codex/skills/devkit-laravel--architect" "$ROOT/plugins/laravel/skills/architect"
