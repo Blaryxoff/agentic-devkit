@@ -28,6 +28,10 @@ Run `git diff --name-only <base>` (or scope to the named files/branch) and class
   writes `ralphex`. The reviewer may also load when the review target is a file under `docs/plans/**`. Claude Code's
   built-in `/plan` mode is not ralphex; never route it to `devkit-plan-creator`.
 - **Full branch / code review = two skills.** `devkit-reviewer-deep` (architecture, security, data correctness, performance) and `devkit-reviewer-business-logic` (behavioural completeness, business-rule correctness) cover different axes — run both for "review the whole branch / the changes".
+- **Flatten full-review fan-out.** From the top-level session, resolve the applicable deep and business-logic variants,
+  generic fallbacks, and risk-gated specialists from `review-specialist-fanout.md` exactly once. Launch one parallel batch
+  when capacity permits, or the minimum capacity-bounded waves otherwise. Do not dispatch orchestrators as nested
+  subagents. Use one shared change set unless the user explicitly requests independent scopes.
 - **Mixed diff (`docs/plans/**` AND code):** run the code reviewers **and** `devkit-plan-reviewer`.
 - **Fast vs deep:** only use `devkit-reviewer-fast` when the user signals speed ("quick", "fast", "just regressions"). Default code review is deep + business-logic.
 - **Test ≠ review:** "test/QA/протестируй" never means a static reviewer — it means `devkit-browser` (drives the running app).

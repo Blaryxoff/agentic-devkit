@@ -139,11 +139,13 @@ fi
 # --- Update AGENTS.md ---
 SECTION_START="<!-- devkit-toolkit:start -->"
 SECTION_END="<!-- devkit-toolkit:end -->"
+skill_policy=$(< "$ADAPTER_DIR/../../plugins/core/hooks/skill-eval.txt")
+skill_policy=${skill_policy//\{\{DEVKIT_HOME\}\}/$DEVKIT_REF}
 
 new_section="${SECTION_START}
 ## devkit-toolkit
 
-$(cat "$ADAPTER_DIR/../../plugins/core/hooks/skill-eval.txt")
+${skill_policy}
 
 Enabled plugins define eligible conduct, not mandatory context. Follow the loading policy below only when the task
 touches that plugin. Start from its index and open further documents only for concrete layers or risks; never read a

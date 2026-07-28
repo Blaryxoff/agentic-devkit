@@ -164,10 +164,12 @@ fi
 # managed section globally instead of injecting the same policy on every prompt.
 policy_start="<!-- devkit-skill-policy:start -->"
 policy_end="<!-- devkit-skill-policy:end -->"
+skill_policy=$(< "$DEVKIT_HOME/plugins/core/hooks/skill-eval.txt")
+skill_policy=${skill_policy//\{\{DEVKIT_HOME\}\}/$DEVKIT_HOME}
 policy_section="${policy_start}
 ## devkit skill policy
 
-$(cat "$DEVKIT_HOME/plugins/core/hooks/skill-eval.txt")
+${skill_policy}
 ${policy_end}"
 
 if [ -f "$CLAUDE_GUIDANCE" ]; then

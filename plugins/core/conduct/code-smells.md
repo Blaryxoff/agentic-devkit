@@ -31,6 +31,18 @@ Check that changed code matches the surrounding code:
 3. **Feature envy** — code that uses another module's data more than its own.
 4. **Primitive obsession** — primitives where a domain type would be clearer.
 
+## Over-engineering
+
+1. **Pass-through layers** — wrappers, services, or repositories that only forward the same arguments and return value
+   without enforcing a boundary, contract, policy, or cross-cutting behavior required by local architecture.
+2. **Single-use factories or interfaces** — extension machinery with one fixed implementation and no demonstrated
+   consumer, substitution, generated-contract, or test-seam need.
+3. **Redundant representations** — DTOs, mappers, or conversion chains that repeat the same shape without enforcing a boundary.
+4. **Speculative flexibility** — unused hooks, plugin points, generic options, or configuration for a fixed requirement.
+5. **Dead alternatives** — legacy modes, dual implementations, or feature flags whose alternate path has no active caller.
+6. **Failure-hiding fallback** — catching a real failure and silently taking a degraded path instead of surfacing the error.
+7. **Premature optimization** — caches, pools, custom structures, or concurrency without evidence that the simple path is insufficient.
+
 ## What to report
 
 For each finding, follow `review-findings-format.md`:

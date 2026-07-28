@@ -67,6 +67,9 @@ assert_absent "$cursor_home/skills/devkit-laravel--architect"
 assert_contains "$claude_home/CLAUDE.md" 'personal global guidance'
 assert_contains "$claude_home/CLAUDE.md" '<!-- devkit-skill-policy:start -->'
 assert_contains "$claude_home/CLAUDE.md" 'Skill selection starts from the catalog metadata.'
+assert_contains "$claude_home/CLAUDE.md" "$ROOT/plugins/core/conduct/learning-capture-gate.md"
+assert_contains "$claude_home/CLAUDE.md" 'Skill(devkit-core--learn)'
+assert_not_contains "$claude_home/CLAUDE.md" '{{DEVKIT_HOME}}'
 assert_contains "$claude_home/settings.json" 'skill-eval.sh'
 assert_contains "$claude_home/settings.json" 'custom-prompt-hook'
 [ "$(jq '[.hooks.UserPromptSubmit[]?.hooks[]? | select(.command | contains("skill-eval.sh"))] | length' "$claude_home/settings.json")" = "1" ] \
@@ -75,6 +78,12 @@ assert_link "$claude_home/output-styles/laconica.md" "$ROOT/plugins/core/output-
 assert_absent "$claude_home/output-styles/laconica-ru.md"
 [ "$(jq -r '.outputStyle' "$claude_home/settings.json")" = "Laconica" ] \
   || fail "expected Laconica default output style"
+
+skill_eval_output=$(sh "$ROOT/plugins/core/hooks/skill-eval.sh")
+[[ "$skill_eval_output" == *"$ROOT/plugins/core/conduct/learning-capture-gate.md"* ]] \
+  || fail "skill-eval hook did not resolve the installed learning gate"
+[[ "$skill_eval_output" == *"Skill(devkit-core--learn)"* ]] \
+  || fail "skill-eval hook did not emit the Claude learn slug"
 
 first_claude_guidance=$(cksum < "$claude_home/CLAUDE.md")
 jq '.outputStyle = "Laconica RU"' "$claude_home/settings.json" > "$claude_home/settings.json.tmp"
@@ -108,6 +117,9 @@ assert_contains "$project/AGENTS.md" '### devkit-laravel'
 assert_contains "$project/AGENTS.md" '### devkit-tailwind'
 assert_not_contains "$project/AGENTS.md" '### devkit-css'
 assert_contains "$project/AGENTS.md" 'plugins/core/conduct/overview.md'
+assert_contains "$project/AGENTS.md" '~/.claude/agentic-devkit/plugins/core/conduct/learning-capture-gate.md'
+assert_contains "$project/AGENTS.md" 'Codex/Cursor activate `devkit-learn`'
+assert_not_contains "$project/AGENTS.md" '{{DEVKIT_HOME}}'
 assert_contains "$project/AGENTS.md" 'plugins/laravel/conduct/overview.md'
 assert_not_contains "$project/AGENTS.md" 'plugins/core/conduct/docker-deployment.md'
 assert_not_contains "$project/AGENTS.md" 'plugins/laravel/conduct/architecture.md'
@@ -118,6 +130,9 @@ assert_link "$project/.cursor/skills/devkit-frontend--pixel-build" "$ROOT/plugin
 assert_link "$project/.cursor/skills/devkit-laravel--architect" "$ROOT/plugins/laravel/skills/architect"
 [ -d "$project/.cursor/skills/custom-skill" ] || fail "custom Cursor skill directory was removed"
 assert_contains "$project/.cursor/rules/devkit-core.mdc" 'plugins/core/conduct/overview.md'
+assert_contains "$project/.cursor/rules/devkit-core.mdc" '~/.claude/agentic-devkit/plugins/core/conduct/learning-capture-gate.md'
+assert_contains "$project/.cursor/rules/devkit-core.mdc" 'Codex/Cursor activate `devkit-learn`'
+assert_not_contains "$project/.cursor/rules/devkit-core.mdc" '{{DEVKIT_HOME}}'
 assert_contains "$project/.cursor/rules/devkit-laravel.mdc" 'plugins/laravel/conduct/overview.md'
 assert_not_contains "$project/.cursor/rules/devkit-core.mdc" 'plugins/core/conduct/docker-deployment.md'
 assert_not_contains "$project/.cursor/rules/devkit-laravel.mdc" 'plugins/laravel/conduct/architecture.md'

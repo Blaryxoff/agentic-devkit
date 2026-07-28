@@ -1,6 +1,10 @@
 ---
 name: devkit-learn
-description: capture strategic, reusable project knowledge discovered this session into the project CLAUDE.md (or CLAUDE.local.md when the discovery is per-developer/per-checkout and that file already exists). Use when the user says "learn", "save knowledge", "update claude.md", "capture learnings", or at the end of a significant work session. Writes team-shared project memory — distinct from your personal cross-session auto-memory (MEMORY.md), which it never touches.
+description: >-
+  capture strategic, reusable project knowledge discovered this session into project CLAUDE.md (or CLAUDE.local.md for
+  existing per-developer/per-checkout memory). Use when the user says "learn", "save knowledge", "update claude.md", or
+  "capture learnings", and when the top-level terminal learning-capture gate finds a durable candidate. Never trigger
+  merely because a session was long. Never write without granular user confirmation.
 ---
 
 # Learn
@@ -8,6 +12,13 @@ description: capture strategic, reusable project knowledge discovered this sessi
 > Adapted from `umputun/cc-thingz` (MIT).
 
 Review the session and capture strategic, reusable project knowledge into the project's `CLAUDE.md`. This writes **team-shared project memory** committed to the repo — it is a separate mechanism from your personal `MEMORY.md` auto-memory (which captures per-user cross-session facts and is not the target here).
+
+The skill has two entry paths:
+
+- **Explicit** — the user asks to learn or update project memory.
+- **Terminal** — the top-level agent invokes it after candidates pass `plugins/core/conduct/learning-capture-gate.md`.
+
+Terminal invocation is a candidate review, not permission to write. Keep the confirmation step below.
 
 ## What qualifies
 
@@ -22,6 +33,8 @@ Review the session and capture strategic, reusable project knowledge into the pr
 - the specific bug fixed or feature implemented
 - temporary workarounds, one-off changes, TODOs
 - historical context about the changes themselves
+- ordinary framework/tool knowledge and facts already documented at their canonical source
+- speculative conclusions or unconfirmed environment state
 
 Decision test for each discovery: *Will this help understand the project in 6 months? Does it appear multiple times? Is it a project-wide convention? Would it save future debugging time?*
 
@@ -38,18 +51,24 @@ This skill never writes to the user's global `~/.claude/CLAUDE.md` and never wri
 
 1. **Check for project memory-placement guidance.** Scan the project `CLAUDE.md`, any `.claude/rules/*.md`, and global `~/.claude/CLAUDE.md` for documented placement rules (a decision tree, a triage command, specific destinations). If found, defer to it instead of the defaults below.
 2. **Read existing memory content** (`CLAUDE.md`, `CLAUDE.local.md` if present, global `~/.claude/CLAUDE.md`, and `MEMORY.md`) to avoid duplication.
-3. **Early exit** — if no new strategic knowledge was found, report "no new strategic knowledge to capture" and stop. Do not call `AskUserQuestion`.
+3. **Early exit** — if no new strategic knowledge was found, stop without asking the user. For explicit invocation,
+   report "no new strategic knowledge to capture"; for terminal invocation, exit silently.
 4. **Classify each discovery** to its destination per the rules above.
-5. **Present** the discoveries, each tagged with its inferred destination:
+5. **Limit and consolidate** — keep at most three high-value discoveries. Prefer merging or replacing an existing entry over appending overlapping text.
+6. **Present** the discoveries, each tagged with its inferred destination:
    ```markdown
    ## [Section] → project CLAUDE.md
    - Discovery 1
    ```
-6. **Confirm via `AskUserQuestion`** — granular selection: first option "All", last "None", middle options the 2–3 most significant items (each labelled with its destination). Save per the selection; "Other" lets the user pick which items, but does not redirect destinations.
+7. **Confirm with the user** — use the environment's structured question tool when available; otherwise ask a concise
+   confirmation question and wait. Offer granular selection: first option "All", last "None", and middle options for the
+   2–3 most significant items, each labelled with its destination. Save only the selected items. A free-form response may
+   select items, but never redirects their destinations.
 
 ## Guidelines
 
 - Capture only genuinely new discoveries; don't duplicate existing memory.
 - Focus on patterns observed, not specific code written.
 - Keep entries concise and actionable.
+- Never treat terminal invocation as permission to write; confirmation is mandatory.
 - Defer to any project/user memory-placement guidance found in step 1.

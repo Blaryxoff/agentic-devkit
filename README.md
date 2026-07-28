@@ -140,7 +140,9 @@ output is identical regardless of where the project lives on disk. Disabled plug
 Their project adapters link only resolved non-core skills, including transitive dependencies; plugins such as
 `devkit-css` stay absent unless explicitly enabled. Generated `AGENTS.md` / `.mdc` rules point to one conduct index per
 plugin and require scope-driven loading instead of listing the full conduct corpus. Re-run the adapter after changing
-`.devkit/toolkit.json`, then start a new agent session to refresh its skill catalog.
+`.devkit/toolkit.json` or after a toolkit update changes generated policy/conduct routing, then start a new agent session
+to refresh its skill catalog. Run `bin/devkit-install` again to refresh copied global Claude guidance; its installed shell
+hooks and symlinked core skills otherwise read the updated clone directly.
 
 The global install also merges a native Codex `PreToolUse` coder gate into `~/.codex/hooks.json`. On the first
 `apply_patch` edit in a session it blocks once and instructs Codex to load `devkit-coder`, which pulls in the core and

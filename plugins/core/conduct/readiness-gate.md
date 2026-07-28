@@ -25,4 +25,10 @@ For multi-step implementation work, apply this gate per step, not only at the en
 
 Skills with their own richer rubric (for example plan-reviewer's quality bar) extend this gate; they do not replace it.
 
+## Top-level terminal learning
+
+After the deliverable passes this gate, the top-level agent applies `learning-capture-gate.md`. Dispatched subagents skip
+terminal learning and return their evidence to the orchestrator. No qualifying candidate means a silent exit; it does not
+delay handoff.
+
 See `plugins/core/skills/plan-reviewer/SKILL.md` (Step 8) for the full pattern.

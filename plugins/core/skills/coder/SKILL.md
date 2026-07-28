@@ -59,3 +59,5 @@ Resolve the active plugins, identify which layers the target actually touches, t
 - Code matches local conventions in sibling files; no DRY/SOLID violations introduced.
 - The stack's lint and typecheck pass (use the project's own commands — do not hardcode them here).
 - If tests are intended and permitted by project policy, create or update them only after every preceding implementation and non-test verification item is complete and green, then run the eligible focused tests.
+- Before the final response, run `plugins/core/conduct/learning-capture-gate.md` from the top-level session. Invoke
+  `devkit-learn` only when a durable candidate passes; otherwise finish silently.

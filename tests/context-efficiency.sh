@@ -13,6 +13,12 @@ assert_contains() {
   grep -Fq "$2" "$1" || fail "expected $1 to contain: $2"
 }
 
+assert_not_contains() {
+  if grep -Fq "$2" "$1"; then
+    fail "expected $1 not to contain: $2"
+  fi
+}
+
 broad_loading=$(rg -n -i \
   'read all.*conduct|load conduct for all|load.*all active plugins|read each plugin.s conduct|read and apply the following conduct' \
   "$ROOT/plugins" "$ROOT/CLAUDE.md" "$ROOT/adapters" \
@@ -40,6 +46,42 @@ while IFS= read -r skill; do
 done < <(find "$ROOT/plugins/core/skills" -name SKILL.md -type f | sort)
 [ "$core_metadata_bytes" -le 20000 ] || fail "core skill metadata exceeds 20KB hard ceiling: $core_metadata_bytes"
 [ "$core_metadata_bytes" -le 12000 ] || echo "WARN: core skill metadata exceeds the 12KB target: $core_metadata_bytes"
+
+# Parse every skill frontmatter with a real YAML parser. Prefer the existing Python
+# environment and fall back to Ruby's standard-library parser without adding a dependency.
+if python3 -c 'import yaml' >/dev/null 2>&1; then
+  python3 - "$ROOT" <<'PY'
+from pathlib import Path
+import sys
+import yaml
+
+root = Path(sys.argv[1])
+for path in sorted(root.glob("plugins/*/skills/*/SKILL.md")):
+    parts = path.read_text().split("---", 2)
+    if len(parts) != 3 or parts[0].strip():
+        raise SystemExit(f"invalid frontmatter delimiters: {path}")
+    data = yaml.safe_load(parts[1])
+    if not isinstance(data, dict) or not isinstance(data.get("name"), str) or not isinstance(data.get("description"), str):
+        raise SystemExit(f"invalid skill frontmatter: {path}")
+PY
+elif command -v ruby >/dev/null 2>&1; then
+  ruby -ryaml - "$ROOT" <<'RB'
+root = ARGV.fetch(0)
+Dir.glob(File.join(root, "plugins/*/skills/*/SKILL.md")).sort.each do |path|
+  parts = File.read(path).split(/^---\s*$\n?/, 3)
+  abort("invalid frontmatter delimiters: #{path}") unless parts.length == 3 && parts[0].strip.empty?
+  data = YAML.safe_load(parts[1], permitted_classes: [], aliases: false)
+  valid = data.is_a?(Hash) && data["name"].is_a?(String) && data["description"].is_a?(String)
+  abort("invalid skill frontmatter: #{path}") unless valid
+end
+RB
+else
+  fail "python3 PyYAML or ruby is required to validate skill frontmatter"
+fi
+
+while IFS= read -r hook; do
+  bash -n "$hook" || fail "invalid shell hook syntax: $hook"
+done < <(find "$ROOT/plugins" -path '*/hooks/*.sh' -type f | sort)
 
 # Every canonical conduct document must be reachable from its plugin index.
 for conduct_dir in "$ROOT"/plugins/*/conduct; do
@@ -69,6 +111,26 @@ assert_contains "$ROOT/plugins/core/skills/plan-reviewer/SKILL.md" 'transitive `
 assert_contains "$ROOT/plugins/core/skills/plan-reviewer/SKILL.md" 'When reviewing a paired product + dev plan, load both references.'
 assert_contains "$ROOT/plugins/core/skills/verify/SKILL.md" 'Conduct requirements'
 assert_contains "$ROOT/plugins/core/skills/verify/SKILL.md" 'transitive `dependencies`'
+assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" 'terminal learning-capture gate'
+assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" "environment's structured question tool"
+assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" 'Save only the selected items.'
+assert_not_contains "$ROOT/plugins/core/skills/learn/SKILL.md" 'AskUserQuestion'
+assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'finish silently'
+assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'strongest three at most'
+assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'Never write project memory directly'
+assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'Skill(devkit-core--learn)'
+assert_contains "$ROOT/plugins/core/hooks/skill-eval.txt" '{{DEVKIT_HOME}}/plugins/core/conduct/learning-capture-gate.md'
+assert_contains "$ROOT/plugins/core/skills/reviewer-deep/SKILL.md" 'review-specialist-fanout.md'
+assert_contains "$ROOT/plugins/core/skills/reviewer-deep/SKILL.md" 'Generic quality fallback'
+assert_contains "$ROOT/plugins/core/skills/reviewer-deep/SKILL.md" 'complete resolved reviewer set'
+assert_contains "$ROOT/plugins/core/skills/reviewer-business-logic/SKILL.md" 'do not dispatch them independently'
+assert_contains "$ROOT/plugins/core/skills/reviewer-business-logic/SKILL.md" 'Generic implementation fallback'
+assert_contains "$ROOT/plugins/core/conduct/review-specialist-fanout.md" 'maximum independent set in parallel waves'
+assert_contains "$ROOT/plugins/core/conduct/review-specialist-fanout.md" 'Never nest orchestration or dispatch the same axis twice.'
+assert_contains "$ROOT/plugins/core/conduct/review-specialist-fanout.md" 'Every prompt must require read-only operation'
+assert_contains "$ROOT/plugins/core/conduct/review-specialist-fanout.md" 'tests or test fixtures changed'
+assert_contains "$ROOT/plugins/core/conduct/review-specialist-fanout.md" 'human documentation changed'
+assert_contains "$ROOT/plugins/core/conduct/code-smells.md" 'Pass-through layers'
 assert_contains "$ROOT/plugins/core/conduct/overview.md" '[review-gate.md](./review-gate.md)'
 assert_contains "$ROOT/plugins/core/conduct/conduct-loading.md" 'must not relax applicable safety'
 assert_contains "$ROOT/plugins/core/conduct/docker-deployment.md" 'source-code bind mounts'
