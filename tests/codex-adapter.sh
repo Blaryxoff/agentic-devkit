@@ -45,6 +45,7 @@ cursor_home="$home/.cursor"
 claude_home="$home/.claude"
 mkdir -p "$codex_home/skills" "$cursor_home/skills" "$claude_home"
 ln -s "$ROOT/plugins/css/skills/css-a11y" "$codex_home/skills/devkit-css--css-a11y"
+ln -s "$ROOT/plugins/core/skills/coder" "$codex_home/skills/devkit-core--retired"
 ln -s "$ROOT/plugins/laravel/skills/architect" "$cursor_home/skills/devkit-laravel--architect"
 ln -s "$ROOT/plugins/core/skills/coder" "$codex_home/skills/user-skill"
 printf '%s\n' 'personal global guidance' > "$claude_home/CLAUDE.md"
@@ -58,6 +59,7 @@ install_output=$(HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home
 assert_link "$codex_home/skills/devkit-core--coder" "$ROOT/plugins/core/skills/coder"
 assert_link "$codex_home/skills/devkit-core--devkit-router" "$ROOT/plugins/core/skills/devkit-router"
 assert_absent "$codex_home/skills/devkit-css--css-a11y"
+assert_absent "$codex_home/skills/devkit-core--retired"
 assert_absent "$codex_home/skills/devkit-laravel--architect"
 assert_link "$codex_home/skills/user-skill" "$ROOT/plugins/core/skills/coder"
 assert_link "$cursor_home/skills/devkit-core--coder" "$ROOT/plugins/core/skills/coder"
@@ -86,10 +88,21 @@ skill_eval_output=$(sh "$ROOT/plugins/core/hooks/skill-eval.sh")
   || fail "skill-eval hook did not emit the Claude learn slug"
 
 first_claude_guidance=$(cksum < "$claude_home/CLAUDE.md")
+codex_coder_link="$codex_home/skills/devkit-core--coder"
+python3 - "$codex_coder_link" <<'PY'
+import os
+import sys
+
+timestamp_ns = 946684800_000_000_000
+os.utime(sys.argv[1], ns=(timestamp_ns, timestamp_ns), follow_symlinks=False)
+PY
+codex_coder_link_mtime=$(python3 -c 'import os, sys; print(os.lstat(sys.argv[1]).st_mtime_ns)' "$codex_coder_link")
 jq '.outputStyle = "Laconica RU"' "$claude_home/settings.json" > "$claude_home/settings.json.tmp"
 mv "$claude_home/settings.json.tmp" "$claude_home/settings.json"
 HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home" DEVKIT_HOME_DIR="$ROOT" \
   bash "$ROOT/bin/devkit-install" >/dev/null
+[ "$codex_coder_link_mtime" = "$(python3 -c 'import os, sys; print(os.lstat(sys.argv[1]).st_mtime_ns)' "$codex_coder_link")" ] \
+  || fail "global Codex core skill links were replaced during idempotent install"
 [ "$first_claude_guidance" = "$(cksum < "$claude_home/CLAUDE.md")" ] || fail "global CLAUDE.md generation is not idempotent"
 [ "$(jq '[.hooks.UserPromptSubmit[]?.hooks[]? | select(.command | contains("skill-eval.sh"))] | length' "$claude_home/settings.json")" = "1" ] \
   || fail "skill-eval hook installation is not idempotent"

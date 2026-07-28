@@ -89,7 +89,15 @@ for entry in "$SKILLS_DEST"/devkit-core--*; do
 done
 # Reap non-core links left by installs that exposed every plugin globally.
 for entry in "$CODEX_SKILLS_DEST"/devkit-*--*; do
-  [ -L "$entry" ] && rm -f "$entry"
+  [ -L "$entry" ] || continue
+  entry_name=$(basename "$entry")
+  case "$entry_name" in
+    devkit-core--*)
+      skill_name="${entry_name#devkit-core--}"
+      [ -d "$core_skills_src/$skill_name" ] || rm -f "$entry"
+      ;;
+    *) rm -f "$entry" ;;
+  esac
 done
 skill_count=0
 for d in "$core_skills_src"/*/; do
@@ -97,7 +105,13 @@ for d in "$core_skills_src"/*/; do
   n=$(basename "$d")
   abs="$(cd "$d" && pwd)"
   ln -s "$abs" "$SKILLS_DEST/devkit-core--$n"
-  ln -s "$abs" "$CODEX_SKILLS_DEST/devkit-core--$n"
+  codex_skill_dest="$CODEX_SKILLS_DEST/devkit-core--$n"
+  if [ -L "$codex_skill_dest" ] && [ "$(readlink "$codex_skill_dest")" = "$abs" ]; then
+    :
+  else
+    [ -L "$codex_skill_dest" ] && rm -f "$codex_skill_dest"
+    ln -s "$abs" "$codex_skill_dest"
+  fi
   skill_count=$((skill_count + 1))
 done
 echo "    Linked:  ~/.claude/skills/devkit-core--* ($skill_count skill(s))"
