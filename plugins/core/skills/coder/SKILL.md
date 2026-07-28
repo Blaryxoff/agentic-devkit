@@ -12,7 +12,7 @@ description: >-
 
 Read the user's target and the smallest useful source slice first: the named file/symbol, sibling code in the same module, relevant tests, and schema or contract when the change depends on one. Read an active plan only when the task points to one or the change is genuinely multi-step. If a required input is missing, stop and ask rather than guessing.
 
-Match the conventions of the surrounding code: naming, file layout, error handling, comment style.
+Match the conventions of the surrounding code: naming, file layout, and error handling. Existing verbose comments are not a convention to copy; apply the no-prose default in `code-comments.md`.
 
 When the change uses a third-party library/framework API whose current signature you are not certain of, fetch up-to-date docs first per `plugins/core/conduct/library-docs.md` (Context7 when available) — do not rely on training-cutoff memory.
 
@@ -24,7 +24,7 @@ These rules are complete enough for a local in-place edit. Apply them directly; 
 
 - Change only what the task requires. Do not improve adjacent code or reformat untouched regions. Remove only orphans created by this change (`surgical-changes.md`).
 - For fixes, make the smallest code change sufficient to resolve the root cause; do not broaden the fix beyond what is necessary.
-- Comments explain non-obvious intent, never the edit history or the next obvious line. Preserve required public API documentation (`code-comments.md`).
+- Do not add prose comments or explanatory docblocks to implementation code. Express intent through names, types, extracted concepts, and simpler control flow. Private/internal narrative comments are forbidden; public docblocks are allowed only for machine-required metadata or contracts that code cannot express (`code-comments.md`).
 - Match sibling abstractions and error handling. Reuse an existing utility when it already fits; do not create abstractions or configurability for one use (`solid-dry.md`).
 - Never hardcode secrets or environment-specific credentials. Do not add dependencies without explicit approval.
 - Treat tests as the final coding phase: do not create or update them during continuous production-code iterations. Finish the requested implementation and make non-test checks green first; only then author intended, project-permitted tests in one commit-ready pass (`agent-test-restraint.md`).

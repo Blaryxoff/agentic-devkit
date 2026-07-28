@@ -15,7 +15,7 @@ Following architecture/design patterns are used:
 - typed domain values - REQUIRED
 - cqrs - OPTIONAL (command query responsibility segregation)
 - variables naming conventions - REQUIRED
-- comments and documentation - REQUIRED
+- self-explanatory code - REQUIRED; inline prose comments are exceptional
 - files and folders structuring - REQUIRED
 
 **IMPORTANT**: remember that even if now all modules belong to one app (one code base), they can be split to separate

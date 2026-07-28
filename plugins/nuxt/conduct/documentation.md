@@ -1,36 +1,38 @@
 # Documentation
 
-Documentation must explain intent, contracts, and usage for frontend code.
+Frontend code should explain itself through precise names, TypeScript types, small composables, and explicit state transitions. Inline prose is exceptional.
 
 ## What to document
 
-- module purpose for non-trivial pages/components/composables
-- input/output contracts for reusable composables and utilities
-- side effects (network, storage, analytics, navigation)
-- important constraints and trade-offs
+- public integration contracts that TypeScript cannot express
+- machine-consumed metadata or required lint directives
+- external browser/vendor constraints that force surprising code
 
 ## Style guidelines
 
-- keep docs close to code where practical.
-- explain **why** a decision exists, not only **what** code does.
-- keep comments short, specific, and maintained with code changes.
+- keep unavoidable comments to the shortest useful form
+- cite an external issue, specification, or invariant when practical
+- put longer architecture and usage guidance in external documentation
 
 ## Type-first documentation
 
-- prefer expressive TypeScript types as primary documentation.
-- add JSDoc only when types are insufficient to explain behavior.
+- use expressive TypeScript types as primary documentation
+- do not add JSDoc to private/internal implementation
+- do not add JSDoc merely because a symbol is exported
 
 ## Examples
 
-- include compact usage examples for shared composables/utilities.
-- use markdown docs for larger patterns and architecture decisions.
+- put compact usage examples in tests or markdown documentation
+- use markdown docs for larger patterns and architecture decisions
 
 ## DO / DO NOT
 
 DO:
-- document contracts for exported APIs
-- update docs when behavior changes
+- refactor unclear implementation instead of explaining it in a comment
+- document only contracts that types and code cannot express
 
 DO NOT:
 - leave stale comments after refactors
 - write obvious comments that duplicate code line-by-line
+- write paragraph-form explanations of business logic or change history
+- copy nearby verbose comments as a style convention
