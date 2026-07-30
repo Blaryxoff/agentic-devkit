@@ -15,7 +15,7 @@
 #   $HOME/.claude/agents/<name>.md                 core subagent wrappers
 #   $HOME/.claude/settings.json                    SessionStart hook → devkit-update --if-stale
 #   $HOME/.codex/skills/devkit-core--<skill>/      symlinks to core skills for Codex
-#   $HOME/.codex/hooks.json                        PreToolUse hook → coder-gate.sh
+#   $HOME/.codex/hooks.json                        PreToolUse hooks → coder-gate.sh, comment-gate.sh
 #   $HOME/.cursor/skills/devkit-core--<skill>/     symlinks to core skills for Cursor
 #
 # The global clone is the single source of truth. devkit-install runs from the
@@ -265,6 +265,42 @@ updated=$(jq --arg cmd "$codergate_cmd" '
 ' "$CODEX_HOOKS")
 printf '%s\n' "$updated" | jq '.' > "$CODEX_HOOKS"
 echo "    Hook:    ~/.codex/hooks.json (PreToolUse coder-gate; review with /hooks)"
+
+# --- PreToolUse comment-gate hook in ~/.claude/settings.json + ~/.codex/hooks.json ---
+# Rejects edits that add change-narrating comments; the rule itself lives in code-comments.md.
+commentgate_path=$(printf '%s' "$DEVKIT_HOME/plugins/core/hooks/comment-gate.sh" | sed "s/'/'\\\\''/g")
+commentgate_cmd="sh '$commentgate_path'"
+# Drop only our own hook object; a user hook sharing the entry survives.
+updated=$(jq --arg cmd "$commentgate_cmd" '
+  .hooks //= {} |
+  .hooks.PreToolUse = (
+    ((.hooks.PreToolUse // []) | map(
+      .hooks = ((.hooks // []) | map(select(.command != $cmd)))
+    ) | map(select((.hooks | length) > 0)))
+    + [ { matcher: "Edit|Write|MultiEdit", hooks: [ { type: "command", command: $cmd } ] } ]
+  )
+' "$SETTINGS")
+printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
+echo "    Hook:    ~/.claude/settings.json (PreToolUse comment-gate)"
+
+updated=$(jq --arg cmd "$commentgate_cmd" '
+  .hooks //= {} |
+  .hooks.PreToolUse = (
+    ((.hooks.PreToolUse // []) | map(
+      .hooks = ((.hooks // []) | map(select(.command != $cmd)))
+    ) | map(select((.hooks | length) > 0)))
+    + [ {
+      matcher: "apply_patch|Edit|Write",
+      hooks: [ {
+        type: "command",
+        command: $cmd,
+        statusMessage: "Checking comment rules"
+      } ]
+    } ]
+  )
+' "$CODEX_HOOKS")
+printf '%s\n' "$updated" | jq '.' > "$CODEX_HOOKS"
+echo "    Hook:    ~/.codex/hooks.json (PreToolUse comment-gate; review with /hooks)"
 
 # --- Output styles → ~/.claude/output-styles (symlinks) + default selection ---
 # Ships the terse, language-mirroring «Laconica» output style.

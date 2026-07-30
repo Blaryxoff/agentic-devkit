@@ -1,0 +1,15 @@
+[devkit comment-gate] This edit adds a comment that narrates change history. Rewrite it, then retry.
+
+`plugins/core/conduct/code-comments.md` forbids these outright:
+
+- Edit narration — `// раньше было X, теперь Y`, `// previously used Z`, `// added`, `// refactored`.
+- Ticket, admin, or investigation context copied into source.
+- Any comment that stops making sense once the words «раньше / теперь / было / стало / previously / now / added / changed» are removed. If deleting them empties the comment, the comment was describing history — delete the comment.
+
+A comment must read the same whether it was written today or three years from now.
+
+How to proceed:
+
+- Delete the comment. The diff and git history already record what changed.
+- If the information matters, encode it in the code: rename the symbol after the domain concept, extract a named predicate, or make the value explicit.
+- If it is a genuine external constraint (vendor, protocol, legal, security), state the constraint itself — not the edit that introduced it — and cite the source.

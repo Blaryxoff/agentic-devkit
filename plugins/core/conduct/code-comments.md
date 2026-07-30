@@ -43,6 +43,10 @@ A comment must read the same whether it was written today or three years ago. If
 
 For a narrow exception, follow the surrounding code's placement and syntax. Project rules may require specific machine-readable annotations, but nearby explanatory comments do not weaken the no-prose default. Per `surgical-changes.md`, do not add or reformat comments on code you did not otherwise have to touch.
 
+## Enforcement
+
+`plugins/core/hooks/comment-gate.sh` runs as a PreToolUse hook in Claude Code and Codex. It rejects an edit whose newly added comment lines narrate change history, and prints the offending lines. Rewrite or delete the comment and retry — there is no bypass flag.
+
 ## Why this matters
 
 Narrative comments duplicate a momentary understanding of the code and drift independently from it. Precise names, types, structure, and tests change with the behavior and remain reviewable. Comments are reserved for external facts the code cannot own.
