@@ -22,6 +22,7 @@ Do not inventory conduct directories or read documents speculatively. Every cond
 
 These rules are complete enough for a local in-place edit. Apply them directly; open the referenced core conduct files only when an edge case needs the fuller rule:
 
+- Before writing new code, climb the existence ladder in `solid-dry.md` and stop at the first rung that resolves the need: does it need to exist → is it already in the codebase → standard library → platform/framework native → installed dependency → one expression. Validation, error handling, security, and accessibility are never dropped or thinned to make a change smaller.
 - Change only what the task requires. Do not improve adjacent code or reformat untouched regions. Remove only orphans created by this change (`surgical-changes.md`).
 - For fixes, make the smallest code change sufficient to resolve the root cause; do not broaden the fix beyond what is necessary.
 - Do not add prose comments or explanatory docblocks to implementation code. Express intent through names, types, extracted concepts, and simpler control flow. Private/internal narrative comments are forbidden; public docblocks are allowed only for machine-required metadata or contracts that code cannot express (`code-comments.md`).
