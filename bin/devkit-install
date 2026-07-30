@@ -213,27 +213,32 @@ else
 fi
 echo "    Guidance: ~/.claude/CLAUDE.md (managed devkit skill policy)"
 
-# Reassert the compact activation gate on each prompt. The full policy remains in
-# CLAUDE.md; this hook is intentionally one line to avoid prompt bloat.
-skilleval_cmd="sh $DEVKIT_HOME/plugins/core/hooks/skill-eval.sh"
-updated=$(jq --arg cmd "$skilleval_cmd" '
-  .hooks //= {} |
-  .hooks.UserPromptSubmit = (((.hooks.UserPromptSubmit // []) | map(
-    .hooks = ((.hooks // []) | map(select(.command != $cmd))) |
-    select((.hooks | length) > 0)
-  )) + [ { hooks: [ { type: "command", command: $cmd } ] } ])
-' "$SETTINGS")
-printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
-echo "    Hook:    ~/.claude/settings.json (UserPromptSubmit skill activation gate)"
-
-# --- PreToolUse coder-gate hook in ~/.claude/settings.json ---
-# Hard-gates code edits until the coder skill is recorded in the session transcript.
 # Managed hooks are matched by script name rather than by absolute path, so relocating
 # DEVKIT_HOME replaces the old command instead of leaving a dangling one behind, and
 # only our own hook object is dropped — a user hook sharing the entry survives.
 hook_command() {
   printf "sh '%s'" "$(printf '%s' "$DEVKIT_HOME/plugins/core/hooks/$1" | sed "s/'/'\\\\''/g")"
 }
+
+# Reassert the compact activation gate on each prompt. The full policy remains in
+# CLAUDE.md; this hook is intentionally one line to avoid prompt bloat.
+skilleval_cmd=$(hook_command skill-eval.sh)
+updated=$(jq --arg cmd "$skilleval_cmd" --arg script "skill-eval.sh" '
+  .hooks //= {} |
+  .hooks.UserPromptSubmit = (
+    ((.hooks.UserPromptSubmit // []) | map(
+      .hooks = ((.hooks // []) | map(select(
+        (.command // "") | contains("plugins/core/hooks/" + $script) | not
+      )))
+    ) | map(select((.hooks | length) > 0)))
+    + [ { hooks: [ { type: "command", command: $cmd } ] } ]
+  )
+' "$SETTINGS")
+printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
+echo "    Hook:    ~/.claude/settings.json (UserPromptSubmit skill activation gate)"
+
+# --- PreToolUse coder-gate hook in ~/.claude/settings.json ---
+# Hard-gates code edits until the coder skill is recorded in the session transcript.
 codergate_cmd=$(hook_command coder-gate.sh)
 updated=$(jq --arg cmd "$codergate_cmd" --arg script "coder-gate.sh" '
   .hooks //= {} |
