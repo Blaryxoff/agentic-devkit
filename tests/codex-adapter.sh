@@ -44,6 +44,15 @@ codex_home="$home/.codex"
 cursor_home="$home/.cursor"
 claude_home="$home/.claude"
 mkdir -p "$codex_home/skills" "$cursor_home/skills" "$claude_home"
+printf '%s\n' \
+  '[[hooks.PreToolUse]]' \
+  '[[hooks.PreToolUse.hooks]]' \
+  'type = "command"' \
+  'command = "agterm-status pre-tool-use"' \
+  > "$codex_home/config.toml"
+jq -n --arg coder "sh '$ROOT/plugins/core/hooks/coder-gate.sh'" \
+  '{hooks:{Stop:[{hooks:[{type:"command",command:"plannotator",timeout:30}]}],PreToolUse:[{hooks:[{type:"command",command:$coder}]}]}}' \
+  > "$codex_home/hooks.json"
 ln -s "$ROOT/plugins/css/skills/css-a11y" "$codex_home/skills/devkit-css--css-a11y"
 ln -s "$ROOT/plugins/core/skills/coder" "$codex_home/skills/devkit-core--retired"
 ln -s "$ROOT/plugins/laravel/skills/architect" "$cursor_home/skills/devkit-laravel--architect"
@@ -64,6 +73,14 @@ assert_absent "$codex_home/skills/devkit-laravel--architect"
 assert_link "$codex_home/skills/user-skill" "$ROOT/plugins/core/skills/coder"
 assert_link "$cursor_home/skills/devkit-core--coder" "$ROOT/plugins/core/skills/coder"
 assert_absent "$cursor_home/skills/devkit-laravel--architect"
+assert_absent "$codex_home/hooks.json"
+assert_contains "$codex_home/config.toml" 'command = "agterm-status pre-tool-use"'
+assert_contains "$codex_home/config.toml" 'command = "plannotator"'
+assert_contains "$codex_home/config.toml" 'coder-gate.sh'
+assert_contains "$codex_home/config.toml" 'comment-gate.sh'
+[ "$(grep -Fc 'coder-gate.sh' "$codex_home/config.toml")" = "1" ] || fail "expected one Codex coder gate"
+[ "$(grep -Fc 'comment-gate.sh' "$codex_home/config.toml")" = "1" ] || fail "expected one Codex comment gate"
+python3 -c 'import sys, tomllib; tomllib.load(open(sys.argv[1], "rb"))' "$codex_home/config.toml"
 [[ "$install_output" == *"Cursor stack skills are now project-scoped"* ]] \
   || fail "Cursor project-skill migration notice was not emitted"
 assert_contains "$claude_home/CLAUDE.md" 'personal global guidance'
@@ -88,6 +105,7 @@ skill_eval_output=$(sh "$ROOT/plugins/core/hooks/skill-eval.sh")
   || fail "skill-eval hook did not emit the Claude learn slug"
 
 first_claude_guidance=$(cksum < "$claude_home/CLAUDE.md")
+first_codex_config=$(cksum < "$codex_home/config.toml")
 codex_coder_link="$codex_home/skills/devkit-core--coder"
 python3 - "$codex_coder_link" <<'PY'
 import os
@@ -104,6 +122,7 @@ HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home" DEVKIT_HOME_DIR
 [ "$codex_coder_link_mtime" = "$(python3 -c 'import os, sys; print(os.lstat(sys.argv[1]).st_mtime_ns)' "$codex_coder_link")" ] \
   || fail "global Codex core skill links were replaced during idempotent install"
 [ "$first_claude_guidance" = "$(cksum < "$claude_home/CLAUDE.md")" ] || fail "global CLAUDE.md generation is not idempotent"
+[ "$first_codex_config" = "$(cksum < "$codex_home/config.toml")" ] || fail "global Codex hook installation is not idempotent"
 [ "$(jq '[.hooks.UserPromptSubmit[]?.hooks[]? | select(.command | contains("skill-eval.sh"))] | length' "$claude_home/settings.json")" = "1" ] \
   || fail "skill-eval hook installation is not idempotent"
 [ "$(jq -r '.outputStyle' "$claude_home/settings.json")" = "Laconica" ] \

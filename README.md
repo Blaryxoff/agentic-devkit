@@ -144,9 +144,11 @@ plugin and require scope-driven loading instead of listing the full conduct corp
 to refresh its skill catalog. Run `bin/devkit-install` again to refresh copied global Claude guidance; its installed shell
 hooks and symlinked core skills otherwise read the updated clone directly.
 
-The global install also merges a native Codex `PreToolUse` coder gate into `~/.codex/hooks.json`. On the first
-`apply_patch` edit in a session it blocks once and instructs Codex to load `devkit-coder`, which pulls in the core and
-active-stack conduct before the edit is retried. Review and trust the hook with `/hooks` after installation or changes.
+The global install also merges native Codex `PreToolUse` coder and comment gates into `~/.codex/config.toml`. Any
+legacy `~/.codex/hooks.json` entries are migrated into that same file so Codex loads a single hook representation for
+the global layer. On the first `apply_patch` edit in a session the coder gate blocks once and instructs Codex to load
+`devkit-coder`, which pulls in the core and active-stack conduct before the edit is retried. Review and trust the hooks
+with `/hooks` after installation or changes.
 
 ## Claude Code Setup
 

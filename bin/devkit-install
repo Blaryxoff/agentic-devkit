@@ -15,7 +15,7 @@
 #   $HOME/.claude/agents/<name>.md                 core subagent wrappers
 #   $HOME/.claude/settings.json                    SessionStart hook → devkit-update --if-stale
 #   $HOME/.codex/skills/devkit-core--<skill>/      symlinks to core skills for Codex
-#   $HOME/.codex/hooks.json                        PreToolUse hooks → coder-gate.sh, comment-gate.sh
+#   $HOME/.codex/config.toml                       PreToolUse hooks → coder-gate.sh, comment-gate.sh
 #   $HOME/.cursor/skills/devkit-core--<skill>/     symlinks to core skills for Cursor
 #
 # The global clone is the single source of truth. devkit-install runs from the
@@ -77,7 +77,8 @@ SETTINGS="$CLAUDE_DIR/settings.json"
 CLAUDE_GUIDANCE="$CLAUDE_DIR/CLAUDE.md"
 CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
 CODEX_SKILLS_DEST="$CODEX_DIR/skills"
-CODEX_HOOKS="$CODEX_DIR/hooks.json"
+CODEX_CONFIG="$CODEX_DIR/config.toml"
+CODEX_LEGACY_HOOKS="$CODEX_DIR/hooks.json"
 CURSOR_DIR="${CURSOR_HOME:-$HOME/.cursor}"
 CURSOR_SKILLS_DEST="$CURSOR_DIR/skills"
 mkdir -p "$SKILLS_DEST" "$CODEX_SKILLS_DEST" "$CURSOR_SKILLS_DEST"
@@ -254,34 +255,7 @@ updated=$(jq --arg cmd "$codergate_cmd" --arg script "coder-gate.sh" '
 printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
 echo "    Hook:    ~/.claude/settings.json (PreToolUse coder-gate)"
 
-# --- PreToolUse coder-gate hook in ~/.codex/hooks.json ---
-# Codex reports file edits as apply_patch, while Edit and Write are supported matcher
-# aliases. The shared hook understands both Codex and Claude tool names.
-if [ ! -f "$CODEX_HOOKS" ]; then
-  printf '{"hooks":{}}\n' > "$CODEX_HOOKS"
-fi
-updated=$(jq --arg cmd "$codergate_cmd" --arg script "coder-gate.sh" '
-  .hooks //= {} |
-  .hooks.PreToolUse = (
-    ((.hooks.PreToolUse // []) | map(
-      .hooks = ((.hooks // []) | map(select(
-        (.command // "") | contains("plugins/core/hooks/" + $script) | not
-      )))
-    ) | map(select((.hooks | length) > 0)))
-    + [ {
-      matcher: "apply_patch|Edit|Write",
-      hooks: [ {
-        type: "command",
-        command: $cmd,
-        statusMessage: "Loading coding conduct"
-      } ]
-    } ]
-  )
-' "$CODEX_HOOKS")
-printf '%s\n' "$updated" | jq '.' > "$CODEX_HOOKS"
-echo "    Hook:    ~/.codex/hooks.json (PreToolUse coder-gate; review with /hooks)"
-
-# --- PreToolUse comment-gate hook in ~/.claude/settings.json + ~/.codex/hooks.json ---
+# --- PreToolUse comment-gate hook in ~/.claude/settings.json ---
 # Rejects edits that add change-narrating comments; the rule itself lives in code-comments.md.
 commentgate_cmd=$(hook_command comment-gate.sh)
 updated=$(jq --arg cmd "$commentgate_cmd" --arg script "comment-gate.sh" '
@@ -298,26 +272,114 @@ updated=$(jq --arg cmd "$commentgate_cmd" --arg script "comment-gate.sh" '
 printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
 echo "    Hook:    ~/.claude/settings.json (PreToolUse comment-gate)"
 
-updated=$(jq --arg cmd "$commentgate_cmd" --arg script "comment-gate.sh" '
-  .hooks //= {} |
-  .hooks.PreToolUse = (
-    ((.hooks.PreToolUse // []) | map(
-      .hooks = ((.hooks // []) | map(select(
-        (.command // "") | contains("plugins/core/hooks/" + $script) | not
-      )))
-    ) | map(select((.hooks | length) > 0)))
-    + [ {
-      matcher: "apply_patch|Edit|Write",
-      hooks: [ {
-        type: "command",
-        command: $cmd,
-        statusMessage: "Checking comment rules"
-      } ]
-    } ]
-  )
-' "$CODEX_HOOKS")
-printf '%s\n' "$updated" | jq '.' > "$CODEX_HOOKS"
-echo "    Hook:    ~/.codex/hooks.json (PreToolUse comment-gate; review with /hooks)"
+# --- PreToolUse hooks in ~/.codex/config.toml ---
+CODEX_CONFIG_FILE="$CODEX_CONFIG" \
+CODEX_LEGACY_HOOKS_FILE="$CODEX_LEGACY_HOOKS" \
+CODEX_CODER_GATE_CMD="$codergate_cmd" \
+CODEX_COMMENT_GATE_CMD="$commentgate_cmd" \
+python3 - <<'PY'
+import json
+import os
+import stat
+from pathlib import Path
+
+config_path = Path(os.environ["CODEX_CONFIG_FILE"])
+legacy_path = Path(os.environ["CODEX_LEGACY_HOOKS_FILE"])
+managed_start = "# devkit-hooks:start"
+managed_end = "# devkit-hooks:end"
+managed_scripts = ("coder-gate.sh", "comment-gate.sh")
+
+
+def toml_value(value):
+    if isinstance(value, str):
+        return json.dumps(value, ensure_ascii=False)
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return str(value)
+    if isinstance(value, list):
+        return "[" + ", ".join(toml_value(item) for item in value) + "]"
+    raise TypeError(f"unsupported hook value: {value!r}")
+
+
+def render_group(event, group):
+    lines = [f"[[hooks.{event}]]"]
+    for key, value in group.items():
+        if key != "hooks":
+            lines.append(f"{key} = {toml_value(value)}")
+    for hook in group.get("hooks", []):
+        lines.extend(("", f"[[hooks.{event}.hooks]]"))
+        lines.extend(f"{key} = {toml_value(value)}" for key, value in hook.items())
+    return "\n".join(lines)
+
+
+content = config_path.read_text() if config_path.exists() else ""
+if managed_start in content:
+    before, remainder = content.split(managed_start, 1)
+    if managed_end not in remainder:
+        raise SystemExit(f"malformed managed hook block in {config_path}")
+    _, after = remainder.split(managed_end, 1)
+    content = before.rstrip() + after
+
+migrated = []
+legacy_exists = legacy_path.exists()
+if legacy_exists:
+    lines = content.splitlines()
+    kept_lines = []
+    skip_state = False
+    legacy_state_prefix = f'[hooks.state."{legacy_path}:'
+    for line in lines:
+        if line.startswith("["):
+            skip_state = line.startswith(legacy_state_prefix)
+        if not skip_state:
+            kept_lines.append(line)
+    content = "\n".join(kept_lines)
+
+    legacy = json.loads(legacy_path.read_text())
+    hooks = legacy.get("hooks", {})
+    if not isinstance(hooks, dict):
+        raise SystemExit(f"invalid hooks object in {legacy_path}")
+    for event, groups in hooks.items():
+        if not isinstance(groups, list):
+            raise SystemExit(f"invalid {event} hook groups in {legacy_path}")
+        for group in groups:
+            kept_hooks = [
+                hook for hook in group.get("hooks", [])
+                if not any(script in hook.get("command", "") for script in managed_scripts)
+            ]
+            if kept_hooks:
+                migrated.append(render_group(event, {**group, "hooks": kept_hooks}))
+
+managed = f'''{managed_start}
+[[hooks.PreToolUse]]
+matcher = "apply_patch|Edit|Write"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = {toml_value(os.environ["CODEX_CODER_GATE_CMD"])}
+statusMessage = "Loading coding conduct"
+
+[[hooks.PreToolUse]]
+matcher = "apply_patch|Edit|Write"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = {toml_value(os.environ["CODEX_COMMENT_GATE_CMD"])}
+statusMessage = "Checking comment rules"
+{managed_end}'''
+
+sections = [content.strip(), *migrated, managed]
+updated = "\n\n".join(section for section in sections if section) + "\n"
+config_path.parent.mkdir(parents=True, exist_ok=True)
+tmp_path = config_path.with_name(config_path.name + ".devkit.tmp")
+tmp_path.write_text(updated)
+mode = stat.S_IMODE(config_path.stat().st_mode) if config_path.exists() else 0o600
+tmp_path.chmod(mode)
+tmp_path.replace(config_path)
+if legacy_exists:
+    legacy_path.unlink()
+PY
+echo "    Hooks:   ~/.codex/config.toml (PreToolUse gates; review with /hooks)"
 
 # --- Output styles → ~/.claude/output-styles (symlinks) + default selection ---
 # Ships the terse, language-mirroring «Laconica» output style.
