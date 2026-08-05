@@ -1,5 +1,5 @@
 #!/bin/sh
-# coder-gate.sh — PreToolUse hook for Claude Code and Codex code edits.
+# coder-gate.sh — PreToolUse hook for Claude Code, Codex, and Cursor code edits.
 #
 # Hard-gates code edits until the session transcript shows that devkit-coder was
 # activated. Once detected, a marker keyed on session_id avoids rescanning the
@@ -13,14 +13,14 @@ input=$(cat)
 # Without jq we cannot reliably inspect the hook payload or transcript.
 command -v jq >/dev/null 2>&1 || exit 0
 
-tool=$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null)
+tool=$(printf '%s' "$input" | jq -r '.tool_name // .toolName // empty' 2>/dev/null)
 case "$tool" in
-  Edit | Write | MultiEdit | apply_patch) ;;
+  Edit | Write | MultiEdit | apply_patch | StrReplace | Delete | EditNotebook) ;;
   *) exit 0 ;;
 esac
 
-sid=$(printf '%s' "$input" | jq -r '.session_id // empty' 2>/dev/null)
-transcript=$(printf '%s' "$input" | jq -r '.transcript_path // empty' 2>/dev/null)
+sid=$(printf '%s' "$input" | jq -r '.session_id // .sessionId // .conversation_id // empty' 2>/dev/null)
+transcript=$(printf '%s' "$input" | jq -r '.transcript_path // .transcriptPath // empty' 2>/dev/null)
 [ -n "$sid" ] && [ -r "$transcript" ] || exit 0
 
 safe_sid=$(printf '%s' "$sid" | tr -c 'A-Za-z0-9._-' '_')
@@ -28,9 +28,11 @@ marker="${TMPDIR:-/tmp}/devkit-coder-active-$safe_sid"
 [ -f "$marker" ] && exit 0
 
 # Claude records successful Skill tool calls. Codex records the tool call that
-# reads the selected SKILL.md. Match only outer transcript events so quoted log
-# output or the initial skill catalog cannot create a false positive.
+# reads the selected SKILL.md. Cursor records Read(path=…/devkit-core--coder/SKILL.md).
+# Match only outer transcript events so quoted log output or the initial skill
+# catalog cannot create a false positive.
 if jq -e '
+  def coder_skill_path: "(devkit-core--coder|devkit-coder|plugins/core/skills/coder)/SKILL\\.md";
   select(
     (
       .message.content? != null
@@ -50,7 +52,21 @@ if jq -e '
       and .payload.type == "custom_tool_call"
       and (
         (.payload.input // "")
-        | test("(devkit-core--coder|plugins/core/skills/coder)/SKILL\\.md")
+        | test(coder_skill_path)
+      )
+    )
+    or
+    (
+      .role == "assistant"
+      and .message.content? != null
+      and any(
+        .message.content[]?;
+        .type == "tool_use"
+        and .name == "Read"
+        and (
+          (.input.path // "")
+          | test(coder_skill_path)
+        )
       )
     )
   )

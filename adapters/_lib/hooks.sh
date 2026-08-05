@@ -69,8 +69,9 @@ merge_plugin_hooks() {
 
 # Event name mapping: Claude Code → Cursor
 # Claude Code events: PreToolUse, PostToolUse, Notification, Stop, SubagentStop
-# Cursor events:      beforeShellExecution, afterFileEdit, beforeSubmitPrompt, etc.
+# Cursor events:      preToolUse, afterFileEdit, beforeShellExecution, etc.
 #
+# PreToolUse maps to preToolUse (edit/tool gates), not beforeShellExecution.
 # Not all events map 1:1. This function translates where possible
 # and drops events that have no Cursor equivalent.
 translate_hooks_to_cursor() {
@@ -78,7 +79,7 @@ translate_hooks_to_cursor() {
 
   echo "$merged_hooks" | jq '
     {
-      "PreToolUse":    "beforeShellExecution",
+      "PreToolUse":    "preToolUse",
       "PostToolUse":   "afterFileEdit",
       "Stop":          "afterResponse"
     } as $event_map |
@@ -91,6 +92,26 @@ translate_hooks_to_cursor() {
         )
       else . end
     )
+  '
+}
+
+# Inject devkit core edit gates into Cursor preToolUse hooks JSON.
+# $1 — hooks object; $2 — coder-gate command; $3 — comment-gate command.
+inject_cursor_edit_gates() {
+  local hooks_json="$1"
+  local coder_cmd="$2"
+  local comment_cmd="$3"
+
+  echo "$hooks_json" | jq --arg coder "$coder_cmd" --arg comment "$comment_cmd" '
+    def ensure_gate($cmd):
+      .preToolUse = (
+        (.preToolUse // [])
+        | map(select((.hooks // []) | any(.command == $cmd) | not))
+      ) + [{
+        matcher: "Write|StrReplace|Edit|MultiEdit|Delete|EditNotebook|apply_patch",
+        hooks: [{ type: "command", command: $cmd, timeout: 60000 }]
+      }];
+    ensure_gate($coder) | ensure_gate($comment)
   '
 }
 

@@ -1,5 +1,5 @@
 #!/bin/sh
-# comment-gate.sh — PreToolUse hook for Claude Code and Codex code edits.
+# comment-gate.sh — PreToolUse hook for Claude Code, Codex, and Cursor code edits.
 #
 # Blocks edits that introduce change-narrating comments (`// раньше было X`,
 # `// now we use Y`, `// added`), which code-comments.md forbids outright. Only
@@ -15,9 +15,9 @@ input=$(cat)
 
 command -v jq >/dev/null 2>&1 || exit 0
 
-tool=$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null)
+tool=$(printf '%s' "$input" | jq -r '.tool_name // .toolName // empty' 2>/dev/null)
 case "$tool" in
-  Edit | Write | MultiEdit | apply_patch) ;;
+  Edit | Write | MultiEdit | apply_patch | StrReplace | Delete | EditNotebook) ;;
   *) exit 0 ;;
 esac
 

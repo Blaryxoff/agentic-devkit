@@ -197,12 +197,19 @@ cursor_hooks=$(echo "$cursor_hooks" | jq --arg cmd "$update_cmd" '
   ensure_event("sessionStart") | ensure_event("workspaceOpen")
 ')
 
+gate_cmd() {
+  printf "sh '%s'" "$(printf '%s' "${HOME}/.claude/agentic-devkit/plugins/core/hooks/$1" | sed "s/'/'\\\\''/g")"
+}
+codergate_cmd=$(gate_cmd coder-gate.sh)
+commentgate_cmd=$(gate_cmd comment-gate.sh)
+cursor_hooks=$(inject_cursor_edit_gates "$cursor_hooks" "$codergate_cmd" "$commentgate_cmd")
+
 hooks_dir="$PROJECT_ROOT/.cursor/hooks"
 mkdir -p "$hooks_dir"
 hooks_file="$hooks_dir/hooks.json"
 echo "$cursor_hooks" | jq '.' > "$hooks_file"
 hook_count=$(echo "$cursor_hooks" | jq '[.[] | length] | add // 0')
-echo "    Created: .cursor/hooks/hooks.json ($hook_count hook(s), incl. devkit auto-update)"
+echo "    Created: .cursor/hooks/hooks.json ($hook_count hook(s), incl. devkit auto-update + edit gates)"
 
 # --- .cursor/mcp.json (per-project MCP servers; overrides global ~/.cursor/mcp.json) ---
 plugin_mcp=$(merge_plugin_mcp_servers "$plugin_index" "$resolved_names")

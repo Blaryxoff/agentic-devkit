@@ -52,6 +52,7 @@ installation, rerun the Cursor adapter in each project to create its resolved `.
 |----------|---------|
 | `merge_plugin_hooks` | Merged JSON of all hooks from resolved plugins (Claude Code format) |
 | `translate_hooks_to_cursor` | Hooks translated from Claude Code event names to Cursor event names |
+| `inject_cursor_edit_gates` | Adds devkit coder-gate and comment-gate to Cursor `preToolUse` hooks JSON |
 | `flatten_hooks_for_text` | Pipe-delimited lines (`event|matcher|command`) for text-based adapters |
 
 ### DRY hook adapter pattern
@@ -62,7 +63,7 @@ Event name mapping:
 
 | Claude Code | Cursor | Codex |
 |-------------|--------|-------|
-| `PreToolUse` | `beforeShellExecution` | instruction-based |
+| `PreToolUse` | `preToolUse` | instruction-based |
 | `PostToolUse` | `afterFileEdit` | instruction-based |
 | `Stop` | `afterResponse` | instruction-based |
 | `Notification` | _(no equivalent)_ | instruction-based |

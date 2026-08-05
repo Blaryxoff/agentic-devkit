@@ -41,6 +41,18 @@ printf '%s\n' '{"type":"response_item","payload":{"type":"custom_tool_call","inp
   > "$codex_transcript"
 [ "$(run_gate codex "$codex_transcript")" = "0" ] || fail "Codex coder skill should open gate"
 
+cursor_transcript="$TMP_DIR/cursor.jsonl"
+printf '%s\n' '{"role":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"path":"/Users/blaryx/.cursor/skills/devkit-core--coder/SKILL.md"}}]}}' \
+  > "$cursor_transcript"
+[ "$(run_gate cursor "$cursor_transcript")" = "0" ] || fail "Cursor coder skill read should open gate"
+
+set +e
+printf '%s\n' "{\"toolName\":\"StrReplace\",\"session_id\":\"cursor-blocked\",\"transcript_path\":\"$empty_transcript\"}" \
+  | TMPDIR="$TMP_DIR" sh "$ROOT/plugins/core/hooks/coder-gate.sh" >/dev/null 2>&1
+cursor_block_status=$?
+set -e
+[ "$cursor_block_status" = "2" ] || fail "Cursor StrReplace without skill should block"
+
 quoted_transcript="$TMP_DIR/quoted.jsonl"
 printf '%s\n' '{"type":"response_item","payload":{"type":"custom_tool_call_output","output":"{\"type\":\"custom_tool_call\",\"input\":\"plugins/core/skills/coder/SKILL.md\"}"}}' \
   > "$quoted_transcript"

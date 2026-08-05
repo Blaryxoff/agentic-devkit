@@ -7,5 +7,6 @@ This repository requires coding conduct before any code-changing tool call:
 - Surgical scope: change only what the task needs. Do not add or reformat comments on lines you did not otherwise have to touch.
 - Claude Code: invoke `Skill(devkit-core--coder)`.
 - Codex: load and follow the `devkit-coder` skill.
+- Cursor: read and follow `devkit-core--coder/SKILL.md`, then retry the edit.
 
 The gate remains closed until the session transcript records that activation. Then re-issue the edit.

@@ -45,7 +45,7 @@ For a narrow exception, follow the surrounding code's placement and syntax. Proj
 
 ## Enforcement
 
-`plugins/core/hooks/comment-gate.sh` runs as a PreToolUse hook in Claude Code and Codex. It rejects an edit whose newly added comment lines narrate change history, and prints the offending lines. Rewrite or delete the comment and retry — there is no bypass flag.
+`plugins/core/hooks/comment-gate.sh` runs as a PreToolUse hook in Claude Code, Codex, and Cursor. It rejects an edit whose newly added comment lines narrate change history, and prints the offending lines. Rewrite or delete the comment and retry — there is no bypass flag.
 
 ## Why this matters
 

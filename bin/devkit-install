@@ -17,6 +17,7 @@
 #   $HOME/.codex/skills/devkit-core--<skill>/      symlinks to core skills for Codex
 #   $HOME/.codex/config.toml                       PreToolUse hooks → coder-gate.sh, comment-gate.sh
 #   $HOME/.cursor/skills/devkit-core--<skill>/     symlinks to core skills for Cursor
+#   $HOME/.cursor/hooks/hooks.json                 preToolUse coder/comment gates
 #
 # The global clone is the single source of truth. devkit-install runs from the
 # clone it lives in; if that is not the canonical location it bootstraps a clone
@@ -65,6 +66,7 @@ else
 fi
 
 source "$DEVKIT_HOME/adapters/_lib/resolve.sh"
+source "$DEVKIT_HOME/adapters/_lib/hooks.sh"
 source "$DEVKIT_HOME/adapters/_lib/claude_agents.sh"
 
 echo "==> devkit-install"
@@ -271,6 +273,18 @@ updated=$(jq --arg cmd "$commentgate_cmd" --arg script "comment-gate.sh" '
 ' "$SETTINGS")
 printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
 echo "    Hook:    ~/.claude/settings.json (PreToolUse comment-gate)"
+
+# --- Global + project Cursor preToolUse edit gates ---
+CURSOR_HOOKS_DIR="$CURSOR_DIR/hooks"
+CURSOR_HOOKS_FILE="$CURSOR_HOOKS_DIR/hooks.json"
+mkdir -p "$CURSOR_HOOKS_DIR"
+cursor_hooks='{}'
+if [ -f "$CURSOR_HOOKS_FILE" ]; then
+  cursor_hooks=$(jq 'del(.version) | .hooks // .' "$CURSOR_HOOKS_FILE" 2>/dev/null || echo '{}')
+fi
+cursor_hooks=$(inject_cursor_edit_gates "$cursor_hooks" "$codergate_cmd" "$commentgate_cmd")
+printf '%s\n' "$cursor_hooks" | jq '.' > "$CURSOR_HOOKS_FILE"
+echo "    Hook:    ~/.cursor/hooks/hooks.json (preToolUse coder-gate + comment-gate)"
 
 # --- PreToolUse hooks in ~/.codex/config.toml ---
 CODEX_CONFIG_FILE="$CODEX_CONFIG" \
