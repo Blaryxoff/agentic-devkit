@@ -26,7 +26,7 @@ plugins/                 All plugins (convention: plugins/*/plugin.json)
   tailwind/              Tailwind CSS conventions
 bin/
   devkit-install           Global installer: core skills + devkit router + core subagents + output styles + auto-update hook
-  devkit-update            Timestamp-guarded `git pull --ff-only` for the global clone (SessionStart hook)
+  devkit-update            Timestamp-guarded `git pull --ff-only` for whichever clone contains it (SessionStart hook)
   devkit-resolve           CLI entry point for resolution and adapter generation (repeatable --project for multi-repo)
 adapters/
   _lib/resolve.sh        Core resolution algorithm (bash + jq); multi-root union of enabled plugins
@@ -127,8 +127,12 @@ The audience is an LLM. Optimise for signal density — every line spends contex
 # One-time global install (core skills + devkit router + core subagents + auto-update hook)
 bin/devkit-install
 
-# Update the global clone now (the SessionStart hook runs `--if-stale` daily)
-bin/devkit-update
+# Deploy a change to sessions: push, then pull the global clone.
+# devkit-update resolves DEVKIT_HOME from its own location, so the bare command
+# run inside a dev checkout updates that checkout and reports "global up to
+# date" while the real clone stays behind. Always call it by absolute path.
+git push
+~/.claude/agentic-devkit/bin/devkit-update
 
 # Resolve plugins for a project (repeat --project for a multi-repo backend+frontend project)
 bin/devkit-resolve --validate
