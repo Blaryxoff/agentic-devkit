@@ -96,7 +96,7 @@ offenders=$(printf '%s\n' "$comments" | grep -E "$ru" | head -n 3)
 dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd 2>/dev/null)
 
 if [ -n "$offenders" ]; then
-  cat "$dir/comment-gate.txt" 2>/dev/null >&2 \
+  cat "$dir/comment-gate.txt" >&2 2>/dev/null \
     || printf '[devkit comment-gate] Comments must not narrate change history — see plugins/core/conduct/code-comments.md.\n' >&2
   printf '\nOffending added line(s):\n%s\n' "$offenders" >&2
   exit 2
@@ -142,7 +142,7 @@ prose=$(printf '%s\n' "$fresh" | awk -v css="$css" '
 ' 2>/dev/null | head -n 6)
 [ -n "$prose" ] || exit 0
 
-cat "$dir/comment-gate-prose.txt" 2>/dev/null >&2 \
+cat "$dir/comment-gate-prose.txt" >&2 2>/dev/null \
   || printf '[devkit comment-gate] Implementation code carries no prose comments — see plugins/core/conduct/code-comments.md.\n' >&2
 printf '\nOffending added line(s):\n%s\n' "$prose" >&2
 exit 2

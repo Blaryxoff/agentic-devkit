@@ -93,4 +93,16 @@ expect 0 "apply_patch markdown section stays exempt" "$(patch_payload '*** Updat
 expect 0 "non-edit tools are ignored" "$(jq -cn '{tool_name:"Bash",tool_input:{command:"ls"}}')"
 expect 0 "malformed input fails open" '{"tool_name":"Edit"}'
 
+gate_stderr() {
+  set +e
+  printf '%s' "$1" | TMPDIR="$TMP_DIR" sh "$ROOT/plugins/core/hooks/comment-gate.sh" 2>&1 1>/dev/null
+  set -e
+}
+
+gate_stderr "$(edit /tmp/a.js "$prose_block")" | grep -q 'no-prose default' \
+  || fail "prose rejection must reach stderr, not just exit 2"
+gate_stderr "$(edit /tmp/a.js '// previously used the old parser
+const x = 1;')" | grep -q 'narrates change history' \
+  || fail "history rejection must reach stderr, not just exit 2"
+
 echo "comment gate tests passed"
