@@ -1,0 +1,15 @@
+[devkit comment-gate] This edit adds a prose comment block to code. Delete it, then retry.
+
+`plugins/core/conduct/code-comments.md` sets a no-prose default: implementation code explains itself. Two or more consecutive full-line comments of running text is the shape this blocks — it does not matter how accurate the explanation is.
+
+Forbidden regardless of content:
+
+- Explaining what a method, branch, business rule, data flow, or design choice does.
+- Narrative docblocks on private or internal members.
+- Investigation notes, ticket context, or your own reasoning about this task copied above the code it produced.
+
+How to proceed:
+
+- Delete the comment. If the reasoning matters to the user, put it in your response, not in the file.
+- If local code needed that paragraph to be understood, fix the code: rename the symbol after the domain concept, extract a named predicate or operation, replace a flag or magic value with an explicit type, or simplify the control flow.
+- A genuine exception — machine-consumed metadata, a required lint directive, an externally imposed protocol/vendor/legal/security constraint, or a public contract the signature cannot express — is allowed in the shortest useful form, citing the external source. Directive, tag, licence, and generated-marker lines do not trip this gate.

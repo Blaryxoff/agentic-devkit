@@ -12,7 +12,7 @@ Do not add comments or docblocks to explain a method, branch, business rule, dat
 4. simplify control flow;
 5. make the behavior executable in a focused test when the project permits tests.
 
-Private and internal members must not have narrative docblocks. Never turn investigation notes, ticket context, or reasoning from the current task into a comment sheet above the resulting code. Existing verbose comments are not precedent to add more.
+Private and internal members must not have narrative docblocks. Never turn investigation notes, ticket context, or reasoning from the current task into a comment sheet above the resulting code — state that reasoning in the response to the user, where the reader can skip it and it never drifts from the code. Existing verbose comments are not precedent to add more.
 
 ## Narrow exceptions
 
@@ -45,7 +45,11 @@ For a narrow exception, follow the surrounding code's placement and syntax. Proj
 
 ## Enforcement
 
-`plugins/core/hooks/comment-gate.sh` runs as a PreToolUse hook in Claude Code, Codex, and Cursor. It rejects an edit whose newly added comment lines narrate change history, and prints the offending lines. Rewrite or delete the comment and retry — there is no bypass flag.
+`plugins/core/hooks/comment-gate.sh` runs as a PreToolUse hook in Claude Code, Codex, and Cursor. It rejects an edit on two grounds and prints the offending lines: comment text that narrates change history, and a prose comment block — two or more consecutive full-line comments of running text on a code file. Directive, tag, licence, and generated-marker lines are exempt from the prose rule. Rewrite or delete the comment and retry — there is no bypass flag.
+
+Rewording an existing comment block counts as adding prose, because only the baseline text survives the subtraction. That is the gate working: per `surgical-changes.md`, leave comments alone on code the change did not otherwise require you to touch.
+
+The hook is a backstop, not the rule. It fires after the comment is already written, so an edit it rejects costs a full second attempt; the no-prose default is what keeps that from happening.
 
 ## Why this matters
 
