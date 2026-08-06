@@ -28,7 +28,8 @@ marker="${TMPDIR:-/tmp}/devkit-coder-active-$safe_sid"
 [ -f "$marker" ] && exit 0
 
 # Claude records successful Skill tool calls. Codex records the tool call that
-# reads the selected SKILL.md. Cursor records Read(path=…/devkit-core--coder/SKILL.md).
+# reads the selected SKILL.md. Cursor ships two toolsets and picks between them per
+# session, so the read arrives as either Read or ReadFile with the path in .input.path.
 # Match only outer transcript events so quoted log output or the initial skill
 # catalog cannot create a false positive.
 if jq -e '
@@ -62,7 +63,7 @@ if jq -e '
       and any(
         .message.content[]?;
         .type == "tool_use"
-        and .name == "Read"
+        and (.name == "Read" or .name == "ReadFile")
         and (
           (.input.path // "")
           | test(coder_skill_path)
