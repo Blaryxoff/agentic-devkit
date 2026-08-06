@@ -88,7 +88,7 @@ Each commit represents a single logical change. Do not mix unrelated changes in 
 
 ## Branching strategy
 
-Feature branches are created from `main` and merged back into `main`.
+Feature branches are created from `master` and merged back into `master`.
 
 ### Branch naming
 
@@ -115,7 +115,7 @@ my-branch                            # no type prefix
 
 - branches should be short-lived — ideally merged within 3 days
 - delete the branch after merging
-- never commit directly to `main`
+- never commit directly to `master`
 
 ## Pull requests
 
@@ -172,19 +172,19 @@ Additional checks before committing:
 
 ### Merge strategy
 
-Squash merge is the default strategy. This keeps `main` history clean — one commit per PR.
+Squash merge is the default strategy. This keeps `master` history clean — one commit per PR.
 
 ### Rebase before merging
 
-Rebase feature branches onto `main` before merging to avoid merge commits and resolve conflicts early.
+Rebase feature branches onto `master` before merging to avoid merge commits and resolve conflicts early.
 
 ### Clean up local commits
 
-Do not push "fix lint", "oops", or "wip" commits. Amend or squash them locally before pushing (`git commit --amend`, `git rebase -i origin/main`).
+Do not push "fix lint", "oops", or "wip" commits. Amend or squash them locally before pushing (`git commit --amend`, `git rebase -i origin/master`).
 
-### Never force-push to main
+### Never force-push to master
 
-Force-pushing to `main` is strictly forbidden. Force-pushing to feature branches is acceptable after rebasing.
+Force-pushing to `master` is strictly forbidden. Force-pushing to feature branches is acceptable after rebasing.
 
 ## Tagging and versioning
 
@@ -200,7 +200,7 @@ All releases use semantic versioning: `vMAJOR.MINOR.PATCH`
 
 ### Tag rules
 
-- tags are created on `main` only
+- tags are created on `master` only
 - use annotated tags with a message describing the release:
 
 ```bash
@@ -218,15 +218,15 @@ git push origin v1.2.3
 - write commit messages in imperative mood
 - use the `<type>: <summary>` format for all commits and PR titles
 - keep one logical change per commit
-- rebase onto `main` before merging
+- rebase onto `master` before merging
 - delete branches after merging
 - use annotated tags for releases
 - run the project's pre-commit checks (fmt, lint, test, build per project `CLAUDE.md` / `Makefile`) before pushing
 
 **DO NOT:**
 
-- commit directly to `main`
-- force-push to `main`
+- commit directly to `master`
+- force-push to `master`
 - push "wip", "fix lint", or "oops" commits — amend locally
 - mix unrelated changes in one commit
 - leave stale branches after merging

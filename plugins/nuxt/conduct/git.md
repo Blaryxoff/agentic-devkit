@@ -57,5 +57,5 @@ If the project file is silent, fall back to the project `Makefile` or `package.j
 - never commit secrets or `.env` files
 - avoid unrelated file churn
 - keep branch short-lived
-- rebase on latest `main` before merge
+- rebase on latest `master` before merge
 - do not force-push shared protected branches

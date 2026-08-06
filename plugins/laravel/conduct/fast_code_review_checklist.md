@@ -95,4 +95,4 @@ Use this checklist before committing code or when reviewing pull requests. Every
 - [ ] One logical change per commit
 - [ ] No secrets or `.env` files in the changeset
 - [ ] `composer.lock` changes are intentional and consistent
-- [ ] Branch is rebased onto latest `main` / `master`
+- [ ] Branch is rebased onto latest `master`
