@@ -107,8 +107,7 @@ inject_cursor_edit_gates() {
       .preToolUse = (
         (.preToolUse // [])
         | map(select(
-            (.hooks // []) | any(.command == $cmd)
-            and (.matcher // "") == $matcher
+            ((.hooks // []) | any(.command == $cmd)) and ((.matcher // "") == $matcher)
             | not
           ))
       ) + [{
