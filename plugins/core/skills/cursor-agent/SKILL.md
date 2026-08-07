@@ -70,11 +70,9 @@ Open every write-mode prompt with:
 Activate the devkit-core--coder skill first (read ~/.cursor/skills/devkit-core--coder/SKILL.md), then <task>.
 ```
 
-**That line does not currently clear the gate.** `coder-gate.sh` looks for a transcript entry whose tool is `Read`;
-Cursor writes `ReadFile` in `~/.cursor/projects/<slug>/agent-transcripts/<sid>/<sid>.jsonl`, so the match never fires
-and edits are refused however faithfully Cursor reads the skill. Runs that appear to succeed fail open instead —
-`coder-gate.sh` exits 0 when the transcript is not yet readable. Until the hook matches `ReadFile`, treat a refused
-delegation as expected: verify the repo state, then repair the hook or do the work natively.
+Cursor must read that skill before the first edit in the session. `coder-gate` records activation from the Read/ReadFile
+`preToolUse` payload (same turn) and from the session transcript (earlier turns). After the read, retry the edit —
+do not route around the gate with shell file writes.
 
 ## Prompt construction
 

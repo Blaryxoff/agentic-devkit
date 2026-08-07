@@ -1,37 +1,54 @@
 #!/bin/sh
 # coder-gate.sh — PreToolUse hook for Claude Code, Codex, and Cursor code edits.
 #
-# Hard-gates code edits until the session transcript shows that devkit-coder was
-# activated. Once detected, a marker keyed on session_id avoids rescanning the
-# transcript on every subsequent edit. Payload text lives in coder-gate.txt.
+# Hard-gates code edits until devkit-coder was activated in the session. Cursor
+# flushes transcript lines only after a turn batch completes, so activation is
+# recorded from Read/ReadFile preToolUse payload as well as transcript scan.
+# Once detected, a marker keyed on session_id avoids rescanning on every edit.
+# Payload text lives in coder-gate.txt.
 #
 # Fail-open by design: if jq is missing or the input is unparseable, allow the edit
 # rather than block every write. Adapted alongside skill-eval.sh.
 
 input=$(cat)
 
-# Without jq we cannot reliably inspect the hook payload or transcript.
 command -v jq >/dev/null 2>&1 || exit 0
 
 tool=$(printf '%s' "$input" | jq -r '.tool_name // .toolName // empty' 2>/dev/null)
+sid=$(printf '%s' "$input" | jq -r '.session_id // .sessionId // .conversation_id // empty' 2>/dev/null)
+safe_sid=$(printf '%s' "$sid" | tr -c 'A-Za-z0-9._-' '_')
+marker="${TMPDIR:-/tmp}/devkit-coder-active-$safe_sid"
+
+is_coder_skill_path() {
+  case "$1" in
+    *devkit-core--coder/SKILL.md | *devkit-coder/SKILL.md | *plugins/core/skills/coder/SKILL.md) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+read_target=$(printf '%s' "$input" | jq -r '
+  .tool_input.path // .tool_input.file_path
+  // .toolInput.path // .toolInput.filePath
+  // .input.path // empty
+' 2>/dev/null)
+
 case "$tool" in
+  Read | ReadFile)
+    if [ -n "$sid" ] && is_coder_skill_path "$read_target"; then
+      : > "$marker"
+    fi
+    exit 0
+    ;;
   Edit | Write | MultiEdit | apply_patch | StrReplace | Delete | EditNotebook) ;;
   *) exit 0 ;;
 esac
 
-sid=$(printf '%s' "$input" | jq -r '.session_id // .sessionId // .conversation_id // empty' 2>/dev/null)
-transcript=$(printf '%s' "$input" | jq -r '.transcript_path // .transcriptPath // empty' 2>/dev/null)
-[ -n "$sid" ] && [ -r "$transcript" ] || exit 0
-
-safe_sid=$(printf '%s' "$sid" | tr -c 'A-Za-z0-9._-' '_')
-marker="${TMPDIR:-/tmp}/devkit-coder-active-$safe_sid"
+[ -n "$sid" ] || exit 0
 [ -f "$marker" ] && exit 0
 
-# Claude records successful Skill tool calls. Codex records the tool call that
-# reads the selected SKILL.md. Cursor ships two toolsets and picks between them per
-# session, so the read arrives as either Read or ReadFile with the path in .input.path.
-# Match only outer transcript events so quoted log output or the initial skill
-# catalog cannot create a false positive.
+transcript=$(printf '%s' "$input" | jq -r '.transcript_path // .transcriptPath // empty' 2>/dev/null)
+[ -r "$transcript" ] || exit 0
+
 if jq -e '
   def coder_skill_path: "(devkit-core--coder|devkit-coder|plugins/core/skills/coder)/SKILL\\.md";
   select(

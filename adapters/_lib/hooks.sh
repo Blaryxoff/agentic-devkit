@@ -103,15 +103,21 @@ inject_cursor_edit_gates() {
   local comment_cmd="$3"
 
   echo "$hooks_json" | jq --arg coder "$coder_cmd" --arg comment "$comment_cmd" '
-    def ensure_gate($cmd):
+    def ensure_gate($matcher; $cmd):
       .preToolUse = (
         (.preToolUse // [])
-        | map(select((.hooks // []) | any(.command == $cmd) | not))
+        | map(select(
+            (.hooks // []) | any(.command == $cmd)
+            and (.matcher // "") == $matcher
+            | not
+          ))
       ) + [{
-        matcher: "Write|StrReplace|Edit|MultiEdit|Delete|EditNotebook|apply_patch",
+        matcher: $matcher,
         hooks: [{ type: "command", command: $cmd, timeout: 60000 }]
       }];
-    ensure_gate($coder) | ensure_gate($comment)
+    ensure_gate("Read|ReadFile"; $coder)
+    | ensure_gate("Write|StrReplace|Edit|MultiEdit|Delete|EditNotebook|apply_patch"; $coder)
+    | ensure_gate("Write|StrReplace|Edit|MultiEdit|Delete|EditNotebook|apply_patch"; $comment)
   '
 }
 

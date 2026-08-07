@@ -46,6 +46,21 @@ printf '%s\n' '{"role":"assistant","message":{"content":[{"type":"tool_use","nam
   > "$cursor_transcript"
 [ "$(run_gate cursor "$cursor_transcript")" = "0" ] || fail "Cursor coder skill read should open gate"
 
+cursor_readfile_transcript="$TMP_DIR/cursor-readfile.jsonl"
+printf '%s\n' '{"role":"assistant","message":{"content":[{"type":"tool_use","name":"ReadFile","input":{"path":"/Users/blaryx/.cursor/skills/devkit-core--coder/SKILL.md"}}]}}' \
+  > "$cursor_readfile_transcript"
+[ "$(run_gate cursor-readfile "$cursor_readfile_transcript")" = "0" ] || fail "Cursor ReadFile transcript should open gate"
+
+set +e
+printf '%s\n' "{\"toolName\":\"ReadFile\",\"session_id\":\"cursor-activate\",\"tool_input\":{\"path\":\"/Users/blaryx/.cursor/skills/devkit-core--coder/SKILL.md\"}}" \
+  | TMPDIR="$TMP_DIR" sh "$ROOT/plugins/core/hooks/coder-gate.sh" >/dev/null 2>&1
+[ $? -eq 0 ] || fail "Cursor ReadFile preToolUse should allow read"
+printf '%s\n' "{\"toolName\":\"StrReplace\",\"session_id\":\"cursor-activate\",\"transcript_path\":\"$empty_transcript\"}" \
+  | TMPDIR="$TMP_DIR" sh "$ROOT/plugins/core/hooks/coder-gate.sh" >/dev/null 2>&1
+same_turn_status=$?
+set -e
+[ "$same_turn_status" = "0" ] || fail "edit in same turn after ReadFile preToolUse should allow"
+
 set +e
 printf '%s\n' "{\"toolName\":\"StrReplace\",\"session_id\":\"cursor-blocked\",\"transcript_path\":\"$empty_transcript\"}" \
   | TMPDIR="$TMP_DIR" sh "$ROOT/plugins/core/hooks/coder-gate.sh" >/dev/null 2>&1
