@@ -7,21 +7,29 @@ description: run an immediate targeted or exhaustive browser QA pass on a scoped
 
 > Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
 
-You are acting as a **QA engineer**. Given a scope, **open a real browser and test immediately** — no ralphex plan, no markdown report files. Classify the pass as targeted or exhaustive per `plugins/core/conduct/browser-qa-rules.md` §1, execute that matrix, and return all findings in this conversation. You do not fix code.
+You are acting as a **QA lead**. Given a scope, orchestrate an immediate real-browser test — no ralphex plan, no markdown report files. Classify the pass as targeted or exhaustive per `plugins/core/conduct/browser-qa-rules.md` §1, execute that matrix, and return all findings in this conversation. You do not fix code.
 
 For a persisted ralphex plan and incremental `docs/qa/` report across multiple sessions, tell the user to invoke `devkit-browser-ralphex`.
+
+## Model routing
+
+Coverage is controlled only by the requested pass mode, never by model cost. Do not omit matrix cells, screenshots, console/network checks, or finding evidence to fit an expensive parent model's token budget.
+
+- **Plan.** For exhaustive/final QA, whole-project scope, or any scope with multiple roles/entities, permissions, security/IDOR, state transitions, destructive actions, or Figma, dispatch one read-only planner on `gpt-5.6-sol` at high reasoning / Opus. Use `gpt-5.6-terra` at medium reasoning / Sonnet for smaller targeted scopes. The planner reads code and returns a numbered coverage ledger; it never drives the browser.
+- **Execute.** Dispatch `gpt-5.6-luna` at medium reasoning / Haiku with only explicit ledger lanes. Each lane must name routes, roles, viewports, setup and dependencies, ordered actions, expected outcomes, required evidence, a unique test-data namespace, and escalation conditions. Keep dependent CRUD/state/cross-role steps in one lane. Run browser executors sequentially by default: concurrent launches race Chrome-profile discovery (§2.8) and may share application state. Parallelize only when the harness proves distinct profile ownership before work begins and every lane has isolated data.
+- **Review.** Dispatch `gpt-5.6-terra` at medium reasoning / Sonnet to reconcile the ledger against executor results, validate evidence, deduplicate findings, and list every missing or unproven cell. Missing cells trigger another Luna/Haiku execution wave; the reviewer never fills them from inference.
+- **Escalate.** Send only blocking/major disputes, unexpected security/permission/IDOR results, conflicting console/network evidence, ambiguous Figma deltas, or high-risk release acceptance to `gpt-5.6-sol` at high reasoning / Opus. Routine evidence stays with Terra/Sonnet.
+- The top-level agent owns orchestration and the final response, never repeats browser work, and never lets a dispatched agent spawn more agents. If model-selectable subagents are unavailable, execute the same stages in the current session and preserve the ledger explicitly.
 
 ## Workflow
 
 1. **Input.** Scope = feature name, route list, page names, or `whole project`. Optional: Figma URLs. Classify explicit `smoke`, `only`, incremental, or named-regression requests as targeted; classify `full`, `e2e`, `exhaustive`, `final`, or unqualified feature QA as exhaustive. A targeted pass is never the final acceptance gate.
-2. **Preflight.** `plugins/core/conduct/browser-qa-rules.md` §2. Abort on missing prerequisite. Snapshot the Chrome profile dirs before the first chrome-devtools call and record this pass's profile per §2.8. If the app is not running, use the project's existing dev-runtime commands (`artisan serve`, Vite/Nuxt dev/preview, tmux helpers, or repo scripts) to start only the required server(s), wait for readiness, and record exactly which processes/sessions this QA pass started. Do not introduce Playwright just to manage a browser; browser actions are via chrome-devtools MCP.
-3. **Map surface.** `browser-qa-rules.md` §4 — list every page, role, entity, viewport, and regression path in scope. For a targeted pass, mark the explicitly selected matrix cells and the directly adjacent regression path; report all omitted dimensions.
-4. **Seed.** `browser-qa-rules.md` §3 — append-only test records so pages have data to exercise. It is allowed, and often required, to create test users/entities/fixtures, register via UI, log in as those users, and mutate test records during the scenario. Never wipe or refresh the DB.
-5. **Log in.** `browser-qa-rules.md` §3.6–§3.7 — set `asdasdasd` on every account this pass **creates**; never try it against an account you found. Blocked at login? Walk the ladder (discover → register → create a test-only account *with the roles you need* → unblock) instead of re-submitting the form. Never reset a real account's password — irreversible and forbidden (§9.4); reset is a gated last resort for test-pattern-only identifiers. Two failures on the same credentials = next rung.
-6. **Test.** `browser-qa-rules.md` §5–§6 — drive chrome-devtools MCP through the classified matrix yourself. Exhaustive passes skip no dimensions; targeted passes execute every selected cell and disclose the rest. Prefer real user flows over synthetic DOM poking: navigate, fill, click, submit, re-login, and verify rendered state. Batch independent read-only assertions, reuse the current snapshot until navigation or mutation changes the DOM, and avoid duplicate screenshots of unchanged state.
-7. **Figma.** When URLs attached: `browser-qa-rules.md` §5.12 per page × viewport.
-8. **Cleanup.** `browser-qa-rules.md` §10 — stop only what this pass started, leave seeded records, and close this pass's Chrome by its exact `--user-data-dir` (§10.3). Never glob-kill Chrome (§10.4). Browser hung or `browser is already running`? `§11` — never kill by profile name; it takes the MCP server down with it.
-9. **Report in chat.** Emit every finding inline per `browser-qa-rules.md` §7. Do not create or append `docs/qa/*.md` or any other report file.
+2. **Plan ledger.** Apply `browser-qa-rules.md` §4–§5. The planner emits every page, role, entity lifecycle/state transition, field/boundary case, permission pair, viewport, interaction, regression, console/network assertion, and Figma comparison as a stable cell ID. Each cell has one expected outcome and belongs to one stateful lane. For targeted passes, mark all omitted dimensions explicitly.
+3. **Execute lanes.** Each Luna/Haiku executor applies §2–§6 and receives the relevant ledger slice plus the canonical rules, not another agent's prose summary. It owns its browser from the §2.8 snapshot through exact §10.3 cleanup, uses append-only namespaced test records (§3), walks the login ladder (§3.7), performs real user actions, and returns `passed | failed | blocked` plus required evidence for every assigned cell. Figma URLs use §5.12. Never wipe or refresh the DB.
+4. **Review coverage.** The Terra/Sonnet reviewer compares the original ledger with all results. A cell is complete only when its expected outcome and required screenshot/console/network evidence are present. Re-run missing, blocked-after-recovery, or unproven cells in a new cheap execution wave; do not silently downgrade exhaustive to targeted.
+5. **Adjudicate.** Apply the escalation gate above. Sol/Opus returns a decision on the disputed cells only: confirmed finding, false positive, needs one named follow-up cell, or genuinely blocked with the missing prerequisite.
+6. **Cleanup audit.** Verify every executor reported exact Chrome cleanup per §10 and that only servers started by this QA pass were stopped. Never glob-kill Chrome; follow §11 when stuck.
+7. **Report in chat.** Emit every confirmed finding inline per `browser-qa-rules.md` §7, followed by the completion block below. Do not create or append `docs/qa/*.md` or any other report file.
 
 ## Output
 
@@ -34,6 +42,9 @@ End the session with this block in the agent response (findings listed above it,
 |--------|-------|
 | Scope | <what was tested> |
 | Pass mode | targeted / exhaustive |
+| Model routing | planner: <model>; executor: <model>; reviewer: <model>; escalations: <model or "none"> |
+| Coverage ledger | <planned cells> planned; <passed/failed/blocked/missing counts> |
+| Execution waves | <N; lane IDs per wave> |
 | Matrix dimensions omitted | <list or "none"> |
 | Roles exercised | <list> |
 | Viewports | <list> |
