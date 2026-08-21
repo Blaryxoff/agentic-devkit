@@ -390,19 +390,29 @@ tmp_path = config_path.with_name(config_path.name + ".devkit.tmp")
 tmp_path.write_text(updated)
 mode = stat.S_IMODE(config_path.stat().st_mode) if config_path.exists() else 0o600
 tmp_path.chmod(mode)
+RENAME_BLOCKED = (errno.EBUSY, errno.EXDEV)
+UNWRITABLE = (errno.EROFS, errno.EACCES, errno.EPERM)
 try:
     tmp_path.replace(config_path)
 except OSError as exc:
     # EBUSY: config.toml is a bind-mount target; EXDEV: tmp and target on different filesystems.
-    if exc.errno not in (errno.EBUSY, errno.EXDEV):
+    if exc.errno not in RENAME_BLOCKED:
         raise
-    config_path.write_text(updated)
-    config_path.chmod(mode)
+    try:
+        config_path.write_text(updated)
+        config_path.chmod(mode)
+    except OSError as inner:
+        if inner.errno not in UNWRITABLE:
+            raise
+        tmp_path.unlink(missing_ok=True)
+        print(f"    Hooks:   SKIPPED - {config_path} is not writable ({inner.strerror}).")
+        print("             Append the devkit-hooks block to it from the host side.")
+        raise SystemExit(0)
     tmp_path.unlink()
 if legacy_exists:
     legacy_path.unlink()
+print("    Hooks:   ~/.codex/config.toml (PreToolUse gates; review with /hooks)")
 PY
-echo "    Hooks:   ~/.codex/config.toml (PreToolUse gates; review with /hooks)"
 
 # --- Output styles → ~/.claude/output-styles (symlinks) + default selection ---
 # Ships the terse, language-mirroring «Laconica» output style.
