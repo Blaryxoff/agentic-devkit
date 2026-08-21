@@ -292,6 +292,7 @@ CODEX_LEGACY_HOOKS_FILE="$CODEX_LEGACY_HOOKS" \
 CODEX_CODER_GATE_CMD="$codergate_cmd" \
 CODEX_COMMENT_GATE_CMD="$commentgate_cmd" \
 python3 - <<'PY'
+import errno
 import json
 import os
 import stat
@@ -389,7 +390,15 @@ tmp_path = config_path.with_name(config_path.name + ".devkit.tmp")
 tmp_path.write_text(updated)
 mode = stat.S_IMODE(config_path.stat().st_mode) if config_path.exists() else 0o600
 tmp_path.chmod(mode)
-tmp_path.replace(config_path)
+try:
+    tmp_path.replace(config_path)
+except OSError as exc:
+    # EBUSY: config.toml is a bind-mount target; EXDEV: tmp and target on different filesystems.
+    if exc.errno not in (errno.EBUSY, errno.EXDEV):
+        raise
+    config_path.write_text(updated)
+    config_path.chmod(mode)
+    tmp_path.unlink()
 if legacy_exists:
     legacy_path.unlink()
 PY
