@@ -10,6 +10,8 @@ You are dispatching a fast review across whatever stacks the project has enabled
 
 Fast review focuses on correctness, regressions, and major convention violations. For a thorough architecture/security/performance pass use `devkit-reviewer-deep`. For behavioural-completeness use `devkit-reviewer-business-logic`.
 
+When the user named revmux as the review engine, this skill does not run unless they asked for both passes: routing hands that pass to the upstream revmux skill, which replaces this fan-out rather than adding to it (`plugins/core/conduct/revmux-review.md`).
+
 **NEVER change code, ONLY review it.**
 
 ---

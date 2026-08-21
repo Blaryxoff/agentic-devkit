@@ -10,6 +10,7 @@ Start with `conduct-loading.md`, then open only the documents routed by the acti
 | Surgical implementation, abstractions, comments, or smells | [surgical-changes.md](./surgical-changes.md), [solid-dry.md](./solid-dry.md), [code-comments.md](./code-comments.md), [code-smells.md](./code-smells.md) |
 | Implementation completion and verification | [review-gate.md](./review-gate.md), [verification-loop.md](./verification-loop.md), [agent-test-restraint.md](./agent-test-restraint.md) |
 | Review routing, specialist fan-out, finding format, cross-checking, or peer-CLI invocation | [review-routing.md](./review-routing.md), [review-specialist-fanout.md](./review-specialist-fanout.md), [review-findings-format.md](./review-findings-format.md), [cross-agent-review.md](./cross-agent-review.md) |
+| Supervised multi-agent review delegated to revmux | [revmux-review.md](./revmux-review.md) |
 | Git and commit workflow | [git-commit-workflow.md](./git-commit-workflow.md) |
 | Context, parallel work, token use, or MCP economy | [context-management.md](./context-management.md), [parallel-sessions.md](./parallel-sessions.md), [token-optimization.md](./token-optimization.md), [mcp-economy.md](./mcp-economy.md) |
 | Communication style | [communication-style.md](./communication-style.md) |

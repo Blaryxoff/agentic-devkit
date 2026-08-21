@@ -13,6 +13,8 @@ You are dispatching a deep code-quality review across whatever stacks the projec
 
 Deep review covers architecture, security, data correctness, error handling, performance, and maintainability. For behavioural-completeness use `devkit-reviewer-business-logic`. For a faster, regression-focused pass use `devkit-reviewer-fast`.
 
+When the user named revmux as the review engine, this skill does not run unless they asked for both passes: routing hands that pass to the upstream revmux skill, which replaces this fan-out rather than adding to it (`plugins/core/conduct/revmux-review.md`).
+
 **NEVER change code, ONLY review it.**
 
 ---

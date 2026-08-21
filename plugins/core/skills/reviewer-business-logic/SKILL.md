@@ -10,6 +10,8 @@ You are dispatching a behavioural-completeness review across whatever stacks the
 
 This is **complementary** to `devkit-reviewer-deep` and `devkit-reviewer-fast`. Those cover code quality. This one covers entity-lifecycle and user-flow completeness.
 
+When the user named revmux as the review engine, this skill does not run unless they asked for both passes: routing hands that pass to the upstream revmux skill, which replaces this fan-out rather than adding to it (`plugins/core/conduct/revmux-review.md`).
+
 **NEVER change code, ONLY review it.**
 
 ---
