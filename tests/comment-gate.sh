@@ -75,6 +75,14 @@ expect 0 "js private fields are not comments" "$(edit /tmp/a.js 'class A {
   #anotherPrivateField = 1;
 }')"
 expect 0 "prose targets are skipped" "$(edit /tmp/a.md "$prose_block")"
+expect 0 "container build files are exempt from the no-prose default" "$(edit /tmp/Dockerfile.hermes '# The upstream base symlinks tini to the s6 init, so calling it here crash-loops the container
+# and the static build is the only one that reaps orphans as PID 1 without it
+RUN echo build')"
+expect 0 "extensionless Dockerfile is exempt too" "$(edit /tmp/Dockerfile '# Arch comes from dpkg at run time because the legacy builder never populates TARGETARCH
+# and the release assets both use that exact suffix
+RUN echo build')"
+expect 2 "container build files still block change narration" "$(edit /tmp/Dockerfile '# previously pinned to the old base
+RUN echo build')"
 expect 0 "baseline prose is not an addition" "$(edit /tmp/a.js "$prose_block" "$prose_block")"
 
 expect 2 "apply_patch prose block must block" "$(patch_payload '*** Update File: src/app.ts

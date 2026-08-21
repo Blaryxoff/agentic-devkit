@@ -109,6 +109,11 @@ fi
 # never a sentence — it breaks the run instead of joining it. Directive, tag,
 # licence, and generated-marker lines are the exceptions code-comments.md grants,
 # so they break a run too.
+# Container build files state base-image, arch and builder constraints their instructions cannot express; the change-history check above still applies to them.
+case "${target##*/}" in
+  Dockerfile | Dockerfile.* | *.dockerfile | Containerfile | Containerfile.*) exit 0 ;;
+esac
+
 css=0
 case "$target" in
   *.css | *.scss | *.less | *.sass) css=1 ;;

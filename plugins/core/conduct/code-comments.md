@@ -24,6 +24,8 @@ A comment is allowed only when the information cannot be encoded in names, types
 
 Keep an exception to the shortest useful form and cite the external source, issue, or invariant when practical. Do not write paragraph-form docblocks for an exception. A public or exported symbol does not automatically need a docblock.
 
+**Container build files are outside the no-prose default.** `Dockerfile*`, `*.dockerfile` and `Containerfile*` state base-image quirks, arch selection, builder and layer-cache behaviour — constraints no instruction, name, or structure can carry, and which the next reader needs before editing a layer. Match the surrounding file's comment density there. Everything else still applies: no change narration, and no notes about the task that produced the layer.
+
 ## Always forbidden
 
 Do not write comments that narrate edits, progress, or what used to be there. The diff and git history already record that.
