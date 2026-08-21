@@ -128,14 +128,32 @@ A good devkit skill:
 
 ## Porting external skills
 
+> Portability guidance informed by `umputun/revmux` (MIT): Claude Code and Codex can need different instructions for
+> native tools, but devkit defaults to one shared Agent Skills leaf (`SKILL.md` plus referenced resources).
+
 When importing from external skill repositories:
 
-1. Treat external content as inspiration, not gospel.
-2. Reject anything requiring hidden SaaS, daemon, container, or proprietary runtime unless explicitly approved.
-3. Rename and rewrite for devkit conventions (`devkit-*` names where appropriate).
-4. Strip platform-specific assumptions that do not apply here.
-5. Keep licensing/attribution concerns in mind; do not blindly copy proprietary reference files.
-6. Test the adapted skill against a real local command or realistic prompt.
+1. Treat external content as inspiration, not gospel. Record its license and preserve attribution when material text or
+   workflow design survives.
+2. Read the source `SKILL.md` and only its referenced resources. Separate the portable workflow from discovery paths,
+   plugin manifests, hooks, permissions, install commands, and other host-shell concerns.
+3. Keep one canonical devkit skill directory and one shared `SKILL.md` by default. Do not add adapter or installer
+   machinery for hypothetical portability differences.
+4. Express small harness differences inside the shared body. Use a compact Claude/Codex table when ordering, commands,
+   or native primitives differ; name the concrete tools when that makes the instruction more reliable.
+5. Describe the common capability when the distinction does not affect execution, such as "use the available structured
+   question tool" or "use the available subagent mechanism."
+6. Consider separate harness bodies only after a real skill repeatedly fails in one harness and a short inline branch
+   cannot express the difference clearly. Treat that as an explicit architecture change, not routine skill porting.
+7. Keep discovery, plugin manifests, hooks, permissions, and other unavoidable host behavior in the owning adapter.
+8. Resolve bundled resources relative to the loaded skill directory or `DEVKIT_HOME`. Do not introduce
+   `${CLAUDE_PLUGIN_ROOT}` into a cross-host skill; Codex has no equivalent.
+9. Reject anything requiring hidden SaaS, daemon, container, proprietary runtime, or a new dependency unless explicitly
+   approved.
+10. Rename and rewrite for devkit conventions (`devkit-*` names where appropriate). Remove unsupported source metadata
+   instead of inventing an equivalent.
+11. Validate the shared skill in both Claude Code and Codex with a realistic prompt. Confirm both catalogs discover it
+    and each harness follows the intended native path.
 
 ## Output format for skill reviews
 
@@ -155,4 +173,6 @@ Verification:
 - Do not create a skill if a two-line note in the current task would do.
 - Do not hide project-specific secrets or credentials inside skills.
 - Do not add background services as “skills”. Skills describe workflows; they are not an excuse to build a zoo.
+- Do not build harness-specific adapter machinery for an unobserved skill problem. Prefer one shared body with a compact
+  harness branch when necessary.
 - Do not rewrite all skills mechanically. Improve only what has a clear quality problem.
