@@ -53,7 +53,7 @@ Each annotation sits in context — the surrounding `===` file headers and diff 
 
 ### 3. Plan the changes
 
-Enter plan mode (`EnterPlanMode`): list each annotation, the file/code it targets, and the planned fix. Get approval before touching code. Resolve ambiguous annotations via `plugins/core/conduct/clarification-protocol.md` instead of guessing.
+Plan the response using the harness's native plan mode when available; otherwise present it in chat. List each annotation, the file/code it targets, and the planned fix. Get approval before touching code. Resolve ambiguous annotations via `plugins/core/conduct/clarification-protocol.md` instead of guessing.
 
 ### 4. Address annotations
 

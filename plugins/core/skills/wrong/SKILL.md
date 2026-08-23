@@ -40,4 +40,4 @@ Which approach is most appropriate, and why.
 - Production-quality, idiomatic solutions — not proofs of concept.
 - Scope changes surgically; do not rewrite working code that isn't part of the problem.
 - Ask clarifying questions before proceeding when the problem is underspecified — resolve via `plugins/core/conduct/clarification-protocol.md`.
-- For a non-trivial chosen approach, switch to `EnterPlanMode` before implementing.
+- For a non-trivial chosen approach, use the harness's native plan mode when available; otherwise present the plan in chat and get approval before implementing.

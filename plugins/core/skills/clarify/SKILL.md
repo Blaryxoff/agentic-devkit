@@ -55,8 +55,8 @@ Tone: gentle, not condescending. Avoid "you're wrong" framing. Keep it concrete 
 For category F:
 
 1. **State the scope** explicitly: trivial · localized · moderate · significant · architectural — and why. The user must understand the magnitude before deciding.
-2. **Present options** when multiple valid approaches exist — via `AskUserQuestion`, recommended option first, include "do nothing" when the issue is cosmetic, has a workaround, or the fix is risky relative to benefit. Follow `plugins/core/conduct/clarification-protocol.md` for how to phrase and batch questions.
-3. **Switch to `EnterPlanMode`** for the chosen approach. Do not fix a non-trivial issue without planning.
+2. **Present options** when multiple valid approaches exist — via the environment's structured question tool, recommended option first, include "do nothing" when the issue is cosmetic, has a workaround, or the fix is risky relative to benefit. Follow `plugins/core/conduct/clarification-protocol.md` for how to phrase and batch questions.
+3. **Plan before implementation** for the chosen non-trivial approach. Use the harness's native plan mode when available; otherwise present the plan in chat and get approval. This skill does not implement the fix.
 
 ## Response format
 

@@ -56,7 +56,7 @@ Enumerate candidate review targets:
 - **Flows**: each acceptance criterion or user journey in the product plan. If no plan, derive flows from top-level routes / pages / Inertia page components.
 - **Stateful views**: every page or component that fetches async data, accepts user input, or renders different output for different backend states.
 
-Use `AskQuestion` (max 4 questions per round) to confirm scope:
+Use the environment's structured question tool (max 4 questions per round) to confirm scope:
 
 - which flows to audit
 - which pages/components to audit

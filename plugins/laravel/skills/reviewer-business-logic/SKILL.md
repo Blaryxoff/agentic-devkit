@@ -52,7 +52,7 @@ Enumerate candidate review targets:
 - **Entities**: Eloquent models in `app/Models/` that have a state column (status, state, phase) — detect via the schema snapshot, model `$casts`, or status enums in `app/Enums/`.
 - **Flows**: each acceptance criterion or user journey in the product plan. If no plan, derive flows from named route groups, controller actions, and Filament/Nova resources.
 
-Use `AskQuestion` (max 4 questions per round) to confirm scope:
+Use the environment's structured question tool (max 4 questions per round) to confirm scope:
 
 - which entities to audit
 - which flows to audit

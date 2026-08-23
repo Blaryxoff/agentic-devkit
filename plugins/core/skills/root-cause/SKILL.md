@@ -83,4 +83,4 @@ Load on demand during investigation:
 
 ## Handoff
 
-Once the root cause is confirmed and a fix is warranted, stop and switch to implementation (or `EnterPlanMode` for non-trivial fixes). This skill investigates; it does not change code.
+Once the root cause is confirmed and a fix is warranted, stop and hand off to implementation. For a non-trivial fix, use the harness's native plan mode when available or present a plan in chat for approval. This skill investigates; it does not change code.
