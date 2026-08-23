@@ -25,9 +25,63 @@
 | Claude Code skill | `claude plugin marketplace add umputun/revmux` then `claude plugin install revmux@revmux` |
 | Codex skill | `cp -r <marketplace-clone>/plugins/codex/skills/revmux ~/.codex/skills/revmux` |
 
-The profile decides which model CLIs must exist: `comprehensive`, `focused`, `final`, `grill-me`, `triage` and `expert`
-need both `claude` and `codex`; `claude-only` and `codex-only` need one. The upstream skill's own preflight step checks
-this — pass it the profile that will actually run.
+The profile decides which model CLIs must exist: `comprehensive`, `focused`, `final`, `grill-me`, `triage`, `expert` and
+`codex-led` need both `claude` and `codex`; `claude-only` and `codex-only` need one. The upstream skill's own preflight
+step checks this — pass it the profile that will actually run.
+
+## Profile selection
+
+Default to `codex-led` when the operator wants codex to carry the review volume and claude to adjudicate it. Set it in
+`~/.config/revmux/config` with `profile = codex-led`; per-run, pass `--profile=codex-led`.
+
+| agent | lenses | executor |
+|---|---|---|
+| `claude-bugs+impl` | bugs, impl | `claude/opus:high` |
+| `codex-arch+quality` | architecture, quality | `codex/gpt-5.6-sol:high` |
+| `codex-docs+tests` | docs, tests, comments | `codex/gpt-5.6-sol:high` |
+| `codex-adversarial` | adversarial | `codex/gpt-5.6-sol:high` |
+| synthesis, verify | — | `claude/opus:high` |
+
+- Keep both stages on claude. Verify is the only stage that opens the cited code and can return `rejected` or
+  `immaterial`; synthesis is forbidden from judging truth, so a codex-heavy roster is safe only while verify is claude.
+- Declare `stages:` explicitly. Both stages otherwise inherit the profile's top-level `model:`, which silently moves
+  adjudication to codex and inverts the design.
+- Keep one claude roster agent on `bugs`+`impl`. Verify cannot raise a finding no roster agent made, so a defect every
+  codex agent misses is lost without it.
+- Do not duplicate a lens across both executors. Corroboration already crosses complementary lenses; full duplication is
+  what `expert` and `grill-me` charge for.
+- Expect roughly half the claude spend of `comprehensive`, not three quarters: synthesis and verify stay on claude and
+  verify fans out to `--verify-groups` (6 by default).
+
+Recreate the profile on another machine — generate the body, never paste it, so it matches the installed revmux:
+
+```bash
+revmux --dump-defaults=/tmp/revmux-defaults
+mkdir -p ~/.config/revmux/prompts/profiles
+{ printf '%s\n' '---' \
+    'description: codex carries architecture+quality, docs+tests and adversarial; claude keeps bugs+impl and owns synthesis and verify' \
+    'model: codex/gpt-5.6-sol:high' \
+    'agents:' \
+    '  - {name: claude-bugs+impl,   lenses: [bugs, impl],            model: claude/opus:high, color: cyan}' \
+    '  - {name: codex-arch+quality, lenses: [architecture, quality],                          color: magenta}' \
+    '  - {name: codex-docs+tests,   lenses: [docs, tests, comments],                          color: green}' \
+    '  - {name: codex-adversarial,  lenses: [adversarial],                                    color: yellow}' \
+    'stages:' \
+    '  synthesis: claude/opus:high' \
+    '  verify: claude/opus:high' \
+    '---'
+  awk 'f{print} /^---$/{c++; if (c==2) f=1}' /tmp/revmux-defaults/prompts/profiles/comprehensive.md
+} > ~/.config/revmux/prompts/profiles/codex-led.md
+revmux config --task <any-task>   # confirm the roster and both stage executors resolved
+```
+
+Prompt-tree resolution is per file: `./.revmux/`, then `~/.config/revmux/`, then revmux's embedded defaults. devkit's
+clone is not on that path, so a profile devkit recommends still has to be written into `~/.config/revmux/`.
+
+- Regenerate `codex-led` after every revmux upgrade. Its body is a frozen copy of that release's `comprehensive.md`;
+  built-in profiles pick up a changed panel prompt on upgrade and a user profile does not.
+- Expect `~/.config/revmux/config` to stop tracking upstream once a line in it is uncommented — `--init` replaces a
+  comment-only file and leaves a customized one alone, so knobs added later never appear there.
 
 ## Relationship to the devkit reviewers
 
