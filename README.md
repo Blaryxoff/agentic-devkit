@@ -8,7 +8,9 @@ every project picks it up.
 
 Install the toolkit once per machine. `devkit-install` clones it to `~/.claude/agentic-devkit` (the global clone,
 `DEVKIT_HOME`), symlinks the universal core skills + the `devkit` stack-router into `~/.claude/skills/`, installs the
-core subagents, and adds a daily auto-update hook.
+core subagents, installs short slash commands in `~/.claude/commands` (`/wrapup` authored, `/root-cause` and
+`/reviewer-deep` generated per core skill), and adds a daily auto-update hook. On Codex there is no custom-command
+directory: a skill is invoked by its frontmatter name (`$wrapup`, `$devkit-reviewer-deep`).
 
 ```bash
 git clone https://github.com/Blaryxoff/agentic-devkit.git ~/.claude/agentic-devkit
@@ -170,7 +172,7 @@ propagate live through the clone (kept current by the daily auto-update hook).
 
 ```text
 plugins/              Convention-based plugin discovery (plugins/*/plugin.json)
-  core/
+  core/               skills/, conduct/, commands/ (authored Claude slash commands), hooks/, output-styles/
   frontend/
   laravel/
   nuxt/
@@ -179,7 +181,7 @@ plugins/              Convention-based plugin discovery (plugins/*/plugin.json)
   tailwind/
   css/
 bin/
-  devkit-install      Global installer: core skills + router + subagents + auto-update hook
+  devkit-install      Global installer: core skills + router + subagents + slash commands + auto-update hook
   devkit-update       Timestamp-guarded `git pull --ff-only` for the global clone
   devkit-resolve      CLI: init/resolve/validate/adapter generation
 adapters/

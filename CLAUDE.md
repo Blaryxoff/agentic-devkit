@@ -17,7 +17,7 @@ and standards docs.
 
 ```
 plugins/                 All plugins (convention: plugins/*/plugin.json)
-  core/                  Always-on shared standards (git, plan, test-case, review) + output-styles/
+  core/                  Always-on shared standards (git, plan, test-case, review) + commands/ (Claude slash) + output-styles/
   frontend/              Generic frontend architecture + CSS
   laravel/               Laravel framework skills + conduct
   nuxt/                  Nuxt framework skills + conduct
@@ -25,7 +25,7 @@ plugins/                 All plugins (convention: plugins/*/plugin.json)
   inertia/               Inertia.js transport rules
   tailwind/              Tailwind CSS conventions
 bin/
-  devkit-install           Global installer: core skills + devkit router + core subagents + output styles + auto-update hook
+  devkit-install           Global installer: core skills + devkit router + core subagents + slash commands + output styles + auto-update hook
   devkit-update            Timestamp-guarded `git pull --ff-only` for whichever clone contains it (SessionStart hook)
   devkit-resolve           CLI entry point for resolution and adapter generation (repeatable --project for multi-repo)
 adapters/
@@ -53,9 +53,28 @@ howto/                   Developer guides (Russian)
 
 - Each skill lives in `plugins/<plugin>/skills/<skill-name>/SKILL.md`.
 - SKILL.md has YAML frontmatter (`name`, `description`) followed by the prompt body.
-- Skill names use the `devkit-` or `ralphex-` prefix in frontmatter.
+- Skill names use the `devkit-` or `ralphex-` prefix in frontmatter. Exception: a skill whose short name is unambiguous
+  and user-facing may drop the prefix so Codex reaches it as `$<name>` (currently `wrapup`). Renaming an existing skill's
+  frontmatter name is a breaking migration — hooks, `skill-eval.txt`, generated subagents, and conduct references all key
+  on it.
 - Shared skills (git, plan-creator, plan-reviewer, etc.) live ONLY in `core/` -- never duplicated.
 - Stack-specific skills live in their owning plugin.
+
+### Slash commands
+
+- `bin/devkit-install` generates one short Claude command per core skill — `/root-cause`, `/reviewer-deep`,
+  `/reviewer-business-logic`. Each generated file only routes to `Skill(devkit-core--<skill>)`; the workflow stays in
+  `SKILL.md`.
+- Hand-authored commands live at `plugins/core/commands/<name>.md`, are symlinked as-is, and suppress generation for
+  that name (`/wrapup` is one). Author a command only when it needs its own wording, `argument-hint`, or arguments
+  contract.
+- `SHORT_COMMAND_DENY` in `bin/devkit-install` keeps a skill long-form. It holds generic names that collide with harness
+  built-ins or third-party skills (`browser`, `coder`, `design`, `git`, `init`, `learn`, `plan`, `review`, `run`,
+  `verify`, `devkit-router`) and token-gated skills (`plan-creator`, `plan-reviewer` — they require `ralphex`, see
+  `plugins/core/hooks/skill-eval.txt`).
+- Files already in `~/.claude/commands/` are never overwritten or deleted unless devkit wrote them; the installer names
+  what it kept.
+- Codex has no custom-command directory — there a skill is invoked as `$<frontmatter-name>`.
 
 ### Conduct
 
