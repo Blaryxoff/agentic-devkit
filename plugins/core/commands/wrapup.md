@@ -1,6 +1,6 @@
 ---
-description: Close out the finished task — leftovers sweep, verify, commit, push, deploy, evidence report.
-argument-hint: [extra scope, branch, or deploy target]
+description: Close out the finished task — leftovers sweep, verify, commit, push, evidence report.
+argument-hint: [extra scope or branch]
 ---
 
 Run the devkit wrapup workflow over the work finished in this session.
