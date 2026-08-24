@@ -66,6 +66,7 @@ install_output=$(HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home
   bash "$ROOT/bin/devkit-install")
 
 assert_link "$codex_home/skills/devkit-core--coder" "$ROOT/plugins/core/skills/coder"
+assert_link "$codex_home/skills/devkit-core--backlog" "$ROOT/plugins/core/skills/backlog"
 assert_link "$codex_home/skills/devkit-core--devkit-router" "$ROOT/plugins/core/skills/devkit-router"
 assert_absent "$codex_home/skills/devkit-css--css-a11y"
 assert_absent "$codex_home/skills/devkit-core--retired"
@@ -84,6 +85,7 @@ python3 -c 'import sys, tomllib; tomllib.load(open(sys.argv[1], "rb"))' "$codex_
 [[ "$install_output" == *"Cursor stack skills are now project-scoped"* ]] \
   || fail "Cursor project-skill migration notice was not emitted"
 assert_contains "$claude_home/CLAUDE.md" 'personal global guidance'
+assert_link "$claude_home/skills/devkit-core--backlog" "$ROOT/plugins/core/skills/backlog"
 assert_contains "$claude_home/CLAUDE.md" '<!-- devkit-skill-policy:start -->'
 assert_contains "$claude_home/CLAUDE.md" 'Skill selection starts from the catalog metadata.'
 assert_contains "$claude_home/CLAUDE.md" "$ROOT/plugins/core/conduct/learning-capture-gate.md"

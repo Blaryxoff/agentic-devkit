@@ -59,6 +59,7 @@ Write a new item on the repository default branch unless the user explicitly acc
 - Keep every item visible. `worth` controls recommendation and ordering, not filtering.
 - Identify dependencies between items before an all-items triage. Ask about prerequisites before dependents and carry the
   relationship into both briefings.
+- For a blocker outside the backlog, recommend leaving the item and name the blocker.
 
 ## 5. Item briefing
 

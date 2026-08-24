@@ -1,14 +1,15 @@
 ---
 name: devkit-backlog
 description: >-
-  read, triage, work, or append a Git repository's deferred-work items in docs/backlog/. Use when the user says
-  "backlog", "check backlog", "work the backlog", "add to backlog", or when real findings from the current task should
-  be deferred instead of fixed now. Supports a slug and --all; verifies stale anchors before recommendations.
+  Manage a Git repository's deferred-work items in docs/backlog/: list, triage, fix, drop, or append accepted findings.
+  Use for backlog requests or when current findings should be deferred. Supports a slug and --all.
 ---
 
 # Backlog
 
 > Adapted from `umputun/cc-thingz` (MIT).
+
+> Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
 
 Follow `plugins/core/conduct/deferred-work-backlog.md` and `plugins/core/conduct/git-commit-workflow.md`. Operate only in
 a Git repository. Outside one, report that the workflow requires Git and stop.
@@ -43,7 +44,8 @@ mode.
 
 ## All items
 
-1. Read every item in full. Verify all anchors and map dependencies before asking the first question.
+1. Read every item in full. Verify all anchors and map dependencies before asking the first question. Include each
+   dependency in both affected item briefings.
 2. Order real prerequisites before their dependents; otherwise retain conduct §4 ordering.
 3. Process one item at a time. Print `item N of M`, then its four-part briefing, then ask about that item alone.
 4. Carry out the answer before moving on. Immediately before a fix or drop, re-read the item and re-verify `where`; if
@@ -58,7 +60,8 @@ mode.
 3. Dedupe per conduct §6. Update an existing item when the defect matches; do not create a parallel account.
 4. Write exact frontmatter and body per conduct §1. Use today's ISO date for `added`.
 5. Inspect the pre-existing index before staging or offering a commit. If anything is already staged, report it and stop.
-6. Offer the next Git action, but do not commit or push without explicit authorization.
+6. If the index was clean, offer to stage the exact item paths and commit plus push them together. Do not perform either
+   action without explicit authorization.
 
 ## Mutation rules
 
