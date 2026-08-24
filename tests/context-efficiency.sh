@@ -115,6 +115,10 @@ assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" 'terminal learning-ca
 assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" "environment's structured question tool"
 assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" 'Save only the selected items.'
 assert_not_contains "$ROOT/plugins/core/skills/learn/SKILL.md" 'AskUserQuestion'
+assert_contains "$ROOT/plugins/core/skills/backlog/SKILL.md" 'docs/backlog/<slug>.md'
+assert_contains "$ROOT/plugins/core/skills/backlog/SKILL.md" 'Process one item at a time.'
+assert_contains "$ROOT/plugins/core/conduct/overview.md" '[deferred-work-backlog.md](./deferred-work-backlog.md)'
+assert_contains "$ROOT/plugins/core/conduct/deferred-work-backlog.md" 'Do not treat a shared path as proof of duplication.'
 assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'finish silently'
 assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'strongest three at most'
 assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'Never write project memory directly'
