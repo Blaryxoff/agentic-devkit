@@ -27,6 +27,12 @@ independent, so the ordering rules below are not decoration.
 
 Do not self-invoke, and do not load this for a one-file change, a question, or a review-only request.
 
+**The trigger authorizes every stage the operator's hand-off named — run them without asking between
+them.** Naming revmux and wrapup in the hand-off is the approval for both; pausing at each stage
+boundary to confirm buys nothing and costs the operator a turn. Stop only for a decision the pipeline
+genuinely cannot make: an ambiguity in the spec that changes what gets built, a destructive action, or
+a stage the hand-off never mentioned.
+
 ## Stage owners — fixed, not inferred
 
 The single most expensive failure mode is reading a stage's owner out of the operator's prose. "browser qa with codex"
@@ -148,3 +154,4 @@ acceptance list from stage 1 with the outcome of each item, plus everything defe
 - Never commit unrelated untracked paths that the pipeline's diff export happened to surface; `wrapup` Step 2 triages
   them.
 - Deferred defects are reported to the operator, not silently dropped.
+- Never pause at a stage boundary to ask permission for a stage the hand-off already named.
