@@ -24,14 +24,17 @@ When the user named revmux as the review engine, this skill does not run unless 
    - **Frontend variant** (`devkit-reviewer-business-logic-frontend`, at `plugins/frontend/skills/reviewer-business-logic/SKILL.md`) — when any frontend stack plugin is enabled (`devkit-frontend`, `devkit-nuxt`, `devkit-vue`, `devkit-inertia`).
    - **Generic implementation fallback** — for changed behavior not covered by either active stack variant; use the role
      defined in `plugins/core/conduct/review-specialist-fanout.md`.
-3. When this is a standalone business-logic review, dispatch the applicable variants and fallback per
+3. When this is a standalone business-logic review, resolve the visual-reference specialist gate, then dispatch the
+   applicable variants, fallback, and opened specialist per
    `review-specialist-fanout.md`. When paired with deep review for a full review, register them with the shared top-level
    fan-out and do not dispatch them independently.
-4. Present each variant's report unchanged, under a heading: `## Laravel — Business-logic review` and `## Frontend — Business-logic review`. Reports are **sequential and clearly separated** — do not merge findings, do not produce a cross-wire pairing section.
+4. Present each report unchanged under `## Laravel — Business-logic review`, `## Frontend — Business-logic review`, or
+   `## Design-reference fidelity`. Omit unopened gates. Reports are **sequential and clearly separated** — do not merge
+   findings or produce a cross-wire pairing section.
 5. **Cross-check in Codex.** Once the variant reports are assembled, run the cross-agent cross-check per `plugins/core/conduct/cross-agent-review.md`, using Codex skill slug `devkit-core--reviewer-business-logic`. Merge kept findings into the matching stack section, tagged `(via Codex)`. **This step is mandatory when the gate holds** — run `command -v codex`, do not treat it as optional or proportional, and state the gate outcome explicitly. Skip only when a gating condition genuinely fails, naming which.
 6. Apply the review completion gate in `plugins/core/conduct/review-findings-format.md` after all requested review skills finish. When paired with deep review, wait for both reports before deciding the combined pass outcome.
-7. Stop only when no stack variant or generic implementation fallback applies. Report unavailable stack coverage
-   separately from the review outcome.
+7. Stop only when no stack variant, generic implementation fallback, or visual-reference specialist applies. Report
+   unavailable stack coverage separately from the review outcome.
 
 Use the same requested entity/flow set for every stack by default. Ask about independent scopes only when the user names
 different targets or the repository layout makes one shared scope ambiguous.

@@ -14,14 +14,15 @@ If the harness has no subagents, run the same reviewers sequentially.
    implementation fallback below for changed behaviour that no stack variant covers.
 4. Add the testing specialist only when its gate opens.
 5. Add the documentation specialist only when its gate opens.
-6. Launch all applicable read-only reviewers in one batch or the minimum capacity-bounded waves. Give every reviewer the
+6. Add the visual-reference specialist only when its gate opens.
+7. Launch all applicable read-only reviewers in one batch or the minimum capacity-bounded waves. Give every reviewer the
    same scope and intent. Never nest orchestration or dispatch the same axis twice.
-7. Keep reports separated by reviewer axis. Deduplicate only identical `file:line` plus defect findings, preserving all
+8. Keep reports separated by reviewer axis. Deduplicate only identical `file:line` plus defect findings, preserving all
    contributing reviewer names.
 
-Every prompt must require read-only operation, real source context beyond the diff, evidence as `file:line`, and
-`review-findings-format.md`. Never pass one reviewer's conclusions to another before both have independently reviewed the
-scope.
+Every prompt must require read-only operation, real context beyond the diff, and `review-findings-format.md`. Require
+`file:line` for source-backed findings and the evidence contract below for visual-reference findings. Never pass one
+reviewer's conclusions to another before both have independently reviewed the scope.
 
 ## Generic fallbacks
 
@@ -64,6 +65,28 @@ human documentation changed.
 Prompt the specialist to compare the changed contract with its canonical README, API, CLI, configuration, migration, and
 operations documentation. Report only missing, stale, or contradictory human documentation. Do not request `CLAUDE.md`
 entries; route durable project knowledge through `learning-capture-gate.md`.
+
+## Visual-reference specialist
+
+Open this gate when the reviewed change affects rendered frontend UI and the user or scoped acceptance artifacts supply
+a Figma frame, approved screenshot, mockup, or other design reference. A supplied reference makes visual correspondence
+part of review acceptance even when the user did not separately ask for a design review.
+
+Prompt the specialist to:
+
+- inspect the running UI at every referenced page/state × applicable viewport; start only the project's minimal local
+  server when needed and leave pre-existing servers running;
+- apply `plugins/frontend/conduct/design-quality.md` **Reference fidelity** and use
+  `plugins/frontend/conduct/visual-implementation.md` §2–§4 for measured browser comparison;
+- verify typography, geometry, spacing, styling, content and component inventory, missing and excess elements, and all
+  rendering artifacts rather than judging only general resemblance;
+- cite the reference, route/state, viewport, expected versus actual measurement or appearance, screenshot evidence, and
+  `file:line` when the source cause is traceable;
+- list unchecked reference states/viewports as unverified. If the reference or running page is inaccessible, report the
+  blocked gate and never infer a clean visual result from source code alone.
+
+Keep this specialist read-only. It reports implementation deltas, not subjective redesign preferences, and never
+updates baselines or fixes CSS.
 
 ## Simplification
 

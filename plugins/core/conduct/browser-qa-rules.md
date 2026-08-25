@@ -22,7 +22,8 @@ Canonical rules for browser-based QA skills (`devkit-browser`, `devkit-browser-r
 
 2.3. Verify DB or test-DB access and at least one usable seeder/factory path.
 
-2.4. When the user attaches Figma URLs, verify Figma MCP is available before starting.
+2.4. When the user supplies a design reference, verify it is accessible before starting. Figma URLs require Figma MCP;
+attached or repository screenshots/mockups require a readable image at its original resolution.
 
 2.5. Missing prerequisite → stop via `plugins/core/conduct/clarification-protocol.md`. Never test against an unverified environment.
 
@@ -94,6 +95,9 @@ Discover everything below from the codebase before testing or planning.
 
 4.7. **Regression surface** — adjacent behaviour reachable from in-scope navigation; discover from routing, not from memory.
 
+4.8. **Design-reference map** — when a reference is supplied, map every frame/screen to its route, UI state, intended
+viewport, and responsive variants. Mark any reference with no resolvable live target before execution.
+
 ## 5. Scenario matrix
 
 Exhaustive coverage requires all dimensions below; neither skill may skip a dimension to save time. A targeted pass executes the cells selected under §1.4–§1.5 and reports the remaining dimensions as untested.
@@ -120,7 +124,11 @@ Exhaustive coverage requires all dimensions below; neither skill may skip a dime
 
 5.11. **Console/network** — `list_console_messages` + `list_network_requests` after substantive actions.
 
-5.12. **Figma** (when URLs provided) — `get_design_context` or `get_screenshot`; compare layout, spacing, typography, colors, component presence against live page; report deltas, never silently fix CSS.
+5.12. **Design-reference fidelity** (when Figma, approved screenshots, mockups, or other references are supplied) — test
+every mapped reference × route/state × viewport from §4.8. For Figma, use `get_design_context` or `get_screenshot`.
+Apply every check in `plugins/frontend/conduct/design-quality.md` **Reference fidelity**. Capture design measurements plus
+rendered DOM/computed styles when available; do not approve by casual visual resemblance. Report every unexplained delta
+and every untested reference state/viewport; never silently fix CSS.
 
 ## 6. Browser session
 
@@ -138,7 +146,7 @@ Exhaustive coverage requires all dimensions below; neither skill may skip a dime
 
 ## 7. Finding format
 
-7.1. One finding per defect. Required fields: ID · route/page · role · viewport · severity · reproduction steps (MCP actions) · expected · actual · screenshot reference · console/network evidence.
+7.1. One finding per defect. Required fields: ID · route/page · role · viewport · severity · reproduction steps (MCP actions) · expected · actual · screenshot reference · console/network evidence. For design deltas, also cite the design reference/frame and expected versus actual measurement or appearance.
 
 7.2. Severity: `blocking` | `major` | `minor` | `cosmetic`.
 
@@ -148,7 +156,7 @@ Exhaustive coverage requires all dimensions below; neither skill may skip a dime
 
 **chrome-devtools:** `navigate_page`, `new_page`, `list_pages`, `select_page`, `click`, `fill`, `fill_form`, `hover`, `press_key`, `type_text`, `take_snapshot`, `take_screenshot`, `resize_page`, `emulate`, `evaluate_script`, `wait_for`, `handle_dialog`, `list_console_messages`, `list_network_requests`, `upload_file`, `drag`.
 
-**Figma** (when URLs attached): `get_design_context`, `get_screenshot`. Read each tool schema before first use.
+**Figma** (when URLs supplied as design references): `get_design_context`, `get_screenshot`. Read each tool schema before first use.
 
 ## 9. Hard rules
 

@@ -62,6 +62,25 @@ Evaluate the interface as a whole before polishing isolated details:
 7. **States:** loading, empty, error, disabled, focus, hover, active, and success states match the surrounding product.
 8. **Responsive behavior:** the hierarchy and composition reflow intentionally rather than merely shrinking.
 
+## Reference fidelity
+
+When the user supplies a design reference, treat correspondence to that reference as an acceptance criterion rather
+than a matter of taste. Compare each applicable page, viewport, and UI state against the matching reference.
+
+- Verify structure and content: every referenced element exists, appears in the correct order and hierarchy, and uses
+  the intended copy, icon, image, and control variant.
+- Reject excess UI: report elements, wrappers, decoration, labels, or controls that are absent from the reference unless
+  another explicit requirement authorizes them.
+- Verify geometry: container and element dimensions, grid/flow, alignment, padding, gaps, margins, and whitespace rhythm.
+- Verify typography: font family, size, weight, line height, letter spacing, wrapping, truncation, and text alignment.
+- Verify visual styling: colors, borders, radii, shadows, opacity, imagery, icon shape, and icon size.
+- Reject rendering artifacts: clipping, overflow, overlap, unintended scrollbars, broken assets, fallback fonts,
+  misaligned baselines, stale skeletons, and transient or duplicated elements.
+- Use measured design values and rendered DOM/computed styles when available. Do not approve fidelity from a casual
+  screenshot glance when exact evidence can be obtained.
+- Report every unexplained delta with the reference, route/state, viewport, expected value or appearance, actual value
+  or appearance, and screenshot evidence. Do not claim a match for reference states or viewports that were not checked.
+
 ## Anti-slop check
 
 AI slop is repetition without a reason, not a specific color or style. Check at two levels:
@@ -84,7 +103,7 @@ identity, and usage frequency better than the alternatives.
 ## Verification
 
 - Inspect the running UI at the relevant mobile and desktop viewports when available.
-- Compare against Figma or approved baselines when supplied.
+- Apply **Reference fidelity** against Figma, approved screenshots, or other supplied design references.
 - Verify spacing, typography, content overflow, focus, and interaction states in rendered output, not code alone.
 - Review motion separately under [motion.md](./motion.md).
 - If the task is critique-only, report findings and do not edit source files.

@@ -22,11 +22,14 @@ When the user named revmux as the review engine, this skill does not run unless 
 2. Decide which variants apply:
    - **Laravel variant** (`devkit-reviewer-fast-laravel`, at `plugins/laravel/skills/reviewer-fast/SKILL.md`) — when `devkit-laravel` is enabled.
    - **Frontend variant** (`devkit-reviewer-fast-frontend`, at `plugins/frontend/skills/reviewer-fast/SKILL.md`) — when any frontend stack plugin is enabled (`devkit-frontend`, `devkit-nuxt`, `devkit-vue`, `devkit-inertia`).
-3. Dispatch the applicable variants. If your harness exposes subagents (e.g. Claude Code's Agent tool with `subagent_type`), invoke each variant as a subagent so its context stays out of this orchestrator's context. When both variants apply, dispatch them **in parallel** in a single tool-call batch and only synthesize after both reports return. If subagents are not available, invoke each variant skill sequentially.
-4. Present each variant's report unchanged, under a heading: `## Laravel — Fast review` and `## Frontend — Fast review`. Reports are **sequential and clearly separated** — do not merge findings, do not produce a cross-wire pairing section.
+   - **Visual-reference specialist** — when the gate in `plugins/core/conduct/review-specialist-fanout.md` opens.
+3. Dispatch the applicable variants and specialist. If your harness exposes subagents (e.g. Claude Code's Agent tool with `subagent_type`), invoke each as a subagent so its context stays out of this orchestrator's context. Dispatch them **in parallel** in a single tool-call batch and only synthesize after all reports return. If subagents are not available, invoke each sequentially.
+4. Present each report unchanged under `## Laravel — Fast review`, `## Frontend — Fast review`, or
+   `## Design-reference fidelity`. Reports are **sequential and clearly separated** — do not merge findings or produce a
+   cross-wire pairing section.
 5. **Cross-check in Codex.** Once the variant reports are assembled, run the cross-agent cross-check per `plugins/core/conduct/cross-agent-review.md`, using Codex skill slug `devkit-core--reviewer-fast`. Merge kept findings into the matching stack section, tagged `(via Codex)`. **This step is mandatory when the gate holds** — run `command -v codex`, do not treat it as optional or proportional, and state the gate outcome explicitly. Skip only when a gating condition genuinely fails, naming which.
 6. Apply the review completion gate in `plugins/core/conduct/review-findings-format.md` to the combined current pass.
-7. If neither side is active, stop and tell the user no compatible stack plugin is enabled and which plugins this skill supports.
+7. If no stack variant or specialist is active, stop and tell the user no compatible stack plugin is enabled and which plugins this skill supports.
 
 Return findings and the pass outcome. This reviewer never repairs findings or invokes `devkit-coder`.
 

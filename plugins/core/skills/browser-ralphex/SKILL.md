@@ -1,6 +1,6 @@
 ---
 name: devkit-browser-ralphex
-description: generate a ralphex plan that drives the chrome-devtools MCP to exhaustively QA-test a scope (a feature, a page set, or the whole project) in a real browser across roles, viewports, full entity lifecycle, field/validation, interactive controls, cross-role access propagation, permissions, and regression — seeds test data without wiping the real DB and produces a dev-ready bug report in docs/qa/. Invoke when asked to "create a QA plan", "write a ralphex plan for browser QA", "plan a full browser regression sweep", or "design QA coverage for a feature/page set/project". Delegates plan rendering to devkit-plan-creator. Does NOT run the QA — the ralphex dev plan executes in a follow-up session. For immediate in-chat results without a plan file, use devkit-browser. Does NOT fix code.
+description: generate a ralphex plan that drives the chrome-devtools MCP to exhaustively QA-test a scope (a feature, a page set, or the whole project) in a real browser across roles, viewports, full entity lifecycle, field/validation, interactive controls, cross-role access propagation, permissions, regression, and fidelity to supplied design references — seeds test data without wiping the real DB and produces a dev-ready bug report in docs/qa/. Invoke when asked to "create a QA plan", "write a ralphex plan for browser QA", "plan a full browser regression sweep", or "design QA coverage for a feature/page set/project". Delegates plan rendering to devkit-plan-creator. Does NOT run the QA — the ralphex dev plan executes in a follow-up session. For immediate in-chat results without a plan file, use devkit-browser. Does NOT fix code.
 ---
 
 # QA Tester — Ralphex Plan
@@ -19,7 +19,7 @@ The process is identical whether the scope is one feature, a page set, or the wh
 4. **Map the QA surface.** `browser-qa-rules.md` §4.
 5. **Seed strategy.** `browser-qa-rules.md` §3 — record exact commands in the plan.
 6. **Build the scenario matrix.** `browser-qa-rules.md` §5 — roles × pages × viewports × lifecycle × validation × interaction depth × propagation × permissions × regression. This becomes the task list.
-7. **Clarify** remaining gaps via `clarification-protocol.md` (base URL, credentials source, which DB, scope boundaries, Figma URLs). No `TBD`.
+7. **Clarify** remaining gaps via `clarification-protocol.md` (base URL, credentials source, which DB, scope boundaries, design-reference locations and page/state/viewport mappings). No `TBD`.
 8. **Confirm** scope + seed strategy with the user, then **delegate to `devkit-plan-creator`** (via the Skill tool). Hand it the brief below so its interview is pre-filled. Do not restate the ralphex format — `devkit-plan-creator` owns it.
 
 ## Brief handed to devkit-plan-creator
@@ -37,7 +37,7 @@ QA objective, scope/non-scope, acceptance = "every matrix scenario in `browser-q
 - **Cross-role access-propagation tasks:** `browser-qa-rules.md` §5.8 per controllable section.
 - **Permission-matrix tasks:** `browser-qa-rules.md` §5.9.
 - **Regression tasks:** `browser-qa-rules.md` §5.10.
-- **Figma tasks** (when URLs in scope): `browser-qa-rules.md` §5.12 per linked frame × viewport.
+- **Design-reference tasks** (when references are in scope): map them per `browser-qa-rules.md` §4.8, then apply §5.12 per reference/frame × route/state × viewport.
 - **Incremental reporting:** every test task's penultimate checkbox is `- [ ] Append findings from this task to docs/qa/YYYYMMDD-<scope>-report.md`. Final task compiles summary table and dedupes — never authors findings from memory.
 - **Final task — Cleanup:** `browser-qa-rules.md` §10 — stop only what the plan started, then close this pass's Chrome by the exact `--user-data-dir` path read from the report header (§10.3); never glob-kill (§10.4). Record the outcome in the report.
 - Finding format: `browser-qa-rules.md` §7. Screenshots under `docs/qa/screenshots/`.
