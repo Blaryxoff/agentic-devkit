@@ -126,9 +126,11 @@ Exhaustive coverage requires all dimensions below; neither skill may skip a dime
 
 5.12. **Design-reference fidelity** (when Figma, approved screenshots, mockups, or other references are supplied) — test
 every mapped reference × route/state × viewport from §4.8. For Figma, use `get_design_context` or `get_screenshot`.
-Apply every check in `plugins/frontend/conduct/design-quality.md` **Reference fidelity**. Capture design measurements plus
-rendered DOM/computed styles when available; do not approve by casual visual resemblance. Report every unexplained delta
-and every untested reference state/viewport; never silently fix CSS.
+Apply every check, in order, from `plugins/frontend/conduct/design-quality.md` **Reference fidelity**. Record the
+whole-frame composition and element-inventory result before any element-level assertions; local matches cannot close the
+cell without that evidence. Capture design measurements plus rendered DOM/computed styles when available; do not approve
+by casual visual resemblance. Report every unexplained delta and every untested reference state/viewport; never silently
+fix CSS.
 
 ## 6. Browser session
 

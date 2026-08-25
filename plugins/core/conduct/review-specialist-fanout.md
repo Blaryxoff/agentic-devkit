@@ -78,8 +78,8 @@ Prompt the specialist to:
   server when needed and leave pre-existing servers running;
 - apply `plugins/frontend/conduct/design-quality.md` **Reference fidelity** and use
   `plugins/frontend/conduct/visual-implementation.md` §2–§4 for measured browser comparison;
-- verify typography, geometry, spacing, styling, content and component inventory, missing and excess elements, and all
-  rendering artifacts rather than judging only general resemblance;
+- run the mandated whole-frame composition and complete element-inventory pass before inspecting individual colors,
+  spacing, typography, dividers, or other local details. Matching local details never substitutes for the first pass;
 - cite the reference, route/state, viewport, expected versus actual measurement or appearance, screenshot evidence, and
   `file:line` when the source cause is traceable;
 - list unchecked reference states/viewports as unverified. If the reference or running page is inaccessible, report the

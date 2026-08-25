@@ -67,15 +67,21 @@ Evaluate the interface as a whole before polishing isolated details:
 When the user supplies a design reference, treat correspondence to that reference as an acceptance criterion rather
 than a matter of taste. Compare each applicable page, viewport, and UI state against the matching reference.
 
-- Verify structure and content: every referenced element exists, appears in the correct order and hierarchy, and uses
-  the intended copy, icon, image, and control variant.
-- Reject excess UI: report elements, wrappers, decoration, labels, or controls that are absent from the reference unless
-  another explicit requirement authorizes them.
-- Verify geometry: container and element dimensions, grid/flow, alignment, padding, gaps, margins, and whitespace rhythm.
-- Verify typography: font family, size, weight, line height, letter spacing, wrapping, truncation, and text alignment.
-- Verify visual styling: colors, borders, radii, shadows, opacity, imagery, icon shape, and icon size.
-- Reject rendering artifacts: clipping, overflow, overlap, unintended scrollbars, broken assets, fallback fonts,
-  misaligned baselines, stale skeletons, and transient or duplicated elements.
+Run the comparison in this order. Do not start with isolated element details:
+
+1. **Whole-frame composition and inventory:** compare the complete rendered viewport with the complete reference. Verify
+   the number and order of regions, groups, controls, and decorative elements; overall proportions; grid/flow; container
+   placement; horizontal and vertical alignment or centering; whitespace distribution; and dominant visual hierarchy.
+   Report every missing, unexpected, duplicated, or structurally misplaced element unless another explicit requirement
+   authorizes the difference.
+2. **Element-level fidelity:** only after the whole-frame pass, verify dimensions, padding, gaps, margins, typography,
+   colors, borders, radii, shadows, opacity, copy, icons, images, and control variants. Reject clipping, overflow,
+   overlap, unintended scrollbars, broken assets, fallback fonts, misaligned baselines, stale skeletons, and transient or
+   duplicated elements.
+
+A set of matching local details does not prove fidelity. Never issue a clean verdict when the whole-frame composition
+and complete element inventory were not checked explicitly.
+
 - Use measured design values and rendered DOM/computed styles when available. Do not approve fidelity from a casual
   screenshot glance when exact evidence can be obtained.
 - Report every unexplained delta with the reference, route/state, viewport, expected value or appearance, actual value
