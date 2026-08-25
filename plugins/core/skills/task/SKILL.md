@@ -1,15 +1,15 @@
 ---
-name: devkit-ship-feature
+name: devkit-task
 description: >-
-  run a multi-stage feature spec end to end with a peer CLI — freeze the spec, analyse it in parallel with the peer,
-  implement natively, take one peer review round, delegate browser QA to the peer, then wrapup. Manual trigger ONLY:
-  load it when the operator hands over a task specification and names the pipeline — "прогони по процессу",
-  "ship this spec", "work it with codex end to end", "/ship-feature", "full pipeline". A bare feature request is NOT a
-  trigger — that is devkit-core--coder. Does NOT deploy and does NOT open PRs. Stage owners are fixed by the table in
-  this file, never inferred from the operator's phrasing.
+  carry a whole task specification from text to a pushed branch with a peer CLI — freeze the spec, analyse it in
+  parallel with the peer, implement natively, review once (revmux when authorized, else a single peer round),
+  delegate browser QA to the peer, then wrapup. Manual trigger ONLY: load it when the operator hands over a task
+  specification and names the pipeline — "прогони по процессу", "ship this spec", "work it with codex end to end",
+  "/task", "full pipeline". A bare feature request is NOT a trigger — that is devkit-core--coder. Does NOT deploy and
+  does NOT open PRs. Stage owners are fixed by the table in this file, never inferred from the operator's phrasing.
 ---
 
-# Ship Feature
+# Task Pipeline
 
 > Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this
 > skill's symlink target), not the project root.
