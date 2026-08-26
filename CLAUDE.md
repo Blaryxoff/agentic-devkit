@@ -59,6 +59,7 @@ howto/                   Developer guides (Russian)
   on it.
 - Shared skills (git, plan-creator, plan-reviewer, etc.) live ONLY in `core/` -- never duplicated.
 - Stack-specific skills live in their owning plugin.
+- New user-facing skill slugs are one word. Keep the directory slug and generated slash command identical (`nontech` → `/nontech`). Do not rename existing multi-word skills unless the migration is explicitly requested.
 
 ### Slash commands
 
