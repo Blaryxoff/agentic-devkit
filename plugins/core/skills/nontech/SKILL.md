@@ -1,10 +1,10 @@
 ---
-name: devkit-stakeholder-brief
+name: devkit-nontech
 description: >-
   format incidents, status, decisions, results, or explanations for managers and other non-technical readers. Use on "для менеджера", "для нетехнических сотрудников", "объясни простыми словами", "без технических деталей", or "stakeholder update". Preserve impact, status, cause, action, and next steps; omit codebase internals.
 ---
 
-# Stakeholder Brief
+# Nontech
 
 Turn verified technical facts into an audience-ready explanation for a non-technical reader. Keep the meaning, severity, uncertainty, and accountability. Remove implementation details that do not help the reader decide or act.
 

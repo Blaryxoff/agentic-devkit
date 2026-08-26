@@ -3,14 +3,14 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SKILL="$ROOT/plugins/core/skills/stakeholder-brief/SKILL.md"
+SKILL="$ROOT/plugins/core/skills/nontech/SKILL.md"
 
 fail() {
   echo "FAIL: $*" >&2
   exit 1
 }
 
-[ -f "$SKILL" ] || fail "stakeholder-brief skill is missing"
+[ -f "$SKILL" ] || fail "nontech skill is missing"
 
 python3 - "$SKILL" <<'PY2'
 from pathlib import Path
@@ -22,7 +22,7 @@ content = path.read_text()
 assert content.startswith("---\n")
 _, frontmatter, body = content.split("---\n", 2)
 metadata = yaml.safe_load(frontmatter)
-assert metadata["name"] == "devkit-stakeholder-brief"
+assert metadata["name"] == "devkit-nontech"
 description = metadata["description"].lower()
 for trigger in ("non-technical", "для менеджера", "простыми словами"):
     assert trigger in description, trigger
@@ -51,5 +51,5 @@ for audience_fact in (
 assert "do not invent" in body_lower
 assert "current conversation language" in body_lower
 assert "output only the audience-ready text" in body_lower
-print("stakeholder brief skill tests passed")
+print("nontech skill tests passed")
 PY2

@@ -31,7 +31,7 @@ cd my-project
 ```
 
 For Claude Code, the core skills + `devkit` router are already global after `devkit-install`; the per-project
-`--claude` run is only needed when a stack ships subagents, hooks, or MCP servers. Use `/stakeholder-brief` to rewrite
+`--claude` run is only needed when a stack ships subagents, hooks, or MCP servers. Use `/nontech` to rewrite
 technical findings for managers or other non-technical readers without exposing codebase internals.
 
 ## CLI Usage
