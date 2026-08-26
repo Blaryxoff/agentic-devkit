@@ -4,38 +4,39 @@ The peer agent runs browser QA in a fresh context with an isolated browser profi
 else: not your session, not your cookies, not what you already clicked. Every section below exists because omitting it
 sent a real run into a wall.
 
-Write the brief in the operator's language, fill every section, delete nothing.
+Write agent-facing technical instructions in English, fill every section, and delete nothing. Preserve exact product
+copy, user-provided literals, URLs, and commands in their source language because the peer must verify them verbatim.
 
 ---
 
 ```markdown
-# Браузерная QA: <feature>
+# Browser QA: <feature>
 
-Проверить в реальном браузере локальный стенд. Ты — QA, код не правишь; на каждый
-пункт отдаёшь PASS/FAIL со скриншотом или цитатой из DOM.
+Test the local environment in a real browser. You are the QA reviewer and must not edit code. For every item return
+PASS/FAIL with structured evidence in this order: accessibility snapshot identity, DOM/layout audit, console/network
+result, existing Playwright Test assertion/diff, then a saved screenshot crop only for a design comparison or confirmed
+visual finding. Do not open or attach passing screenshots.
 
-## Стенд
+## Environment
 
-- Фронт: **<url>** (<why this host and not localhost — proxy, API base, CORS>).
-- Бэк: <url>, репозиторий <path>.
-- Dev-сервер уже запущен / запусти так: <command>.
-- Известные ложные отказы: <e.g. 504 Outdated Optimize Dep → stale Vite dep cache,
-  перезагрузи страницу; если не помогает — сообщи>.
-- **Отложенная работа выполняется сразу:** <queue driver, e.g. QUEUE_CONNECTION=sync —
-  делают ли delayed-листенеры вид, что прошёл их таймаут. Перечисли, какие статусы
-  из-за этого выглядят «неправильно» локально.>
-- Консоль/artisan: <exact command>.
+- Frontend: **<url>** (<why this host and not localhost — proxy, API base, CORS>).
+- Backend: <url>, repository <path>.
+- Dev server is already running / start it with: <command>.
+- Known false failures: <e.g. 504 Outdated Optimize Dep → stale Vite dependency cache; reload once, then report if it persists>.
+- **Deferred work runs immediately:** <queue driver, e.g. QUEUE_CONNECTION=sync; identify timeout-driven statuses that
+  therefore look different locally>.
+- Console/artisan: <exact command>.
 
-## Предусловия данных
+## Data preconditions
 
 <What the scenario needs to exist before the first click — free slots, an approved
 profile, a second account, a published entity — and the exact command or SQL that
 creates it. Without this a whole branch of the brief comes back BLOCKED.>
 
-<For any "чужие данные" check: name the second account and the id that belongs to it,
+<For any foreign-data check: name the second account and the ID that belongs to it,
 so ownership is proven rather than assumed.>
 
-## Авторизация
+## Authentication
 
 <Where the auth code actually lands locally — log file, mailhog, DB column — and the
 exact steps to get from "code requested" to "logged in", including any post-login
@@ -43,12 +44,12 @@ interstitial to dismiss.>
 
 <Which account to use, or how to create one.>
 
-## Что уже проверено — НЕ повторяй
+## Already verified — do not repeat
 
 <Verbatim list of what you already verified yourself, with the result. Without this
 the peer burns its run re-testing solved ground.>
 
-## Что проверить
+## Checks
 
 ### 1. <area>
 
@@ -66,10 +67,11 @@ the peer burns its run re-testing solved ground.>
 <Every new endpoint or route that reads someone's data gets a foreign-id probe:
 open it as another user, expect 403/redirect and no data on screen.>
 
-## Формат ответа
+## Response format
 
-Список пунктов с PASS/FAIL. Для FAIL — что видел, что ожидалось, шаги
-воспроизведения. Стилистику и дизайн не критикуй, проверяй только эти пункты.
+List every item as PASS/FAIL. For FAIL include observed result, expected result, reproduction steps, and the strongest
+structured evidence. Save screenshots only for a design-reference comparison or confirmed visual defect. Do not critique
+unscoped styling or design; test only the named items.
 ```
 
 ---

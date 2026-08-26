@@ -27,7 +27,9 @@ attached or repository screenshots/mockups require a readable image at its origi
 
 2.5. Missing prerequisite → stop via `plugins/core/conduct/clarification-protocol.md`. Never test against an unverified environment.
 
-2.6. Do not use Playwright as a second browser layer for devkit QA. The browser authority is chrome-devtools MCP; lifecycle helpers are limited to starting/stopping local dev servers.
+2.6. Keep chrome-devtools MCP as the interactive browser authority. Playwright Test may run committed deterministic
+regression checks and produce local expected/actual/diff artifacts; it must not drive exploratory QA, replace MCP actions,
+or become a fallback when the MCP connection is unavailable.
 
 2.7. chrome-devtools MCP: per-project `.mcp.json` / `.cursor/mcp.json` (from `devkit-install --claude|--cursor`) overrides the global entry. Current adapters pass `--isolated`, giving every server a throwaway profile. Configs generated before that change pin a fixed `--userDataDir=~/.cache/chrome-devtools-mcp/profiles/<project>`; two sessions on such a project collide on the profile lock (§11). Regenerate them rather than working around the collision.
 
@@ -108,7 +110,8 @@ Exhaustive coverage requires all dimensions below; neither skill may skip a dime
 
 5.3. **Per role** — login via real form (`navigate_page` → `fill_form` → submit → `wait_for`). Login fails twice with the same credentials → walk the §3.7 ladder; never re-submit the same form a third time.
 
-5.4. **Per page × viewport** — `resize_page`/`emulate`; `take_snapshot` + `take_screenshot`; check adaptive layout.
+5.4. **Per page × viewport** — `resize_page`/`emulate`; `take_snapshot`; run the §6.3 DOM/layout audit; check adaptive
+layout. Run existing Playwright Test visual assertions when the project provides them. Capture pixels only under §6.6.
 
 5.5. **Entity lifecycle** — create/read/update/delete + state transitions (`fill_form`, `click`, `handle_dialog`).
 
@@ -129,8 +132,11 @@ every mapped reference × route/state × viewport from §4.8. For Figma, use `ge
 Apply every check, in order, from `plugins/frontend/conduct/design-quality.md` **Reference fidelity**. Record the
 whole-frame composition and element-inventory result before any element-level assertions; local matches cannot close the
 cell without that evidence. Capture design measurements plus rendered DOM/computed styles when available; do not approve
-by casual visual resemblance. Report every unexplained delta and every untested reference state/viewport; never silently
-fix CSS.
+by casual visual resemblance. Compare stable reference elements against live bounding boxes and alignment anchors, then
+run the project's existing offline pixel diff, or a Playwright expected snapshot, only when reference and live captures
+can be normalised to the same viewport, DPR, crop, and dimensions. Otherwise use measured geometry/inventory plus the
+smallest matching reference/live crops. Report every unexplained delta and every untested reference state/viewport; never
+silently fix CSS.
 
 ## 6. Browser session
 
@@ -138,17 +144,46 @@ fix CSS.
 
 6.2. `take_snapshot` before acting on each page.
 
-6.3. `take_screenshot` on every finding and at least once per page × viewport.
+6.3. Run the standard probe in `plugins/core/conduct/browser-layout-audit.md` after the page is stable at every tested
+viewport. Return concise JSON, not page HTML. At minimum inspect:
+
+- document-level horizontal overflow (`scrollWidth > clientWidth`);
+- visible elements escaping the viewport;
+- elements whose content is clipped or scrollable on either axis, including computed `overflow-*`;
+- visible actionable elements whose centre point is covered by another painted element;
+- broken images/assets and visible loading/skeleton markers after readiness;
+- each candidate's stable selector or accessible identity, bounding box, scroll/client dimensions, and relevant computed
+  styles.
+
+Treat the audit as a candidate generator, not an automatic verdict: carousels, menus, off-canvas panels, code blocks, and
+intentional scroll regions can overflow by design. Confirm each candidate against interaction behaviour, the design
+reference, or project intent. A clean audit does not prove visual fidelity because paint, icons, imagery, shadows, and
+pseudo-elements can differ without changing DOM geometry.
 
 6.4. Reuse a `take_snapshot` result until navigation, submission, modal state, role, viewport, or another DOM-changing action invalidates it. Do not snapshot unchanged state before consecutive read-only assertions.
 
 6.5. Batch independent MCP reads in one tool-call batch when the harness supports it. Prefer one `evaluate_script` call for multiple read-only DOM assertions; never replace a user interaction or server-side permission check with synthetic DOM mutation.
 
-6.6. Capture one screenshot for multiple assertions against the same unchanged page state. Keep the mandatory evidence from §6.3; remove only redundant captures.
+6.6. Capture pixels only for a supplied design-reference comparison, a local visual-regression baseline/diff, or evidence
+for a confirmed visual finding. Pass `filePath` so chrome-devtools saves the image instead of attaching it to the model
+response. Do not open or attach a passing capture. When interpretation is still required after snapshot, geometry, and
+local diff evidence, inspect the smallest useful crop of the diff plus the matching reference crop; use a full-frame image
+only for whole-frame composition.
+
+6.7. Prefer Playwright Test for repeatable visual regression when the project already has it or dependency addition is
+authorised. Configure deterministic fixtures, fonts, animations, viewport, colour scheme, locale, timezone, and device
+scale; run baselines in one canonical environment. Use `toHaveScreenshot` for local comparison and retain trace/screenshots
+on failure. The model reads the textual assertion and diff path first; it does not ingest passing images.
+
+6.8. Use this evidence order: accessibility snapshot → batched DOM/layout audit → console/network → local Playwright
+assertion/diff → cropped visual inspection. Escalate upward only when the cheaper layer cannot prove or explain the result.
 
 ## 7. Finding format
 
-7.1. One finding per defect. Required fields: ID · route/page · role · viewport · severity · reproduction steps (MCP actions) · expected · actual · screenshot reference · console/network evidence. For design deltas, also cite the design reference/frame and expected versus actual measurement or appearance.
+7.1. One finding per defect. Required fields: ID · route/page · role · viewport · severity · reproduction steps (MCP
+actions) · expected · actual · evidence. Evidence names the strongest applicable proof: snapshot identity, selector and
+geometry/computed style, console/network entry, Playwright assertion/diff path, or saved screenshot crop. For design deltas,
+also cite the design reference/frame and expected versus actual measurement or appearance.
 
 7.2. Severity: `blocking` | `major` | `minor` | `cosmetic`.
 
@@ -239,4 +274,5 @@ After the kill, call no chrome-devtools tool: the server's `getContext()` relaun
 
 11.4. Never `kill -9` a browser. SIGTERM is sufficient (§10.3) and lets Chrome flush profile state; SIGKILL leaves `SingletonLock`, `SingletonSocket`, and `SingletonCookie` pointing at a dead PID. Chrome clears those on the next launch, so a stale lock is never the cause of §11.1 — do not delete lock files to "fix" it.
 
-11.5. When the browser tools are already gone because a server was killed, stop. Do not respawn chrome-devtools by hand and do not fall back to Playwright (§2.6). Report the loss and tell the user to reconnect via `/mcp`.
+11.5. When the browser tools are already gone because a server was killed, stop. Do not respawn chrome-devtools by hand
+and do not use Playwright Test as an interactive fallback (§2.6). Report the loss and tell the user to reconnect via `/mcp`.

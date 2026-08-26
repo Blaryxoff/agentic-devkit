@@ -1,6 +1,6 @@
 ---
 name: devkit-pixel-guard
-description: modify frontend code safely with visual regression protection — captures screenshots via chrome-devtools MCP and compares against approved baselines to catch unintended UI changes during refactoring, restyling, token extraction, or responsive fixes
+description: modify frontend code safely with visual regression protection — audits live DOM geometry/overflow through chrome-devtools MCP and runs local Playwright Test screenshot diffs against approved baselines to catch unintended layout and paint changes
 claudeSubagent: true
 ---
 
@@ -46,11 +46,11 @@ Copy this checklist and track progress:
 ```
 Pixel Guard Progress:
 - [ ] Step 0: Load stack context — select conduct for the affected pages
-- [ ] Step 1: Verify baselines — capture and compare current state
+- [ ] Step 1: Verify baselines — run current DOM audit and Playwright assertions
 - [ ] Step 2: Plan changes — identify scope and risk
 - [ ] Step 3: Apply changes — implement the refactoring
-- [ ] Step 4: Capture — screenshot every affected viewport via chrome-devtools MCP
-- [ ] Step 5: Triage — classify each diff as intentional or regression
+- [ ] Step 4: Verify — rerun DOM audits and local visual assertions
+- [ ] Step 5: Triage — classify geometry, overflow, and pixel deltas
 - [ ] Step 6: Fix regressions — restore unintended visual changes
 - [ ] Step 7: Approve intentional changes — with user confirmation
 - [ ] Step 8: Report — summarize outcome
@@ -61,8 +61,9 @@ Pixel Guard Progress:
 Before touching any code, confirm baselines exist for every page affected by the change.
 
 For each page × viewport:
-1. Capture via `visual-implementation.md` §3 → `visual/output/<page>/<viewport>/actual.png`.
-2. Compare `actual.png` against `visual/baselines/<page>/<viewport>.png`.
+1. Run `take_snapshot` and the DOM/layout audit from `visual-implementation.md` §3.
+2. Run the focused Playwright Test visual assertion against the approved baseline.
+3. Read the textual result and diff path; do not open passing images.
 
 If all viewports match, baselines are current — proceed.
 
@@ -88,15 +89,15 @@ Implement the requested modifications. Follow project conventions and the active
 
 Keep changes atomic — do not mix unrelated refactoring with the requested task.
 
-## Step 4: Capture
+## Step 4: Verify
 
-After changes, capture every affected page × viewport via `visual-implementation.md` §3.
-
-Save to `visual/output/<page>/<viewport>/actual.png`.
+After changes, rerun the DOM/layout audit and focused Playwright Test assertion for every affected page × viewport.
+Save Chrome screenshots only when `visual-implementation.md` §3.11 requires a local artifact.
 
 ## Step 5: Triage
 
-For each viewport, compare `actual.png` against `visual/baselines/<page>/<viewport>.png` per `visual-implementation.md` §4.2.
+For each viewport, reconcile DOM/layout candidates with the Playwright expected/actual/diff result per
+`visual-implementation.md` §4.2–§4.6.
 
 ### Intentional change
 
@@ -114,10 +115,11 @@ The diff is unexpected — an area you did not intend to change has shifted. Com
 
 For any unintentional diff:
 
-1. Open both `actual.png` and the baseline side-by-side to locate the affected region.
-2. Trace the cause back to your code changes.
-3. Fix the regression without reverting the intentional changes.
-4. Re-capture the affected viewport and verify.
+1. Read the failing assertion and diff path.
+2. Inspect the affected live elements' boxes and computed styles.
+3. Open only the smallest useful diff/baseline crop when DOM evidence cannot explain the paint delta.
+4. Trace the cause back to your code changes and fix it without reverting intentional changes.
+5. Rerun the affected audit and assertion.
 
 Repeat until all unintentional diffs are resolved.
 
@@ -134,7 +136,7 @@ If the task was a pure refactor, all viewports should match without needing appr
 Summarize:
 
 - Files modified
-- Per-viewport comparison result
+- Per-viewport DOM/layout audit and local visual-diff result
 - Classification of each diff (intentional vs. regression, and resolution)
 - Any remaining deltas and why they are acceptable
 - Risks or side effects to watch for
@@ -148,4 +150,4 @@ Summarize:
 - If a pure refactor produces any visual diff, treat it as a bug until proven otherwise.
 - Keep all configured viewports passing; do not fix one viewport at the expense of another.
 - Prefer design token / layout fixes over one-off pixel hacks.
-- Do not use Playwright, Chromium, or visual-loop CLI commands.
+- Use Playwright Test only under `visual-implementation.md` §4; keep chrome-devtools MCP as the interactive browser.

@@ -41,7 +41,9 @@ QA objective, scope/non-scope, acceptance = "every matrix scenario in `browser-q
 - **Incremental reporting:** every test task's penultimate checkbox is `- [ ] Append findings from this task to docs/qa/YYYYMMDD-<scope>-report.md`. Final task compiles summary table and dedupes — never authors findings from memory.
 - **Per-task cleanup:** every browser task ends with `browser-qa-rules.md` §10.8 and appends its exact profile/MCP ownership record plus cleanup result before `Mark completed`; multi-agent tasks may overlap only after §10.7 proves distinct ownership.
 - **Final task — Cleanup audit:** `browser-qa-rules.md` §10 — stop only what the plan started, clean the final task's exact owned tree, verify every task row reports Chrome/MCP/watchdog cleanup, and list any ambiguity without glob-killing (§10.4).
-- Finding format: `browser-qa-rules.md` §7. Screenshots under `docs/qa/screenshots/`.
+- Finding format: `browser-qa-rules.md` §7. Persist snapshot identities, layout-audit JSON, console/network entries, and
+  Playwright assertion/diff paths as the default evidence. Save screenshots under `docs/qa/screenshots/` only for a
+  supplied design comparison or confirmed visual finding under §6.6; passing cells do not need screenshots.
 - Checkboxes only inside `### Task N:`; each task ends with `- [ ] Mark completed`.
 
 ## Rules

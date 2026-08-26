@@ -1,13 +1,15 @@
 ---
 name: devkit-pixel-build
-description: build or refine frontend UI to match a Figma design — reads Figma via MCP, implements code, then verifies pixel-level fidelity across all viewports via chrome-devtools MCP screenshots compared against the Figma reference
+description: build or refine frontend UI to match a Figma design — reads measured Figma context, implements code, audits live DOM geometry/overflow through chrome-devtools MCP, and verifies fidelity with measured comparison plus a normalised existing diff or selective matching crops
 claudeSubagent: true
 ---
 
 # Pixel Build — Implement UI from Figma
 
 You are acting as a **senior frontend developer with pixel-perfect attention to detail**.
-Your job is to translate a Figma design into production-ready code, then verify it visually using chrome-devtools MCP.
+Your job is to translate a Figma design into production-ready code, then verify structure and layout through
+chrome-devtools MCP and paint fidelity through the project's existing normalised diff when available, otherwise through
+measured design comparison and selective matching crops.
 
 The Figma design is the source of truth. Your goal is to make the rendered UI match it across all configured viewports.
 
@@ -47,9 +49,9 @@ Pixel Build Progress:
 - [ ] Step 1: Read Figma — extract design specs
 - [ ] Step 2: Audit existing code — find reusable components/tokens
 - [ ] Step 3: Implement — write or update code
-- [ ] Step 4: Capture — screenshot every viewport via chrome-devtools MCP
-- [ ] Step 5: Compare — diff live UI against Figma; fix by priority
-- [ ] Step 6: Iterate — re-capture and re-compare until all viewports pass
+- [ ] Step 4: Audit — snapshot and measure every viewport; run a normalised existing visual diff when available
+- [ ] Step 5: Compare — reconcile inventory, geometry, overflow, and paint deltas
+- [ ] Step 6: Iterate — rerun affected checks, then the full viewport set
 - [ ] Step 7: Report — summarize changes and final state
 ```
 
@@ -103,20 +105,26 @@ Reuse what exists. Only create new abstractions when nothing suitable is found.
 - Use design tokens and theme variables instead of hardcoded values.
 - Ensure the page key exists in `visual/config.json` under `pages` when that file is used. Add it with the correct `route`.
 
-## Step 4: Capture
+## Step 4: Audit and Diff
 
 For every configured viewport, follow `visual-implementation.md` §3:
 
 1. Set viewport (`emulate` or `resize_page`).
 2. Navigate to the page route.
 3. Authenticate if required (`visual-implementation.md` §3.6).
-4. Stabilize and `take_screenshot` → `visual/output/<page>/<viewport>/actual.png`.
+4. Stabilize; run `take_snapshot` and the DOM/layout audit.
+5. Run the focused Playwright Test visual assertion when it uses the exact design reference or an approved browser
+   baseline for this state; otherwise do not present its result as a Figma comparison.
+6. Save Chrome pixels with `filePath` only when §3.11 requires a design or finding artifact.
 
-Capture all viewports before comparing.
+Audit all viewports before comparing. Classify every overflow/occlusion candidate; do not infer pass from a clean screenshot.
 
 ## Step 5: Compare and Fix
 
-For each viewport, compare `actual.png` against the Figma reference (`get_screenshot` or the screenshot from Step 1). Apply `visual-implementation.md` §4.3 fix priority:
+For each viewport, compare the Figma inventory and measurements against the snapshot, live bounding boxes, and computed
+styles. Use a local pixel diff only when an existing tool can normalise the reference and live capture to the same
+viewport, DPR, crop, and dimensions; otherwise use the smallest matching Figma/live crops for unresolved paint deltas.
+Apply `visual-implementation.md` §4.4 fix priority:
 
 1. **Layout** — wrong structure, missing elements, collapsed containers
 2. **Spacing** — incorrect gaps, padding, margins
@@ -125,7 +133,8 @@ For each viewport, compare `actual.png` against the Figma reference (`get_screen
 5. **Alignment** — off-center, wrong justify/align
 6. **Icons** — wrong glyph, size, stroke, or color
 
-Cross-reference with the Figma design to determine the correct fix. Prefer design token / layout fixes over one-off pixel hacks.
+Cross-reference with the Figma design to determine the correct fix. Inspect cropped pixels only for paint-level or
+ambiguous deltas. Prefer design token / layout fixes over one-off pixel hacks.
 
 ### Mandatory spacing audit
 
@@ -140,13 +149,14 @@ A visually similar screenshot is not sufficient evidence that paddings are corre
 Verify each icon explicitly:
 
 - Confirm each icon from the Step 1 inventory is present, in the right place, at the right size.
-- Compare glyph shape to the Figma screenshot side-by-side.
+- Compare glyph shape with the smallest matching Figma/live icon crops; reuse the crop while the state is unchanged.
 - Verify stroke width and color match.
 - If the project does not have the exact icon, stop and ask the user — do not pick a near-match from the existing icon library.
 
 ## Step 6: Iterate
 
-After fixing, re-capture every affected viewport (`visual-implementation.md` §5.1).
+After fixing, rerun the affected DOM/layout audit and the applicable comparison (`visual-implementation.md` §5.1): the
+focused Playwright assertion when configured, otherwise measured inventory/geometry and matching crops.
 
 Repeat until all viewports pass Figma comparison.
 
@@ -157,7 +167,8 @@ To speed iteration, re-check only the viewport you are actively fixing; run the 
 When all viewports pass, summarize:
 
 - Files created or modified
-- Per-viewport comparison result (pass / remaining deltas)
+- Per-viewport DOM/layout audit and the applicable comparison result: normalised diff paths, or measured inventory,
+  geometry, and matching-crop evidence
 - Any remaining deltas and why they are acceptable
 - Components or tokens that were reused vs. newly created
 - Follow-up suggestions (e.g., missing states, responsive edge cases, accessibility)
@@ -174,6 +185,6 @@ When the user confirms the UI is correct and wants to keep regression baselines,
 - Keep all configured viewports passing; do not optimize for only one breakpoint.
 - Do not silently update baseline files.
 - Do not introduce new dependencies without user approval.
-- Do not use Playwright, Chromium, or visual-loop CLI commands.
+- Use Playwright Test only under `visual-implementation.md` §4; keep chrome-devtools MCP as the interactive browser.
 - If the design references components or tokens that do not exist in the project, flag this to the user rather than inventing replacements.
 - Spacing and icons must be verified against the Figma spec explicitly, not inferred from a passing screenshot.

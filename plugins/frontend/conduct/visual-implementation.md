@@ -12,7 +12,12 @@ Canonical rules for visual frontend skills (`devkit-pixel-build`, `devkit-pixel-
 
 1.4. For `devkit-pixel-guard`: baseline screenshots must exist under `visual/baselines/<page>/` before changes. If missing, capture and get user approval first.
 
-1.5. Missing prerequisite → stop via `plugins/core/conduct/clarification-protocol.md`.
+1.5. Use the project's existing Playwright Test setup for repeatable visual regression. When none exists, add
+`@playwright/test` and a focused visual spec only when dependency/test-file changes are authorised. Missing Playwright
+does not block a one-off design check; it does block claiming persistent regression protection. Apply
+`plugins/frontend/conduct/playwright-visual-regression.md`.
+
+1.6. Missing prerequisite → stop via `plugins/core/conduct/clarification-protocol.md`.
 
 ## 2. Page and viewport config
 
@@ -42,7 +47,7 @@ Canonical rules for visual frontend skills (`devkit-pixel-build`, `devkit-pixel-
 
 3.8. Wait for page readiness: `wait_for` with expected text, or `evaluate_script` checking `document.fonts.ready`.
 
-3.9. Stabilize before screenshot — inject via `evaluate_script`:
+3.9. Stabilize before measurement or capture — inject via `evaluate_script`:
 
 ```js
 async () => {
@@ -61,23 +66,45 @@ async () => {
 }
 ```
 
-3.10. `take_screenshot` with `filePath` for every page × viewport check. Save captures under `visual/output/<page>/<viewport>/actual.png`.
+3.10. Run `take_snapshot`, then the DOM/layout audit from `plugins/core/conduct/browser-qa-rules.md` §6.3 at every
+page × viewport. Resolve or classify every viewport escape, clipped/scrollable region, actionable-element occlusion,
+broken asset, and stale loading marker before pixel comparison.
 
-3.11. Apply `plugins/core/conduct/browser-qa-rules.md` §6.1–6.3 for general session discipline.
+3.11. Capture with `take_screenshot(filePath: ...)` only for design-reference comparison, baseline creation, or confirmed
+visual-finding evidence. Save under `visual/output/<page>/<viewport>/actual.png`; do not attach or open a passing capture.
+
+3.12. Apply `plugins/core/conduct/browser-qa-rules.md` §6 for evidence order and screenshot escalation.
 
 ## 4. Comparison
 
-4.1. **Pixel build (Figma is source of truth):** `get_design_context` or `get_screenshot` from Figma MCP; compare layout, spacing, typography, colors, icons, and component presence against the live capture. Report every delta explicitly.
+4.1. **Pixel build (Figma is source of truth):** extract whole-frame inventory, measured boxes, spacing, typography,
+colours, and component states with `get_design_context`; use `get_screenshot` for paint-level reference. Compare stable
+reference elements with live DOM bounding boxes and computed styles before inspecting pixels. Report every delta explicitly.
 
-4.2. **Pixel guard (baselines are source of truth):** read `visual/baselines/<page>/<viewport>.png`; compare against the fresh `actual.png`. Any unintended visual change is a regression.
+4.2. **Pixel guard (approved baselines are source of truth):** run focused Playwright Test specs using
+`expect(page|locator).toHaveScreenshot()`. Keep expected, actual, and diff images local. Any unintended visual change is a
+regression; a passing local comparison does not need model image input. Apply
+`plugins/frontend/conduct/playwright-visual-regression.md`.
 
-4.3. Fix priority: layout → spacing → typography → sizing → alignment → icons.
+4.3. Configure visual specs deterministically: canonical Linux runtime, `use: { channel: "chrome" }`, fixed viewport and
+device scale, stable fixtures, ready fonts, disabled animations/caret, explicit colour scheme/locale/timezone, and masking
+only for genuinely volatile data. In an unprivileged container whose Chrome sandbox cannot start, also set
+`launchOptions: { args: ["--no-sandbox"] }`. Store separate baselines when a different runtime is intentionally supported.
 
-4.4. A visually clean screenshot is not sufficient for spacing or icons — verify measured Figma values and icon inventory explicitly.
+4.4. Fix in this order: structure/inventory → document overflow → element position/size/alignment → clipping/overlap →
+spacing/typography → colours/borders/shadows → icons/images.
+
+4.5. Read Playwright's textual mismatch result and diff path first. Inspect live DOM measurements next. Open only the
+smallest failed diff/reference crop needed to explain a paint-level mismatch; use the full frame only for composition.
+
+4.6. A clean DOM audit cannot prove paint fidelity, and a passing pixel threshold cannot prove exact spacing, correct
+semantics, or absence of masked defects. Require both applicable gates plus the design inventory.
 
 ## 5. Iteration
 
-5.1. After code fixes, reload or re-navigate, re-stabilize, and re-capture every affected viewport.
+5.1. After code fixes, reload or re-navigate and re-stabilize. Rerun the affected DOM audit and focused Playwright
+assertion when configured; otherwise rerun the measured inventory/geometry and matching-crop comparison. Then run the
+full configured viewport set once before completion.
 
 5.2. Keep all configured viewports passing; do not optimize for only one breakpoint.
 
@@ -91,20 +118,26 @@ async () => {
 
 6.2. Baseline approval requires explicit user confirmation.
 
-6.3. After approval, save the confirmed capture: `take_screenshot` with `filePath` set to `visual/baselines/<page>/<viewport>.png`.
+6.3. After approval, update only the named Playwright snapshot(s) or save the confirmed Chrome capture under
+`visual/baselines/<page>/<viewport>.png`. Review the generated diff before updating; never use a blanket snapshot update.
 
 ## 7. MCP tools
 
 **chrome-devtools:** `list_pages`, `select_page`, `new_page`, `navigate_page`, `resize_page`, `emulate`, `take_snapshot`, `take_screenshot`, `fill`, `fill_form`, `click`, `wait_for`, `evaluate_script`, `handle_dialog`.
 
+**Playwright Test:** committed deterministic assertions and local visual diffs only; never interactive agent browsing.
+
 **Figma** (pixel-build only): `get_design_context`, `get_screenshot`.
 
 ## 8. Hard rules
 
-8.1. Do not use Playwright, Chromium, or `pnpm ui:*` / visual-loop CLI commands.
+8.1. Do not use direct Playwright scripts, Playwright MCP, or removed `pnpm ui:*` / visual-loop commands. Playwright Test
+is the only allowed second browser path and only for deterministic committed regression checks.
 
 8.2. chrome-devtools MCP uses the installed Google Chrome browser — independent of any Playwright browser cache.
 
-8.3. Do not introduce new dependencies without user approval.
+8.3. Do not introduce project dependencies without user approval. Committed specs require a pinned project-local
+`@playwright/test`; a provisioning-managed global CLI/browser runtime is allowed for durable tool availability but never
+replaces the local dependency or project package-manager command.
 
 8.4. Do not overwrite `visual/baselines/` unless the user explicitly approves.

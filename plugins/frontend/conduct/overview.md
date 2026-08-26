@@ -20,6 +20,7 @@ This section contains tool-agnostic frontend architecture and generic CSS best p
 - Visual direction, redesign preservation, hierarchy, and anti-slop review → [design-quality.md](./design-quality.md).
 - Animation purpose, timing, physicality, interruption, and reduced-motion behavior → [motion.md](./motion.md).
 - Visual implementation, screenshot comparison, and baseline approval → [visual-implementation.md](./visual-implementation.md).
+- Deterministic local visual baselines and Playwright Test diff triage → [playwright-visual-regression.md](./playwright-visual-regression.md).
 
 ## Architecture
 
