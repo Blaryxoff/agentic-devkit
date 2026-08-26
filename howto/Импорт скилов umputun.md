@@ -18,6 +18,7 @@
 - `code-comments.md` — комментарий описывает текущее состояние/назначение, не историю изменений (запрет `// added`, `// previously X, now Y`); документировать публичный API. Язык-агностично.
 - `code-smells.md` — стек-агностичный чек-лист код-смеллов и анти-паттернов; цитируется вариантами `devkit-reviewer-deep`.
 - `communication-style.md` — анти-AI-speak для коммитов/PR/ревью; цитируется `devkit-git`.
+- `output-styles/senior.md` — глобальный стиль Claude: честный senior-peer без лести, сахарной ваты и AI-speak; собран из `Primary Guidelines` в `umputun/spot` и `writing-style` из `umputun/cc-thingz`. Устанавливается как стиль по умолчанию, `Laconica` остаётся доступной вручную.
 - `learning-capture-gate.md` — терминальный фильтр для новых долгоживущих знаний; без кандидата завершается молча и не
   читает проектную память.
 - `review-specialist-fanout.md` — единый верхнеуровневый fan-out по качеству, реализации, тестам и документации с

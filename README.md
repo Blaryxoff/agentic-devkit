@@ -9,7 +9,8 @@ every project picks it up.
 Install the toolkit once per machine. `devkit-install` clones it to `~/.claude/agentic-devkit` (the global clone,
 `DEVKIT_HOME`), symlinks the universal core skills + the `devkit` stack-router into `~/.claude/skills/`, installs the
 core subagents, installs short slash commands in `~/.claude/commands` (`/wrapup` authored, `/root-cause` and
-`/reviewer-deep` generated per core skill), and adds a daily auto-update hook. On Codex there is no custom-command
+`/reviewer-deep` generated per core skill), installs the `Senior` and `Laconica` Claude output styles, selects `Senior`
+by default, and adds a daily auto-update hook. On Codex there is no custom-command
 directory: a skill is invoked by its frontmatter name (`$wrapup`, `$devkit-reviewer-deep`).
 
 ```bash

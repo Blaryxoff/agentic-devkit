@@ -96,9 +96,10 @@ assert_contains "$claude_home/settings.json" 'custom-prompt-hook'
 [ "$(jq '[.hooks.UserPromptSubmit[]?.hooks[]? | select(.command | contains("skill-eval.sh"))] | length' "$claude_home/settings.json")" = "1" ] \
   || fail "expected one skill-eval hook"
 assert_link "$claude_home/output-styles/laconica.md" "$ROOT/plugins/core/output-styles/laconica.md"
+assert_link "$claude_home/output-styles/senior.md" "$ROOT/plugins/core/output-styles/senior.md"
 assert_absent "$claude_home/output-styles/laconica-ru.md"
-[ "$(jq -r '.outputStyle' "$claude_home/settings.json")" = "Laconica" ] \
-  || fail "expected Laconica default output style"
+[ "$(jq -r '.outputStyle' "$claude_home/settings.json")" = "Senior" ] \
+  || fail "expected Senior default output style"
 
 skill_eval_output=$(sh "$ROOT/plugins/core/hooks/skill-eval.sh")
 [[ "$skill_eval_output" == *"$ROOT/plugins/core/conduct/learning-capture-gate.md"* ]] \
@@ -117,7 +118,7 @@ timestamp_ns = 946684800_000_000_000
 os.utime(sys.argv[1], ns=(timestamp_ns, timestamp_ns), follow_symlinks=False)
 PY
 codex_coder_link_mtime=$(python3 -c 'import os, sys; print(os.lstat(sys.argv[1]).st_mtime_ns)' "$codex_coder_link")
-jq '.outputStyle = "Laconica RU"' "$claude_home/settings.json" > "$claude_home/settings.json.tmp"
+jq '.outputStyle = "Laconica"' "$claude_home/settings.json" > "$claude_home/settings.json.tmp"
 mv "$claude_home/settings.json.tmp" "$claude_home/settings.json"
 HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home" DEVKIT_HOME_DIR="$ROOT" \
   bash "$ROOT/bin/devkit-install" >/dev/null
@@ -127,8 +128,14 @@ HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home" DEVKIT_HOME_DIR
 [ "$first_codex_config" = "$(cksum < "$codex_home/config.toml")" ] || fail "global Codex hook installation is not idempotent"
 [ "$(jq '[.hooks.UserPromptSubmit[]?.hooks[]? | select(.command | contains("skill-eval.sh"))] | length' "$claude_home/settings.json")" = "1" ] \
   || fail "skill-eval hook installation is not idempotent"
-[ "$(jq -r '.outputStyle' "$claude_home/settings.json")" = "Laconica" ] \
-  || fail "legacy Laconica RU output style was not migrated"
+[ "$(jq -r '.outputStyle' "$claude_home/settings.json")" = "Senior" ] \
+  || fail "previous devkit Laconica output style was not migrated to Senior"
+jq '.outputStyle = "Explanatory"' "$claude_home/settings.json" > "$claude_home/settings.json.tmp"
+mv "$claude_home/settings.json.tmp" "$claude_home/settings.json"
+HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home" DEVKIT_HOME_DIR="$ROOT" \
+  bash "$ROOT/bin/devkit-install" >/dev/null
+[ "$(jq -r '.outputStyle' "$claude_home/settings.json")" = "Explanatory" ] \
+  || fail "explicit non-devkit output style was overwritten"
 
 project="$TMP_DIR/project"
 mkdir -p "$project/.devkit" "$project/.codex/skills/custom-skill" "$project/.cursor/skills/custom-skill"

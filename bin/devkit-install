@@ -468,8 +468,8 @@ print("    Hooks:   ~/.codex/config.toml (PreToolUse gates; review with /hooks)"
 PY
 
 # --- Output styles → ~/.claude/output-styles (symlinks) + default selection ---
-# Ships the terse, language-mirroring «Laconica» output style.
-# keep-coding-instructions:true inside the style file preserves Claude Code's coding behaviour.
+# Ships «Senior» for direct peer communication and «Laconica» for terse output.
+# keep-coding-instructions:true inside each style preserves Claude Code's coding behaviour.
 OUTPUT_STYLES_SRC="$DEVKIT_HOME/plugins/core/output-styles"
 OUTPUT_STYLES_DEST="$CLAUDE_DIR/output-styles"
 if [ -d "$OUTPUT_STYLES_SRC" ]; then
@@ -497,11 +497,11 @@ if [ -d "$OUTPUT_STYLES_SRC" ]; then
     echo "    NOTICE: kept your own ~/.claude/output-styles file(s) for:$os_kept — devkit did not overwrite them."
   fi
 
-  # Make «Laconica» the default when unset and migrate the previous devkit-managed name.
+  # Make «Senior» the default when unset and migrate earlier devkit-managed defaults.
   # Any other explicit outputStyle remains untouched.
-  style_default="Laconica"
+  style_default="Senior"
   updated=$(jq --arg s "$style_default" '
-    if .outputStyle == null or .outputStyle == "Laconica RU"
+    if .outputStyle == null or .outputStyle == "Laconica" or .outputStyle == "Laconica RU"
     then .outputStyle = $s
     else .
     end
