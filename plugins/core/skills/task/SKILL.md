@@ -2,7 +2,7 @@
 name: devkit-task
 description: >-
   carry a whole task specification from text to a pushed branch with a peer CLI — freeze the spec, analyse it in
-  parallel with the peer, implement natively, review once (revmux when authorized, else a single peer round),
+  parallel with the peer, implement natively, run an adversarial review/fix loop (revmux when authorized, else Codex),
   delegate browser QA to the peer, then wrapup. Manual trigger ONLY: load it when the operator hands over a task
   specification and names the pipeline — "прогони по процессу", "ship this spec", "work it with codex end to end",
   "/task", "full pipeline". A bare feature request is NOT a trigger — that is devkit-core--coder. Does NOT deploy and
@@ -44,7 +44,7 @@ table decides:
 | 1 | Freeze the spec | you | `TASK.md` written, both agents will read the same bytes |
 | 2 | Analysis | **both, in parallel** | your design is written before the peer's lands in your context |
 | 3 | Implementation + tests | you | project lint/typecheck/test green |
-| 4 | Code review | **revmux** when authorized, else a single peer round | every real defect fixed or explicitly deferred with a reason |
+| 4 | Code review | **revmux** when authorized, else Codex review/fix loop | no critical/major finding remains; every real defect fixed or explicitly deferred |
 | 5 | Browser QA | **peer**, from your written brief | PASS/FAIL on every brief item |
 | 6 | wrapup | you | branch pushed, SHAs reported |
 
@@ -103,20 +103,28 @@ Export the diffs and untracked new files first — a peer cannot see your workin
 | Situation | Engine |
 |---|---|
 | Operator named revmux in the process hand-off | revmux, against the **final** diff — the primary gate |
-| Operator did not name revmux | one `codex exec` round; say the revmux stage was skipped and why |
-| Implementation still churning, revmux authorized for later | one cheap peer round now, revmux once at the end |
+| Operator did not name revmux | Codex adversarial review/fix loop; say the revmux stage was skipped and why |
+| Implementation still churning, revmux authorized for later | one Codex loop now, revmux once against the final diff |
 
-revmux is strictly stronger than a single peer round and subsumes it: the `codex-led` roster already carries codex on
+revmux is strictly stronger than the Codex loop and subsumes it: the `codex-led` roster already carries codex on
 architecture, quality, docs/tests and adversarial lenses, adds a claude `bugs+impl` lens no single codex run has, and
-ends in a verify stage that opens the cited code and can return `rejected` / `immaterial`. Running a peer round first
+ends in a verify stage that opens the cited code and can return `rejected` / `immaterial`. Running a Codex loop first
 and revmux after spends the operator's time twice on the same defects and makes you hand-triage findings verify would
 have filtered.
 
 The one thing that never changes: `plugins/core/conduct/revmux-review.md` forbids any devkit skill from reaching for
 revmux on its own judgement, and being inside this pipeline is not an exemption. If the operator did not name it, do
-not run it — fall back to the single peer round.
+not run it — fall back to the Codex loop.
 
 Never run both engines against the same finished diff.
+
+### Codex review/fix loop
+
+Read `references/codex-review.md` and follow it exactly. Codex reviews read-only; you verify and fix confirmed findings,
+run the plan's validation, refresh the diff, and send it back for another independent pass. Stop after a clean pass or
+after a minor-only pass whose confirmed findings you fixed. Continue while Codex reports any `CRITICAL` or `MAJOR`
+finding, up to 10 iterations. If iteration 10 still has a blocking finding, stop the pipeline and report it; do not
+advance to browser QA or wrapup.
 
 Triage every finding against the code before acting:
 
@@ -149,7 +157,7 @@ acceptance list from stage 1 with the outcome of each item, plus everything defe
 
 - Never run a stage the table assigns to the peer.
 - Never let the peer's analysis reach your context before your own design is written.
-- One review engine per finished diff: revmux when authorized, a single peer round otherwise, never both.
+- One review engine per finished diff: revmux when authorized, the Codex review/fix loop otherwise, never both.
 - Never widen a guard past the scenario that motivated it without naming the flows it now blocks.
 - Never commit unrelated untracked paths that the pipeline's diff export happened to surface; `wrapup` Step 2 triages
   them.
