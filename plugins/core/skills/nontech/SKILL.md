@@ -2,6 +2,7 @@
 name: devkit-nontech
 description: >-
   format incidents, status, decisions, results, or explanations for managers and other non-technical readers. Use on "для менеджера", "для нетехнических сотрудников", "объясни простыми словами", "без технических деталей", or "stakeholder update". Preserve impact, status, cause, action, and next steps; omit codebase internals.
+  A bare invocation rewrites the immediately preceding assistant response.
 ---
 
 # Nontech
@@ -52,25 +53,29 @@ Do not invent impact, scope, cause, dates, percentages, or ETA. Say "the exact s
 
 ## Workflow
 
-### 1. Establish the audience and purpose
+### 1. Select the source
+
+Use source text or task parameters supplied with the invocation. When neither is supplied, including a bare `/nontech` or `$devkit-nontech`, rewrite the immediately preceding assistant response. Do not ask the user to paste it again. If no preceding assistant response exists, ask for the source instead of inventing one.
+
+### 2. Establish the audience and purpose
 
 Default to a manager or non-technical employee when the user does not specify a narrower audience. Infer whether the deliverable is an incident explanation, status update, completed-work summary, decision brief, or direct answer. Ask only when the audience or purpose materially changes the message.
 
-### 2. Extract verified facts
+### 3. Extract verified facts
 
 From the conversation and available evidence, identify what happened, impact, current status, cause, what was done, next step, and known timing. Separate confirmed facts from assumptions and unknowns.
 
-### 3. Rewrite at business level
+### 4. Rewrite at business level
 
 Replace codebase structure with user-visible behaviour, operational consequences, or business concepts. Keep only details that change the reader's understanding, decision, or required action.
 
-### 4. Run the disclosure scrub
+### 5. Run the disclosure scrub
 
 Before answering, check every sentence for file paths, file names, table names, column names, class names, function names, stack traces, raw errors, commands, code identifiers, and repository references. Rewrite or remove every hit.
 
 Then check the opposite failure: confirm that simplification did not remove impact, severity, current status, uncertainty, ownership, or the next action.
 
-### 5. Deliver the message
+### 6. Deliver the message
 
 Output only the audience-ready text. Do not preface it with "simplified version", explain the transformation, include a technical appendix, or mention what details were removed.
 

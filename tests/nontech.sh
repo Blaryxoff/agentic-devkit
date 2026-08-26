@@ -51,5 +51,9 @@ for audience_fact in (
 assert "do not invent" in body_lower
 assert "current conversation language" in body_lower
 assert "output only the audience-ready text" in body_lower
+assert "bare invocation rewrites the immediately preceding assistant response" in description
+assert "when neither is supplied" in body_lower
+assert "rewrite the immediately preceding assistant response" in body_lower
+assert "do not ask the user to paste it again" in body_lower
 print("nontech skill tests passed")
 PY2
