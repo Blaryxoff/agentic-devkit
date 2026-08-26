@@ -1,6 +1,6 @@
 {
   "name": "devkit-core",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Cross-stack shared engineering standards: workflow, git, spec/test-case process, review conventions, thinking/session tools",
   "layer": "core",
   "defaultEnabled": true,

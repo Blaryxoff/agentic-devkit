@@ -98,7 +98,7 @@ assert_contains "$claude_home/settings.json" 'skill-eval.sh'
 assert_contains "$claude_home/settings.json" 'custom-prompt-hook'
 [ "$(jq '[.hooks.UserPromptSubmit[]?.hooks[]? | select(.command | contains("skill-eval.sh"))] | length' "$claude_home/settings.json")" = "1" ] \
   || fail "expected one skill-eval hook"
-assert_link "$claude_home/output-styles/laconica.md" "$ROOT/plugins/core/output-styles/laconica.md"
+assert_absent "$claude_home/output-styles/laconica.md"
 assert_link "$claude_home/output-styles/senior.md" "$ROOT/plugins/core/output-styles/senior.md"
 assert_absent "$claude_home/output-styles/laconica-ru.md"
 [ "$(jq -r '.outputStyle' "$claude_home/settings.json")" = "Senior" ] \
