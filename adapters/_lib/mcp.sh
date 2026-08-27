@@ -32,8 +32,9 @@ merge_plugin_mcp_servers() {
 # Force chrome-devtools onto an isolated, ephemeral Chrome profile so concurrent
 # sessions (multiple terminals, worktrees, sibling repos) never contend on a
 # profile lock: --isolated gives each server instance a throwaway user-data-dir
-# that Chrome auto-cleans on exit. --experimentalPageIdRouting routes tool calls
-# by page ID, which upstream recommends for concurrent agent sessions.
+# that Chrome auto-cleans on exit. --headless keeps browser QA from opening a
+# foreground window. --pageIdRouting routes tool calls by page ID,
+# which upstream recommends for concurrent agent sessions.
 # $2 is accepted for call-site compatibility but intentionally unused now that the
 # profile is ephemeral rather than a fixed per-project directory.
 apply_chrome_devtools_profile() {
@@ -44,7 +45,8 @@ apply_chrome_devtools_profile() {
       .["chrome-devtools"].args = [
         "-y",
         "chrome-devtools-mcp@latest",
-        "--experimentalPageIdRouting",
+        "--headless",
+        "--pageIdRouting",
         "--isolated"
       ]
     else
