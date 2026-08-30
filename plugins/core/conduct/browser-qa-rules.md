@@ -16,20 +16,44 @@ Canonical rules for browser-based QA skills (`devkit-browser`, `devkit-browser-r
 
 ## 2. Preflight
 
-2.1. Snapshot the Chrome profile directories per §2.8 **first** — the reachability call below launches Chrome. Then verify chrome-devtools MCP is reachable (`list_pages`), and immediately take the §2.8 delta.
+2.1. Choose and record one interactive browser authority per lane with this precedence:
 
-2.2. Verify the dev server is up; discover base URL from env, README, or project config. If it is not up, start only the minimal required local server(s) using existing project/dev-runtime commands, wait for a real HTTP readiness signal, and record exactly what this QA pass started. During cleanup, stop only those recorded processes/sessions; if the environment was already running (for example on the user's Mac), leave it running.
+1. **Explicit choice.** Explicit user choice is a hard constraint and wins first: chrome-devtools, external
+   Chrome/extension (Codex Bridge), or the in-app Browser. If that exact surface is unavailable, report it unavailable;
+   never substitute another surface without user approval.
+2. **Codex browser-client.** Without an explicit choice, use the browser-client when an existing authenticated session,
+   extension-dependent/browser-native UI, or visible user-browser state is required and the selected concrete binding
+   supports every action and evidence type in the dependent lane. Follow its installed Browser/Chrome skill to select and
+   record the concrete binding; Codex Bridge means only the external Chrome/extension binding, never the in-app Browser.
+3. **chrome-devtools.** Otherwise default to chrome-devtools MCP, especially for isolated or mutation-heavy flows,
+   append-only test data, multi-role work, viewport emulation, DOM/layout evaluation, console/network evidence, and
+   parallel lanes.
+4. **Mixed pass.** A pass may use different surfaces for independent lanes, but never both on the same tab or dependent
+   stateful lane. Probe required capabilities before execution. A missing capability does not waive evidence.
+   Move the entire dependent lane to a capable surface when the user's explicit choice permits it, or report it blocked.
 
-2.3. Verify DB or test-DB access and at least one usable seeder/factory path.
+For every chrome-devtools lane, snapshot the Chrome profile directories per §2.8 **first** — the reachability call launches
+Chrome — then verify reachability (`list_pages`) and immediately take the §2.8 delta. For every browser-client lane,
+complete §2.9 before acting.
+
+2.2. Discover the intended environment and exact base origin from the user's scope, env, README, or project config;
+record both before browser work. For local QA, verify the dev server is up. If it is not, start only the minimal required
+local server(s) using existing project/dev-runtime commands, wait for a real HTTP readiness signal, and record exactly
+what this QA pass started. During cleanup, stop only those recorded processes/sessions; if the environment was already
+running (for example on the user's Mac), leave it running.
+
+2.3. For each mutation-capable non-production lane, verify DB or test-DB access and at least one usable seeder/factory
+path. Read-only lanes, including production observation, use existing data and mark DB/seeder setup as not applicable.
 
 2.4. When the user supplies a design reference, verify it is accessible before starting. Figma URLs require Figma MCP;
 attached or repository screenshots/mockups require a readable image at its original resolution.
 
 2.5. Missing prerequisite → stop via `plugins/core/conduct/clarification-protocol.md`. Never test against an unverified environment.
 
-2.6. Keep chrome-devtools MCP as the interactive browser authority. Playwright Test may run committed deterministic
-regression checks and produce local expected/actual/diff artifacts; it must not drive exploratory QA, replace MCP actions,
-or become a fallback when the MCP connection is unavailable.
+2.6. Keep the surface selected under §2.1 as the lane's sole interactive browser authority. Do not alternate
+chrome-devtools and browser-client against one stateful flow or use one to recover the other's tab. Playwright Test may
+run committed deterministic regression checks and produce local expected/actual/diff artifacts; it must not drive
+exploratory QA, replace the selected surface's actions, or become a fallback when that browser connection is unavailable.
 
 2.7. chrome-devtools MCP: per-project `.mcp.json` / `.cursor/mcp.json` (from `devkit-install --claude|--cursor`) overrides the global entry. Current adapters pass `--headless --isolated`, keeping Chrome in the background and giving every server a throwaway profile. Configs generated before that change pin a fixed `--userDataDir=~/.cache/chrome-devtools-mcp/profiles/<project>`; two sessions on such a project collide on the profile lock (§11). Regenerate them rather than working around the collision.
 
@@ -53,6 +77,36 @@ ls -d "$tmp"/puppeteer_dev_chrome_profile-* 2>/dev/null | sort \
 Carry the printed path forward: `devkit-browser` keeps it in the agent's own context and bakes the literal into §10.3; `devkit-browser-ralphex` writes it into the dated `docs/qa/` report, because its cleanup task runs in a later session.
 
 A concurrent session that launches Chrome between the two steps also lands in the delta. Keep the steps adjacent, and when the delta holds anything other than exactly one path, kill nothing (§10.5).
+
+2.9. **Codex browser-client environment pin.** The external Codex Bridge binding controls the user's real browser and may
+expose signed-in local, stage, and production tabs side by side; the in-app Browser is a distinct concrete binding. Treat
+tab discovery as read-only. Listing tabs, reading their current URLs, and taking a read-only snapshot of the current page
+are allowed solely to establish the pin, including on production; perform these checks before navigation or interaction:
+
+1. Follow the installed Browser/Chrome skill's setup and documentation. List the available tabs without reading cookies,
+   storage, passwords, or profile data.
+2. Build an environment map from trusted project/user inputs: exact `scheme://host:port` origins for local, stage, and
+   production. Never infer environment from tab order, active-tab status, favicon, or title alone.
+3. First check: match the candidate tab's current URL to the intended exact origin and corroborate the project/environment
+   with one independent signal (an in-app environment badge, expected tenant/project marker, or known route/content).
+   Ambiguous or unmapped origins remain discovery-only and are blocked from navigation, interaction, and mutation.
+4. Pin and record `{concrete binding, tab handle/ID, exact origin, environment, project/tenant, account/role}` for the lane.
+   Record `not applicable` only when the application genuinely has no such identity dimension; an unknown required
+   identity blocks mutation. Do not reuse that tab for another environment.
+5. Pre-existing Bridge tabs are inspection-only by default: do not navigate, click, type, submit, resize, or otherwise
+   change their page or browser state. Create and pin a new pass-owned tab for local/stage navigation or interaction; it
+   shares the external browser's authenticated session. Use a pre-existing tab interactively only after the user explicitly
+   authorises that named tab and exact origin, and still apply every pin and production rule here.
+6. Second check: immediately before every potentially state-changing action — form submission, confirmation, toggle,
+   upload, drag/reorder, create/update/delete, permission/state change, or a click whose effects are not proven read-only —
+   revalidate the full pin: the same concrete binding and tab handle, exact origin, and every applicable project/tenant,
+   account, and role signal, using trusted visible markers or a safe identity endpoint. Revalidate after navigation,
+   redirect, login, popup/new-tab creation, tab replacement, or stale/missing-tab recovery before continuing. A mapped
+   external auth origin may be traversed only as part of the expected login flow; no application mutation occurs until the
+   tab returns to and revalidates the full app pin.
+7. Any binding, tab, origin, project/tenant, account, or role mismatch aborts the action. Do not "correct" it by navigating
+   a mismatched pre-existing tab; select or create the right tab, rebuild the pin, and repeat both checks. Apply the
+   production gate in §9.5.
 
 ## 3. Seed strategy
 
@@ -140,9 +194,12 @@ silently fix CSS.
 
 ## 6. Browser session
 
-6.1. Start from the browser tab already open when one exists; do not navigate away unless the scope requires it.
+6.1. With chrome-devtools, start from the already-open isolated tab when one exists. With browser-client, apply §2.9:
+pre-existing external Bridge tabs are inspection-only by default, and navigation or interaction uses a new pass-owned tab
+unless the user explicitly authorises a named existing tab and exact origin. Never navigate an unrelated or production
+tab to local/stage.
 
-6.2. `take_snapshot` before acting on each page.
+6.2. Take the selected surface's accessibility/DOM snapshot before acting on each page.
 
 6.3. Run the standard probe in `plugins/core/conduct/browser-layout-audit.md` after the page is stable at every tested
 viewport. Return concise JSON, not page HTML. At minimum inspect:
@@ -162,7 +219,9 @@ pseudo-elements can differ without changing DOM geometry.
 
 6.4. Reuse a `take_snapshot` result until navigation, submission, modal state, role, viewport, or another DOM-changing action invalidates it. Do not snapshot unchanged state before consecutive read-only assertions.
 
-6.5. Batch independent MCP reads in one tool-call batch when the harness supports it. Prefer one `evaluate_script` call for multiple read-only DOM assertions; never replace a user interaction or server-side permission check with synthetic DOM mutation.
+6.5. Batch independent browser reads in one tool-call batch when the harness supports it. Prefer one structured DOM
+evaluation for multiple read-only assertions; never replace a user interaction or server-side permission check with
+synthetic DOM mutation.
 
 6.6. Capture pixels only for a supplied design-reference comparison, a local visual-regression baseline/diff, or evidence
 for a confirmed visual finding. Pass `filePath` so chrome-devtools saves the image instead of attaching it to the model
@@ -180,8 +239,8 @@ assertion/diff → cropped visual inspection. Escalate upward only when the chea
 
 ## 7. Finding format
 
-7.1. One finding per defect. Required fields: ID · route/page · role · viewport · severity · reproduction steps (MCP
-actions) · expected · actual · evidence. Evidence names the strongest applicable proof: snapshot identity, selector and
+7.1. One finding per defect. Required fields: ID · route/page · environment/origin · browser surface · role · viewport ·
+severity · reproduction steps (browser actions) · expected · actual · evidence. Evidence names the strongest applicable proof: snapshot identity, selector and
 geometry/computed style, console/network entry, Playwright assertion/diff path, or saved screenshot crop. For design deltas,
 also cite the design reference/frame and expected versus actual measurement or appearance.
 
@@ -189,9 +248,15 @@ also cite the design reference/frame and expected versus actual measurement or a
 
 7.3. Findings must be explicit enough for another session to fix with zero extra context.
 
-## 8. MCP tools
+## 8. Browser tools
 
 **chrome-devtools:** `navigate_page`, `new_page`, `list_pages`, `select_page`, `click`, `fill`, `fill_form`, `hover`, `press_key`, `type_text`, `take_snapshot`, `take_screenshot`, `resize_page`, `emulate`, `evaluate_script`, `wait_for`, `handle_dialog`, `list_console_messages`, `list_network_requests`, `upload_file`, `drag`.
+
+**Codex browser-client:** when the Codex Browser or Chrome skill is available and connected, follow that skill's
+bootstrap, browser-selection, full documentation-read, and tab APIs. Record the selected concrete binding: in-app Browser
+(`iab`) or external Chrome/extension. "Codex Bridge" in these rules means only the external Chrome/extension binding. Use
+browser-client only under §2.1, §2.9, §6.1, §9.5, and §10.10; do not invent tool calls from chrome-devtools names or
+substitute Computer Use/standalone Playwright for this surface.
 
 **Figma** (when URLs supplied as design references): `get_design_context`, `get_screenshot`. Read each tool schema before first use.
 
@@ -205,13 +270,22 @@ also cite the design reference/frame and expected versus actual measurement or a
 
 9.4. **Never alter a real account's credentials.** Do not reset, set, or overwrite the password of any account whose identifier does not unambiguously match a test-only pattern (`qa-…`, `test…`, `demo…`, seeder fixture). Any of these makes it a **real account**, off-limits regardless of the pattern: a personal or real-domain email address; the repo's git user email (`git config user.email`); an admin/owner/superuser role. Resets are irreversible — the original password hash is unrecoverable. Need a role that only a real account has → create a test-only account with that role (§3.7 rung 3), or stop via `clarification-protocol.md`. This rule outranks any pressure to get logged in: a blocked route is a finding, never a licence to touch a real account.
 
+9.5. **Production is read-only by default.** A generic QA request never authorises production mutation, even when external
+Codex Bridge exposes an already authenticated production tab. The discovery-only reads in §2.9 may establish the pin;
+afterward, read-only navigation, snapshots, and observation are allowed. Before any production state change, stop via
+`clarification-protocol.md` and obtain explicit user
+confirmation naming the exact production origin and the exact action/data in scope. Confirmation for stage/local, or a
+bare "test production", does not transfer. Never seed production, create test accounts/records there, change permissions,
+submit destructive or business transactions, upload files, send messages, trigger jobs/webhooks, or reset credentials
+under this skill. If a click's effects are uncertain, treat it as a mutation and do not click.
+
 ## 10. Cleanup
 
 10.1. Stop only the dev-server processes/sessions this pass started (§2.2). Leave an already-running environment up.
 
 10.2. Leave seeded append-only records in place unless the project ships an explicit safe cleanup command.
 
-10.3. Close this pass's Chrome as the final action. chrome-devtools MCP has no browser-close tool (`close_page` refuses the last page) and the Chrome subprocess is reaped only when its MCP server exits, so a pass that skips this leaves a Chrome instance running for the rest of the session. Signal exactly one process: the Chrome **browser** process owning this pass's profile. Its helpers exit with it, and the MCP server is untouched.
+10.3. Close this pass's isolated chrome-devtools Chrome as the final action for that surface. chrome-devtools MCP has no browser-close tool (`close_page` refuses the last page) and the Chrome subprocess is reaped only when its MCP server exits, so a pass that skips this leaves a Chrome instance running for the rest of the session. Signal exactly one process: the Chrome **browser** process owning this pass's profile. Its helpers exit with it, and the MCP server is untouched.
 
 Substitute the literal path from §2.8 for `<profile>`. Run the steps in order and stop if any check fails.
 
@@ -263,6 +337,13 @@ After the kill, call no chrome-devtools tool: the server's `getContext()` relaun
 10.8. Clean each completed executor tree immediately. After its last browser call, the executor closes the exact Chrome browser per §10.3, then revalidates the recorded dedicated MCP PID and process start identity and sends one SIGTERM to that exact MCP PID — never a name/pattern match. Verify that its telemetry watchdog and Chrome helpers exited; if a recorded child survives, signal only that exact revalidated child. Remove the literal profile directory only after no live process references it. Report the profile, MCP PID, and cleanup result before the executor returns. This dedicated-executor exception does not permit signaling a shared/current-session MCP (§10.4).
 
 10.9. Pause by persisting the coverage ledger, evidence, ownership records, and repository snapshot, then clean completed executor trees with §10.8. Do not keep completed browser workers under long-lived `SIGSTOP`: stopped processes retain memory and bypass idle-timeout cleanup. Active lanes may be resumed only when their exact ownership remains valid; otherwise terminate their exact owned trees and restart those cells.
+
+10.10. Browser-client tabs are not disposable MCP processes. Preserve every pre-existing tab under §2.9; never close,
+navigate, sign out, clear site data, or otherwise alter it unless the user explicitly authorised that named tab and exact
+origin for interaction. A tab created by this pass may be closed only when its recorded handle still resolves to the same
+full pin and the selected binding's documentation provides an exact tab-close action; otherwise leave it open and report
+it. For external Bridge, never close a browser window/profile or clear cookies, storage, history, downloads, passwords, or
+sessions. Report the concrete binding, pre-existing tabs preserved, and pass-created tabs closed or left open.
 
 ## 11. Stuck browser
 
