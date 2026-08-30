@@ -23,11 +23,11 @@ assert_absent() {
 }
 
 assert_contains() {
-  grep -Fq "$2" "$1" || fail "expected $1 to contain: $2"
+  grep -Fq -- "$2" "$1" || fail "expected $1 to contain: $2"
 }
 
 assert_not_contains() {
-  if grep -Fq "$2" "$1"; then
+  if grep -Fq -- "$2" "$1"; then
     fail "expected $1 not to contain: $2"
   fi
 }
@@ -49,6 +49,15 @@ printf '%s\n' \
   '[[hooks.PreToolUse.hooks]]' \
   'type = "command"' \
   'command = "agterm-status pre-tool-use"' \
+  '[mcp_servers.chrome-devtools]' \
+  'command = "npx"' \
+  'args = [' \
+  '  "chrome-devtools-mcp@latest",' \
+  '  "--experimentalPageIdRouting",' \
+  '  "--headless=false",' \
+  '  "--isolated",' \
+  '  "--custom-flag"' \
+  ']' \
   > "$codex_home/config.toml"
 jq -n --arg coder "sh '$ROOT/plugins/core/hooks/coder-gate.sh'" \
   '{hooks:{Stop:[{hooks:[{type:"command",command:"plannotator",timeout:30}]}],PreToolUse:[{hooks:[{type:"command",command:$coder}]}]}}' \
@@ -81,6 +90,9 @@ assert_contains "$codex_home/config.toml" 'command = "agterm-status pre-tool-use
 assert_contains "$codex_home/config.toml" 'command = "plannotator"'
 assert_contains "$codex_home/config.toml" 'coder-gate.sh'
 assert_contains "$codex_home/config.toml" 'comment-gate.sh'
+assert_contains "$codex_home/config.toml" 'args = ["chrome-devtools-mcp@latest", "--custom-flag", "--headless", "--pageIdRouting", "--isolated"]'
+assert_not_contains "$codex_home/config.toml" '--experimentalPageIdRouting'
+assert_not_contains "$codex_home/config.toml" '--headless=false'
 [ "$(grep -Fc 'coder-gate.sh' "$codex_home/config.toml")" = "1" ] || fail "expected one Codex coder gate"
 [ "$(grep -Fc 'comment-gate.sh' "$codex_home/config.toml")" = "1" ] || fail "expected one Codex comment gate"
 python3 -c 'import sys, tomllib; tomllib.load(open(sys.argv[1], "rb"))' "$codex_home/config.toml"

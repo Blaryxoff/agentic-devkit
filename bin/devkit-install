@@ -16,7 +16,7 @@
 #   $HOME/.claude/settings.json                    SessionStart hook → devkit-update --if-stale
 #   $HOME/.claude/commands/<name>.md               slash commands (e.g. /wrapup)
 #   $HOME/.codex/skills/devkit-core--<skill>/      symlinks to core skills for Codex
-#   $HOME/.codex/config.toml                       PreToolUse hooks → coder-gate.sh, comment-gate.sh
+#   $HOME/.codex/config.toml                       PreToolUse hooks + headless chrome-devtools defaults
 #   $HOME/.cursor/skills/devkit-core--<skill>/     symlinks to core skills for Cursor
 #   $HOME/.cursor/hooks/hooks.json                 preToolUse coder/comment gates
 #
@@ -335,15 +335,17 @@ cursor_hooks=$(inject_cursor_edit_gates "$cursor_hooks" "$codergate_cmd" "$comme
 printf '%s\n' "$cursor_hooks" | jq '.' > "$CURSOR_HOOKS_FILE"
 echo "    Hook:    ~/.cursor/hooks/hooks.json (preToolUse coder-gate + comment-gate)"
 
-# --- PreToolUse hooks in ~/.codex/config.toml ---
+# --- Codex defaults + PreToolUse hooks in ~/.codex/config.toml ---
 CODEX_CONFIG_FILE="$CODEX_CONFIG" \
 CODEX_LEGACY_HOOKS_FILE="$CODEX_LEGACY_HOOKS" \
 CODEX_CODER_GATE_CMD="$codergate_cmd" \
 CODEX_COMMENT_GATE_CMD="$commentgate_cmd" \
 python3 - <<'PY'
+import ast
 import errno
 import json
 import os
+import re
 import stat
 from pathlib import Path
 
@@ -377,8 +379,57 @@ def render_group(event, group):
     return "\n".join(lines)
 
 
+def normalize_chrome_devtools_args(content):
+    table = re.search(r"(?m)^\s*\[mcp_servers\.chrome-devtools\]\s*(?:#.*)?$", content)
+    if not table:
+        return content
+    next_table = re.search(r"(?m)^\s*\[", content[table.end():])
+    section_end = table.end() + next_table.start() if next_table else len(content)
+    assignment = re.search(r"(?m)^\s*args\s*=\s*\[", content[table.end():section_end])
+    if not assignment:
+        return content
+
+    array_start = table.end() + assignment.end() - 1
+    depth = 0
+    quote = None
+    escaped = False
+    for index in range(array_start, section_end):
+        char = content[index]
+        if quote:
+            if quote == '"' and escaped:
+                escaped = False
+            elif quote == '"' and char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+            continue
+        if char in ('"', "'"):
+            quote = char
+        elif char == "[":
+            depth += 1
+        elif char == "]":
+            depth -= 1
+            if depth == 0:
+                try:
+                    args = ast.literal_eval(content[array_start:index + 1])
+                except (SyntaxError, ValueError):
+                    return content
+                if not isinstance(args, list) or not all(isinstance(arg, str) for arg in args):
+                    return content
+                managed = {"--experimentalPageIdRouting", "--pageIdRouting", "--isolated"}
+                normalized = [
+                    arg for arg in args
+                    if arg not in managed and arg != "--headless" and not arg.startswith("--headless=")
+                ]
+                normalized.extend(("--headless", "--pageIdRouting", "--isolated"))
+                replacement = json.dumps(normalized, ensure_ascii=False)
+                return content[:array_start] + replacement + content[index + 1:]
+    raise SystemExit("malformed chrome-devtools args array in Codex config")
+
+
 content = config_path.read_text() if config_path.exists() else ""
 original = content
+content = normalize_chrome_devtools_args(content)
 if managed_start in content:
     before, remainder = content.split(managed_start, 1)
     if managed_end not in remainder:

@@ -32,6 +32,11 @@ Canonical rules for browser-based QA skills (`devkit-browser`, `devkit-browser-r
    stateful lane. Probe required capabilities before execution. A missing capability does not waive evidence.
    Move the entire dependent lane to a capable surface when the user's explicit choice permits it, or report it blocked.
 
+A request to **show a screenshot** stays on the selected surface and returns captured evidence in chat; it does not require
+a headed browser. A request to **open the page in my Chrome**, **let me watch**, or otherwise show a live visible browser
+selects external Codex Bridge explicitly. If Bridge is unavailable, report that exact surface unavailable rather than
+restarting chrome-devtools without `--headless`.
+
 For every chrome-devtools lane, snapshot the Chrome profile directories per §2.8 **first** — the reachability call launches
 Chrome — then verify reachability (`list_pages`) and immediately take the §2.8 delta. For every browser-client lane,
 complete §2.9 before acting.
@@ -55,7 +60,7 @@ chrome-devtools and browser-client against one stateful flow or use one to recov
 run committed deterministic regression checks and produce local expected/actual/diff artifacts; it must not drive
 exploratory QA, replace the selected surface's actions, or become a fallback when that browser connection is unavailable.
 
-2.7. chrome-devtools MCP: per-project `.mcp.json` / `.cursor/mcp.json` (from `devkit-install --claude|--cursor`) overrides the global entry. Current adapters pass `--headless --isolated`, keeping Chrome in the background and giving every server a throwaway profile. Configs generated before that change pin a fixed `--userDataDir=~/.cache/chrome-devtools-mcp/profiles/<project>`; two sessions on such a project collide on the profile lock (§11). Regenerate them rather than working around the collision.
+2.7. chrome-devtools MCP: per-project `.mcp.json` / `.cursor/mcp.json` (from `devkit-install --claude|--cursor`) overrides the global entry. Current adapters pass `--headless --isolated`, keeping Chrome in the background and giving every server a throwaway profile. `devkit-install` normalises an existing Codex `~/.codex/config.toml` chrome-devtools entry to the same defaults. Configs generated before that change may omit `--headless` or pin a fixed `--userDataDir=~/.cache/chrome-devtools-mcp/profiles/<project>`; regenerate them rather than working around a visible window or profile collision (§11).
 
 2.8. Identify this pass's Chrome profile, so §10.3 can close exactly that instance. Run step 1 before the first chrome-devtools call of the pass; run step 2 immediately after it. The one new directory is this pass's profile — `--isolated` places it at `$TMPDIR/puppeteer_dev_chrome_profile-<random>`, and Chrome runs with it as `--user-data-dir`.
 
