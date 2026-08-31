@@ -2,7 +2,7 @@
 name: devkit-nontech
 description: >-
   format incidents, status, decisions, results, or explanations for managers and other non-technical readers. Use on "для менеджера", "для нетехнических сотрудников", "объясни простыми словами", "без технических деталей", or "stakeholder update". Preserve impact, status, cause, action, and next steps; omit codebase internals.
-  A bare invocation rewrites the immediately preceding assistant response.
+  Always writes the final answer in Russian. A bare invocation rewrites the immediately preceding assistant response.
 ---
 
 # Nontech
@@ -42,7 +42,7 @@ Do not invent impact, scope, cause, dates, percentages, or ETA. Say "the exact s
 
 ## Translation rules
 
-- Write in the user's requested language or the current conversation language. Translate all template labels; never switch to English because this skill is written in English.
+- Write the entire final answer in Russian, regardless of the user's language, requested output language, or the current conversation language. Translate every label and explanatory phrase into Russian; keep only proper names, product names, and other terms that must remain exact in their original form.
 - Translate mechanisms, not nouns. "Two operations changed the same information at once" is useful; the names of the processes are not.
 - Explain consequences before causes. The audience usually needs impact and status before the internal reason.
 - Use familiar words. Prefer "data was incomplete" over storage terminology and "the external service responded too slowly" over protocol details.
@@ -86,12 +86,12 @@ Output only the audience-ready text. Do not preface it with "simplified version"
 Use short labeled paragraphs when the update has several facts:
 
 ```text
-What happened: [visible problem]
-Impact: [affected audience/process and severity]
-Current status: [current state]
-Cause: [plain-language cause]
-What was done: [corrective outcome]
-Next step: [follow-up or monitoring]
+Что произошло: [видимая проблема]
+Влияние: [кого или какой процесс затронуло и насколько сильно]
+Текущий статус: [текущее состояние]
+Причина: [причина простыми словами]
+Что сделано: [результат исправления]
+Следующий шаг: [дальнейшие действия или наблюдение]
 ```
 
 Omit a label only when it adds no information. Preserve explicit unknowns that matter.
