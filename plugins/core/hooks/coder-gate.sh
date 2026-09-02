@@ -5,6 +5,7 @@
 # flushes transcript lines only after a turn batch completes, so activation is
 # recorded from Read/ReadFile preToolUse payload as well as transcript scan.
 # Once detected, a marker keyed on session_id avoids rescanning on every edit.
+# Writes under a tmp/scratch path are exempt — no shipped code lives there.
 # Payload text lives in coder-gate.txt.
 #
 # Fail-open by design: if jq is missing or the input is unparseable, allow the edit
@@ -26,7 +27,17 @@ is_coder_skill_path() {
   esac
 }
 
-read_target=$(printf '%s' "$input" | jq -r '
+tmpdir="${TMPDIR:-/tmp}"
+tmpdir="${tmpdir%/}"
+
+is_scratch_path() {
+  case "$1" in
+    "$tmpdir"/* | /tmp/* | /private/tmp/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+target=$(printf '%s' "$input" | jq -r '
   .tool_input.path // .tool_input.file_path
   // .toolInput.path // .toolInput.filePath
   // .input.path // empty
@@ -34,12 +45,14 @@ read_target=$(printf '%s' "$input" | jq -r '
 
 case "$tool" in
   Read | ReadFile)
-    if [ -n "$sid" ] && is_coder_skill_path "$read_target"; then
+    if [ -n "$sid" ] && is_coder_skill_path "$target"; then
       : > "$marker"
     fi
     exit 0
     ;;
-  Edit | Write | MultiEdit | apply_patch | StrReplace | Delete | EditNotebook) ;;
+  Edit | Write | MultiEdit | apply_patch | StrReplace | Delete | EditNotebook)
+    is_scratch_path "$target" && exit 0
+    ;;
   *) exit 0 ;;
 esac
 
