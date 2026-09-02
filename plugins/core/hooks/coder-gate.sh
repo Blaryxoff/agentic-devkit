@@ -5,7 +5,7 @@
 # flushes transcript lines only after a turn batch completes, so activation is
 # recorded from Read/ReadFile preToolUse payload as well as transcript scan.
 # Once detected, a marker keyed on session_id avoids rescanning on every edit.
-# Writes under a tmp/scratch path are exempt — no shipped code lives there.
+# A canonicalized tmp/scratch path outside any git work tree is exempt; payloads with no path field (Codex apply_patch, EditNotebook) still gate.
 # Payload text lives in coder-gate.txt.
 #
 # Fail-open by design: if jq is missing or the input is unparseable, allow the edit
@@ -27,14 +27,22 @@ is_coder_skill_path() {
   esac
 }
 
-tmpdir="${TMPDIR:-/tmp}"
-tmpdir="${tmpdir%/}"
+tmpdir=$(CDPATH='' cd -- "${TMPDIR:-/tmp}" 2>/dev/null && pwd -P) || tmpdir=/tmp
+case "$tmpdir" in '' | /) tmpdir=/tmp ;; esac
 
 is_scratch_path() {
   case "$1" in
-    "$tmpdir"/* | /tmp/* | /private/tmp/*) return 0 ;;
+    /*) ;;
     *) return 1 ;;
   esac
+  dir=$(dirname -- "$1")
+  real_dir=$(CDPATH='' cd -- "$dir" 2>/dev/null && pwd -P) || return 1
+  case "$real_dir/" in
+    "$tmpdir"/* | /tmp/* | /private/tmp/*) ;;
+    *) return 1 ;;
+  esac
+  git -C "$dir" rev-parse --is-inside-work-tree >/dev/null 2>&1 && return 1
+  return 0
 }
 
 target=$(printf '%s' "$input" | jq -r '

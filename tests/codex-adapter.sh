@@ -116,7 +116,7 @@ assert_absent "$claude_home/output-styles/laconica-ru.md"
 [ "$(jq -r '.outputStyle' "$claude_home/settings.json")" = "Senior" ] \
   || fail "expected Senior default output style"
 
-skill_eval_output=$(sh "$ROOT/plugins/core/hooks/skill-eval.sh")
+skill_eval_output=$(sh "$ROOT/plugins/core/hooks/skill-eval.sh" < /dev/null)
 [[ "$skill_eval_output" == *"$ROOT/plugins/core/conduct/learning-capture-gate.md"* ]] \
   || fail "skill-eval hook did not resolve the installed learning gate"
 [[ "$skill_eval_output" == *"Skill(devkit-core--learn)"* ]] \
