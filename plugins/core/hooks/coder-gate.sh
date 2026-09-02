@@ -35,13 +35,22 @@ is_scratch_path() {
     /*) ;;
     *) return 1 ;;
   esac
+  [ -L "$1" ] && return 1
   dir=$(dirname -- "$1")
   real_dir=$(CDPATH='' cd -- "$dir" 2>/dev/null && pwd -P) || return 1
   case "$real_dir/" in
     "$tmpdir"/* | /tmp/* | /private/tmp/*) ;;
     *) return 1 ;;
   esac
-  git -C "$dir" rev-parse --is-inside-work-tree >/dev/null 2>&1 && return 1
+  d="$real_dir"
+  while [ "$d" != / ]; do
+    case "$d/" in
+      "$tmpdir"/* | /tmp/* | /private/tmp/*) ;;
+      *) break ;;
+    esac
+    [ -e "$d/.git" ] && return 1
+    d=$(dirname -- "$d")
+  done
   return 0
 }
 
