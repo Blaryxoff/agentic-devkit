@@ -115,7 +115,9 @@ has_hooks=$(echo "$merged_hooks" | jq 'length > 0')
 
 if [ -f "$settings_file" ]; then
   if [ "$has_hooks" = "true" ]; then
-    updated=$(jq --argjson hooks "$merged_hooks" '.hooks = ((.hooks // {}) + $hooks)' "$settings_file")
+    existing_hooks=$(jq '.hooks // {}' "$settings_file")
+    merged=$(merge_hooks_preserving_existing "$existing_hooks" "$merged_hooks")
+    updated=$(jq --argjson hooks "$merged" '.hooks = $hooks' "$settings_file")
     echo "$updated" | jq '.' > "$settings_file"
     echo "    Updated: .claude/settings.json (hooks)"
   fi

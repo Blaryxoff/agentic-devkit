@@ -1,5 +1,5 @@
 ---
-name: devkit-tester
+name: devkit-tester-laravel
 description: >-
   implement tests from existing test-case documents for the current project stack.
   Runs only after production implementation and non-test checks are complete and

@@ -6,6 +6,7 @@
 #
 # Exports:
 #   merge_plugin_hooks  — merge all resolved plugins' hooks into a single JSON object
+#   merge_hooks_preserving_existing — merge new hooks into an existing hooks-by-event object
 #
 # Plugin hooks format (Claude Code canonical):
 #   {
@@ -65,6 +66,26 @@ merge_plugin_hooks() {
   done <<< "$resolved_names"
 
   echo "$merged"
+}
+
+# merge_hooks_preserving_existing <existing_hooks_json> <new_hooks_json> — per event, drops existing matcher entries whose command also appears in <new_hooks_json> for that event, then appends <new_hooks_json>'s entries; both args and the result are hooks-by-event objects
+merge_hooks_preserving_existing() {
+  local existing="$1"
+  local new="$2"
+
+  jq -n --argjson existing "$existing" --argjson new "$new" '
+    $existing as $base |
+    reduce ($new | to_entries[]) as $entry (
+      $base;
+      ($entry.value | map(.hooks[]?.command)) as $new_cmds |
+      .[$entry.key] = (
+        ((.[$entry.key] // [])
+          | map(.hooks = ((.hooks // []) | map(select(.command as $c | ($new_cmds | index($c)) | not))))
+          | map(select((.hooks // []) | length > 0))
+        ) + $entry.value
+      )
+    )
+  '
 }
 
 # Event name mapping: Claude Code → Cursor

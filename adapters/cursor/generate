@@ -186,6 +186,16 @@ done <<< "$resolved_names"
 merged_hooks=$(merge_plugin_hooks "$plugin_index" "$resolved_names")
 cursor_hooks=$(translate_hooks_to_cursor "$merged_hooks")
 
+hooks_dir="$PROJECT_ROOT/.cursor/hooks"
+mkdir -p "$hooks_dir"
+hooks_file="$hooks_dir/hooks.json"
+hooks_file_existed=false
+if [ -f "$hooks_file" ]; then
+  hooks_file_existed=true
+  existing_cursor_hooks=$(jq 'del(.version) | .hooks // .' "$hooks_file" 2>/dev/null || echo '{}')
+  cursor_hooks=$(merge_hooks_preserving_existing "$existing_cursor_hooks" "$cursor_hooks")
+fi
+
 # Auto-update global clone (+ project submodule) on workspace open and agent session start.
 update_cmd="${HOME}/.claude/agentic-devkit/bin/devkit-update --if-stale"
 cursor_hooks=$(echo "$cursor_hooks" | jq --arg cmd "$update_cmd" '
@@ -204,12 +214,13 @@ codergate_cmd=$(gate_cmd coder-gate.sh)
 commentgate_cmd=$(gate_cmd comment-gate.sh)
 cursor_hooks=$(inject_cursor_edit_gates "$cursor_hooks" "$codergate_cmd" "$commentgate_cmd")
 
-hooks_dir="$PROJECT_ROOT/.cursor/hooks"
-mkdir -p "$hooks_dir"
-hooks_file="$hooks_dir/hooks.json"
 echo "$cursor_hooks" | jq '.' > "$hooks_file"
 hook_count=$(echo "$cursor_hooks" | jq '[.[] | length] | add // 0')
-echo "    Created: .cursor/hooks/hooks.json ($hook_count hook(s), incl. devkit auto-update + edit gates)"
+if [ "$hooks_file_existed" = true ]; then
+  echo "    Updated: .cursor/hooks/hooks.json ($hook_count hook(s), incl. devkit auto-update + edit gates)"
+else
+  echo "    Created: .cursor/hooks/hooks.json ($hook_count hook(s), incl. devkit auto-update + edit gates)"
+fi
 
 # --- .cursor/mcp.json (per-project MCP servers; overrides global ~/.cursor/mcp.json) ---
 plugin_mcp=$(merge_plugin_mcp_servers "$plugin_index" "$resolved_names")

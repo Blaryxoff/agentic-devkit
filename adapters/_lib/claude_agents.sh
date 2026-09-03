@@ -105,6 +105,7 @@ generate_subagents() {
   reap_devkit_agents "$agents_dir"
 
   local name
+  local _seen_subagent_names=""
   while IFS= read -r name; do
     [ -z "$name" ] && continue
     local pdata skills_rel pdir skills_dir
@@ -118,6 +119,14 @@ generate_subagents() {
     for skill_md in "$skills_dir"/*/SKILL.md; do
       [ -f "$skill_md" ] || continue
       grep -q "^claudeSubagent:[[:space:]]*true" "$skill_md" || continue
+      local fm_name
+      fm_name=$(grep -m1 '^name:' "$skill_md" | sed 's/^name:[[:space:]]*//;s/[[:space:]]*$//')
+      if printf '%s\n' "$_seen_subagent_names" | grep -qxF "$fm_name"; then
+        echo "    WARN: subagent name '$fm_name' (from $name) collides with an earlier plugin — not emitted (use the 'devkit' router for it)" >&2
+        continue
+      fi
+      _seen_subagent_names="$_seen_subagent_names$fm_name
+"
       mkdir -p "$agents_dir"
       emit_subagent "$skill_md" "$agents_dir"
     done

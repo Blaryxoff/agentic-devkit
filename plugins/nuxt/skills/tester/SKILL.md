@@ -1,5 +1,5 @@
 ---
-name: devkit-tester
+name: devkit-tester-nuxt
 description: >-
   implement tests from existing test-case documents for Nuxt/TypeScript projects
   only after production implementation and non-test checks are complete and green
