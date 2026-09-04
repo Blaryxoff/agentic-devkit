@@ -48,8 +48,10 @@ Apply all of these tests to each candidate:
 1. **Different-task test** — would this guide work beyond repeating or revisiting the issue just solved?
 2. **Project-contract test** — does it describe an intentional, durable project decision or invariant rather than a
    low-level technical lesson?
-3. **Fresh-reader test** — is it actionable without the current session's incident history?
-4. **Placement test** — is a project instruction file the best enforcement point, rather than code, tests, types, or
+3. **Established-evidence test** — is it supported beyond one failure path by multiple project locations, an existing
+   workflow, or a confirmed team decision?
+4. **Fresh-reader test** — is it actionable without the current session's incident history?
+5. **Placement test** — is a project instruction file the best enforcement point, rather than code, tests, types, or
    canonical technical documentation?
 
 If any answer is no, do not propose the candidate. Recurrence prevention alone is insufficient.
