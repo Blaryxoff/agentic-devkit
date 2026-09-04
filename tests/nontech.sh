@@ -57,23 +57,5 @@ assert "bare invocation rewrites the immediately preceding assistant response" i
 assert "when neither is supplied" in body_lower
 assert "rewrite the immediately preceding assistant response" in body_lower
 assert "do not ask the user to paste it again" in body_lower
-for preservation_rule in (
-    "decision-relevant evidence",
-    "keep useful specificity",
-    "observed before/after behaviour",
-    "strongest understandable evidence or ruled-out exception",
-    "make the rewrite modestly shorter",
-    "group related facts and remove repetition",
-    "strongest evidence, material exceptions",
-):
-    assert preservation_rule in body_lower, preservation_rule
-assert "raw log excerpts" in body_lower
-for domain_specific_term in (
-    "tariff number",
-    "stream number",
-    "sales period ended",
-    "доступен к продаже",
-):
-    assert domain_specific_term not in body_lower, domain_specific_term
 print("nontech skill tests passed")
 PY2

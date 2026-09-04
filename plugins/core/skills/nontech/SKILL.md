@@ -7,7 +7,7 @@ description: >-
 
 # Nontech
 
-Turn verified technical facts into a concise, audience-ready explanation for a non-technical reader. Preserve the meaning, severity, uncertainty, accountability, and decision-relevant evidence. Translate implementation details and combine supporting facts when that makes the result easier to scan.
+Turn verified technical facts into a concise, audience-ready explanation for a non-technical reader. Preserve what the reader needs to understand, trust, and act on the result while translating implementation details and combining supporting facts.
 
 ## Hard boundary: no codebase internals
 
@@ -26,23 +26,11 @@ Do not merely shorten or pseudonymize a technical identifier. Replace it with th
 
 You may inspect technical evidence to establish the facts. Keep raw artifacts private and translate the facts they establish before answering.
 
-This boundary applies to implementation vocabulary, not to factual detail. Keep operational identifiers already present in the source when they help people locate the affected item. Keep concrete dates, times, states, and observed before/after behaviour when they materially support the conclusion. Translate technical fields into their business meaning instead of deleting the entire fact.
+This boundary applies to implementation vocabulary, not to factual detail. Translate technical fields into their business meaning. Keep an operational identifier only when it helps the reader locate the affected item or act on the message.
 
-## Keep useful specificity
+## Content contract
 
-Preserve the facts needed to establish:
-
-- the affected entity or process and the scope of impact;
-- the relevant state or business rule;
-- the cause and material timing;
-- the strongest understandable evidence or ruled-out exception;
-- the current status and required action.
-
-Make the rewrite modestly shorter than a detailed technical source. Group related facts, remove repetition, and omit secondary proof that does not change the scope, confidence, status, or action. Do not compress the result to generic statements that leave the cause unsupported or hide a material exception.
-
-## Preserve the facts that matter
-
-Every explanation should answer the relevant subset of:
+Preserve the relevant subset of:
 
 1. **What happened** — the visible problem or result in plain language.
 2. **Impact** — who or what was affected, and how severely.
@@ -51,8 +39,11 @@ Every explanation should answer the relevant subset of:
 5. **What was done** — the corrective action expressed as an outcome, not an implementation diff.
 6. **Next step** — monitoring, follow-up work, prevention, decision needed, or no further action.
 7. **Timing** — only when a real deadline, duration, or ETA is known.
+8. **Confidence** — one or two understandable observations or ruled-out exceptions when they materially support the conclusion.
 
 Do not invent impact, scope, cause, dates, percentages, or ETA. Say "the exact scope is still being checked" when it is genuinely unknown. Do not turn uncertainty into reassurance.
+
+Make the rewrite modestly shorter than a detailed technical source. Group related facts, remove repetition, and omit secondary proof that does not change the content contract. Do not compress the result to generic statements that leave the cause unsupported or hide a material exception.
 
 ## Translation rules
 
@@ -61,8 +52,7 @@ Do not invent impact, scope, cause, dates, percentages, or ETA. Say "the exact s
 - Explain consequences before causes. The audience usually needs impact and status before the internal reason.
 - Use familiar words. Prefer "data was incomplete" over storage terminology and "the external service responded too slowly" over protocol details.
 - Keep necessary business terms, product names, customer-visible feature names, money, dates, and measured impact exact.
-- Keep one or two strong, understandable evidence points when they make the conclusion more credible. Summarize repetitive proof and remove raw technical artifacts.
-- Translate identifiers that name implementation mechanics. Keep operational identifiers only when they help the reader locate the affected item or act on the message.
+- Summarize technical evidence as observable behaviour; never include its raw representation.
 - Avoid blame. Describe the failed process or missing safeguard unless personal responsibility is a verified and relevant fact.
 - Avoid euphemisms. A serious outage remains a serious outage after simplification.
 
@@ -78,17 +68,17 @@ Default to a manager or non-technical employee when the user does not specify a 
 
 ### 3. Extract verified facts
 
-From the conversation and available evidence, identify the affected entity or process, relevant state or rule, cause, material timing, strongest evidence, important exceptions, scope, current status, and required action. Separate confirmed facts from assumptions and unknowns.
+Extract confirmed facts, assumptions, and unknowns. Select facts using the content contract.
 
 ### 4. Rewrite at business level
 
-Replace codebase structure with user-visible behaviour, operational consequences, or business concepts. Group related facts and remove repetition while keeping enough detail to support the conclusion, establish scope, explain important exceptions, and enable action.
+Replace codebase structure with user-visible behaviour, operational consequences, or business concepts. Group related facts and remove repetition.
 
 ### 5. Run the disclosure scrub
 
 Before answering, check every sentence for file paths, file names, table names, column names, class names, function names, stack traces, raw errors, commands, code identifiers, and repository references. Rewrite or remove every hit.
 
-Then check the opposite failure: confirm that simplification did not remove the cause, scope, strongest evidence, material exceptions, current status, uncertainty, ownership, or next action.
+Then compare the result with the content contract and restore any material fact lost during simplification.
 
 ### 6. Deliver the message
 
@@ -129,14 +119,4 @@ Answer in one or two plain paragraphs. Do not force a status template onto a sma
 
 ## Quality check
 
-The final text passes only when a non-technical reader can answer:
-
-- What changed or went wrong?
-- Does it affect me, customers, or operations?
-- Is it fixed now?
-- What happens next, and do I need to act?
-- Why is the conclusion credible?
-
-Compare the final text with the source once more. Restore any omitted fact that materially changes the cause, scope, confidence, status, or required action; leave redundant supporting detail out.
-
-The reader must not need to understand the repository, source code, database structure, deployment layout, or developer tooling.
+The final text passes when it satisfies the content contract without requiring knowledge of the repository, source code, database structure, deployment layout, or developer tooling.
