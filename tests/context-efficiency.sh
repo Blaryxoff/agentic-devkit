@@ -114,6 +114,12 @@ assert_contains "$ROOT/plugins/core/skills/verify/SKILL.md" 'transitive `depende
 assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" 'terminal learning-capture gate'
 assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" "environment's structured question tool"
 assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" 'Save only the selected items.'
+assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" "current harness's native project"
+assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" '`AGENTS.md` for Codex'
+assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" '`CLAUDE.md` for Claude Code'
+assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" "another harness's global file"
+assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" 'Different-task test'
+assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" 'Recurrence prevention alone is insufficient.'
 assert_not_contains "$ROOT/plugins/core/skills/learn/SKILL.md" 'AskUserQuestion'
 assert_contains "$ROOT/plugins/core/skills/backlog/SKILL.md" 'docs/backlog/<slug>.md'
 assert_contains "$ROOT/plugins/core/skills/backlog/SKILL.md" 'Process one item at a time.'
@@ -131,6 +137,7 @@ assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'finish si
 assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'strongest three at most'
 assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'Never write project memory directly'
 assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'Skill(devkit-core--learn)'
+assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'A lesson does not qualify merely because it could prevent the same bug'
 assert_contains "$ROOT/plugins/core/hooks/skill-eval.txt" '{{DEVKIT_HOME}}/plugins/core/conduct/learning-capture-gate.md'
 assert_contains "$ROOT/plugins/core/skills/reviewer-deep/SKILL.md" 'review-specialist-fanout.md'
 assert_contains "$ROOT/plugins/core/skills/reviewer-deep/SKILL.md" 'Generic quality fallback'
