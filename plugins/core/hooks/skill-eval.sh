@@ -11,7 +11,7 @@ DEVKIT_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../../.." && pwd)
 STALE_SECONDS=1200
 
 gate() {
-  printf '%s\n' "DEVKIT TURN GATE: Before responding or calling any non-Skill tool, compare the request with available skill descriptions. If any match, first call Skill(<catalog-slug>) for the smallest directly relevant set. Mentioning a skill is not activation. If none match, proceed directly. Before a top-level final response when completed work may have revealed durable project knowledge, apply $DEVKIT_ROOT/plugins/core/conduct/learning-capture-gate.md; call Skill(devkit-core--learn) only when a candidate passes, otherwise finish silently."
+  printf '%s\n' "DEVKIT TURN GATE: Before responding or calling any non-Skill tool, compare the request with available skill descriptions. If any match, first call Skill(<catalog-slug>) for the smallest directly relevant set. Mentioning a skill is not activation. If none match, proceed directly. Before a top-level final response when completed work may have revealed durable project knowledge, apply $DEVKIT_ROOT/plugins/core/conduct/learning-capture-gate.md; call Skill(devkit-core--learn) only when a candidate passes, offer a fix or backlog deferral in one line when the finding is actionable repository work instead, otherwise finish silently."
 }
 
 if ! command -v jq >/dev/null 2>&1; then

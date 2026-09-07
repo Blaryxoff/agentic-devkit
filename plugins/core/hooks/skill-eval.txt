@@ -10,5 +10,6 @@ Devkit policy:
 - When a skill applies, state which one and why, then activate it. When none applies, proceed without mentioning skill evaluation.
 - Before a top-level final response when completed work may have revealed durable project knowledge, apply
   `{{DEVKIT_HOME}}/plugins/core/conduct/learning-capture-gate.md`. When a candidate passes, Claude Code calls
-  `Skill(devkit-core--learn)`; Codex/Cursor activate `devkit-learn` through their native skill mechanism. Otherwise finish
+  `Skill(devkit-core--learn)`; Codex/Cursor activate `devkit-learn` through their native skill mechanism. When the
+  finding is actionable repository work instead, offer a fix or backlog deferral in one line. Otherwise finish
   silently. Dispatched subagents never run this gate.
