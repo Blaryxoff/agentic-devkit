@@ -9,6 +9,7 @@ SCRIPTS=(
   context-efficiency.sh
   nontech.sh
   output-style.sh
+  sprint-skill.sh
 )
 
 failures=()
