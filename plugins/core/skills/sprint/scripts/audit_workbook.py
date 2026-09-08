@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -63,6 +64,48 @@ def json_value(value: Any) -> Any:
     if hasattr(value, "isoformat"):
         return value.isoformat()
     return str(value)
+
+
+def clean_url(value: str) -> str:
+    url = value.rstrip(".,;:!?")
+    pairs = (("(", ")"), ("[", "]"), ("{", "}"))
+    changed = True
+    while changed and url:
+        changed = False
+        for opening, closing in pairs:
+            if url.endswith(closing) and url.count(closing) > url.count(opening):
+                url = url[:-1].rstrip(".,;:!?")
+                changed = True
+    return url
+
+
+def sheet_fingerprint(sheet: Any, last_row: int, last_column: int) -> str:
+    cells = []
+    for row in sheet.iter_rows(max_row=last_row or 1, max_col=last_column or 1):
+        for cell in row:
+            if cell.value in (None, "") and not cell.hyperlink and not cell.comment:
+                continue
+            cells.append({
+                "cell": cell.coordinate,
+                "value": json_value(cell.value),
+                "hyperlink": (
+                    {"target": cell.hyperlink.target, "location": cell.hyperlink.location}
+                    if cell.hyperlink else None
+                ),
+                "comment": (
+                    cell.comment.text
+                    if cell.comment else None
+                ),
+            })
+    payload = {
+        "state": sheet.sheet_state,
+        "cells": cells,
+        "hidden_rows": [row for row in range(1, last_row + 1) if sheet.row_dimensions[row].hidden],
+        "hidden_columns": hidden_columns(sheet, last_column),
+        "validations": validations(sheet),
+    }
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def meaningful_bounds(sheet: Any) -> tuple[int, int, int]:
@@ -227,7 +270,7 @@ def cell_inventory(formula_sheet: Any, value_sheet: Any, last_row: int, last_col
                     "location": cell.hyperlink.location,
                     "display": json_value(cell.value),
                 })
-            extracted_urls = URL_PATTERN.findall(str(cell.value)) if cell.value not in (None, "") else []
+            extracted_urls = [clean_url(url) for url in URL_PATTERN.findall(str(cell.value))] if cell.value not in (None, "") else []
             if extracted_urls:
                 result["url_cells"].append({"cell": cell.coordinate, "urls": extracted_urls})
             if cell.comment:
@@ -383,6 +426,7 @@ def workbook_audit(path: Path) -> dict[str, Any]:
             "last_meaningful_row": last_row,
             "last_meaningful_column": last_column,
             "nonempty_rows": nonempty_rows,
+            "content_fingerprint": sheet_fingerprint(formula_sheet, last_row, last_column),
             "hidden_rows": [row for row in range(1, last_row + 1) if formula_sheet.row_dimensions[row].hidden],
             "hidden_columns": hidden_columns(formula_sheet, last_column),
             "data_validations": validations(formula_sheet),
@@ -412,21 +456,126 @@ def workbook_audit(path: Path) -> dict[str, Any]:
     }
 
 
+def compare_history_snapshot(
+    audit: dict[str, Any],
+    snapshot_path: Path,
+    workbook_id: str,
+    target_sheet: str | None,
+) -> dict[str, Any]:
+    errors: list[str] = []
+    try:
+        snapshot = json.loads(snapshot_path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"compatible": False, "errors": [str(exc)]}
+
+    if snapshot.get("schema_version") != 2:
+        errors.append("schema_version must be 2")
+    if snapshot.get("workbook_id") != workbook_id:
+        errors.append("workbook_id does not match")
+    gates = snapshot.get("quality", {}).get("gates")
+    if not isinstance(gates, dict) or not gates or not all(gates.values()):
+        errors.append("stored quality gates are missing or false")
+
+    tasks = snapshot.get("task_history")
+    record_ids: set[str] = set()
+    if not isinstance(tasks, list):
+        errors.append("task_history must be a list")
+    else:
+        task_ids = [task.get("record_id") for task in tasks if isinstance(task, dict)]
+        record_ids = {record_id for record_id in task_ids if isinstance(record_id, str)}
+        if len(record_ids) != len(tasks):
+            errors.append("task_history record_id values must be unique strings")
+
+    for index_name in ("task_index", "title_index", "epic_index"):
+        index = snapshot.get(index_name)
+        if not isinstance(index, dict):
+            errors.append(f"{index_name} must be an object")
+            continue
+        unresolved = [
+            record_id
+            for entry in index.values()
+            if isinstance(entry, dict)
+            for record_id in entry.get("record_ids", [])
+            if record_id not in record_ids
+        ]
+        if unresolved:
+            errors.append(f"{index_name} contains unresolved record IDs")
+
+    task_id_pattern = snapshot.get("task_id_pattern")
+    try:
+        compiled_task_id = re.compile(task_id_pattern) if isinstance(task_id_pattern, str) else None
+    except re.error:
+        compiled_task_id = None
+    if compiled_task_id is None:
+        errors.append("task_id_pattern must be a valid regular expression")
+    elif isinstance(snapshot.get("task_index"), dict) and any(
+        not compiled_task_id.fullmatch(task_id) for task_id in snapshot["task_index"]
+    ):
+        errors.append("task_index contains an ID outside task_id_pattern")
+
+    sources = snapshot.get("spec_sources")
+    lookup = snapshot.get("source_lookup")
+    if not isinstance(sources, dict) or not isinstance(lookup, dict):
+        errors.append("spec_sources and source_lookup must be objects")
+    elif any(source_key not in sources for source_key in lookup.values()):
+        errors.append("source_lookup contains unresolved source keys")
+
+    current = {sheet["title"]: sheet["content_fingerprint"] for sheet in audit["sheets"]}
+    stored_sheets = snapshot.get("sheets")
+    if not isinstance(stored_sheets, dict):
+        errors.append("sheets must be an object")
+        stored: dict[str, str | None] = {}
+    else:
+        stored = {
+            title: record.get("content_fingerprint") if isinstance(record, dict) else None
+            for title, record in stored_sheets.items()
+        }
+    compared_titles = (set(current) | set(stored)) - ({target_sheet} if target_sheet else set())
+    matched = sorted(title for title in compared_titles if title in current and current[title] == stored.get(title))
+    changed = sorted(title for title in compared_titles if title in current and title in stored and current[title] != stored[title])
+    new = sorted(title for title in compared_titles if title in current and title not in stored)
+    missing = sorted(title for title in compared_titles if title in stored and title not in current)
+    return {
+        "compatible": not errors,
+        "errors": errors,
+        "target_sheet_excluded": target_sheet,
+        "matched_sheets": matched,
+        "changed_sheets": changed,
+        "new_sheets": new,
+        "missing_sheets": missing,
+        "refresh_required": bool(changed or new or missing),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("workbook", type=Path)
     parser.add_argument("--pretty", action="store_true")
+    parser.add_argument("--snapshot", type=Path)
+    parser.add_argument("--workbook-id")
+    parser.add_argument("--target-sheet")
     args = parser.parse_args()
     if not args.workbook.is_file():
         parser.error(f"workbook not found: {args.workbook}")
+    if args.snapshot and not args.snapshot.is_file():
+        parser.error(f"snapshot not found: {args.snapshot}")
+    if args.snapshot and not args.workbook_id:
+        parser.error("--workbook-id is required with --snapshot")
     try:
         result = workbook_audit(args.workbook)
     except Exception as exc:  # noqa: BLE001 - CLI must report malformed workbooks
         print(f"audit_workbook.py: {exc}", file=sys.stderr)
         return 1
+    if args.snapshot:
+        result["snapshot_comparison"] = compare_history_snapshot(
+            result,
+            args.snapshot,
+            args.workbook_id,
+            args.target_sheet,
+        )
     json.dump(result, sys.stdout, ensure_ascii=False, indent=2 if args.pretty else None)
     sys.stdout.write("\n")
-    return 0
+    return 2 if args.snapshot and not result["snapshot_comparison"]["compatible"] else 0
 
 
 if __name__ == "__main__":
