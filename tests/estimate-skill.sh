@@ -53,6 +53,17 @@ for rule in (
     "prior estimate of this or an adjacent scope",
     "never average a superseded estimate into the new one",
     "name one delivered anchor slice and express the new scope as a ratio to it",
+    "the anchor is a ceiling, not a footnote",
+    "the production-ready high case does not exceed the anchor's own span",
+    "each blocker carries its own day cost on its own line",
+    "anchor span + sum of blocker costs",
+    "never report a ratio below 1.0 alongside a schedule above the anchor",
+    "the anchor line — the named delivered slice, its calendar span, and the new scope's ratio to it",
+    "the base scenario is the scope exactly as the user wrote it",
+    "never make the expansive reading the headline number",
+    "no figure on the schedule was produced by multiplying another figure",
+    "never reach a production figure by scaling demo, alpha, or beta by a factor",
+    "skip this step entirely when a credible local anchor exists",
     "elapsed low/likely/high",
     "pack ready lanes into explicit execution waves",
     "never append a free-floating day allowance",
@@ -69,6 +80,17 @@ for rule in (
     assert rule in normalized_body, rule
 
 normalized_reference = " ".join(reference.lower().split())
+for banned in (
+    "seven times the build",
+    "hardening tail was roughly",
+):
+    assert banned not in normalized_reference, banned
+for rule in (
+    "never multiply, scale, or apply a percentage from this page",
+    "do not calibrate a scope classified mostly `exact`, `continuation`, or `foundation` from this page",
+    "never as a tail proportional to the build",
+):
+    assert rule in normalized_reference, rule
 for source in (
     "lovable.dev/blog/how-nursa-built-a-new-product-in-48-hours",
     "replit.com/blog/building-mobile-apps-on-replit",

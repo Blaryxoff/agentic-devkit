@@ -71,6 +71,10 @@ Record:
 - acceptance criteria and unresolved decisions;
 - any prior estimate of this or an adjacent scope, its method, and the reason it changed.
 
+The base scenario is the scope exactly as the user wrote it. Every expansion beyond that literal text — extra
+consumers, a shared registry, a template library, additional roles, a second client — is a named delta reported above
+the base, never folded into the base range. Never make the expansive reading the headline number.
+
 If one ambiguity changes the likely estimate by 25% or more, produce separate scenarios. Ask only when a
 scenario split would not let the user plan safely.
 
@@ -110,6 +114,14 @@ Record:
 Name one delivered anchor slice and express the new scope as a ratio to it. A scope smaller than an anchor that
 shipped in N days does not estimate above N days without a named reason.
 
+The anchor is a ceiling, not a footnote. When no requirement is classified `absent` and most are `exact`,
+`continuation`, or `foundation`, the production-ready high case does not exceed the anchor's own span. Exceeding it
+requires a named blocker — an unresolved product decision, a new external integration, or a migration over live data.
+Naming it is not enough: each blocker carries its own day cost on its own line, and the production likely case must
+reconcile as `anchor span + sum of blocker costs`. A blocker whose days cannot be written as a line item is not a
+blocker; drop it and recompute. Never report a ratio below 1.0 alongside a schedule above the anchor without that
+reconciliation.
+
 Use commit timestamps as boundaries only when session/plan evidence makes the work window credible. Never infer coding
 duration from LOC, generated files, one commit timestamp, merge frequency, or parallel agent-runtime totals. File and
 line counts compare the new scope against the anchor slice; they never convert to duration.
@@ -141,6 +153,10 @@ Pack ready lanes into explicit execution waves, capped by both agent slots and o
 for the next wave. Forward-schedule the low, likely, and high cases separately. Never derive elapsed time by summing
 agent-hours, dividing aggregate work by eight, or dividing a total by the agent count.
 
+Check the result against the anchor span before reporting it. A schedule that exceeds the anchor while the scope is
+smaller than the anchor is wrong until a named blocker explains it. Never reach a production figure by scaling demo,
+alpha, or beta by a factor.
+
 Include merge conflict and cross-lane contract cost when multiple agents touch the same files or schema. Concurrently
 open agent branches conflict often enough to be a scheduled cost rather than a rounding error — measured rates in
 [agent-first-calibration.md](references/agent-first-calibration.md) § Parallel-agent and rework cost. Keep these
@@ -162,6 +178,8 @@ evidence, no credible local analogue exists, or a lane exceeds a measured autono
 calibration. Re-fetch cited sources when web access is available and cite only the pages that moved a range, a
 decomposition, or the confidence rating.
 
+- Skip this step entirely when a credible local anchor exists and the scope is mostly `exact`, `continuation`, or
+  `foundation`. Those sources measure new work and inflate a scope that is already largely built.
 - Use vendor case studies as evidence for achievable demo/MVP speed, never as a production multiplier.
 - Use independent/empirical research to bound autonomy and uncertainty, not to replace local evidence.
 - Prefer local high-context throughput over low-context benchmarks.
@@ -180,12 +198,18 @@ bury materially different scope inside one.
 Return only the audience-ready estimate. Do not preface it with investigation notes, skill names, or a description of
 the workflow used. Lead with one recommended planning commitment in calendar days. Then provide:
 
-1. a demo/alpha/beta/production table where relevant;
-2. what is already reusable and what remains;
-3. the parallel lanes and the actual critical path;
-4. assumptions and named risk deltas;
-5. local evidence plus the web sources that affected calibration;
-6. confidence (`high`, `medium`, or `low`) and what would change it.
+1. the anchor line — the named delivered slice, its calendar span, and the new scope's ratio to it — before any other
+   detail, plus the reconciliation `anchor span + each named blocker's days = production likely` whenever the schedule
+   exceeds the anchor;
+2. a demo/alpha/beta/production table where relevant;
+3. what is already reusable and what remains;
+4. the parallel lanes and the actual critical path;
+5. assumptions and named risk deltas;
+6. local evidence plus the web sources that affected calibration;
+7. confidence (`high`, `medium`, or `low`) and what would change it.
+
+Omit the anchor line only when no delivered analogue exists in any inspected repository, and say so explicitly in its
+place.
 
 Explicitly correct an earlier estimate when the evidence changes it. Do not preserve a familiar number for consistency.
 Do not create a report file unless the user asked for one.
@@ -206,6 +230,11 @@ Do not create a report file unless the user asked for one.
 
 - The recommended number lies inside the reported range.
 - Independent lanes were not summed into elapsed time; sequential dependencies were not parallelized.
+- The output states the anchor slice, its span, and the new scope's ratio to it, or says no analogue exists.
+- The production-ready high case sits at or below the anchor span, or the reconciliation line adds the anchor span and
+  each blocker's own days up to the reported figure.
+- The headline range covers the literal requested scope; expansions appear only as named deltas above it.
+- No figure on the schedule was produced by multiplying another figure.
 - The estimate was reconciled against the named anchor slice and against any superseded prior estimate.
 - Existing work was discounted once and only with named evidence.
 - Demo evidence was not used to claim production readiness.

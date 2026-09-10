@@ -13,8 +13,10 @@ Dates below are the source's own publication or last-updated date as verified on
 - Date: July 1, 2026.
 - Reported result: one weekend produced an interactive shift scheduler, student and admin portals, and a credentials
   dashboard; "two weeks turning Nursa for schools into an enterprise-grade product" followed.
-- Use for: the demo-to-production ratio — the hardening tail was roughly seven times the build.
-- Do not use for: claiming any arbitrary enterprise feature takes 48 hours. This is a vendor-authored success story.
+- Use for: separating a demo weekend from the hardening that follows it, as two independently evidenced windows.
+- Do not use for: a demo-to-production ratio, multiplier, or hardening-tail factor of any kind. This is a
+  vendor-authored story about a greenfield product built from nothing; it carries no information about a scope that is
+  already largely implemented.
 
 ### Flash News / Replit
 
@@ -97,7 +99,8 @@ Dates below are the source's own publication or last-updated date as verified on
 - Reported result: 40.2% of repositories had temporally overlapping agent PR pairs (53.4% within a one-week window),
   covering 79.4% of all agent PRs. Textual conflict rate was 19.8% for same-agent pairs and 41.7% for cross-agent
   pairs; 84.4% of conflicts were in source files rather than dependency manifests.
-- Use for: pricing the merge and contract-reconciliation cost of parallel lanes instead of assuming lanes are free.
+- Use for: pricing one merge/contract-reconciliation gate on the specific lanes that actually touch the same files or
+  schema. Lanes with disjoint ownership carry no such cost.
 - Do not use for: capping the number of lanes by itself; local file ownership and schema coupling decide that.
 
 ### Reviewer involvement in merged agent pull requests
@@ -106,7 +109,7 @@ Dates below are the source's own publication or last-updated date as verified on
 - Date: May 21, 2026. Dataset: 11,048 closed agentic PRs, 9,799 human-reviewed, 717 manually inspected.
 - Reported result: 15.4% of merged PRs required explicit reviewer feedback or direct commits. Only 35.7% of rejections
   reflected clear agent failure; 31.2% were workflow constraints.
-- Use for: keeping an integration and review gate in the schedule; not reading a rejected branch as wasted work.
+- Use for: keeping one integration/review gate per lane in the schedule; not reading a rejected branch as wasted work.
 - Do not use for: estimating implementation duration.
 
 ### GitClear: The Maintainability Gap
@@ -115,16 +118,23 @@ Dates below are the source's own publication or last-updated date as verified on
 - Date: January 2026. Dataset: 623 million analyzed changes, 2023 to 2026.
 - Reported result: refactoring fell to 3.8% of changes year-to-date 2026 (from 21% in 2022), block duplication rose 81%
   over 2023, copy/paste reached 15.7% in the first half of 2026 (from 9.4% in 2022), and churn rose 15%.
-- Use for: sizing the stabilization and rework tail between alpha and production on an agent-written codebase.
+- Use for: pricing a named dedup/refactor gate between alpha and production when the code under change is itself
+  agent-written and unrefactored. Never as a tail proportional to the build.
 - Do not use for: a speed factor. GitClear authors this research and sells the analytics product that measures these
   signals — label it vendor-authored.
 
 ## Application rules
 
-1. Cite the exact source and the narrow fact used.
-2. Label vendor case studies as vendor evidence.
-3. Pair web evidence with at least one local implementation or throughput analogue whenever available.
-4. Use demo case studies to calibrate demo/alpha only.
-5. Use later stabilization time and the rework sources to calibrate beta/production.
-6. State the source date or retrieval date when the estimate is time-sensitive.
-7. Replace or remove a source when the page is unavailable, materially changed, or superseded by stronger evidence.
+1. Never multiply, scale, or apply a percentage from this page to an estimate. Every source here either prices one
+   named gate in the schedule or widens a stated range. A source that cannot be attached to a specific gate does not
+   enter the estimate.
+2. Do not calibrate a scope classified mostly `exact`, `continuation`, or `foundation` from this page at all. Every
+   source below measures new or greenfield work; local anchor evidence governs a scope that is already largely built.
+3. Cite the exact source and the narrow fact used.
+4. Label vendor case studies as vendor evidence.
+5. Pair web evidence with at least one local implementation or throughput analogue whenever available.
+6. Use demo case studies to calibrate demo/alpha only.
+7. Use the rework sources to add named hardening gates to beta/production, each carrying its own low/likely/high
+   window. Never express them as a percentage or factor over the implementation total.
+8. State the source date or retrieval date when the estimate is time-sensitive.
+9. Replace or remove a source when the page is unavailable, materially changed, or superseded by stronger evidence.
