@@ -7,6 +7,7 @@ SCRIPTS=(
   codex-adapter.sh
   comment-gate.sh
   context-efficiency.sh
+  estimate-skill.sh
   nontech.sh
   output-style.sh
   sprint-skill.sh

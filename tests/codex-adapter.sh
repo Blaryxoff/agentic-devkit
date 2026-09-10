@@ -76,6 +76,7 @@ install_output=$(HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home
 
 assert_link "$codex_home/skills/devkit-core--coder" "$ROOT/plugins/core/skills/coder"
 assert_link "$codex_home/skills/devkit-core--backlog" "$ROOT/plugins/core/skills/backlog"
+assert_link "$codex_home/skills/devkit-core--estimate" "$ROOT/plugins/core/skills/estimate"
 assert_link "$codex_home/skills/devkit-core--nontech" "$ROOT/plugins/core/skills/nontech"
 assert_link "$codex_home/skills/devkit-core--task" "$ROOT/plugins/core/skills/task"
 assert_link "$codex_home/skills/devkit-core--devkit-router" "$ROOT/plugins/core/skills/devkit-router"
@@ -84,6 +85,7 @@ assert_absent "$codex_home/skills/devkit-core--retired"
 assert_absent "$codex_home/skills/devkit-laravel--architect"
 assert_link "$codex_home/skills/user-skill" "$ROOT/plugins/core/skills/coder"
 assert_link "$cursor_home/skills/devkit-core--coder" "$ROOT/plugins/core/skills/coder"
+assert_link "$cursor_home/skills/devkit-core--estimate" "$ROOT/plugins/core/skills/estimate"
 assert_link "$cursor_home/skills/devkit-core--nontech" "$ROOT/plugins/core/skills/nontech"
 assert_absent "$cursor_home/skills/devkit-laravel--architect"
 assert_absent "$codex_home/hooks.json"
@@ -101,6 +103,7 @@ python3 -c 'import sys, tomllib; tomllib.load(open(sys.argv[1], "rb"))' "$codex_
   || fail "Cursor project-skill migration notice was not emitted"
 assert_contains "$claude_home/CLAUDE.md" 'personal global guidance'
 assert_link "$claude_home/skills/devkit-core--backlog" "$ROOT/plugins/core/skills/backlog"
+assert_link "$claude_home/skills/devkit-core--estimate" "$ROOT/plugins/core/skills/estimate"
 assert_link "$claude_home/skills/devkit-core--nontech" "$ROOT/plugins/core/skills/nontech"
 assert_link "$claude_home/skills/devkit-core--task" "$ROOT/plugins/core/skills/task"
 assert_contains "$claude_home/CLAUDE.md" '<!-- devkit-skill-policy:start -->'
