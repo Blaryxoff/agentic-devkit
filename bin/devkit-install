@@ -627,11 +627,12 @@ for d in "$core_skills_src"/*/; do
       sub(/^[[:space:]]+/, "", line)
       v = (v == "" ? line : v " " line)
     }
-    END {
-      if (length(v) > 150) { v = substr(v, 1, 150); sub(/[[:space:]][^[:space:]]*$/, "", v); v = v "…" }
-      print v
-    }
+    END { print v }
   ' "$d/SKILL.md")
+  if [ "${#desc}" -gt 150 ]; then
+    desc="${desc:0:150}"
+    desc="${desc% *}…"
+  fi
   {
     printf -- '---\ndescription: >-\n  %s\n---\n\n' "$desc"
     printf '%s\n\n' "$COMMAND_SENTINEL"

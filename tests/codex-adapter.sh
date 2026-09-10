@@ -106,6 +106,12 @@ assert_link "$claude_home/skills/devkit-core--backlog" "$ROOT/plugins/core/skill
 assert_link "$claude_home/skills/devkit-core--estimate" "$ROOT/plugins/core/skills/estimate"
 assert_link "$claude_home/skills/devkit-core--nontech" "$ROOT/plugins/core/skills/nontech"
 assert_link "$claude_home/skills/devkit-core--task" "$ROOT/plugins/core/skills/task"
+assert_contains "$claude_home/commands/nontech.md" 'Skill(devkit-core--nontech)'
+assert_contains "$claude_home/commands/xlsx.md" 'Skill(devkit-core--xlsx)'
+for cmd in "$claude_home"/commands/*.md; do
+  iconv -f UTF-8 -t UTF-8 < "$cmd" > /dev/null 2>&1 \
+    || fail "generated command is not valid UTF-8: $cmd"
+done
 assert_contains "$claude_home/CLAUDE.md" '<!-- devkit-skill-policy:start -->'
 assert_contains "$claude_home/CLAUDE.md" 'Skill selection starts from the catalog metadata.'
 assert_contains "$claude_home/CLAUDE.md" "$ROOT/plugins/core/conduct/learning-capture-gate.md"
