@@ -57,5 +57,15 @@ assert "bare invocation rewrites the immediately preceding assistant response" i
 assert "when neither is supplied" in body_lower
 assert "rewrite the immediately preceding assistant response" in body_lower
 assert "do not ask the user to paste it again" in body_lower
+for actionable_rule in (
+    "preserve actionable instructions",
+    "same actor, target, sequence, and conditions",
+    "exact user-visible names of buttons",
+    "открыть операцию №4352 и нажать «повторить завершение»",
+    "must not become \"вручную повторить обработку операции\"",
+    "a user-visible interface label is not a codebase internal",
+    "without guessing which item to open",
+):
+    assert actionable_rule in body_lower, actionable_rule
 print("nontech skill tests passed")
 PY2

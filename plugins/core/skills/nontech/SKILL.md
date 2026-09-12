@@ -2,7 +2,7 @@
 name: devkit-nontech
 description: >-
   format incidents, status, decisions, results, or explanations for managers and other non-technical readers. Use on "для менеджера", "для нетехнических сотрудников", "объясни простыми словами", "без технических деталей", or "stakeholder update". Preserve impact, status, cause, action, and next steps; omit codebase internals.
-  Always writes the final answer in Russian. A bare invocation rewrites the immediately preceding assistant response.
+  Preserve direct instructions and exact user-visible control names. Always writes the final answer in Russian. A bare invocation rewrites the immediately preceding assistant response.
 ---
 
 # Nontech
@@ -27,6 +27,17 @@ Do not merely shorten or pseudonymize a technical identifier. Replace it with th
 You may inspect technical evidence to establish the facts. Keep raw artifacts private and translate the facts they establish before answering.
 
 This boundary applies to implementation vocabulary, not to factual detail. Translate technical fields into their business meaning. Keep an operational identifier only when it helps the reader locate the affected item or act on the message.
+
+## Hard boundary: preserve actionable instructions
+
+Direct instructions are essential content, not technical noise. When the source tells the reader what to do, preserve the instruction directly with the same actor, target, sequence, and conditions. Do not replace a concrete instruction with a summary of its intended outcome: "открыть операцию №4352 и нажать «Повторить завершение»" must not become "вручную повторить обработку операции".
+
+- Keep exact user-visible names of buttons, links, menu items, tabs, screens, settings, and other controls, including their spelling, capitalization, and interface language. Quote them with «ёлочки» in Russian prose.
+- Keep operational identifiers, navigation context, prerequisites, and fallback branches that the reader needs to complete or escalate the action.
+- Preserve explicit conditions such as "if this happens again, contact support" instead of flattening them into a general next step.
+- Never invent a control name or navigation path. If the source does not provide the exact label, describe the action without pretending that wording is present in the interface.
+
+A user-visible interface label is not a codebase internal, even when it resembles a technical term. Preserve it when it tells the reader exactly what to select or press.
 
 ## Content contract
 
@@ -68,7 +79,7 @@ Default to a manager or non-technical employee when the user does not specify a 
 
 ### 3. Extract verified facts
 
-Extract confirmed facts, assumptions, and unknowns. Select facts using the content contract.
+Extract confirmed facts, assumptions, and unknowns. Select facts using the content contract. Separately list every direct instruction and the exact user-visible labels, identifiers, conditions, and fallback steps needed to carry it out.
 
 ### 4. Rewrite at business level
 
@@ -78,7 +89,7 @@ Replace codebase structure with user-visible behaviour, operational consequences
 
 Before answering, check every sentence for file paths, file names, table names, column names, class names, function names, stack traces, raw errors, commands, code identifiers, and repository references. Rewrite or remove every hit.
 
-Then compare the result with the content contract and restore any material fact lost during simplification.
+Then compare the result with the content contract and source. Restore any material fact lost during simplification, and confirm that every retained action still names the exact control and target when the source supplied them.
 
 ### 6. Deliver the message
 
@@ -119,4 +130,4 @@ Answer in one or two plain paragraphs. Do not force a status template onto a sma
 
 ## Quality check
 
-The final text passes when it satisfies the content contract without requiring knowledge of the repository, source code, database structure, deployment layout, or developer tooling.
+The final text passes when it satisfies the content contract without requiring knowledge of the repository, source code, database structure, deployment layout, or developer tooling. A reader must be able to carry out every requested action without guessing which item to open, which visible control to use, or what to do if the action fails.
