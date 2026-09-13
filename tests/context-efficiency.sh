@@ -86,7 +86,9 @@ for path in sorted(root.glob("plugins/core/skills/*/SKILL.md")):
     slug = path.parent.name
     meta = yaml.safe_load(path.read_text().split("---", 2)[1])
     desc, name = meta["description"].strip(), meta["name"]
-    size = len(desc) + len(name)
+    # The Claude catalog keys a skill by its directory slug (devkit-core--<slug>),
+    # a subagent by its frontmatter name. Measuring both with `name` under-counts.
+    size = len(desc) + len(f"devkit-core--{slug}")
 
     if len(desc) > PER_SKILL_CAP:
         problems.append(f"{slug}: description is {len(desc)} chars, cap is {PER_SKILL_CAP}")
@@ -105,8 +107,9 @@ for path in sorted(root.glob("plugins/core/skills/*/SKILL.md")):
     rows.append((size, "skill", slug))
 
     if str(meta.get("claudeSubagent", "")).lower() == "true":
-        total += size
-        rows.append((size, "agent", name))
+        agent_size = len(desc) + len(name)
+        total += agent_size
+        rows.append((agent_size, "agent", name))
 
     if slug not in deny and slug not in authored:
         command = len(f"Run the devkit {slug} workflow.") + len(slug)
