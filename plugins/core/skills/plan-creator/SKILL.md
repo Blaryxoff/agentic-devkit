@@ -1,7 +1,10 @@
 ---
 name: devkit-plan-creator
 description: >-
-  write a product plan and a ralphex-format dev plan to `{plans_dir}/product/` and `{plans_dir}/dev/` (default `docs/plans/`). Invoke ONLY when the user explicitly writes "ralphex" ("ralphex plan", "создай ralphex план"), or when devkit-browser-ralphex delegates plan rendering here. Do NOT invoke for Claude Code's built-in plan mode (`/plan`, EnterPlanMode/ExitPlanMode), nor for generic "plan a feature" / "propose a solution" / "design an approach" / "спланируй" requests — answer those directly, without this skill.
+  write a product plan and a ralphex-format dev plan to `{plans_dir}/product/` and `{plans_dir}/dev/` (default
+  `docs/plans/`). Invoke ONLY when the user explicitly writes "ralphex" ("ralphex plan", "создай ralphex план").
+  Do NOT invoke for Claude Code's built-in plan mode (`/plan`, EnterPlanMode/ExitPlanMode), nor for generic
+  "plan a feature" / "design an approach" / "спланируй" requests — answer those directly.
 ---
 
 # Plan Creator

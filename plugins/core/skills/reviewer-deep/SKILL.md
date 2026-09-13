@@ -1,13 +1,15 @@
 ---
 name: devkit-reviewer-deep
 description: >-
-  orchestrate deep code-quality review across the active stack (architecture, security, data correctness, performance),
-  with risk-gated testing, documentation, and design-reference specialists. Dispatches applicable reviewers in parallel
-  and presents reports by axis. Use when the user asks to review code, a code change, or a whole branch. Run TOGETHER with
-  devkit-reviewer-business-logic for a full review. Routing policy: plugins/core/conduct/review-routing.md.
+  orchestrate deep code-quality review across the active stack — architecture, security, data correctness,
+  performance, with risk-gated testing, documentation and design-reference specialists. Use when the user asks
+  to review code, a code change, or a whole branch. Run TOGETHER with devkit-reviewer-business-logic for a full
+  review.
 ---
 
 # Deep reviewer (orchestrator)
+
+Routing policy — which review skill owns which target, and when several must run together: `plugins/core/conduct/review-routing.md`.
 
 You are dispatching a deep code-quality review across whatever stacks the project has enabled. This skill does not perform the review itself — it routes to the stack-specific variants.
 

@@ -1,6 +1,10 @@
 ---
 name: devkit-cli-loop
-description: drive an iterated CLI workflow where the agent clarifies the task, grounds in real environment data, then emits copy-paste-ready command batches and waits for the user's terminal output between batches. Use when the user is operating a remote/local shell step-by-step (provisioning, ops, db work, deploys, secret-bearing setup) and wants the agent to plan, hand off commands, then react to their output.
+description: >-
+  drive an iterated CLI workflow: clarify the task, ground in real environment data, then emit copy-paste-ready
+  command batches and wait for the user's terminal output between batches. Use when the user is operating a
+  remote or local shell step-by-step — provisioning, ops, db work, deploys, secret-bearing setup — and wants to
+  run the commands themselves.
 ---
 
 # CLI loop (iterated shell workflow)

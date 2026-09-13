@@ -1,8 +1,9 @@
 ---
 name: devkit-backlog
 description: >-
-  Manage a Git repository's deferred-work items in docs/backlog/: list, triage, fix, drop, or append accepted findings.
-  Use for backlog requests or when current findings should be deferred. Supports a slug and --all.
+  manage a repository's deferred-work items in docs/backlog/: list, triage, fix, drop, or append accepted
+  findings. Use for backlog requests, or when the user accepts deferring a finding raised in the current
+  session. Supports a slug and --all.
 ---
 
 # Backlog

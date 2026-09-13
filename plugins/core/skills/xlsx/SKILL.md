@@ -1,6 +1,9 @@
 ---
 name: devkit-xlsx
-description: create, read, edit, validate, or summarize spreadsheets (.xlsx, .xlsm, .csv, .tsv) on demand. Use for data cleanup, tabular reports, inventory exports, reconciliation, lightweight analysis, and preserving existing workbook formulas/formatting. Uses Python/CLI tools only; no background services.
+description: >-
+  create, read, edit, validate, or summarize spreadsheets (.xlsx, .xlsm, .csv, .tsv) on demand. Use for data
+  cleanup, tabular reports, inventory exports, reconciliation, lightweight analysis, and preserving existing
+  workbook formulas and formatting.
 ---
 
 # XLSX / Spreadsheet Workflows

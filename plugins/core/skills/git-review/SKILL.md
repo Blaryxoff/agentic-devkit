@@ -1,6 +1,10 @@
 ---
 name: devkit-git-review
-description: interactive git-diff annotation review — generate a cleaned-up diff, open it in $EDITOR for the user to annotate, then address the annotations in a loop. Use when the user says "git review", "review my changes", "annotate changes/diff", or "interactive review". For a non-interactive correctness/architecture pass use devkit-reviewer-fast / devkit-reviewer-deep instead.
+description: >-
+  interactive git-diff annotation review — generate a cleaned-up diff, open it in $EDITOR for the user to
+  annotate, then address the annotations in a loop. Use on "git review", "review my changes", "annotate
+  changes/diff", or "interactive review". For a non-interactive correctness/architecture pass use
+  devkit-reviewer-fast or devkit-reviewer-deep.
 ---
 
 # Git Review (interactive annotation)

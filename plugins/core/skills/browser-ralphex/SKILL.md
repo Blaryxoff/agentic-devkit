@@ -1,6 +1,10 @@
 ---
 name: devkit-browser-ralphex
-description: generate a ralphex plan that drives the chrome-devtools MCP to exhaustively QA-test a scope (a feature, a page set, or the whole project) in a real browser across roles, viewports, full entity lifecycle, field/validation, interactive controls, cross-role access propagation, permissions, regression, and fidelity to supplied design references — seeds test data without wiping the real DB and produces a dev-ready bug report in docs/qa/. Invoke when asked to "create a QA plan", "write a ralphex plan for browser QA", "plan a full browser regression sweep", or "design QA coverage for a feature/page set/project". Delegates plan rendering to devkit-plan-creator. Does NOT run the QA — the ralphex dev plan executes in a follow-up session. For immediate in-chat results without a plan file, use devkit-browser. Does NOT fix code.
+description: >-
+  generate a ralphex plan that drives an exhaustive browser QA sweep of a feature, page set, or whole project,
+  producing a dev-ready bug report in docs/qa/. Invoke on "create a QA plan", "write a ralphex plan for browser
+  QA", "plan a full browser regression sweep", or "design QA coverage". Does NOT run the QA — the plan executes
+  in a follow-up session — and does NOT fix code. For immediate in-chat QA, use devkit-browser.
 ---
 
 # QA Tester — Ralphex Plan

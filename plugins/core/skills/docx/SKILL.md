@@ -1,6 +1,9 @@
 ---
 name: devkit-docx
-description: create, read, edit, or review Microsoft Word .docx documents on demand. Use for extracting text, generating reports/contracts/specs, applying simple edits, preserving comments/tracked changes when possible, or converting between docx and markdown. Prefers lightweight CLI/Python workflows; no background services.
+description: >-
+  create, read, edit, or review Microsoft Word .docx documents on demand. Use for extracting text, generating
+  reports/contracts/specs, applying simple edits, preserving comments/tracked changes where possible, or
+  converting between docx and markdown.
 ---
 
 # DOCX Documents

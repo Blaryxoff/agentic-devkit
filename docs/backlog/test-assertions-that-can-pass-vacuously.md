@@ -1,13 +1,13 @@
 ---
 worth: yes
-where: tests/context-efficiency.sh:22
+where: tests/codex-adapter.sh:166
 added: 2026-09-02
 ---
 # Several test assertions pass without checking anything
 
-- `broad_loading=$(rg … || true)` (`tests/context-efficiency.sh:22-26`) swallows exit 127 as well as rg's no-match
-  exit 1. On a machine without ripgrep the variable is empty and the wholesale-conduct-loading check reports success
-  having searched nothing. `rg` is undeclared anywhere.
+- ~~`broad_loading=$(rg … || true)` swallowed exit 127 as well as rg's no-match exit 1, so on a machine without
+  ripgrep the wholesale-conduct-loading check reported success having searched nothing.~~ Fixed 2026-09-13: the check
+  now guards on `command -v rg` and falls back to `grep -rniE`.
 - `assert_contains "$project/.gitignore" '.codex/'` (`tests/codex-adapter.sh:166`) is presence-only.
   `codex/generate` runs three times against the same project, so a regression in `ensure_gitignore_entry`'s
   normalization awk that appended on every run would leave three copies and every assertion would still pass. The

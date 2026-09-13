@@ -1,6 +1,9 @@
 ---
 name: devkit-docker-deploy
-description: bootstrap or audit a project's Docker / docker-compose production deployment against the org's docker-deployment conduct. Single-node prod+test is the default shape (Laravel + optional Nuxt + mysql + redis); multi-node fleets are an opt-in appendix. Use when starting a new dockerized service, hardening an existing one, or reviewing the docker setup of an existing project.
+description: >-
+  bootstrap or audit a project's Docker / docker-compose production deployment against the org's deployment
+  conduct. Use when starting a new dockerized service, hardening an existing one, or reviewing the docker setup
+  of an existing project. Covers the default single-node prod+test shape and opt-in multi-node fleets.
 ---
 
 # Docker Deployment — Setup & Audit

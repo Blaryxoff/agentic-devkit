@@ -1,6 +1,10 @@
 ---
 name: devkit
-description: dispatch to the project's stack-specific devkit skills and conduct (Laravel, Vue, Nuxt, Inertia, Tailwind, CSS, frontend architecture). Use when a request needs framework/stack conventions, backend or frontend architecture/design, or stack-specific implementation and the stack skills are not globally registered. Reads each accessible repo's .devkit/toolkit.json, resolves the enabled plugins from the global devkit clone, and loads the matching child skill + conduct on demand. Skip for pure git/plan/review/verify work — those core skills are globally registered and auto-match on their own.
+description: >-
+  dispatch to the project's stack-specific devkit skills and conduct (Laravel, Vue, Nuxt, Inertia, Tailwind,
+  CSS, frontend architecture). Use when a request needs framework/stack conventions or stack-specific
+  architecture, design, or implementation and the stack skills are not globally registered. Skip pure
+  git/plan/review/ verify work — those core skills auto-match on their own.
 ---
 
 # devkit (stack router)

@@ -9,11 +9,16 @@ testing axes). Ordering below is by severity as adjudicated at filing time, not 
 Four items from the original Blocking set were fixed 2026-09-03 (Codex-validated) and removed: the Claude adapter's
 settings.json hook merge, the Cursor adapter's hooks.json overwrite, the `devkit-tester` name collision, and the missing
 test runner (`tests/run-all.sh` now exists and is documented in `CLAUDE.md`). Running that runner for the first time
-surfaced a fifth, previously-unknown Blocking bug — see below — which was filed but not fixed in the same pass.
+surfaced a fifth, previously-unknown Blocking bug (the Cyrillic-description install crash), filed then and fixed below.
+
+Three further items were fixed 2026-09-13 during a catalog-metadata pass and removed: the Cyrillic-description install
+crash (the slash-command generator no longer parses skill descriptions at all), the three trigger-less skill
+descriptions, and the unvalidated subagent output path. `tests/context-efficiency.sh` now enforces the description
+contract and a catalog-wide metadata budget, so the first two cannot regress.
 
 ## Blocking
 
-- [`bin/devkit-install` crashes on any fresh install with a Cyrillic skill description](awk-crashes-on-multibyte-skill-descriptions.md)
+_None._
 
 ## Significant
 
@@ -37,14 +42,12 @@ surfaced a fifth, previously-unknown Blocking bug — see below — which was fi
 - [Private identifiers in shipped conduct](private-identifiers-in-shipped-conduct.md)
 - [The layout tree omits the css plugin and `tests/`](claude-md-layout-omits-css-plugin-and-tests.md)
 - [The `ralphex-` prefix is documented but unused](ralphex-prefix-documented-but-unused.md)
-- [Three skill descriptions have no trigger clause](skill-descriptions-without-a-trigger-clause.md)
 
 ## Minor
 
 - [Three cross-reference defects in the review conduct cluster](review-conduct-cross-reference-defects.md)
 - [Test assertions that can pass vacuously](test-assertions-that-can-pass-vacuously.md)
 - [`settings.json` writes truncate before producing output](json-writes-truncate-before-producing-output.md)
-- [Subagent output path from unvalidated frontmatter](subagent-output-path-from-unvalidated-frontmatter.md)
 - [Cursor and Codex adapters ignore `paths.skills`](cursor-and-codex-adapters-ignore-paths-skills.md)
 - [`devkit-css` Cursor rule globs every file](devkit-css-cursor-rule-globs-every-file.md)
 - [Nine css skills drop the prefix, undocumented](css-skills-drop-the-prefix-undocumented.md)

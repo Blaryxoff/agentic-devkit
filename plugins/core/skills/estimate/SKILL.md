@@ -1,12 +1,10 @@
 ---
 name: devkit-estimate
 description: >-
-  estimate calendar delivery time for a software feature or project from its specification, current repositories,
-  Git/session analogues, available agent concurrency, and current web evidence. Produces demo, alpha, beta, and
-  production-ready ranges from the agent critical path instead of summed human person-days, formatted for direct paste
-  into a tracker or Telegram. Use for "estimate this task", "how long will this take", agent-first, agent-only, or
-  vibe-coding delivery estimates. Does not edit sprint workbooks or allocate people; use devkit-sprint for that. Does
-  not implement the work.
+  estimate calendar delivery time for a software feature or project, formatted for direct paste into a tracker
+  or Telegram. Use for "estimate this task", "how long will this take", agent-first, agent-only, or vibe-coding
+  delivery estimates. Produces demo, alpha, beta and production-ready ranges from the agent critical path. Does
+  not allocate people or edit sprint workbooks — that is devkit-sprint — and does not implement the work.
 ---
 
 # Agent-First Estimator

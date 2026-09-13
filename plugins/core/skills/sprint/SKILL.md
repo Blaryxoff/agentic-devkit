@@ -1,11 +1,10 @@
 ---
 name: devkit-sprint
 description: >-
-  audit and update sprint-planning Google Sheets workbooks using a project-local historical evidence snapshot plus
-  target/changed specification, Git, and session evidence; estimate remaining coding hours, classify
-  back/front/common/full work, assign executors, balance real coding capacity, and add native task-specific Drive smart
-  chips. Use for sprint estimation, capacity allocation, executor assignment, or repairing planning-workbook links and
-  totals. Does not implement product code.
+  audit and update sprint-planning Google Sheets workbooks: estimate remaining coding hours, classify
+  back/front/common/full work, balance real coding capacity, and repair links and totals with Drive smart chips.
+  Use for sprint estimation, capacity allocation, executor assignment, or repairing planning-workbook links.
+  Does not implement product code — for delivery ranges without a workbook use devkit-estimate.
 ---
 
 # Sprint Workbook Planner

@@ -1,7 +1,10 @@
 ---
 name: devkit-clarify
 description: >-
-  handle user confusion — verify intent, explain the actual behaviour with evidence, and decide whether there's a real issue to fix. Use when the user appears confused or misaligned: "I don't understand", "this doesn't make sense", "wait, shouldn't it…", "why is this happening", "I expected X but got Y", contradictory statements, or frustration. Primary goal is to clarify, not to fix.
+  handle user confusion — verify intent, explain the actual behaviour with evidence, and decide whether there is
+  a real issue to fix. Use when the user appears confused or misaligned: "I don't understand", "this doesn't
+  make sense", "why is this happening", "I expected X but got Y", contradictory statements, or frustration.
+  Clarifies; does not fix.
 ---
 
 # Clarify

@@ -1,7 +1,10 @@
 ---
 name: wrapup
 description: >-
-  close out finished work — sweep this session's leftovers, verify, commit, push, clean up the worktree, and report evidence (SHAs). Invoke on "wrapup", "/wrapup", "commit and push", "коммить и пушь", "remove worktree", or any request to finish/ship the current task. Do NOT invoke on a status question ("did you push?") — answer that from git evidence without changing anything. Does NOT deploy, review code, or open PRs.
+  close out finished work — sweep this session's leftovers, verify, commit, push, clean up the worktree, and
+  report SHAs. Invoke on "wrapup", "commit and push", "коммить и пушь", "remove worktree", or any request to
+  finish/ship the current task. Do NOT invoke on a status question ("did you push?"). Does NOT deploy, review
+  code, or open PRs.
 ---
 
 # Wrapup

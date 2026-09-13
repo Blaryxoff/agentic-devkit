@@ -1,6 +1,8 @@
 ---
 name: devkit-reviewer-logging
-description: review code for logging standards — proper levels, traceability, and no sensitive data leakage
+description: >-
+  review code for logging standards — proper levels, traceability, and no sensitive data leakage. Use when asked
+  for a logging or log audit; not as the general code reviewer.
 claudeSubagent: true
 claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 ---

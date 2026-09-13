@@ -1,6 +1,11 @@
 ---
 name: devkit-browser
-description: run an immediate targeted or exhaustive browser QA pass on a scoped feature or page set — choose isolated chrome-devtools MCP or, when available in Codex, the Codex browser-client including external Codex Bridge; pin every browser tab to one verified environment, seed append-only test records only for mutation lanes, exercise the requested scenario matrix, audit snapshots/DOM geometry/overflow, and compare supplied design references with applicable normalised diffs or matching-crop evidence. Invoke for "test"/"протестируй"/"прокликай", "QA this page", "click through the feature", "smoke-test these routes", or "does it match the design". Explicit smoke/only/regression requests stay targeted; full/e2e/final requests execute the exhaustive matrix. Does NOT read ralphex plans, write report files, or fix code.
+description: >-
+  run an immediate browser QA pass on a scoped feature or page set — targeted for smoke/regression requests,
+  exhaustive for full/e2e/final ones. Invoke for "test"/"протестируй"/"прокликай", "QA this page", "click
+  through the feature", "smoke-test these routes", or "does it match the design". Covers roles, viewports,
+  entity lifecycle, validation, controls, overflow and design fidelity. Does NOT read ralphex plans, write
+  report files, or fix code.
 ---
 
 # QA Tester
@@ -8,8 +13,6 @@ description: run an immediate targeted or exhaustive browser QA pass on a scoped
 > Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
 
 You are acting as a **QA lead**. Given a scope, orchestrate an immediate real-browser test — no ralphex plan, no markdown report files. Classify the pass as targeted or exhaustive per `plugins/core/conduct/browser-qa-rules.md` §1, execute that matrix, and return all findings in this conversation. You do not fix code.
-
-For a persisted ralphex plan and incremental `docs/qa/` report across multiple sessions, tell the user to invoke `devkit-browser-ralphex`.
 
 ## Model routing
 

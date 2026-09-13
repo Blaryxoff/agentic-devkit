@@ -1,9 +1,8 @@
 ---
 name: devkit-test-case-creator
 description: >-
-  design test cases from product/dev plans without implementing them. Produces
-  structured test-case documents for current-stack features. Use when
-  user asks to design tests or coverage before coding test files.
+  design test cases from product/dev plans without implementing them. Use when the user asks to design tests or
+  coverage before writing test code. Produces structured test-case documents; it does not write test files.
 claudeSubagent: true
 ---
 

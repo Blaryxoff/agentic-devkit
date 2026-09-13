@@ -1,11 +1,10 @@
 ---
 name: devkit-crosscheck
 description: >-
-  run one task twice — once natively in this harness, once in the peer CLI (Claude Code ↔ Codex) — then verify both
-  answers against primary evidence and merge them into one best answer. Manual trigger ONLY, never self-invoked: load
-  it when the user writes "crosscheck", "кросс-чек", "проверь через codex", "проверь через claude", "ask codex too",
-  "ask claude too", "second opinion", "run it in both". No other request matches, however uncertain or high-stakes it
-  looks. Mechanics: plugins/core/conduct/cross-agent-review.md.
+  run one task twice — once natively in this harness, once in the peer CLI (Claude Code ↔ Codex) — then verify
+  both answers against primary evidence and merge them. Manual trigger ONLY, never self-invoked: "crosscheck",
+  "кросс-чек", "проверь через codex/claude", "ask codex too", "ask claude too", "second opinion", "run it in
+  both". No other request matches, however uncertain or high-stakes it looks.
 ---
 
 # Cross-Check

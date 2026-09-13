@@ -1,6 +1,8 @@
 ---
 name: devkit-babysit
-description: keep a PR merge-ready by triaging comments, resolving clear conflicts, and fixing CI in a loop
+description: >-
+  keep a PR merge-ready by triaging comments, resolving clear conflicts, and fixing CI in a loop. Use when asked
+  to babysit, watch, or shepherd a pull request until it is mergeable.
 claudeSubagent: true
 ---
 

@@ -1,6 +1,9 @@
 ---
 name: devkit-wrong
-description: reset and re-evaluate when the current approach has hit a dead end — step back, restate the problem, and propose fresh alternatives instead of patching a failing path. Use when the user says "wrong", "this isn't working", "wrong approach", "start over", "try again", or "bad direction".
+description: >-
+  reset and re-evaluate when the current approach has hit a dead end — step back, restate the problem, and
+  propose fresh alternatives instead of patching a failing path. Use on "wrong", "this isn't working", "wrong
+  approach", "start over", "try again", or "bad direction".
 ---
 
 # Wrong — Reset and Re-evaluate

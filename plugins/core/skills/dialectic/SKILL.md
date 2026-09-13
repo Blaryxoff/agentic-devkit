@@ -1,6 +1,9 @@
 ---
 name: devkit-dialectic
-description: prove and counter-prove a statement with two opposing analyses run in parallel, then synthesize an objective conclusion verified against the code. Use when the user says "dialectic", "prove/disprove", "stress-test this claim", "is this really true", "argue both sides", or when a claim about the codebase needs bias-free analysis from opposing viewpoints.
+description: >-
+  prove and counter-prove a statement with two opposing analyses run in parallel, then synthesize a conclusion
+  verified against the code. Use on "dialectic", "prove/disprove", "stress-test this claim", "is this really
+  true", "argue both sides", or when a claim about the codebase needs bias-free analysis.
 ---
 
 # Dialectic Analysis

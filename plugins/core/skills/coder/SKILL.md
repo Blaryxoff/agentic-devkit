@@ -1,7 +1,8 @@
 ---
 name: devkit-coder
 description: >-
-  implement, fix, build, change, add, remove, or refactor code in any stack. Use before the first edit for every implementation, bugfix, or refactor request. Applies the core coding baseline and loads only the active-stack conduct required by the touched files and risks. Do not use for code review, ralphex plan review, or browser QA.
+  implement, fix, build, change, add, remove, or refactor code in any stack. Use before the first edit for every
+  implementation, bugfix, or refactor request. Do not use for code review, ralphex plan review, or browser QA.
 ---
 
 # Coder

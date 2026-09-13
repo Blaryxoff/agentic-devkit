@@ -1,10 +1,15 @@
 ---
 name: devkit-reviewer-fast
 description: >-
-  orchestrate fast correctness/regressions review across the active stack — dispatches to laravel and frontend variants and presents their reports sequentially. Use only when the user signals speed ("quick review", "fast pass", "быстро глянь", "just regressions"). For a full branch/code review use devkit-reviewer-deep + devkit-reviewer-business-logic; for changes under docs/plans/** use devkit-plan-reviewer. Routing policy: plugins/core/conduct/review-routing.md.
+  orchestrate a fast correctness/regressions review across the active stack. Use only when the user signals
+  speed — "quick review", "fast pass", "быстро глянь", "just regressions". For a full branch/code review use
+  devkit-reviewer-deep + devkit-reviewer-business-logic; for changes under docs/plans/** use
+  devkit-plan-reviewer.
 ---
 
 # Fast reviewer (orchestrator)
+
+Routing policy — which review skill owns which target, and when several must run together: `plugins/core/conduct/review-routing.md`.
 
 You are dispatching a fast review across whatever stacks the project has enabled. This skill does not perform the review itself — it routes to the stack-specific variants.
 

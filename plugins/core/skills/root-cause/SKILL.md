@@ -1,6 +1,10 @@
 ---
 name: devkit-root-cause
-description: systematic root-cause analysis for errors, bugs, and unexpected behaviour using 5-Why methodology — drill from symptom to fundamental cause before proposing any fix. Use when the user reports errors, build/test failures, performance degradation, integration problems, or any "it's not working" scenario. Investigation only; it does not write the fix.
+description: >-
+  systematic root-cause analysis for errors, bugs, and unexpected behaviour using 5-Why methodology — drill from
+  symptom to fundamental cause before proposing any fix. Use when the user reports errors, build/test failures,
+  performance degradation, integration problems, or any "it's not working" scenario. Investigation only; does
+  not write the fix.
 ---
 
 # Root Cause Investigator

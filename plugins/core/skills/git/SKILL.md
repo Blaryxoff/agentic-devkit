@@ -1,6 +1,9 @@
 ---
 name: devkit-git
-description: enforce git workflow conventions for the current team (branching, commits, PR/MR quality, release tags)
+description: >-
+  enforce git workflow conventions for the current team: branching, commits, PR/MR quality, release tags. Use
+  when the user asks to branch, commit, push, open or update a PR/MR, or tag a release. Does NOT review code —
+  that is devkit-reviewer-deep plus devkit-reviewer-business-logic.
 ---
 
 # Git Workflow Enforcer

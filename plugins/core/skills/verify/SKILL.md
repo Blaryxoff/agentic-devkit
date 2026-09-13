@@ -1,6 +1,9 @@
 ---
 name: devkit-verify
-description: run the verification loop (lint, typecheck, test, security) after implementation changes and report results
+description: >-
+  run the verification loop — lint, typecheck, test, security — after implementation changes and report results.
+  Use when asked to verify, check, or validate finished work, and as the closing gate of an implementation
+  thread. Does not write the fix for what it finds.
 claudeSubagent: true
 claudeSubagentTools: Read, Glob, Grep, Bash
 ---

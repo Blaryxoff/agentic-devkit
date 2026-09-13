@@ -1,12 +1,11 @@
 ---
 name: devkit-task
 description: >-
-  carry a whole task specification from text to a pushed branch with a peer CLI — freeze the spec, analyse it in
-  parallel with the peer, implement natively, run an adversarial review/fix loop (revmux when authorized, else Codex),
-  delegate browser QA to the peer, then wrapup. Manual trigger ONLY: load it when the operator hands over a task
-  specification and names the pipeline — "прогони по процессу", "ship this spec", "work it with codex end to end",
-  "/task", "full pipeline". A bare feature request is NOT a trigger — that is devkit-core--coder. Does NOT deploy and
-  does NOT open PRs. Stage owners are fixed by the table in this file, never inferred from the operator's phrasing.
+  carry a whole task specification from text to a pushed branch with a peer CLI — freeze the spec, analyse,
+  implement, run an adversarial review/fix loop, delegate browser QA, then wrapup. Manual trigger ONLY: the
+  operator hands over a specification AND names the pipeline ("прогони по процессу", "ship this spec", "work it
+  with codex end to end", "/task", "full pipeline"). A bare feature request is NOT a trigger — that is
+  devkit-core--coder. Does NOT deploy or open PRs.
 ---
 
 # Task Pipeline

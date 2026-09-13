@@ -1,8 +1,10 @@
 ---
 name: devkit-nontech
 description: >-
-  format incidents, status, decisions, results, or explanations for managers and other non-technical readers. Use on "для менеджера", "для нетехнических сотрудников", "объясни простыми словами", "без технических деталей", or "stakeholder update". Preserve impact, status, cause, action, and next steps; omit codebase internals.
-  Preserve direct instructions and exact user-visible control names. Always writes the final answer in Russian. A bare invocation rewrites the immediately preceding assistant response.
+  format incidents, status, decisions, results, or explanations for managers and other non-technical readers.
+  Use on "для менеджера", "для нетехнических сотрудников", "объясни простыми словами", "без технических
+  деталей", or "stakeholder update". Always writes the final answer in Russian. A bare invocation rewrites the
+  immediately preceding assistant response.
 ---
 
 # Nontech

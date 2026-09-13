@@ -1,11 +1,10 @@
 ---
 name: devkit-learn
 description: >-
-  capture strategic, reusable project knowledge discovered this session into the current harness's native project
-  instruction file or an established per-developer/per-checkout equivalent. Use when the user says "learn", "save
-  knowledge", "update agents.md", "update claude.md", or "capture learnings", and when the top-level
-  terminal learning-capture gate finds a durable candidate. Never trigger merely because a session was long. Never write
-  without granular user confirmation.
+  capture strategic, reusable project knowledge from this session into the harness's native project instruction
+  file. Use on "learn", "save knowledge", "update agents.md/claude.md", "capture learnings", or when the
+  top-level terminal learning-capture gate finds a durable candidate. Never trigger merely because a session was
+  long; never write without granular user confirmation.
 ---
 
 # Learn

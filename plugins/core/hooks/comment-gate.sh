@@ -22,6 +22,26 @@ case "$tool" in
   *) exit 0 ;;
 esac
 
+sid=$(printf '%s' "$input" | jq -r '.session_id // .sessionId // .conversation_id // empty' 2>/dev/null)
+safe_sid=$(printf '%s' "$sid" | tr -c 'A-Za-z0-9._-' '_')
+seen_prefix="${TMPDIR:-/tmp}/devkit-comment-gate-seen-$safe_sid"
+
+# The full payload teaches one rule; a session already taught that rule needs the
+# verdict and the offending lines, not the doc again. Repeats are common because each
+# new file is a fresh violation of the same habit. The marker is keyed per payload, so
+# the prose rule and the change-history rule each get one full teaching.
+emit_payload() {
+  marker="$seen_prefix-$(basename "$2" .txt)"
+  if [ -n "$sid" ] && [ -f "$marker" ]; then
+    printf '[devkit comment-gate] %s — same rule as before: delete or rewrite the comment, then retry.\n' "$1" >&2
+    printf 'Full rule: plugins/core/conduct/code-comments.md\n' >&2
+    return
+  fi
+  cat "$2" >&2 2>/dev/null || printf '[devkit comment-gate] %s — see plugins/core/conduct/code-comments.md.\n' "$1" >&2
+  [ -n "$sid" ] && : > "$marker" 2>/dev/null
+  return 0
+}
+
 is_prose() {
   case "$1" in
     *.md | *.mdx | *.markdown | *.txt | *.rst) return 0 ;;
@@ -96,8 +116,7 @@ offenders=$(printf '%s\n' "$comments" | grep -E "$ru" | head -n 3)
 dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd 2>/dev/null)
 
 if [ -n "$offenders" ]; then
-  cat "$dir/comment-gate.txt" >&2 2>/dev/null \
-    || printf '[devkit comment-gate] Comments must not narrate change history — see plugins/core/conduct/code-comments.md.\n' >&2
+  emit_payload 'Comments must not narrate change history' "$dir/comment-gate.txt"
   printf '\nOffending added line(s):\n%s\n' "$offenders" >&2
   exit 2
 fi
@@ -147,7 +166,6 @@ prose=$(printf '%s\n' "$fresh" | awk -v css="$css" '
 ' 2>/dev/null | head -n 6)
 [ -n "$prose" ] || exit 0
 
-cat "$dir/comment-gate-prose.txt" >&2 2>/dev/null \
-  || printf '[devkit comment-gate] Implementation code carries no prose comments — see plugins/core/conduct/code-comments.md.\n' >&2
+emit_payload 'Implementation code carries no prose comments' "$dir/comment-gate-prose.txt"
 printf '\nOffending added line(s):\n%s\n' "$prose" >&2
 exit 2

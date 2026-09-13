@@ -1,6 +1,9 @@
 ---
 name: devkit-skill-creator
-description: create or improve agentic-devkit skills so they stay small, specific, discoverable, and useful. Use when adding a new devkit skill, porting external Claude/Codex skills, reviewing existing skills for bloat, or deciding whether an idea belongs in a skill, conduct doc, script, or should be rejected.
+description: >-
+  create or improve agentic-devkit skills so they stay small, specific, discoverable, and useful. Use when
+  adding a new devkit skill, porting external Claude/Codex skills, reviewing existing skills for bloat, or
+  deciding whether an idea belongs in a skill, conduct doc, script, or should be rejected.
 ---
 
 # Skill Creator

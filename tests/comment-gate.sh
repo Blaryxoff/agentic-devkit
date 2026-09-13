@@ -113,4 +113,29 @@ gate_stderr "$(edit /tmp/a.js '// previously used the old parser
 const x = 1;')" | grep -q 'narrates change history' \
   || fail "history rejection must reach stderr, not just exit 2"
 
+sid_payload() {
+  jq -cn --arg f "$1" --arg c "$2" --arg s "$3" \
+    '{session_id:$s,tool_name:"Write",tool_input:{file_path:$f,content:$c}}'
+}
+
+rm -f "$TMP_DIR/devkit-comment-gate-seen-sess-x"
+first=$(gate_stderr "$(sid_payload /tmp/first.js "$prose_block" sess-x)")
+second=$(gate_stderr "$(sid_payload /tmp/second.js "$prose_block" sess-x)")
+printf '%s' "$first" | grep -q 'How to proceed' \
+  || fail "the first block in a session must carry the full payload"
+printf '%s' "$second" | grep -q 'same rule as before' \
+  || fail "a repeat block in the same session must collapse to the short form"
+printf '%s' "$second" | grep -q 'Offending added line(s)' \
+  || fail "the short form must still name the offending lines"
+[ "${#second}" -lt "${#first}" ] || fail "the short form must be shorter than the full payload"
+other=$(gate_stderr "$(sid_payload /tmp/third.js "$prose_block" sess-y)")
+printf '%s' "$other" | grep -q 'How to proceed' \
+  || fail "a different session must start from the full payload"
+
+history_block='// previously used the old parser
+const x = 1;'
+history=$(gate_stderr "$(sid_payload /tmp/fourth.js "$history_block" sess-x)")
+printf '%s' "$history" | grep -q 'narrates change history' \
+  || fail "a different rule in the same session must still carry its own full payload"
+
 echo "comment gate tests passed"

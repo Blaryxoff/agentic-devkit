@@ -70,9 +70,11 @@ howto/                   Developer guides (Russian)
   that name (`/wrapup` is one). Author a command only when it needs its own wording, `argument-hint`, or arguments
   contract.
 - `SHORT_COMMAND_DENY` in `bin/devkit-install` keeps a skill long-form. It holds generic names that collide with harness
-  built-ins or third-party skills (`browser`, `coder`, `design`, `git`, `init`, `learn`, `plan`, `review`, `run`,
-  `verify`, `devkit-router`) and token-gated skills (`plan-creator`, `plan-reviewer` — they require `ralphex`, see
-  `plugins/core/hooks/skill-eval.txt`).
+  built-ins or third-party skills (`browser`, `coder`, `design`, `git`, `init`, `learn`, `plan`, `release-notes`,
+  `review`, `run`, `verify`, `devkit-router`) and token-gated skills (`plan-creator`, `plan-reviewer` — they require
+  `ralphex`, see `plugins/core/hooks/skill-eval.txt`). `/release-notes` is a Claude Code built-in.
+- A generated command's `description` is a fixed one-liner (`Run the devkit <name> workflow.`), never a copy of the
+  skill description — the skill entry already carries that text in the same metadata block.
 - Files already in `~/.claude/commands/` are never overwritten or deleted unless devkit wrote them; the installer names
   what it kept.
 - Codex has no custom-command directory — there a skill is invoked as `$<frontmatter-name>`.
@@ -118,6 +120,15 @@ The audience is an LLM. Optimise for signal density — every line spends contex
 
 - `name`: kebab-case, prefixed (`devkit-…` / `ralphex-…`).
 - `description`: this is the trigger an LLM matches against — be specific about *when* to invoke. `bootstrap or audit a project's Docker deployment` beats `Docker helper`. Include the inputs/outputs and the situations that skip the skill.
+- A description carries exactly three things: **what** the skill does, **when** to invoke it (trigger phrases, in every
+  language the team uses), and **how it differs** from a sibling skill that could be picked instead. Mechanics, output
+  formats, post-activation behaviour and conduct citations go in the body — they cost nothing until the skill is
+  selected, and every catalog entry is injected into *every* request under a hard platform cap.
+- Trigger lists state the rule and 3-4 representative phrases. Paraphrases of a phrase already listed are dead weight.
+- `tests/context-efficiency.sh` enforces this: a per-skill cap, a required trigger clause, no conduct paths, and a
+  budget over the whole surface (skills + generated commands + generated subagents).
+- Write a long description as a `>-` folded scalar and wrap on whitespace only. A line break inside a hyphenated
+  token folds to `devkit- reviewer-deep` — a sibling name that resolves to nothing, so the redirect silently dies.
 
 ### Skill vs conduct division
 
