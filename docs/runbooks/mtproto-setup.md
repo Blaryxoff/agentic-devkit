@@ -257,4 +257,3 @@ destroys the volatile writer/session state needed for diagnosis.
 - For nn99/Hetzner, restore the Compose backup and run `docker compose up -d --no-deps telemt`.
 - Restore nginx only when nginx was part of the change; validate with `nginx -t` before reload.
 - Re-run the full public FakeTLS + `resPQ` probe and website TLS checks after rollback.
-
