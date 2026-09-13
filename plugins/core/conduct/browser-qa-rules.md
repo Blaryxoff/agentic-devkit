@@ -1,6 +1,6 @@
 # Browser QA
 
-Canonical rules for browser-based QA skills (`devkit-browser`, `devkit-browser-ralphex`). Skills cite sections here; do not duplicate these rules in skill bodies.
+Canonical rules for the `devkit-browser` QA skill. The skill cites sections here; do not duplicate these rules in its body.
 
 ## 1. Scope
 
@@ -79,7 +79,7 @@ ls -d "$tmp"/puppeteer_dev_chrome_profile-* 2>/dev/null | sort \
   | comm -13 "$tmp/devkit-qa-chrome-before.$PASS" -
 ```
 
-Carry the printed path forward: `devkit-browser` keeps it in the agent's own context and bakes the literal into §10.3; `devkit-browser-ralphex` writes it into the dated `docs/qa/` report, because its cleanup task runs in a later session.
+Carry the printed path forward in the agent's own context and bake the literal into §10.3.
 
 A concurrent session that launches Chrome between the two steps also lands in the delta. Keep the steps adjacent, and when the delta holds anything other than exactly one path, kill nothing (§10.5).
 

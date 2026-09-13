@@ -19,7 +19,7 @@ Run `git diff --name-only <base>` (or scope to the named files/branch) and class
 | "review", "поревьюй" | other spec/PRD markdown, `ralphex` not written | no skill — review directly |
 | "review the branch/code", "поревьюй ветку/изменения целиком" | code | `devkit-reviewer-deep` **and** `devkit-reviewer-business-logic` (both) |
 | "quick/fast review", "быстро глянь" | code | `devkit-reviewer-fast` |
-| "test", "протестируй", "QA", "smoke-test", "прокликай" | running app / UI | `devkit-browser` (or `devkit-browser-ralphex` when a persisted plan + markdown report is wanted) |
+| "test", "протестируй", "QA", "smoke-test", "прокликай" | running app / UI | `devkit-browser` |
 | `revmux` named as the review **engine** — "revmux this branch", "run revmux", "review it with revmux" | any target | upstream `revmux` skill — [revmux-review.md](./revmux-review.md) |
 
 ## Rules
