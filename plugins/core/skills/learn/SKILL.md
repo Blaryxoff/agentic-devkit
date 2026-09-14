@@ -2,9 +2,9 @@
 name: devkit-learn
 description: >-
   capture strategic, reusable project knowledge from this session into the harness's native project instruction
-  file. Use on "learn", "save knowledge", "update agents.md/claude.md", "capture learnings", or when the
-  top-level terminal learning-capture gate finds a durable candidate. Never trigger merely because a session was
-  long; never write without granular user confirmation.
+  file while honoring placement guidance defined at project or user scope. Use on "learn", "save knowledge", "update
+  agents.md/claude.md", "capture learnings", or when the top-level terminal learning-capture gate finds a durable
+  candidate. Never trigger merely because a session was long; never write without granular user confirmation.
 ---
 
 # Learn
@@ -96,9 +96,11 @@ outside this skill's scope. Never write memory for the active harness into anoth
 
 ## Workflow
 
-1. **Identify the active harness and placement guidance.** Inspect only its loaded project instruction files, documented
-   local equivalents, and native global instruction source. If the project defines a placement decision tree or specific
-   destination, follow it instead of the defaults below.
+1. **Identify the active harness and enumerate placement guidance.** Inspect every project- and user-level instruction or
+   rule file that the active harness loads; do not assume one root file contains the whole policy. For Claude Code this
+   includes project `CLAUDE.md`, applicable `.claude/rules/*.md`, user `~/.claude/CLAUDE.md`, and applicable
+   `~/.claude/rules/*.md`. For Codex, inspect every applicable `AGENTS.md` already loaded for the current project and user
+   scopes. If those files define a placement decision tree or specific destination, follow it instead of the defaults.
 2. **Read existing active-harness memory content** in those locations to avoid duplication. Do not scan or edit another
    harness's files unless the project explicitly declares them canonical for all agents.
 3. **Early exit** — if no new strategic knowledge was found, stop without asking the user. For explicit invocation,
