@@ -73,6 +73,49 @@ claude -p "<prompt>" --permission-mode plan < /dev/null
 - Side effect: a plan-mode run may persist a plan file under `~/.claude/plans/`. Harmless; ignore it.
 - `-p` prints the final answer only. Exit status is not a reliable success signal — judge the run by whether the text answers the prompt.
 
+### Persistent subprocess peer sessions
+
+Applies only to **subprocess** peers — a `codex exec` or `claude -p` process this session starts. It does not apply to
+`devkit-pair`, which talks to an interactive session the operator already has open and forbids these commands entirely.
+
+A one-shot `codex exec` / `claude -p` starts from an empty context every time. When a workflow drives the same
+subprocess peer across several rounds, open its session once and resume it — the peer keeps what it already learned,
+and each round costs only the new prompt. The "Prompt requirements" below describe the first round; a resumed round
+carries the earlier context and need not restate it.
+
+**Claude Code → Codex.** Capture the thread id from the first line of `--json`, then resume it:
+
+```bash
+ROUNDS=$(mktemp -d)   # outside the repo — never write scratch JSONL into the checkout
+codex exec --json --sandbox read-only --skip-git-repo-check "<bootstrap prompt>" < /dev/null \
+  > "$ROUNDS/round-0.jsonl"
+# {"type":"thread.started","thread_id":"01a0a189-b1b8-7611-9082-c59ad93e2a38"}
+PEER=$(head -1 "$ROUNDS/round-0.jsonl" | jq -r .thread_id)
+
+codex exec resume "$PEER" --json --skip-git-repo-check -c sandbox_mode='"read-only"' "<next prompt>" < /dev/null
+```
+
+- **`codex exec resume` has no `--sandbox` flag.** It falls back to `sandbox_mode` in `~/.codex/config.toml`, which on
+  many machines is `danger-full-access`. Pass `-c sandbox_mode='"read-only"'` on **every** resume — the flag is the write
+  boundary, and omitting it silently hands the peer full write access to the repo.
+- Never read the session id out of `~/.codex/sessions/` by modification time. `codex exec` writes a rollout file per
+  internal subagent as well, and resuming a subagent id fails with `cannot resume an unloaded multi-agent v2 sub-agent`.
+  `--json`'s `thread.started` is the only reliable source.
+- `--json` also yields the answer without the reasoning trace:
+  `jq -r 'select(.type=="item.completed" and .item.type=="agent_message") | .item.text'`.
+- `-m <model>` works on `resume`, so a cheap tier can answer a cheap round in the same thread.
+
+**Codex → Claude Code.** Mint the id yourself, then resume it:
+
+```bash
+SID=$(uuidgen | tr 'A-Z' 'a-z')
+claude -p --session-id "$SID" --permission-mode plan "<bootstrap prompt>" < /dev/null
+claude -p --resume  "$SID" --permission-mode plan "<next prompt>" < /dev/null
+```
+
+**Exit status is not a success signal in either direction.** A resumed Codex round that answered correctly was observed
+exiting 1. Judge every round by whether its text answers the prompt; treat empty output as a failed round.
+
 ### Prompt requirements (both directions)
 
 - Self-contained: the peer starts with an empty context. State the task, the repo path, the exact scope (files, diff, question), and the required output shape.
