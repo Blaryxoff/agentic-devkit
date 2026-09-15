@@ -81,15 +81,15 @@ reports a false failure.
 
 ## Bootstrap line
 
-The channel does not exist until the peer has been told it exists and that the operator authorized it. A cold
-send of a protocol marker was refused outright:
+Nothing is pre-arranged between the two sessions: the initiator mints the nonce and the bootstrap is what opens
+the channel. It has to explain itself, though — a cold send of a bare protocol marker was refused outright:
 
 ```
 I'm not going to emit the [PEER-REPLY] line — I have no verified peer channel to claude-a, and blindly
 …
 ```
 
-After a bootstrap line carrying the authorization, the same peer answered on the first try:
+After a bootstrap line that said who was calling and why, the same peer answered on the first try:
 
 ```
 <<RPY boot status=ready
