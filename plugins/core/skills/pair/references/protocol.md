@@ -35,18 +35,46 @@ accepts the highlighted default.
 
 ## Send one message
 
-One call. The trailing newline submits; sending text and newline separately leaves a window in which the
-operator or the peer can write into the same composer.
+Two calls: the text, then a bare newline.
 
 ```bash
-printf '>>REQ %s-7 <one line of message>\n' "$NONCE" \
-  | agtermctl session type --window "$WIN" --target "$PEER" --pane "$PANE" --stdin
+agtermctl session type --window "$WIN" --target "$PEER" --pane "$PANE" ">>REQ $NONCE-7 <one line>"
+printf '\n' | agtermctl session type --window "$WIN" --target "$PEER" --pane "$PANE" --stdin
 ```
 
 - `session type` does **not** append Enter. Text alone sits in the composer unsent. Verified.
 - Every `\n` in the text submits at that point. `printf 'a\nb\n' | session type --stdin` submitted `a`, then
-  `b`, as two separate prompts — so a message must contain exactly one newline, at the end.
-- A single `printf 'echo X\n' | session type --stdin` typed and submitted in one socket request. Verified.
+  `b`, as two separate prompts — so a message carries no newline of its own.
+- **Text and newline in one call does not submit in the Codex TUI.** Verified against a live Codex session:
+  `printf 'Reply with exactly ATOMIC-A...\n' | session type --stdin` left the text in the composer at
+  `0 in · 0 out`; a following bare-newline call submitted it and the model answered. A trailing `\r` in the
+  same call behaved identically. The burst is treated as a paste, and the composer keeps the terminator.
+- Claude Code **does** submit on the single-call form — verified, it answered `ATOMIC-CL`. That asymmetry is
+  why an always-one-call recipe fails in the Claude → Codex direction only, and looks intermittent.
+- A single call works against a plain **shell** (`printf 'echo X\n' | session type --stdin` ran the command).
+  Do not generalize a shell result to a TUI; that is how the one-call recipe got in.
+
+## Confirm the send landed
+
+The empty-composer marker doubles as the pre-send idle check and the post-send submission check:
+
+| Peer | Composer is empty when the pane shows |
+|---|---|
+| Codex | `Ask Codex to do anything` |
+| Claude Code | a bare `❯` line with nothing after it |
+
+```bash
+agtermctl session text --window "$WIN" --target "$PEER" --pane "$PANE" --lines 14 \
+  | grep -q "Ask Codex to do anything" && echo empty || echo occupied
+```
+
+Verified on both TUIs: `empty` at rest, `occupied` while text sits unsent, `empty` again after the newline
+lands. Recover an `occupied` composer with one more bare newline — never with more text, which appends to the
+same unsent buffer.
+
+A prefix match on the composer marker is **not** a substitute: Codex renders submitted user messages in the
+transcript with the same leading `›`, so matching `›` plus your text finds your own submitted message and
+reports a false failure.
 - Escape sequences pass through: `printf '\033[B' | agtermctl session type --target "$P" --stdin` moves the
   selection down a TUI menu. Use this only when the operator asked you to answer a specific prompt — never to
   accept an approval on the peer's behalf.

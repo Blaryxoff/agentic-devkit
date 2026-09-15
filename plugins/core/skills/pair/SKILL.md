@@ -99,14 +99,21 @@ an unconfirmed channel.
 
 ## Wire protocol
 
-**One line per message, sent as one call.** `session type` does not append Enter, and every `\n` inside the text
-submits at that point — a four-line message becomes four truncated prompts. Put the newline at the end and send
-text and newline in a single request, so nothing can interleave between them:
+**One line per message, sent as two calls: the text, then a bare newline.** `session type` does not append
+Enter, and every `\n` inside the text submits at that point — a four-line message becomes four truncated
+prompts. The newline must be its own call:
 
 ```bash
-printf '>>REQ %s-7 sealed 4f2a9c1, review it against acceptance A2 A3\n' "$NONCE" \
-  | agtermctl session type --window "$WIN" --target "$PEER" --pane "$PANE" --stdin
+agtermctl session type --window "$WIN" --target "$PEER" --pane "$PANE" \
+  ">>REQ $NONCE-7 sealed 4f2a9c1, review it against acceptance A2 A3"
+printf '\n' | agtermctl session type --window "$WIN" --target "$PEER" --pane "$PANE" --stdin
 ```
+
+**Never put the newline in the same call as the text.** A single burst carrying its own terminator is treated
+as a *paste*: the Codex composer keeps the text and does not submit, so the peer sits idle while you wait for a
+reply that will never come. Verified — text plus `\n` in one call left Codex at `0 in · 0 out` with the message
+still in its composer, and a trailing `\r` behaved the same. Claude Code submits either way, which is exactly
+why this breaks in one direction only and looks intermittent.
 
 | Rule | Why |
 |---|---|
@@ -121,11 +128,22 @@ printf '>>REQ %s-7 sealed 4f2a9c1, review it against acceptance A2 A3\n' "$NONCE
 
 1. Re-resolve the target and confirm `foreground`/`splitForeground` and `cwd` still match. A dead id fails
    `notFound` and a shortened prefix can go `ambiguous`; either means stop, not retry.
-2. Read the last lines of the peer's pane and confirm it is **at an idle composer**. Never send while it is
-   mid-turn, and never when an approval dialog, a trust prompt, or any selection list is on screen — your
-   trailing newline would accept the highlighted default. Verified: an arrow-key and newline injection answers
-   a Claude Code trust prompt.
+2. Read the last lines of the peer's pane and confirm it is **at an empty composer**. Codex shows its
+   placeholder `Ask Codex to do anything`; Claude Code shows a bare `❯` line with nothing after it. Either
+   marker means the composer is empty and idle. Never send while it is mid-turn, and never when an approval
+   dialog, a trust prompt, or any selection list is on screen — your newline would accept the highlighted
+   default. Verified: an arrow-key and newline injection answers a Claude Code trust prompt.
 3. Snapshot the buffer. Your reply matcher only accepts a `<<RPY` that is **not** in this baseline.
+
+### After every send
+
+Confirm the message actually went in. Re-run the step-2 empty-composer check about two seconds after the
+newline:
+
+- Composer empty again → submitted. Start polling for the reply.
+- Your text still sitting in the composer → the newline did not land. Send **one more bare newline**. Never
+  send more text: it appends to the same unsent buffer and corrupts the message.
+- Still not empty after the second newline → stop and tell the operator. Do not keep typing into that pane.
 
 ## 3. Read the reply
 
@@ -143,8 +161,10 @@ hook, so it is absent entirely on a machine without one; a Claude peer with the 
 The buffer is rendered screen: lines wrap with leading padding and the peer's TUI chrome (`•`, `⏺`, box
 borders) prefixes the reply. Match `<<RPY <id>` as a substring, not at column zero.
 
-No reply inside the agreed window → send one `>>REQ <id> ping`. Still nothing → tell the operator the peer is
-unresponsive. Never spawn a subprocess peer as a fallback.
+No reply inside the agreed window → **suspect an unsubmitted message first**, which is the most common cause.
+Re-run the empty-composer check; if your request is still sitting there, send a bare newline, not text. Only
+when the composer is empty and the peer is genuinely silent do you send `>>REQ <id> ping`. Still nothing →
+tell the operator the peer is unresponsive. Never spawn a subprocess peer as a fallback.
 
 ## 4. Answering the peer
 
@@ -217,7 +237,9 @@ delegate on your behalf; ask it the question.
 - `agtermctl` is the only channel. No `codex exec`, no `codex exec resume`, no `claude -p`, no
   `claude --resume`, no stored thread ids.
 - Never spawn or replace the peer session.
-- One line per message, text and newline in a single send.
+- One line per message; the text and the newline are two separate sends, never one.
+- Confirm the composer emptied after every send; recover an unsubmitted message with a bare newline, never
+  with more text.
 - Every peer-facing command carries explicit `--window`, `--target` and `--pane`.
 - Request ids are `<nonce>-<n>`, monotonic, never reused; replies are matched against a pre-send baseline.
 - One global write lock; the side without it never edits, stages, or commits.
