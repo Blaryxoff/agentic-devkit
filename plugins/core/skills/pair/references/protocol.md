@@ -66,6 +66,17 @@ The empty-composer marker doubles as the pre-send idle check and the post-send s
 | Codex | `Ask Codex to do anything` | `esc to interrupt` on a `• Working (…)` line |
 | Claude Code | a bare `❯` line with nothing after it | a `✻ …` spinner line carrying elapsed time and no `· done` |
 
+Read both columns from a live window of about 15 lines — `session text --target <id> --pane <p> --lines 15` —
+and match only within it. A wider capture or `--all` reaches into scrollback, where the peer's progress lines
+survive as the recorded output of every busy check you already ran; grepping those reports a busy peer that
+has been idle for minutes. Recorded echoes render inside a result block, indistinguishable from a live line:
+
+```
+• Ran agtermctl session text --pane left --lines 15
+  └
+    ✳ Waddling… (8s · ↓ 1.5k tokens)      <- the peer as it was, not as it is
+```
+
 The two columns are independent: a working agent still renders its empty-composer placeholder. Verified —
 `• Working (5m 33s • esc to interrupt)` sat directly above `› Ask Codex to do anything`, and `✻ Sock-hopping…
 (48s · ↓ 7.2k tokens)` above a bare `❯`. Use the left column to decide the send is safe and the right one to

@@ -146,6 +146,12 @@ submits either way, so this breaks in one direction only and looks intermittent.
    | Composer clear | Is there unsent text I would corrupt? | Codex `Ask Codex to do anything`; Claude Code a bare `❯` |
    | Not busy | Will it see this now, or queue it? | Busy iff the pane shows a live progress line — Codex `esc to interrupt`, Claude Code a `✻ …` spinner with no `· done` on it |
 
+   **Both checks read the live screen only** — a `--lines` window of about 15 that covers the composer, never
+   `--all` and never a long tail. Every busy check prints the peer's progress line into *your own* scrollback,
+   so a wide capture matches that echo and reports busy forever. Observed: a sender waited out a fully idle
+   Codex because a `✳ …` line captured minutes earlier sat ten rows up in its own transcript. `--all` is for
+   matching a reply by unique id; it is never evidence of current state.
+
    **A working peer shows an empty composer** (evidence in `references/protocol.md`). Judging idleness from
    the composer alone sends into a busy peer, where the message queues and merges with the next — the observed
    pile-up of three request ids in one prompt. Never send when an approval prompt, trust prompt, or selection
@@ -324,6 +330,8 @@ delegate on your behalf; ask it the question.
 
 ## Safety
 
+- Read state from a short live window, never `--all`: your own scrollback holds echoes of the peer's progress
+  lines from every earlier check.
 - Never send into a pane that is not at an idle composer, and never into one showing an approval prompt, a
   trust prompt, or a selection list.
 - Never type a confirmation, a credential, or anything that approves a destructive action or bypasses the peer
