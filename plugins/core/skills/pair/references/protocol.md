@@ -5,13 +5,16 @@ notes are observations, not inferences.
 
 ## Resolve and verify a target
 
+The skill's discovery command enumerates every window and both panes; this single-window form is only a quick
+look at the frontmost one:
+
 ```bash
 agtermctl tree --json | python3 -c '
 import sys, json
 t = json.load(sys.stdin)["result"]["tree"]
 for w in t["workspaces"]:
     for s in w["sessions"]:
-        print(s["id"], s.get("foreground"), s.get("status"), s["cwd"], "|", s["name"])'
+        print(s["id"], s.get("foreground"), s.get("splitForeground"), s["cwd"], "|", s["name"])'
 ```
 
 Sample of a real tree — note that several sessions per CLI per repo is the normal case:
@@ -92,10 +95,10 @@ I'm not going to emit the [PEER-REPLY] line — I have no verified peer channel 
 After a bootstrap line that said who was calling and why, the same peer answered on the first try:
 
 ```
-<<RPY boot status=ready
+<<RPY boot next=you status=ready
 ```
 
-Codex, same bootstrap, answered `• <<RPY boot Acknowledged.` — the leading `•` is its own TUI chrome, which is
+Codex, same bootstrap, answered `• <<RPY boot Acknowledged.` (that probe predates the `next=` token) — the leading `•` is its own TUI chrome, which is
 why the matcher takes a substring rather than an anchored line.
 
 ## Why the two prefixes differ
@@ -112,7 +115,10 @@ answer with ONE line starting with the five characters left-angle left-angle R P
 same id
 ```
 
-## Poll for the reply
+## Confirm a reply landed
+
+A reply is **pushed** into the requester's pane and arrives there as a prompt; nothing below is how a reply
+reaches you. Use the buffer read to confirm your own outbound message landed, and to re-read an exchange.
 
 ```bash
 agtermctl session text --window "$WIN" --target "$PEER" --pane "$PANE" --all \
