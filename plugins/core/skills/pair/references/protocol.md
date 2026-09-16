@@ -61,10 +61,15 @@ printf '\n' | agtermctl session type --window "$WIN" --target "$PEER" --pane "$P
 
 The empty-composer marker doubles as the pre-send idle check and the post-send submission check:
 
-| Peer | Composer is empty when the pane shows |
-|---|---|
-| Codex | `Ask Codex to do anything` |
-| Claude Code | a bare `❯` line with nothing after it |
+| Peer | Composer is clear when the pane shows | And it is BUSY when the pane also shows |
+|---|---|---|
+| Codex | `Ask Codex to do anything` | `esc to interrupt` on a `• Working (…)` line |
+| Claude Code | a bare `❯` line with nothing after it | a `✻ …` spinner line carrying elapsed time and no `· done` |
+
+The two columns are independent: a working agent still renders its empty-composer placeholder. Verified —
+`• Working (5m 33s • esc to interrupt)` sat directly above `› Ask Codex to do anything`, and `✻ Sock-hopping…
+(48s · ↓ 7.2k tokens)` above a bare `❯`. Use the left column to decide the send is safe and the right one to
+decide the peer will read it now instead of queueing it.
 
 ```bash
 agtermctl session text --window "$WIN" --target "$PEER" --pane "$PANE" --lines 14 \

@@ -1,11 +1,11 @@
 ---
 name: devkit-pair
 description: >-
-  pair this session with another already-running agterm session (Claude Code ↔ Codex) and work one
-  task together over a live terminal channel — discover the peer, hand a single write lock back and
-  forth, exchange one-line messages. Manual trigger ONLY, never self-invoked: "pair", "парой", "talk
-  to the codex session", "live pair". Both sessions must already be open in agterm. Not the
-  fixed-stage pipeline of devkit-task, and not a one-shot subprocess peer, which is
+  pair this session with another already-running agterm session (Claude Code ↔ Codex) to work one
+  issue over a live terminal channel — one holds the write lock while the other reviews the same
+  change and corrects it, never splitting the task. Manual trigger ONLY, never self-invoked: "pair",
+  "парой", "talk to the codex session", "live pair". Both must already be open in agterm. Not the
+  fixed-stage pipeline of devkit-task, nor a one-shot subprocess peer, which is
   devkit-crosscheck.
 ---
 
@@ -138,14 +138,23 @@ submits either way, so this breaks in one direction only and looks intermittent.
 
 1. Re-resolve the target and confirm `foreground`/`splitForeground` and `cwd` still match. A dead id fails
    `notFound` and a shortened prefix can go `ambiguous`; either means stop, not retry.
-2. Confirm the peer is **at an empty composer** — the markers are in `references/protocol.md`. Never send
-   mid-turn, and never when an approval prompt, trust prompt, or selection list is on screen: your newline
-   would accept the highlighted default (verified).
+2. Run **two separate checks** — they answer different questions and an empty composer does not mean an idle
+   peer:
+
+   | Check | Question | Marker |
+   |---|---|---|
+   | Composer clear | Is there unsent text I would corrupt? | Codex `Ask Codex to do anything`; Claude Code a bare `❯` |
+   | Not busy | Will it see this now, or queue it? | Busy iff the pane shows a live progress line — Codex `esc to interrupt`, Claude Code a `✻ …` spinner with no `· done` on it |
+
+   **A working peer shows an empty composer** (evidence in `references/protocol.md`). Judging idleness from
+   the composer alone sends into a busy peer, where the message queues and merges with the next — the observed
+   pile-up of three request ids in one prompt. Never send when an approval prompt, trust prompt, or selection
+   list is on screen: your newline would accept the highlighted default.
 
    **A busy peer is a wait, not a stop.** Mid-turn is normal — at bootstrap, `status active` just means the
-   operator left it working. Poll the composer with backoff for about two minutes, then send. Still occupied,
-   or stuck on a prompt needing a human → tell the operator what it is stuck on. Do your own share meanwhile;
-   never idle waiting for a composer.
+   operator left it working. Re-check with backoff for about two minutes, then send. Still busy, or stuck on a
+   prompt needing a human → tell the operator what it is stuck on. Meanwhile review what it has already
+   produced — never open a second workstream to fill the time.
 3. Snapshot the buffer. Your reply matcher only accepts a `<<RPY` that is **not** in this baseline.
 
 ### After every send
@@ -200,9 +209,7 @@ acting.
 ## 5. Never end a turn holding the ball
 
 **This is the failure that breaks real pairings.** Both sides go idle at their prompts, each believing the
-other owes the next move, and the work stops with nothing visibly wrong. Observed twice in one day: a peer
-replied `lock back to you for review`, and the other side reviewed, wrote a status summary to the operator, and
-ended — leaving the peer waiting at an empty composer forever.
+other owes the next move, and the work stops with nothing visibly wrong. Observed twice in one day.
 
 A turn may only end in one of three states. Check which one you are in **before** you write your final message:
 
@@ -214,12 +221,15 @@ A turn may only end in one of three states. Check which one you are in **before*
 
 A turn that ends with no outstanding message pushed is a stall, whatever else it accomplished.
 
+**Say the pairing state in the message that ends the turn**, whenever an id is outstanding: the id, what the
+peer is working on, what you reviewed meanwhile, and what will wake you. One line. A turn that ends with a
+polished answer and no word about the peer is indistinguishable from having forgotten it.
+
 ### Arm the backstop before you stop
 
 A pushed reply normally wakes you, so most turns need nothing more. But **push is the peer's obligation, not
 yours**, and a peer that does not honour it leaves you dead: you no longer poll, so its answer sits in its own
-pane forever. Observed — a peer on an older skill printed `<<RPY <id> closed` locally, never pushed it, and the
-pairing half-closed with one side believing it was finished.
+pane forever. Observed with a peer on an older skill, which half-closed a pairing that way.
 
 So whenever you end a turn holding an outstanding id, leave a bounded watcher running that greps the peer's
 pane for that marker and delivers it to you — recipe per harness in `references/protocol.md`. Push is the fast
@@ -265,9 +275,23 @@ other's half-finished edits into its commit. The alternative — separate worktr
 - The lock is global and named in every handoff. Taking it is a request and an ack, never an assumption:
   `>>REQ <id> taking the lock for the revision rollback` → `<<RPY <id> next=you yours`.
 - **Simultaneous claims: the lower session UUID wins.** State the tiebreak once; do not re-litigate per conflict.
-- The side without the lock reads, reviews, investigates and proposes. It does not edit, stage, or commit.
+- The side without the lock reviews the lock holder's work and proposes corrections to it. It does not edit,
+  stage, commit, or start a piece of work of its own.
 
-## 7. Work the task
+## 7. Work the task — together, on the same thing
+
+**The pairing is a writer and a reviewer of one change, not two workstreams.** Both sides stay on the same
+issue the whole time: one writes it, the other reads what was just written and corrects it while a correction
+is still cheap. That mutual correction is the entire reason to pay for a second agent.
+
+**Never split the task.** Do not hand the peer a separate piece to go build, do not take one yourself, and do
+not send it an errand whose result you will not use in the next few minutes. Two agents each producing their
+own half is two solo sessions sharing a terminal — it costs double and catches nothing, because neither side
+ever looks at the other's work.
+
+**If there is nothing to review yet, say so and wait.** An idle reviewer is cheaper than a diverging one. Ask
+the writer what it is about to do and push back on the approach before the code exists; that is review too, and
+it is the cheapest kind.
 
 **Review targets a sealed commit, never the working tree.** The lock holder commits, then sends the SHA:
 
@@ -283,9 +307,10 @@ Findings arrive as messages and go into a queue the lock holder drains at a boun
 finding stops new work until it is closed. A rejected finding gets one line of reason back — silence reads as
 agreement and the peer will raise it again.
 
-While the other side holds the lock, do work that survives the next commit: review the last sealed SHA,
-investigate an open question, build the touch list for the next area, write acceptance checks. **Never
-patches** — a patch written against a tree that is still moving does not apply.
+While the other side holds the lock, your job is its current change and nothing else: review the last sealed
+SHA against the issue, check the direction it just described against what the change actually needs, and name
+what is wrong now rather than after the next commit. **Never patches** — a patch written against a tree that is
+still moving does not apply.
 
 ## Cheap-model delegation
 
@@ -322,4 +347,6 @@ delegate on your behalf; ask it the question.
   parked pairing reported to the operator — a status report is none of these.
 - Resume the session's existing pairing; never mint a second nonce to escape a stall.
 - One global write lock; the side without it never edits, stages, or commits, and review targets sealed SHAs.
+- Both sides work the same issue at all times. Never split the task into independent pieces — reviewing the
+  other's work is the job, and idling beats diverging.
 - Ambiguous discovery stops and asks the operator.
