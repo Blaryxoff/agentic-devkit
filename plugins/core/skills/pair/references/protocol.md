@@ -146,3 +146,32 @@ Leave the peer at its prompt. Do not `session close` a session you did not creat
 its authenticated context belong to that launch, and a control-socket respawn inherits the GUI environment
 instead (an observed Codex respawn died on `Missing environment variable: OPENAI_API_KEY`, which the operator's
 login shell supplies).
+
+## Backstop watcher
+
+Armed when you end a turn holding an outstanding id, in case the peer answers without pushing. Bounded, and
+cancelled once the reply arrives by either route.
+
+**Claude Code** — run with `run_in_background`; the completion notification wakes the session:
+
+```bash
+for i in $(seq 1 60); do
+  agtermctl session text --window "$WIN" --target "$PEER" --pane "$PANE" --all \
+    | grep -F "<<RPY $NONCE-7" && exit 0
+  sleep 10
+done; echo "backstop expired for $NONCE-7"
+```
+
+**Codex** — detach it and have it type what it found into your own session, which re-prompts you:
+
+```bash
+nohup sh -c 'for i in $(seq 1 60); do
+  L=$(agtermctl session text --target '"$PEER"' --pane '"$PANE"' --all | grep -F "<<RPY '"$NONCE"'-7" | tail -1)
+  [ -n "$L" ] && { agtermctl session type --target "$AGTERM_SESSION_ID" "backstop: $L"
+                   printf "\n" | agtermctl session type --target "$AGTERM_SESSION_ID" --stdin; exit 0; }
+  sleep 10
+done' >/dev/null 2>&1 &
+```
+
+Verified: a detached job outliving its parent shell still reaches the control socket and types into a session.
+The self-type is what turns a shell job into a wake-up — Codex has no harness notification of its own.

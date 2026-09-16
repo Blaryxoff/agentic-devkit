@@ -166,8 +166,8 @@ and neither side can go dormant holding an unread answer.
 Send a reply with the same two-call sequence as a request, targeting the **requester's** pane, and print the
 same line in your own pane so the exchange is readable in both scrollbacks.
 
-Poll the peer's buffer only to confirm *your own* send landed (see [After every send](#after-every-send)), never
-as the way a reply reaches you.
+Poll the peer's buffer to confirm *your own* send landed (see [After every send](#after-every-send)) and as the
+backstop for a peer that answers without pushing — never as the primary way a reply reaches you.
 
 `status` in `tree --json` is a cheap pre-check, never a gate — it comes from an operator-installed hook, so it
 is absent on machines without one and a Codex peer was seen stuck on `active` after erroring.
@@ -208,12 +208,23 @@ A turn may only end in one of three states. Check which one you are in **before*
 
 | State | What you must have done |
 |---|---|
-| Ball with the peer | You pushed a `>>REQ` or `<<RPY` that names its next action, and confirmed its composer emptied |
+| Ball with the peer | You pushed a `>>REQ` or `<<RPY`, confirmed its composer emptied, **and armed the backstop below** |
 | Pairing closed | Both sides exchanged the close handshake below |
 | Parked | You told the operator what the pairing is blocked on and that it is stopped |
 
-There is no "waiting" state, because nobody waits: the peer's answer is pushed into this session and wakes it.
 A turn that ends with no outstanding message pushed is a stall, whatever else it accomplished.
+
+### Arm the backstop before you stop
+
+A pushed reply normally wakes you, so most turns need nothing more. But **push is the peer's obligation, not
+yours**, and a peer that does not honour it leaves you dead: you no longer poll, so its answer sits in its own
+pane forever. Observed — a peer on an older skill printed `<<RPY <id> closed` locally, never pushed it, and the
+pairing half-closed with one side believing it was finished.
+
+So whenever you end a turn holding an outstanding id, leave a bounded watcher running that greps the peer's
+pane for that marker and delivers it to you — recipe per harness in `references/protocol.md`. Push is the fast
+path; the watcher is what survives a peer that does not push. Cancel it when the reply arrives by either route,
+and never let two watchers run on one id.
 
 **A status report to the operator is not a terminal state.** If you finish work and the peer is idle, the
 obligation is still yours: send the next `>>REQ`, or close. Reporting to the operator while the peer waits is
@@ -307,8 +318,8 @@ delegate on your behalf; ask it the question.
 - Confirm the composer emptied after every send; recover an unsubmitted message with a bare newline, never with
   more text.
 - Every reply carries `next=`, is pushed into the requester's pane, and a missing token means `next=you`.
-- Never end a turn holding the ball: a pushed message, a completed close, or a parked pairing reported to the
-  operator — a status report is none of these.
+- Never end a turn holding the ball: a pushed message with a backstop watcher armed, a completed close, or a
+  parked pairing reported to the operator — a status report is none of these.
 - Resume the session's existing pairing; never mint a second nonce to escape a stall.
 - One global write lock; the side without it never edits, stages, or commits, and review targets sealed SHAs.
 - Ambiguous discovery stops and asks the operator.
