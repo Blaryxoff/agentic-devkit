@@ -56,6 +56,9 @@ codex exec --sandbox read-only --skip-git-repo-check "<prompt>" < /dev/null
 ```
 
 - Always end the invocation with `< /dev/null`. `codex exec` reads stdin to append a `<stdin>` block even when the prompt is a positional arg, so an inherited open pipe (common when launching in the background) never closes and codex blocks forever on "Reading additional input from stdin…"; `/dev/null` gives immediate EOF.
+- Never pipe a peer run through `tail`/`head`: they buffer until EOF, so a run that is blocked on stdin looks
+  like a run that is thinking, and the one line naming the cause never appears. Redirect to a file and read it.
+  A blocked peer shows near-zero CPU (`ps -o time=`) against minutes of elapsed time.
 - `--sandbox read-only` is the write boundary. Never grant `workspace-write` or `--dangerously-bypass-approvals-and-sandbox` to a peer run.
 - Add `-c tools.web_search=true` only when the task genuinely needs the network (reading a URL, checking upstream docs).
 - Codex prints its reasoning trace before the answer; the final message is the last block. Use `-o <file>` (`--output-last-message`) when only the answer matters.
