@@ -154,7 +154,25 @@ Backoff, do not hammer: 2s, 5s, 10s, 20s, 30s. Readiness signals, in order of tr
 | `status` still `active` | says nothing — a Codex peer stayed `active` after erroring out |
 
 `session text` returns rendered screen: a long line wraps at the pane width with leading padding on the
-continuation. Keep replies short enough to land on one line; anything longer cites a path or a SHA instead.
+continuation. Keep replies short enough to land on one line; anything longer cites a path and line instead.
+
+## Read the change under review
+
+A pairing commits nothing, so the review handle is the working tree the lock holder has stopped writing to.
+`git diff` alone misses files the change added, so start from the status list, which carries tracked changes
+and `??` untracked entries together:
+
+```bash
+git status --porcelain -uall           # -uall: else a new directory collapses to `?? dir/` and `cat dir/` fails
+git diff HEAD -- <path>                # HEAD: plain `git diff` hides anything already staged
+cat <path>                             # untracked: no diff exists, read it whole
+```
+
+`-uall` and `HEAD` are both load-bearing. The pairing stages nothing, but the operator may have staged work
+before it started, and a bare `git diff` would let those hunks through review unseen.
+
+Quote the offending line's text next to `path:line` in the finding. The tree is mutable and the lock holder
+drains findings at a boundary, so a bare line number can point somewhere else by the time it is read.
 
 ## Closing
 
