@@ -64,7 +64,7 @@ The empty-composer marker doubles as the pre-send idle check and the post-send s
 | Peer | Composer is clear when the pane shows | And it is BUSY when the pane also shows |
 |---|---|---|
 | Codex | `Ask Codex to do anything` | `esc to interrupt` on a `• Working (…)` line |
-| Claude Code | a bare `❯` line with nothing after it | a `✻ …` spinner line carrying elapsed time and no `· done` |
+| Claude Code | a bare `❯`, or a contextual placeholder proven by the probe below | a `✻ …` spinner line carrying elapsed time and no `· done` |
 
 Read both columns from a live window of about 15 lines — `session text --target <id> --pane <p> --lines 15` —
 and match only within it. A wider capture or `--all` reaches into scrollback, where the peer's progress lines
@@ -82,14 +82,32 @@ The two columns are independent: a working agent still renders its empty-compose
 (48s · ↓ 7.2k tokens)` above a bare `❯`. Use the left column to decide the send is safe and the right one to
 decide the peer will read it now instead of queueing it.
 
+Claude Code also renders contextual suggestions after `❯`, such as `check on the pairing`. They are muted on
+screen but `session text` returns plain text, so a colour-blind `bare ❯` test reports a false occupied composer.
+Resolve an ambiguous Claude composer only after the busy and prompt checks pass:
+
+```bash
+agtermctl session type --window "$WIN" --target "$PEER" --pane "$PANE" 'X'
+sleep 0.3
+agtermctl session text --window "$WIN" --target "$PEER" --pane "$PANE" --lines 14
+printf '\177' | agtermctl session type --window "$WIN" --target "$PEER" --pane "$PANE" --stdin
+sleep 0.3
+agtermctl session text --window "$WIN" --target "$PEER" --pane "$PANE" --lines 14
+```
+
+- Composer becomes exactly `❯ X` → the prior text was a visual placeholder. DEL restores an empty composer.
+- Prior text remains before or after `X` → it is real unsent input. DEL removes only the probe; require the
+  original composer to be restored exactly, then stop without sending.
+- The probe or DEL produces any other state → stop. Never press Enter or continue on an uncertain restore.
+
 ```bash
 agtermctl session text --window "$WIN" --target "$PEER" --pane "$PANE" --lines 14 \
   | grep -q "Ask Codex to do anything" && echo empty || echo occupied
 ```
 
 Verified on both TUIs: `empty` at rest, `occupied` while text sits unsent, `empty` again after the newline
-lands. Recover an `occupied` composer with one more bare newline — never with more text, which appends to the
-same unsent buffer.
+lands. Claude's contextual placeholder is the exception above. Recover your exact outbound line remaining in
+the composer with one more bare newline — never with more text, which appends to the same unsent buffer.
 
 A prefix match on the composer marker is **not** a substitute: Codex renders submitted user messages in the
 transcript with the same leading `›`, so matching `›` plus your text finds your own submitted message and

@@ -144,7 +144,7 @@ submits either way, so this breaks in one direction only and looks intermittent.
 
    | Check | Question | Marker |
    |---|---|---|
-   | Composer clear | Is there unsent text I would corrupt? | Codex `Ask Codex to do anything`; Claude Code a bare `❯` |
+   | Composer clear | Is there unsent text I would corrupt? | Codex `Ask Codex to do anything`; Claude Code a bare `❯`, or the reversible probe below |
    | Not busy | Will it see this now, or queue it? | Busy iff the pane shows a live progress line — Codex `esc to interrupt`, Claude Code a `✻ …` spinner with no `· done` on it |
 
    **Both checks read the live screen only** — a `--lines` window of about 15 that covers the composer, never
@@ -152,6 +152,14 @@ submits either way, so this breaks in one direction only and looks intermittent.
    so a wide capture matches that echo and reports busy forever. Observed: a sender waited out a fully idle
    Codex because a `✳ …` line captured minutes earlier sat ten rows up in its own transcript. `--all` is for
    matching a reply by unique id; it is never evidence of current state.
+
+   **Treat text after Claude Code's `❯` as ambiguous, not occupied.** Claude Code renders contextual prompt
+   suggestions there in muted colour, but `session text` strips styling and makes a placeholder look like a
+   real draft. Once the peer is not busy and no prompt or menu is open, type one ASCII `X` without Enter,
+   wait briefly, and re-read the live composer. Exactly `❯ X` means the prior text was a placeholder; prior
+   text still visible around the `X` means it is real unsent input. Immediately remove the probe with one DEL
+   (`printf '\177' | agtermctl session type ... --stdin`) and verify the composer restored before sending or
+   reporting it occupied. Never submit the probe.
 
    **A working peer shows an empty composer** (evidence in `references/protocol.md`). Judging idleness from
    the composer alone sends into a busy peer, where the message queues and merges with the next — the observed
@@ -166,12 +174,15 @@ submits either way, so this breaks in one direction only and looks intermittent.
 
 ### After every send
 
-Re-run the empty-composer check about two seconds after the newline:
+Re-read the bottom composer block about two seconds after the newline:
 
-- Empty again → submitted. Start the wait for the reply.
-- Your text still there → the newline did not land. Send **one more bare newline**, never more text, which
+- Your exact outbound line is absent → submitted. A new Claude Code suggestion is only a placeholder. Start
+  the wait for the reply.
+- Your exact outbound line is still in the composer → the newline did not land. Send **one more bare
+  newline**, never more text, which
   appends to the same unsent buffer and corrupts the message.
-- Still not empty after that → stop and tell the operator. Do not keep typing into that pane.
+- Still present after that → stop and tell the operator. Do not keep typing into that pane. Match only the
+  composer between the bottom separators; the submitted line also appears higher in the transcript.
 
 ## 3. Replies are pushed, not polled
 
@@ -189,8 +200,8 @@ backstop for a peer that answers without pushing — never as the primary way a 
 is absent on machines without one and a Codex peer was seen stuck on `active` after erroring.
 
 No reply after the agreed window → **suspect an unsubmitted message first**, the most common cause. Re-run the
-empty-composer check and send a bare newline if your request is still sitting in the peer's composer. Only once
-its composer is empty and it is genuinely silent do you retransmit: resend the **same** id verbatim. A
+live-composer check and send a bare newline if your exact request is still sitting in the peer's composer.
+Only once that request is absent and the peer is genuinely silent do you retransmit: resend the **same** id verbatim. A
 retransmission is not a new request, and a duplicate reply to an id you already answered is discarded. Still
 nothing → park the pairing and tell the operator.
 
@@ -222,7 +233,7 @@ A turn may only end in one of three states. Check which one you are in **before*
 
 | State | What you must have done |
 |---|---|
-| Ball with the peer | You pushed a `>>REQ`, or a `<<RPY` carrying `next=you` or `next=park`, confirmed its composer emptied, **and armed the backstop below**. A `<<RPY next=me` keeps the ball: it is not this state |
+| Ball with the peer | You pushed a `>>REQ`, or a `<<RPY` carrying `next=you` or `next=park`, confirmed its exact outbound line left the composer, **and armed the backstop below**. A `<<RPY next=me` keeps the ball: it is not this state |
 | Parked | No obligation left that you can discharge, and you told the operator — and the peer, if it is reachable — where the pairing stands. It stays open and resumable |
 | Pairing closed | The operator asked to close and both sides exchanged the handshake below |
 
@@ -382,8 +393,8 @@ delegate on your behalf; ask it the question.
   or replace the peer session.
 - One line per message; text and newline are two separate sends, and every peer-facing command carries explicit
   `--window`, `--target` and `--pane`.
-- Confirm the composer emptied after every send; recover an unsubmitted message with a bare newline, never with
-  more text.
+- Confirm the exact outbound line left the bottom composer after every send; a different Claude suggestion is
+  a placeholder. Recover an unsubmitted message with a bare newline, never with more text.
 - Every reply carries `next=`, is pushed into the requester's pane, and a missing token means `next=you`.
 - Never end a turn holding the ball: a pushed message with a backstop watcher armed, a parked pairing reported
   to both the operator and the peer, or a close handshake both sides completed — a status report is none of these.
