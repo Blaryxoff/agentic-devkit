@@ -4,17 +4,7 @@ Deferred work items for this repository, one file per defect. Format and lifecyc
 `plugins/core/conduct/deferred-work-backlog.md`.
 
 Seeded 2026-09-02 from a whole-repo review at `1a14529` (generic quality, generic implementation, documentation, and
-testing axes). Ordering below is by severity as adjudicated at filing time, not by `worth`.
-
-Four items from the original Blocking set were fixed 2026-09-03 (Codex-validated) and removed: the Claude adapter's
-settings.json hook merge, the Cursor adapter's hooks.json overwrite, the `devkit-tester` name collision, and the missing
-test runner (`tests/run-all.sh` now exists and is documented in `CLAUDE.md`). Running that runner for the first time
-surfaced a fifth, previously-unknown Blocking bug (the Cyrillic-description install crash), filed then and fixed below.
-
-Three further items were fixed 2026-09-13 during a catalog-metadata pass and removed: the Cyrillic-description install
-crash (the slash-command generator no longer parses skill descriptions at all), the three trigger-less skill
-descriptions, and the unvalidated subagent output path. `tests/context-efficiency.sh` now enforces the description
-contract and a catalog-wide metadata budget, so the first two cannot regress.
+testing axes). The last item was cleared 2026-09-20.
 
 ## Blocking
 
@@ -22,24 +12,34 @@ _None._
 
 ## Significant
 
-- [A failed fetch is stamped as a successful pull](devkit-update-stamps-failed-pull.md)
-- [A malformed global Cursor hooks file is reset to `{}`](install-resets-malformed-cursor-hooks.md)
-- [`paths.settings` and `paths.lspServers` are read by nothing](plugin-paths-settings-and-lsp-never-read.md)
-- [`--validate` performs no schema validation](validate-flag-validates-nothing.md)
-- [Cursor adapter hardcodes the devkit home path](cursor-adapter-hardcodes-devkit-home-path.md)
-- [A dangling devkit symlink is misreported as the user's file](dangling-devkit-symlink-reported-as-user-file.md)
-- [Core subagent skills are registered twice](core-subagent-skills-registered-twice.md)
-- [The no-clobber guard is never exercised](untested-no-clobber-guard.md)
-- [`coder-gate`'s scratch exemption has no test](untested-coder-gate-scratch-exemption.md)
-- [The resolution core and three CLI entry points have no coverage](untested-install-and-resolve-paths.md)
-- [`adapters/README.md` is stale in four places](adapters-readme-describes-an-adapter-that-no-longer-exists.md)
+_None._
 
 ## Minor
 
-- [Three cross-reference defects in the review conduct cluster](review-conduct-cross-reference-defects.md)
-- [Test assertions that can pass vacuously](test-assertions-that-can-pass-vacuously.md)
-- [`settings.json` writes truncate before producing output](json-writes-truncate-before-producing-output.md)
-- [Cursor and Codex adapters ignore `paths.skills`](cursor-and-codex-adapters-ignore-paths-skills.md)
-- [`devkit-css` Cursor rule globs every file](devkit-css-cursor-rule-globs-every-file.md)
-- [No test seams on the high-blast-radius scripts](no-test-seams-on-high-blast-radius-scripts.md)
-- [Tests assert documentation wording, not behaviour](tests-assert-documentation-wording-not-behaviour.md)
+_None._
+
+## Cleared
+
+- **2026-09-03** — the Claude adapter's settings.json hook merge, the Cursor adapter's hooks.json overwrite, the
+  `devkit-tester` name collision, and the missing test runner. Running that runner for the first time surfaced a fifth,
+  previously-unknown Blocking bug (the Cyrillic-description install crash), filed then and fixed below.
+- **2026-09-13** — the Cyrillic-description install crash (the slash-command generator no longer parses skill
+  descriptions at all), the three trigger-less skill descriptions, and the unvalidated subagent output path.
+  `tests/context-efficiency.sh` enforces the description contract and a catalog-wide metadata budget, so the first two
+  cannot regress.
+- **2026-09-20** — the remaining twenty-two, in six passes:
+  - **resolution** — paths interpolated into Python literals, `exit 1` inside sourced helpers, a configless extra
+    project root skipped silently.
+  - **installer** — every JSON write routed through `write_json` (tmp-then-`mv`, symlink- and mode-preserving), a
+    malformed global Cursor hooks file no longer reset to `{}`, dangling devkit symlinks repaired instead of blamed on
+    the user, `devkit-update` no longer stamping a failed fetch.
+  - **`--validate`** — real checking of every `toolkit.json` and `plugin.json` against `schemas/`, via a checker for the
+    draft-07 subset those schemas use that refuses to run against a keyword it does not implement.
+  - **adapters** — the Cursor adapter's hardcoded clone path, `paths.skills` ignored by Cursor and Codex, `devkit-css`
+    globbing every file, and `paths.settings`/`paths.lspServers` promised by the schema and read by nothing.
+  - **tests** — new coverage for the no-clobber guard, the resolution core, the Claude and Cursor adapters,
+    `devkit-update`, `skill-eval`'s debounce, `coder-gate`'s scratch exemption and the visual-loop cleanup; vacuous
+    assertions repaired; wording canaries split into `tests/doc-canaries.sh`; `--preset`/`--enable` and `--dry-run`
+    added as the seams two of those scripts lacked.
+  - **docs** — `adapters/README.md`'s four stale sections, three cross-references in the review conduct cluster, and
+    dual registration of core subagent skills settled as deliberate. `update.sh` deleted.
