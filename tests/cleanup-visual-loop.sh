@@ -106,4 +106,38 @@ printf '{ not json' > "$bad/package.json"
 run "$bad" && fail "a malformed package.json must exit non-zero"
 [ "$(cat "$bad/package.json")" = "{ not json" ] || fail "a malformed package.json was rewritten"
 
+# --- the package.json write is atomic ------------------------------------------
+# It rewrites a file devkit did not create. A partial write, a replaced symlink, or a
+# dropped mode destroys state the script cannot reconstruct.
+
+sym="$TMP_DIR/symlinked"
+mkdir -p "$sym/real"
+printf '{"scripts":{"ui:check":"x","build":"b"}}\n' > "$sym/real/package.json"
+ln -s "real/package.json" "$sym/package.json"
+run "$sym" || fail "a symlinked package.json exited non-zero: $(cat "$TMP_DIR/out")"
+[ -L "$sym/package.json" ] || fail "the symlink was replaced by a regular file"
+[ "$(jq -r '.scripts["ui:check"] // "gone"' "$sym/real/package.json")" = "gone" ] \
+  || fail "the write did not reach the symlink's target"
+
+mode="$TMP_DIR/mode"
+mkdir -p "$mode"
+printf '{"scripts":{"ui:loop":"x","build":"b"}}\n' > "$mode/package.json"
+chmod 640 "$mode/package.json"
+run "$mode" || fail "cleanup exited non-zero on a mode-restricted package.json"
+actual=$(python3 -c 'import os,stat,sys; print(format(stat.S_IMODE(os.stat(sys.argv[1]).st_mode), "04o"))' "$mode/package.json")
+[ "$actual" = "0640" ] || fail "the file's mode became $actual instead of 0640"
+
+# A failed write must leave the original untouched and no temp file behind.
+ro="$TMP_DIR/readonly"
+mkdir -p "$ro"
+printf '{"scripts":{"ui:check":"x","build":"b"}}\n' > "$ro/package.json"
+before_ro=$(cat "$ro/package.json")
+chmod 500 "$ro"
+run "$ro" && { chmod 700 "$ro"; fail "a write into an unwritable directory must exit non-zero"; }
+chmod 700 "$ro"
+[ "$(cat "$ro/package.json")" = "$before_ro" ] || fail "a failed write corrupted package.json"
+
+leftovers=$(find "$TMP_DIR" -name '*.devkit.tmp.*' | wc -l | tr -d ' ')
+[ "$leftovers" = "0" ] || fail "$leftovers temp file(s) survived"
+
 echo "cleanup-visual-loop tests passed"

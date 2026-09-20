@@ -19,6 +19,22 @@ async function exists(filePath) {
   }
 }
 
+async function writeJsonAtomic(destPath, value) {
+  // Resolve a symlink first: rename onto the link would replace it, while the
+  // writeFile this replaced wrote through it. Dotfile repos rely on that.
+  const dest = await fs.realpath(destPath);
+  const tmp = `${dest}.devkit.tmp.${process.pid}`;
+  try {
+    await fs.writeFile(tmp, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+    const { mode } = await fs.stat(dest);
+    await fs.chmod(tmp, mode & 0o7777);
+    await fs.rename(tmp, dest);
+  } catch (error) {
+    await fs.rm(tmp, { force: true });
+    throw error;
+  }
+}
+
 async function cleanupProject(projectRoot, dryRun) {
   const resolved = path.resolve(projectRoot);
   const packageJsonPath = path.join(resolved, "package.json");
@@ -40,7 +56,7 @@ async function cleanupProject(projectRoot, dryRun) {
     if (removed > 0) {
       if (!dryRun) {
         pkg.scripts = scripts;
-        await fs.writeFile(packageJsonPath, `${JSON.stringify(pkg, null, 2)}\n`, "utf8");
+        await writeJsonAtomic(packageJsonPath, pkg);
       }
       changes.push(`${dryRun ? "would remove" : "removed"} ${removed} ui:* script(s) from package.json`);
     }
