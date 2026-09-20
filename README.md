@@ -134,7 +134,7 @@ Resolves: `core -> laravel`
 
 | Adapter  | Generated files                                                                                                        |
 |----------|------------------------------------------------------------------------------------------------------------------------|
-| `claude` | `.claude/settings.json` (hooks), `.claude/agents/*.md` (stack subagents), `.mcp.json` — core skills + router are global |
+| `claude` | `.claude/settings.json` (hooks), `.claude/agents/*.md` (stack subagents), `.claude/skills/devkit-*--*` symlinks (inline stack skills), `.mcp.json` — core skills + router are global |
 | `cursor` | `.cursor/skills/devkit-*--*/`, compact conduct-index rules, MCP config, and hooks                                   |
 | `codex`  | `.codex/skills/devkit-*--*/` for non-core plugins and compact conduct indexes in `AGENTS.md`                     |
 

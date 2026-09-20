@@ -17,7 +17,8 @@
 #   - Core skills are global in ~/.codex/skills/devkit-core--*
 #   - Resolved non-core plugin skills are linked under PROJECT_ROOT/.codex/skills
 #   - AGENTS.md gets a managed section listing one conduct index per plugin
-#   - Plugin hooks are described in AGENTS.md as instructions (Codex lacks native hook support)
+#   - Plugin hooks are described in AGENTS.md as instructions; the native PreToolUse
+#     gates live in ~/.codex/config.toml, written by bin/devkit-install
 
 set -euo pipefail
 

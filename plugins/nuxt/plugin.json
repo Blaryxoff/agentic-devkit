@@ -4,13 +4,15 @@
   "description": "Nuxt conventions: SSR, data-fetching, TypeScript",
   "layer": "framework",
   "defaultEnabled": false,
-  "dependencies": ["devkit-core", "devkit-frontend", "devkit-vue"],
+  "dependencies": [
+    "devkit-core",
+    "devkit-frontend",
+    "devkit-vue"
+  ],
   "paths": {
     "skills": "./skills",
     "conduct": "./conduct",
     "mcpServers": "./.mcp.json",
-    "lspServers": "./.lsp.json",
-    "hooks": "./hooks/hooks.json",
-    "settings": "./settings.json"
+    "hooks": "./hooks/hooks.json"
   }
 }

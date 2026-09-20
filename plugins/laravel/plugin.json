@@ -4,13 +4,13 @@
   "description": "Laravel framework conventions: architecture, PHP, security, Inertia integration",
   "layer": "framework",
   "defaultEnabled": false,
-  "dependencies": ["devkit-core"],
+  "dependencies": [
+    "devkit-core"
+  ],
   "paths": {
     "skills": "./skills",
     "conduct": "./conduct",
     "mcpServers": "./.mcp.json",
-    "lspServers": "./.lsp.json",
-    "hooks": "./hooks/hooks.json",
-    "settings": "./settings.json"
+    "hooks": "./hooks/hooks.json"
   }
 }

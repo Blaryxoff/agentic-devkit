@@ -57,7 +57,7 @@ This documents breaking changes from the old Claude-Code-centric structure to th
 
 | Path | Reason |
 |------|--------|
-| `claude-code/.claude-plugin/marketplace.json` | Replaced by convention-based discovery; Claude adapter generates this per-project |
+| `claude-code/.claude-plugin/marketplace.json` | Replaced by convention-based discovery; the Claude adapter now removes `.claude-plugin/` from consuming projects |
 | `claude-code/shared/` | Canonical files moved to `plugins/core/skills/`; symlinks removed |
 | `claude-code/migrations/` | Superseded by this refactor |
 | `conduct/` (top-level) | All docs moved into their owning plugins' `conduct/` subdirectory |

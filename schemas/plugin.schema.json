@@ -4,7 +4,15 @@
   "title": "devkit plugin manifest",
   "description": "Plugin manifest placed at plugins/<name>/plugin.json inside the toolkit.",
   "type": "object",
-  "required": ["name", "version", "description", "layer", "defaultEnabled", "dependencies", "paths"],
+  "required": [
+    "name",
+    "version",
+    "description",
+    "layer",
+    "defaultEnabled",
+    "dependencies",
+    "paths"
+  ],
   "additionalProperties": false,
   "properties": {
     "name": {
@@ -23,7 +31,12 @@
     },
     "layer": {
       "type": "string",
-      "enum": ["core", "stack", "framework", "styling"],
+      "enum": [
+        "core",
+        "stack",
+        "framework",
+        "styling"
+      ],
       "description": "Determines loading order: core -> stack -> framework -> styling."
     },
     "defaultEnabled": {
@@ -56,17 +69,9 @@
           "type": "string",
           "description": "Path to .mcp.json MCP server configuration."
         },
-        "lspServers": {
-          "type": "string",
-          "description": "Path to .lsp.json LSP server configuration."
-        },
         "hooks": {
           "type": "string",
           "description": "Path to hooks.json hook definitions."
-        },
-        "settings": {
-          "type": "string",
-          "description": "Path to settings.json (permissions, deny lists, etc.)."
         }
       }
     }

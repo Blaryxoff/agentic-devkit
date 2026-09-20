@@ -36,7 +36,8 @@ adapters/
   _lib/hooks.sh          Shared hook merging + event translation (DRY adapter pattern)
   _lib/claude_agents.sh  Shared subagent generation (used by claude/generate + devkit-install)
   _lib/mcp.sh            Shared MCP server merging
-  claude/generate        Claude Code adapter (slim: per-project stack subagents, hooks, MCP — core is global)
+  claude/generate        Claude Code adapter (slim: per-project stack subagents, inline stack skill symlinks under
+                         .claude/skills/, hooks, MCP — core is global)
   cursor/generate        Cursor IDE adapter
   codex/generate         OpenAI Codex adapter
 schemas/                 JSON schemas for toolkit.json and plugin.json
