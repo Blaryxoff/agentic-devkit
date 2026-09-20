@@ -26,7 +26,8 @@ rather than expanded into the current change.
 - Set `worth: later` only when the value decision is unresolved. Name the condition or unknown that would settle it.
 - Set `worth: no` only when retaining the rejection rationale prevents repeated rediscovery. Delete stale `no` items.
 - Add `where: path:line` only when one location anchors the finding. Treat the line as a navigation hint, not identity.
-- Set `added: YYYY-MM-DD` once. Never rewrite it; age is backlog information.
+- Set `added: YYYY-MM-DD` once, zero-padded. Never rewrite it; age is backlog information, and a reader sorting
+  on this field has nothing to fall back on when the value is not an ISO date.
 - Use the H1 as the title. Keep the body as short as the evidence allows, but record why the item exists and why it was
   deferred or rejected.
 
@@ -57,6 +58,8 @@ Write a new item on the repository default branch unless the user explicitly acc
 - Verify each `where` against the current tree. Report a missing or mismatched anchor as stale, not as confirmed work.
 - Order list output by `worth`: `yes`, `later`, `no`; then oldest `added` first.
 - Keep every item visible. `worth` controls recommendation and ordering, not filtering.
+- A structured-question tool caps its options. With more items than it accepts, group them across several questions
+  rather than truncating the list or silently dropping the tail.
 - Identify dependencies between items before an all-items triage. Ask about prerequisites before dependents and carry the
   relationship into both briefings.
 - For a blocker outside the backlog, recommend leaving the item and name the blocker.
@@ -70,8 +73,12 @@ Brief an item against the repository as it exists now, not only against the item
 - **Blast radius** — name callers, generated artifacts, shared paths, and rollback difficulty.
 - **Materiality** — name who is affected now, severity, and the cost of leaving it.
 
-Keep effort, blast radius, and materiality to one evidence-bearing line each. Do not inflate items with no user-visible
-symptom.
+Keep effort, blast radius, and materiality to one evidence-bearing line each: the word alone asks the user to take
+the call on trust, and the fact behind it is what lets them disagree. Do not inflate items with no user-visible symptom.
+
+**Print the briefing as ordinary output before the question, not inside it.** A structured-question widget covers
+roughly five lines above itself, so a briefing emitted with the question is the part that gets hidden. The question
+text still names the item and carries the one-line reason for its recommendation.
 
 ## 6. Dedupe and updates
 
