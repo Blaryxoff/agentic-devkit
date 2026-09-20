@@ -214,7 +214,7 @@ codergate_cmd=$(gate_cmd coder-gate.sh)
 commentgate_cmd=$(gate_cmd comment-gate.sh)
 cursor_hooks=$(inject_cursor_edit_gates "$cursor_hooks" "$codergate_cmd" "$commentgate_cmd")
 
-echo "$cursor_hooks" | jq '.' > "$hooks_file"
+write_json "$hooks_file" "$cursor_hooks" || exit 1
 hook_count=$(echo "$cursor_hooks" | jq '[.[] | length] | add // 0')
 if [ "$hooks_file_existed" = true ]; then
   echo "    Updated: .cursor/hooks/hooks.json ($hook_count hook(s), incl. devkit auto-update + edit gates)"
@@ -239,7 +239,7 @@ if [ "$mcp_count" != "0" ]; then
   plugin_mcp=$(apply_chrome_devtools_profile "$plugin_mcp" "$chrome_profile")
   if [ -f "$mcp_file" ]; then
     updated=$(jq --argjson s "$plugin_mcp" '.mcpServers = $s' "$mcp_file")
-    echo "$updated" | jq '.' > "$mcp_file"
+    write_json "$mcp_file" "$updated" || exit 1
     echo "    Updated: .cursor/mcp.json ($mcp_count server(s), per-project chrome profile)"
   else
     jq -n --argjson s "$plugin_mcp" '{mcpServers: $s}' > "$mcp_file"

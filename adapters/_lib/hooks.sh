@@ -51,7 +51,10 @@ merge_plugin_hooks() {
     fi
 
     local plugin_hooks
-    plugin_hooks=$(jq '.hooks // {}' "$hooks_file" 2>/dev/null || echo '{}')
+    if ! plugin_hooks=$(jq '.hooks // {}' "$hooks_file" 2>/dev/null); then
+      echo "WARN: $hooks_file is not valid JSON — its hooks were skipped." >&2
+      plugin_hooks='{}'
+    fi
 
     if [ "$plugin_hooks" = '{}' ]; then
       continue

@@ -68,6 +68,7 @@ fi
 
 DEVKIT_HOME_REAL="$(cd "$DEVKIT_HOME" && pwd -P)"
 
+repaired=0
 # A relocated or symlinked clone leaves links whose raw target no longer starts with DEVKIT_HOME.
 links_into_devkit() {
   [ -L "$1" ] || return 1
@@ -78,9 +79,17 @@ links_into_devkit() {
     /*) ;;
     *) target="$(dirname "$1")/$target" ;;
   esac
-  dir="$(cd "$(dirname "$target")" 2>/dev/null && pwd -P)" || return 1
-  case "$dir/" in
-    "$DEVKIT_HOME_REAL"/*) return 0 ;;
+  if dir="$(cd "$(dirname "$target")" 2>/dev/null && pwd -P)"; then
+    case "$dir/" in
+      "$DEVKIT_HOME_REAL"/*) return 0 ;;
+    esac
+    return 1
+  fi
+  # Dangling: the clone it pointed at is gone, so the target cannot be resolved. Claim it
+  # back by shape — only a devkit clone has these layouts — instead of leaving a broken
+  # command in place and reporting it as the user's own file.
+  case "$target" in
+    */plugins/core/commands/*.md|*/plugins/core/output-styles/*.md) return 0 ;;
   esac
   return 1
 }
@@ -217,7 +226,7 @@ if [ -f "$SETTINGS" ]; then
       + [ { hooks: [ { type: "command", command: $cmd } ] } ]
     )
   ' "$SETTINGS")
-  printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
+  write_json "$SETTINGS" "$updated" || exit 1
   echo "    Hook:    ~/.claude/settings.json (SessionStart auto-update)"
 else
   jq -n --arg cmd "$hook_cmd" \
@@ -286,7 +295,7 @@ updated=$(jq --arg cmd "$skilleval_cmd" --arg script "skill-eval.sh" '
     + [ { hooks: [ { type: "command", command: $cmd } ] } ]
   )
 ' "$SETTINGS")
-printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
+write_json "$SETTINGS" "$updated" || exit 1
 echo "    Hook:    ~/.claude/settings.json (UserPromptSubmit skill activation gate)"
 
 # --- PreToolUse coder-gate hook in ~/.claude/settings.json ---
@@ -303,7 +312,7 @@ updated=$(jq --arg cmd "$codergate_cmd" --arg script "coder-gate.sh" '
     + [ { matcher: "Edit|Write|MultiEdit", hooks: [ { type: "command", command: $cmd } ] } ]
   )
 ' "$SETTINGS")
-printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
+write_json "$SETTINGS" "$updated" || exit 1
 echo "    Hook:    ~/.claude/settings.json (PreToolUse coder-gate)"
 
 # --- PreToolUse comment-gate hook in ~/.claude/settings.json ---
@@ -320,7 +329,7 @@ updated=$(jq --arg cmd "$commentgate_cmd" --arg script "comment-gate.sh" '
     + [ { matcher: "Edit|Write|MultiEdit", hooks: [ { type: "command", command: $cmd } ] } ]
   )
 ' "$SETTINGS")
-printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
+write_json "$SETTINGS" "$updated" || exit 1
 echo "    Hook:    ~/.claude/settings.json (PreToolUse comment-gate)"
 
 # --- Global + project Cursor preToolUse edit gates ---
@@ -329,10 +338,15 @@ CURSOR_HOOKS_FILE="$CURSOR_HOOKS_DIR/hooks.json"
 mkdir -p "$CURSOR_HOOKS_DIR"
 cursor_hooks='{}'
 if [ -f "$CURSOR_HOOKS_FILE" ]; then
-  cursor_hooks=$(jq 'del(.version) | .hooks // .' "$CURSOR_HOOKS_FILE" 2>/dev/null || echo '{}')
+  # Never fall back to '{}' here: this file is written back at the end of the block, so a
+  # swallowed parse error would silently replace the user's global hooks with an empty set.
+  if ! cursor_hooks=$(jq 'del(.version) | .hooks // .' "$CURSOR_HOOKS_FILE" 2>/dev/null); then
+    echo "ERROR: $CURSOR_HOOKS_FILE is not valid JSON — fix or move it, then re-run." >&2
+    exit 1
+  fi
 fi
 cursor_hooks=$(inject_cursor_edit_gates "$cursor_hooks" "$codergate_cmd" "$commentgate_cmd")
-printf '%s\n' "$cursor_hooks" | jq '.' > "$CURSOR_HOOKS_FILE"
+write_json "$CURSOR_HOOKS_FILE" "$cursor_hooks" || exit 1
 echo "    Hook:    ~/.cursor/hooks/hooks.json (preToolUse coder-gate + comment-gate)"
 
 # --- Codex defaults + PreToolUse hooks in ~/.codex/config.toml ---
@@ -528,6 +542,7 @@ if [ -d "$OUTPUT_STYLES_SRC" ]; then
   # Reap only symlinks that point back into this clone; never touch user-authored styles.
   for entry in "$OUTPUT_STYLES_DEST"/*; do
     if links_into_devkit "$entry"; then
+      [ -e "$entry" ] || repaired=$((repaired + 1))
       rm -f "$entry"
     fi
   done
@@ -557,7 +572,7 @@ if [ -d "$OUTPUT_STYLES_SRC" ]; then
     else .
     end
   ' "$SETTINGS")
-  printf '%s\n' "$updated" | jq '.' > "$SETTINGS"
+  write_json "$SETTINGS" "$updated" || exit 1
   echo "    Style:   ~/.claude/settings.json (default outputStyle → $style_default)"
 fi
 
@@ -575,6 +590,7 @@ mkdir -p "$COMMANDS_DEST"
 for entry in "$COMMANDS_DEST"/*; do
   if [ -L "$entry" ]; then
     if links_into_devkit "$entry"; then
+      [ -e "$entry" ] || repaired=$((repaired + 1))
       rm -f "$entry"
     fi
   elif [ -f "$entry" ] && grep -qF "$COMMAND_SENTINEL" "$entry" 2>/dev/null; then
@@ -628,6 +644,9 @@ done
 echo "    Linked:  ~/.claude/commands/*.md ($cmd_count authored, $short_count generated short command(s))"
 if [ -n "$foreign_names" ]; then
   echo "    NOTICE: kept your own ~/.claude/commands file(s) for:$foreign_names — those skills stay at /devkit-core--<name>."
+fi
+if [ "$repaired" -gt 0 ]; then
+  echo "    Repaired: $repaired broken devkit symlink(s) left by a moved or re-cloned devkit."
 fi
 
 # --- Optional per-project adapters ---

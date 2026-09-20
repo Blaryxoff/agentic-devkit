@@ -62,7 +62,10 @@ _pull_ff() {
   }
 
   before=$(git -C "$repo" rev-parse --short HEAD 2>/dev/null || echo "?")
-  git -C "$repo" fetch -q origin 2>/dev/null || true
+  if ! git -C "$repo" fetch -q origin 2>/dev/null; then
+    echo "devkit: $label fetch from origin failed — not updated (still $before)" >&2
+    return 1
+  fi
 
   after=$(git -C "$repo" rev-parse --short "$upstream" 2>/dev/null || echo "?")
   if [ "$before" = "$after" ]; then
@@ -98,8 +101,9 @@ if ! git -C "$DEVKIT_HOME" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 0
 fi
 
-_pull_ff "$DEVKIT_HOME" "global"
-printf '%s' "$now" > "$STATE_FILE" 2>/dev/null || true
+if _pull_ff "$DEVKIT_HOME" "global"; then
+  printf '%s' "$now" > "$STATE_FILE" 2>/dev/null || true
+fi
 
 project_root="${DEVKIT_PROJECT_ROOT:-${PWD:-}}"
 submodule_path="$project_root/toolkits/agentic-devkit"

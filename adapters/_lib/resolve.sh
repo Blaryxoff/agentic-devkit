@@ -25,6 +25,38 @@ toolkit_abspath() { printf '%s\n' "$TOOLKIT_ROOT"; }
 DEVKIT_HOME_REF="${DEVKIT_HOME_REF:-~/.claude/agentic-devkit}"
 toolkit_home_ref() { printf '%s\n' "$DEVKIT_HOME_REF"; }
 
+# Write JSON to a destination atomically. A plain `producer > dest` truncates the
+# target when the redirection is set up, before the producer runs, so an
+# interruption or a jq fault leaves an empty file with no backup.
+# Usage: write_json <dest> <json-text>
+write_json() {
+  local dest="$1" json="$2" tmp mode
+  # Resolve a symlinked destination: `mv` onto a symlink replaces the link, while
+  # the redirection this replaced wrote through it. Dotfile repos rely on that.
+  if [ -L "$dest" ]; then
+    dest=$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$dest") || return 1
+  fi
+  tmp="$dest.devkit.tmp.$$"
+  if ! printf '%s\n' "$json" | jq '.' > "$tmp"; then
+    rm -f "$tmp"
+    echo "ERROR: refusing to write invalid JSON to $dest" >&2
+    return 1
+  fi
+  # An empty producer passes jq with exit 0 and no output, which would still truncate
+  # the destination. `{}` and `null` are non-empty, so no real payload is rejected here.
+  if [ ! -s "$tmp" ]; then
+    rm -f "$tmp"
+    echo "ERROR: refusing to write empty JSON to $dest" >&2
+    return 1
+  fi
+  # `mv` also carries the temp file's umask mode over; keep the target's own.
+  if [ -f "$dest" ]; then
+    mode=$(python3 -c 'import os,stat,sys; print(format(stat.S_IMODE(os.stat(sys.argv[1]).st_mode), "04o"))' "$dest" 2>/dev/null) \
+      && chmod "$mode" "$tmp" 2>/dev/null || true
+  fi
+  mv -f "$tmp" "$dest"
+}
+
 _check_jq() {
   if ! command -v jq &>/dev/null; then
     echo "ERROR: jq is required but not found. Install it: https://jqlang.github.io/jq/download/" >&2
