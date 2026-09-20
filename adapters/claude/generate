@@ -87,10 +87,13 @@ while IFS= read -r name; do
     skill_md="$skill_dir/SKILL.md"
     [ -f "$skill_md" ] || continue
     # Skip isolation skills — they are emitted as subagents, not skills.
+    # This applies to STACK skills only. Core skills are registered both ways on
+    # purpose; see "Dual registration of core subagent skills" in CLAUDE.md.
     devkit_is_subagent "$skill_md" && continue
-    # Collision guard: two plugins can share a frontmatter name (laravel & nuxt
-    # both define devkit-coder). Registering both makes the skill ambiguous, so
-    # link the first and warn on the rest rather than create a broken pair.
+    # Collision guard: two plugins can declare the same frontmatter name. Registering
+    # both makes the skill ambiguous, so link the first and warn on the rest rather
+    # than create a broken pair. No shipped pair collides today; the guard is for
+    # a plugin added later.
     fm_name=$(devkit_frontmatter "$skill_md" | LC_ALL=C grep -m1 '^name:' | sed 's/^name:[[:space:]]*//;s/[[:space:]]*$//')
     if printf '%s\n' "$_seen_skill_names" | grep -qxF "$fm_name"; then
       echo "    WARN: skill name '$fm_name' (from $name) collides with an earlier plugin — not linked (use the 'devkit' router for it)"

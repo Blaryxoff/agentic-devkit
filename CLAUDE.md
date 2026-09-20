@@ -87,6 +87,25 @@ tests/                   Shell test suite — run tests/run-all.sh before pushin
   what it kept.
 - Codex has no custom-command directory — there a skill is invoked as `$<frontmatter-name>`.
 
+### Dual registration of core subagent skills
+
+A core skill with `claudeSubagent: true` is registered **both** as `~/.claude/skills/devkit-core--<n>` and as
+`~/.claude/agents/<name>.md`. That is deliberate, and it is why `adapters/claude/generate`'s "isolation skills must NOT
+also be registered as skills" rule applies to stack skills only.
+
+The two entry points are not duplicates of one capability:
+
+- The subagent runs isolated, on the tools its `claudeSubagentTools` names, and returns findings.
+- The skill runs inline, with the caller's tools and the caller's turns.
+
+`plan-reviewer` is the clearest case: its subagent has no write tool, and its workflow requires user turns a subagent
+cannot take ("ask the user" when the plan type is unclear, Step 6's interactive clarification, and "do not write to the
+file until the user confirms"). Only the skill can run the review-and-apply loop. Removing either registration for that
+skill needs a write tool and a parent relay protocol for the subagent's questions first.
+
+Consequence to keep in mind: a generated short command (`/reviewer-logging`, `/test-case-creator`) routes to
+`Skill(devkit-core--<n>)` — the inline path. Use the subagent when isolation is the point.
+
 ### Conduct
 
 - Each plugin may have a `conduct/` directory with Markdown standards docs.
