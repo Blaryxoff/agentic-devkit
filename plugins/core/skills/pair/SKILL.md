@@ -30,7 +30,9 @@ agreement. Two agents converging politely produce nothing.
 
 ## Sending
 
-**Everything that touches the other pane goes through the script. Never drive `agtermctl` directly.**
+**Nothing may be typed into the other pane except through the script.** Never write to it with
+`agtermctl` directly. Reading is not writing: `agtermctl session text` on the peer's pane is allowed and is
+how you look at a quiet exchange — the script has no read operation.
 It checks the target agent, window, composer and caret, types the body as bounded separately-observed
 events, then sends the submit key after the last one settles. A raw `session type` bypasses all of it,
 and that is how messages arrive merged, truncated, or sitting unsent in a composer.
@@ -48,12 +50,16 @@ time, and no heredoc, redirection, variables or substitutions in either call —
 evaluate the request as a shell wrapper, so its approval rules cannot match:
 
 ```bash
-peer-chat.py --prepare-message peer-chat-codex-a91f.txt   # prints the absolute path; fill that file
+peer-chat.py --prepare-message peer-chat-codex-a91f.txt   # prints JSON with an absolute messageFile field
 peer-chat.py --to claude --message-file peer-chat-codex-a91f.txt
 ```
 
-- **The reserved name must match `peer-chat-<sender>-<suffix>.txt`** — anything else exits 2 before
-  the file is created.
+- **The reserved name must match `peer-chat-[a-z0-9][a-z0-9-]{2,48}.txt`** — anything else exits 2 before
+  the file is created. The script's own error text says `peer-chat-<sender>-<suffix>.txt`, but it never
+  checks the sender, so `peer-chat-foo.txt` passes; name yours by sender anyway, for the reader.
+- **The message is capped at 64 KiB of UTF-8**, and the file is consumed before its mode, size, decoding and
+  body are validated — so an oversized, unreadable or permissive file is destroyed by the failure that
+  rejects it. Reserve a fresh name and refill it; never expect the old one to survive.
 - **Write one paragraph.** The script collapses whitespace, because a newline submits the fragment
   before it.
 - **Never write the `Chat from …:` label yourself.** The script adds it, and that label is what makes
@@ -101,8 +107,11 @@ Passing a patch, read-only side → writer:
 2. Fill that mode-0600 file without replacing it; send its path and SHA-256.
 3. The writer reserves its own file with the same template, copies the patch once, and works only from
    that copy — verify it, review it, recheck the hash immediately before applying.
-4. Each agent deletes **its own** file by its exact path before reporting an outcome or starting other
-   work; after an interruption, remove it first if it survived. Never glob `/tmp`.
+4. The writer sends back one line confirming it copied and verified the patch. **Only then** does the
+   read-only side delete its file — deleting as soon as the send returns pulls the path out from under a
+   writer that has not opened it yet. Waiting for that confirmation is not polling: it arrives on its own.
+5. Each agent deletes **its own** file by its exact path, never a glob, before reporting an outcome or
+   starting other work; after an interruption, remove it first if it survived.
 
 If both agents turn out to have received direct user requests authorising writes in the same worktree,
 stop before the next write and ask the user to revoke one agent's authority in that pane, then assign
@@ -120,16 +129,21 @@ diff; if the writer is unclear, stay read-only and require the same direct resol
 
 ## When a send fails
 
-| Script says | State | Do |
+**Read stderr, not the exit code.** Exit 1 means refusal *or* failure, including two cases where the
+message did land: `delivery is ambiguous; do not resend` and `delivery was confirmed; do not resend`.
+Treating exit 1 as "it never arrived" is how you send it twice. Only `{"sent": N}` with exit 0 is success;
+exit 130 is an interrupt.
+
+| stderr says | State | Do |
 |---|---|---|
-| A pre-write refusal | Nothing was typed | Safe to retry once the named cause is fixed |
+| A pre-write refusal | Nothing was typed | From `--stdin`, retry once the named cause is fixed. From `--message-file`, the file was already consumed — reserve a **new** name and refill it |
 | `composer cleared` after a body failure | Its backspaces restored the empty prompt | Report; do not re-send blind |
 | `composer cleanup failed` | Text may remain in that pane | Read the pane, report, stop |
-| A submit or acceptance failure | Ambiguous — the message may have landed | Stop, report the exact error, never re-send |
+| Anything saying `do not resend` | The message may have landed, or did | Stop. Report it. Never re-send |
 
-`{"sent": N}` and exit 0 is the only success. Exit 1 is a refusal with the reason on stderr; the script
-retries pre-write checks five times at ten-second intervals, so a pane sitting on a dialog costs about
-forty seconds and then types nothing.
+The five retries at ten-second intervals cover **only an occupied or unrecognisable composer** — a pane on a
+dialog costs about forty seconds and then types nothing. An agterm, JSON or target-resolution error fails on
+the first attempt instead.
 
 ## Manners
 
