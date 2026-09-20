@@ -48,7 +48,7 @@ technical findings for managers or other non-technical readers without exposing 
 ~/.claude/agentic-devkit/bin/devkit-resolve --init
 ```
 
-- Validate config and show resolved set.
+- Check every `toolkit.json` and `plugin.json` against `schemas/`, then show the resolved set. Targeted validation over the draft-07 subset those schemas use, not full JSON Schema conformance.
 
 ```bash
 ~/.claude/agentic-devkit/bin/devkit-resolve --validate

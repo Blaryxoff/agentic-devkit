@@ -144,7 +144,9 @@ resolve_plugins() {
   local enabled_json
   enabled_json=$(_collect_enabled) || return 1
 
-  echo "$plugin_index" | jq -r --argjson enabled "$enabled_json" '
+  local resolved_out resolved_err rc=0
+  resolved_err=$(mktemp)
+  resolved_out=$(echo "$plugin_index" | jq -r --argjson enabled "$enabled_json" '
     . as $plugins |
 
     {"core":0, "stack":1, "framework":2, "styling":3} as $layer_order |
@@ -176,7 +178,63 @@ resolve_plugins() {
 
     .resolved | keys | sort_by($layer_order[$plugins[.].layer] // 99) |
     .[]
-  '
+  ' 2>"$resolved_err") || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    # jq prints `jq: error (at <stdin>:129): Plugin not found: devkit-nope`; the
+    # location is an artifact of how the index is piped in, not something a user acts on.
+    sed -e 's/^jq: error[^)]*): /ERROR: /' -e 's/^jq: error: /ERROR: /' "$resolved_err" >&2
+    rm -f "$resolved_err"
+    return 1
+  fi
+  rm -f "$resolved_err"
+  printf '%s\n' "$resolved_out"
+}
+
+# Validate a single JSON document against one of the shipped schemas.
+_validate_one() {
+  local schema="$1" doc="$2" label="$3" out
+  if ! jq -e . "$doc" >/dev/null 2>&1; then
+    echo "ERROR: $label is not valid JSON" >&2
+    return 1
+  fi
+  if ! out=$(jq -n -r --argjson schema "$(cat "$schema")" --argjson doc "$(cat "$doc")" \
+      --arg label "$label" -f "$TOOLKIT_ROOT/adapters/_lib/schema-validate.jq"); then
+    echo "ERROR: could not validate $label" >&2
+    return 1
+  fi
+  if [ -z "$out" ]; then
+    return 0
+  fi
+  printf '%s\n' "$out" | while IFS= read -r line; do echo "ERROR: $line" >&2; done
+  return 1
+}
+
+# Check every project's toolkit.json and every shipped plugin.json against
+# schemas/. Targeted validation over the draft-07 subset those schemas use, not
+# full JSON Schema conformance — see adapters/_lib/schema-validate.jq.
+# Prints the number of manifests checked on success.
+validate_schemas() {
+  _check_jq || return 1
+  local rc=0 manifest count=0
+  if [ ! -f "$TOOLKIT_ROOT/adapters/_lib/schema-validate.jq" ]; then
+    echo "ERROR: missing $TOOLKIT_ROOT/adapters/_lib/schema-validate.jq" >&2
+    return 1
+  fi
+  while IFS= read -r root; do
+    [ -n "$root" ] || continue
+    if [ -f "$root/.devkit/toolkit.json" ]; then
+      _validate_one "$TOOLKIT_ROOT/schemas/toolkit.schema.json" \
+        "$root/.devkit/toolkit.json" "$root/.devkit/toolkit.json" || rc=1
+    fi
+  done < <(_project_roots)
+  for manifest in "$TOOLKIT_ROOT"/plugins/*/plugin.json; do
+    [ -f "$manifest" ] || continue
+    count=$((count + 1))
+    _validate_one "$TOOLKIT_ROOT/schemas/plugin.schema.json" "$manifest" \
+      "${manifest#"$TOOLKIT_ROOT/"}" || rc=1
+  done
+  printf '%s\n' "$count"
+  return $rc
 }
 
 resolve_plugin_dirs() {

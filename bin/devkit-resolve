@@ -5,7 +5,7 @@
 #   devkit-resolve                     # List resolved plugin names
 #   devkit-resolve --init              # Create .devkit/toolkit.json interactively
 #   devkit-resolve --dirs              # List resolved plugin directories
-#   devkit-resolve --validate          # Validate config only
+#   devkit-resolve --validate          # Validate configs against schemas/, then resolve
 #   devkit-resolve --adapter=claude    # Resolve + generate Claude Code config
 #   devkit-resolve --adapter=cursor    # Resolve + generate Cursor config
 #   devkit-resolve --adapter=codex     # Resolve + generate Codex config
@@ -29,7 +29,8 @@ Usage:
   devkit-resolve                     List resolved plugin names (one per line)
   devkit-resolve --init              Create .devkit/toolkit.json interactively
   devkit-resolve --dirs              List resolved plugin directories
-  devkit-resolve --validate          Validate .devkit/toolkit.json only
+  devkit-resolve --validate          Check every toolkit.json and plugin.json against
+                                   schemas/, then resolve
   devkit-resolve --adapter=<name>    Resolve + generate config for an adapter
                                    Supported: claude, cursor, codex
 
@@ -41,7 +42,7 @@ Options:
 Environment:
   DEVKIT_PROJECT_ROOT   Same as --project
 EOF
-  exit 0
+  exit "${1:-0}"
 }
 
 MODE="list"
@@ -71,7 +72,7 @@ for arg in "$@"; do
       ;;
     *)
       echo "Unknown option: $arg" >&2
-      usage
+      usage 1
       ;;
   esac
 done
@@ -202,8 +203,13 @@ case "$MODE" in
     _init_toolkit
     ;;
   validate)
-    resolved=$(resolve_plugins)
+    if ! manifests=$(validate_schemas); then
+      echo "FAILED: schema validation" >&2
+      exit 1
+    fi
+    resolved=$(resolve_plugins) || exit 1
     count=$(echo "$resolved" | wc -l | tr -d ' ')
+    echo "OK: toolkit.json + $manifests plugin manifest(s) match schemas/ (targeted, not full JSON Schema conformance)"
     echo "OK: $count plugins resolved"
     echo "$resolved" | while read -r name; do echo "  - $name"; done
     ;;
