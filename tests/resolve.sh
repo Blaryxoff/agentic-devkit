@@ -92,6 +92,28 @@ grep -q "^ERROR: Plugin not found: devkit-nope" "$TMP_DIR/err" \
 
 resolve --bogus-flag >/dev/null && fail "an unknown option must exit non-zero"
 
+# A dependency cycle must be reported, not recursed into. No shipped pair forms one,
+# so the fixture lives in a copy of the clone.
+CLONE="$TMP_DIR/clone"
+mkdir -p "$CLONE"
+tar -cf - --exclude .git -C "$ROOT" . | tar -xf - -C "$CLONE"
+for pair in "cycle-a:devkit-cycle-b" "cycle-b:devkit-cycle-a"; do
+  dir="${pair%%:*}"
+  dep="${pair#*:}"
+  mkdir -p "$CLONE/plugins/$dir"
+  jq -n --arg n "devkit-$dir" --arg d "$dep" \
+    '{name:$n, version:"1.0.0", description:"cycle fixture", layer:"stack",
+      defaultEnabled:false, dependencies:[$d], paths:{}}' > "$CLONE/plugins/$dir/plugin.json"
+done
+cycle=$(mkproject cycle '{"version":1,"enabled":["devkit-cycle-a"]}')
+set +e
+bash "$CLONE/bin/devkit-resolve" --project="$cycle" >/dev/null 2>"$TMP_DIR/err"
+cycle_status=$?
+set -e
+[ "$cycle_status" != "0" ] || fail "a dependency cycle must not resolve successfully"
+grep -q "^ERROR: Dependency cycle: " "$TMP_DIR/err" \
+  || fail "the cycle error is missing or still raw jq output: $(cat "$TMP_DIR/err")"
+
 # --- --validate ---------------------------------------------------------------
 
 resolve --validate --project="$laravel" >/dev/null || fail "--validate rejected a valid config"

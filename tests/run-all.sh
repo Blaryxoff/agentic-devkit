@@ -3,15 +3,19 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPTS=(
+  claude-adapter.sh
+  cleanup-visual-loop.sh
   coder-gate.sh
   codex-adapter.sh
   comment-gate.sh
   context-efficiency.sh
+  devkit-update.sh
   estimate-skill.sh
   no-clobber.sh
   nontech.sh
   output-style.sh
   resolve.sh
+  skill-eval.sh
   sprint-skill.sh
 )
 

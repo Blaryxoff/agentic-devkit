@@ -165,6 +165,27 @@ HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home" DEVKIT_HOME_DIR
 [ "$(jq -r '.outputStyle' "$claude_home/settings.json")" = "Explanatory" ] \
   || fail "explicit non-devkit output style was overwritten"
 
+# Three installs have now run against this home. inject_cursor_edit_gates and the
+# Claude hook injectors are all re-entrant by construction; assert that, or a
+# regression duplicating an entry on every install goes unnoticed.
+for cmd in coder-gate.sh comment-gate.sh; do
+  n=$(jq --arg c "$cmd" '[.preToolUse[]?.hooks[]? | select(.command | contains($c))] | length' \
+    "$cursor_home/hooks/hooks.json")
+  case "$cmd" in
+    coder-gate.sh) want=2 ;;   # one Read|ReadFile gate, one edit gate
+    comment-gate.sh) want=1 ;;
+  esac
+  [ "$n" = "$want" ] || fail "expected $want $cmd entries in Cursor hooks after three installs, found $n"
+done
+for event in UserPromptSubmit PreToolUse SessionStart; do
+  n=$(jq --arg e "$event" '[.hooks[$e][]?.hooks[]? | select(.command | test("devkit"))] | length' \
+    "$claude_home/settings.json")
+  dupes=$(jq --arg e "$event" '[.hooks[$e][]?.hooks[]?.command | select(test("devkit"))] | length - (unique | length)' \
+    "$claude_home/settings.json")
+  [ "$n" -gt 0 ] || fail "no devkit $event hook in settings.json"
+  [ "$dupes" = "0" ] || fail "three installs left $dupes duplicate devkit $event hook(s)"
+done
+
 project="$TMP_DIR/project"
 mkdir -p "$project/.devkit" "$project/.codex/skills/custom-skill" "$project/.cursor/skills/custom-skill"
 git -C "$project" init -q
