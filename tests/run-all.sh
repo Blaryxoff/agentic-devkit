@@ -11,6 +11,7 @@ SCRIPTS=(
   context-efficiency.sh
   cursor-adapter.sh
   devkit-update.sh
+  doc-canaries.sh
   estimate-skill.sh
   no-clobber.sh
   nontech.sh
