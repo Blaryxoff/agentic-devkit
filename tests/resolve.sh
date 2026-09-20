@@ -178,4 +178,30 @@ mkdir -p "$notgit"
 PROJECT_ROOT="$notgit" ensure_gitignore_entry '.codex/' >/dev/null
 [ -e "$notgit/.gitignore" ] && fail "a .gitignore was created outside a git work tree"
 
+# --- write_json ----------------------------------------------------------------
+# Every JSON write in the installer and the adapters goes through this. A plain
+# `producer > dest` truncates on setup, so the destination must survive a refusal.
+
+wj="$TMP_DIR/wj.json"
+printf '{"keep":1}\n' > "$wj"
+chmod 600 "$wj"
+
+write_json "$wj" "not json at all" 2>/dev/null && fail "invalid JSON was written"
+[ "$(jq -r .keep "$wj")" = "1" ] || fail "a rejected invalid write damaged the destination"
+
+write_json "$wj" "" 2>/dev/null && fail "an empty producer was allowed to truncate the destination"
+[ "$(jq -r .keep "$wj")" = "1" ] || fail "a rejected empty write damaged the destination"
+
+write_json "$wj" '{}' || fail "an empty object is valid JSON and must be written"
+[ "$(jq -c . "$wj")" = "{}" ] || fail "the empty object was not written"
+
+printf '{"keep":1}\n' > "$wj"
+ln -s "$wj" "$TMP_DIR/wj-link.json"
+write_json "$TMP_DIR/wj-link.json" '{"keep":2}' || fail "writing through a symlink failed"
+[ -L "$TMP_DIR/wj-link.json" ] || fail "the symlinked destination was replaced by a regular file"
+[ "$(jq -r .keep "$wj")" = "2" ] || fail "the symlink target was not updated"
+[ "$(stat -f %Lp "$wj" 2>/dev/null || stat -c %a "$wj")" = "600" ] \
+  || fail "the destination's mode was widened by the write"
+ls "$TMP_DIR"/*.devkit.tmp.* >/dev/null 2>&1 && fail "write_json left a temp file behind"
+
 echo "resolve tests passed"

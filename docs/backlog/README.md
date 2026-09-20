@@ -24,7 +24,6 @@ _None._
 
 - [A failed fetch is stamped as a successful pull](devkit-update-stamps-failed-pull.md)
 - [A malformed global Cursor hooks file is reset to `{}`](install-resets-malformed-cursor-hooks.md)
-- [`update.sh` is an orphaned destructive vendor fetch](update-sh-orphaned-destructive-vendor-fetch.md)
 - [`paths.settings` and `paths.lspServers` are read by nothing](plugin-paths-settings-and-lsp-never-read.md)
 - [`--validate` performs no schema validation](validate-flag-validates-nothing.md)
 - [Cursor adapter hardcodes the devkit home path](cursor-adapter-hardcodes-devkit-home-path.md)

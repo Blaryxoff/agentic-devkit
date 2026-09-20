@@ -24,7 +24,7 @@ plugins/                 All plugins (convention: plugins/*/plugin.json)
   vue/                   Vue component/state conventions
   inertia/               Inertia.js transport rules
   tailwind/              Tailwind CSS conventions
-  css/                   Vendored css.dev skills (unprefixed names; refreshed by update.sh)
+  css/                   Vendored css.dev skills (unprefixed names; tracked in git, refreshed by hand)
   {core,laravel,nuxt}/hooks/  Per-plugin hook scripts merged into the harness by the adapters
 bin/
   devkit-install           Global installer: core skills + devkit router + core subagents + slash commands + output styles + auto-update hook
@@ -61,7 +61,7 @@ tests/                   Shell test suite — run tests/run-all.sh before pushin
 - Skill names use the `devkit-` prefix in frontmatter. `ralphex` is a trigger token in the prompt
   (`plugins/core/hooks/skill-eval.txt`), never a name prefix. Exceptions: a skill whose short name is unambiguous and
   user-facing may drop the prefix so Codex reaches it as `$<name>` (currently `wrapup`); and the nine `css-*` skills,
-  vendored wholesale from css.dev by `update.sh`, which would be renamed back on the next vendor refresh. Renaming an existing skill's
+  vendored wholesale from css.dev, which would be renamed back on the next vendor refresh. Renaming an existing skill's
   frontmatter name is a breaking migration — hooks, `skill-eval.txt`, generated subagents, and conduct references all key
   on it.
 - Shared skills (git, plan-creator, plan-reviewer, etc.) live ONLY in `core/` -- never duplicated.
