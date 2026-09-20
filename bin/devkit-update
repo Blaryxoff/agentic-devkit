@@ -62,7 +62,10 @@ _pull_ff() {
   }
 
   before=$(git -C "$repo" rev-parse --short HEAD 2>/dev/null || echo "?")
-  if ! git -C "$repo" fetch -q origin 2>/dev/null; then
+  # A SessionStart hook cannot answer a credential prompt, and the harness detaches a
+  # blocked call rather than killing it, so an expired token would hang every session.
+  export GIT_TERMINAL_PROMPT=0 GIT_ASKPASS=/bin/true SSH_ASKPASS=/bin/true GCM_INTERACTIVE=never
+  if ! git -C "$repo" fetch -q origin 2>/dev/null </dev/null; then
     echo "devkit: $label fetch from origin failed — not updated (still $before)" >&2
     return 1
   fi
@@ -75,7 +78,7 @@ _pull_ff() {
 
   if git -C "$repo" symbolic-ref -q HEAD >/dev/null 2>&1 \
     && git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
-    if git -C "$repo" pull --ff-only -q 2>/dev/null; then
+    if git -C "$repo" pull --ff-only -q 2>/dev/null </dev/null; then
       after=$(git -C "$repo" rev-parse --short HEAD 2>/dev/null || echo "?")
       echo "devkit: $label updated $before..$after"
       return 0

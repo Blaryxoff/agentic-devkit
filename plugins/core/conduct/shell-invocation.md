@@ -1,7 +1,7 @@
 # Shell Invocation
 
-Rules for every command an agent runs through a shell tool. A command that blocks on stdin is the most common
-way a session, a subagent, or a whole turn stops making progress.
+Make every command an agent runs through a shell tool unable to block on stdin. Blocking on stdin is the most
+common way a session, a subagent, or a whole turn stops making progress.
 
 ## Why a shell hangs
 
@@ -19,16 +19,19 @@ will rescue a command. Make it unable to block instead.
   are deliberately feeding.
 - Prefer a non-interactive flag over an interactive prompt (`--yes`, `--no-input`, `--batch`, an explicit
   preset). A tool that offers none is the thing to fix, not to work around with a guessed keystroke.
-- Never pipe a long-running command through `tail` or `head`. They buffer until EOF, so a blocked run is
-  indistinguishable from a slow one and the line naming the cause never appears. Redirect to a file.
+- Never watch a long-running command through `tail`. It buffers until EOF, so a blocked run looks identical to
+  a slow one and the line naming the cause never arrives. `head -n N` does exit early, but it then SIGPIPEs the
+  producer mid-run. Redirect to a file and read the file.
 - Never launch an editor, pager, or REPL. Pass `--no-pager`, or set `GIT_PAGER=cat`, `PAGER=cat`,
   `GIT_EDITOR=true` when a command might reach for one.
 - Do not build a workflow on `timeout`; stock macOS does not ship it.
 - A script this repository ships obeys the same rule: when it needs a terminal it does not have, it exits with
-  a message naming the non-interactive flag. Guard with `[ -t 0 ]`; never prompt into the void.
+  a message naming the non-interactive flag. Guard with `[ -t 0 ]`; never prompt into the void. That refusal
+  stands even for a caller piping answers in — a menu's numbering is not a contract, the flag is.
 
 ## Diagnosing one that is already stuck
 
-`lsof -p <pid> -a -d 0` prints the process's stdin. A `unix` socket is this failure; a `/dev/null` character
-device is not. A blocked process burns no CPU — compare `ps -o time=` against elapsed time. Killing it lets
-the detached task complete immediately.
+`lsof -p <pid> -a -d 0` prints the process's stdin. A `/dev/null` character device rules this failure out; a
+`unix` socket is consistent with it but does not prove it, because a healthy process can hold one. Confirm with
+near-zero CPU (`ps -o time=`) against minutes of elapsed time. Killing a process confirmed that way lets the
+detached task complete immediately.

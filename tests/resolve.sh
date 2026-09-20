@@ -7,7 +7,10 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TMP_DIR=$(mktemp -d)
-trap 'rm -rf "$TMP_DIR"' EXIT
+# BG_PID holds any child this script backgrounds. A test that asserts a process does
+# NOT block must not leak one itself when an assertion fails before it is reaped.
+BG_PID=""
+trap 'rm -rf "$TMP_DIR"; [ -n "$BG_PID" ] && kill -9 "$BG_PID" 2>/dev/null; :' EXIT
 
 fail() {
   echo "FAIL: $*" >&2
@@ -194,6 +197,7 @@ mkfifo "$fifo"
 exec 3<> "$fifo"
 bash "$ROOT/bin/devkit-resolve" --init --project="$init_tty" <&3 >"$TMP_DIR/init-tty.out" 2>&1 &
 init_pid=$!
+BG_PID=$init_pid
 waited=0
 while kill -0 "$init_pid" 2>/dev/null && [ "$waited" -lt 50 ]; do
   sleep 0.1
@@ -208,6 +212,7 @@ set +e
 wait "$init_pid"
 status=$?
 set -e
+BG_PID=""
 exec 3>&-
 rm -f "$fifo"
 out=$(cat "$TMP_DIR/init-tty.out")

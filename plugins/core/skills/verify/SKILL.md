@@ -95,9 +95,8 @@ If any step failed, include the relevant error output below the table.
 
 - Do not fix issues yourself unless the user explicitly asks. Report findings only.
 - Do not run destructive commands (database wipes, force pushes, etc.).
-- Invoke every command per [shell-invocation](../../conduct/shell-invocation.md): redirect stdin from `/dev/null`,
-  prefer the non-interactive flag, never pipe a long run through `tail`. A dispatched agent that blocks on stdin is
-  detached, not killed, and outlives the turn holding whatever it took.
+- Invoke every command per [shell-invocation](../../conduct/shell-invocation.md). A dispatched agent that blocks
+  on stdin is detached rather than killed, so it outlives the turn holding whatever it took.
 - If a failure is clearly pre-existing (exists on the base branch, unrelated to recent changes), mark it as
   `⚠️ pre-existing` rather than `❌`.
 - Respect the project's test rules in `CLAUDE.md` / `AGENTS.md` (see [agent-test-restraint](../../conduct/agent-test-restraint.md)). Never create test files as part of verification. All other steps (lint, typecheck, security review) are expected and should always run.
