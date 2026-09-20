@@ -13,7 +13,10 @@
 # rather than block every write. Runs alongside coder-gate.sh.
 
 # No hook payload can arrive on a terminal, and `cat` would wait for one forever.
+# Announce the skip: a harness that ever did deliver JSON on a pty would otherwise
+# lose this gate silently, which is worse than the hang this replaced.
 if [ -t 0 ]; then
+  echo "devkit: $(basename "$0") got a terminal on stdin, not a hook payload — not gating this call" >&2
   exit 0
 fi
 
