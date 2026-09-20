@@ -92,7 +92,7 @@ nginx. Each gets its own digest marker.
 GHCR rejects uppercase in the namespace path. The workflow must
 **hardcode** `REGISTRY=ghcr.io/<lowercase-owner>` — do not interpolate
 `${{ github.repository_owner }}` because GitHub usernames can be mixed-case
-(e.g. `Blaryxoff`). The remote `bin/deploy.sh` receives `REGISTRY` as an env
+(e.g. `<github-org>`). The remote `bin/deploy.sh` receives `REGISTRY` as an env
 var, lowercased.
 
 ### 1.7 Slim the runtime image

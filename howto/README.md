@@ -31,6 +31,11 @@ AI ускоряет поставку фич только при дисципли
 - [[Промпт-инжиниринг]]
 - [[Когда НЕ использовать AI]]
 
+### Прочее
+- [[Импорт скилов umputun]]
+- [[modular-plugin-ownership-plan]] — на английском
+- [[project-test-rules]] — на английском
+
 ## Операционная модель команды
 
 1. Product пишет требования и acceptance criteria в Markdown (`docs/plans/product/*.md`)

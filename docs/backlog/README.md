@@ -28,8 +28,6 @@ _None._
 - [A malformed global Cursor hooks file is reset to `{}`](install-resets-malformed-cursor-hooks.md)
 - [`update.sh` is an orphaned destructive vendor fetch](update-sh-orphaned-destructive-vendor-fetch.md)
 - [`paths.settings` and `paths.lspServers` are read by nothing](plugin-paths-settings-and-lsp-never-read.md)
-- [README documents a resolution order the resolver does not produce](readme-documents-wrong-resolution-order.md)
-- [The toolkit schema rejects the `$schema` key it ships](toolkit-schema-rejects-the-schema-key-it-ships.md)
 - [`--validate` performs no schema validation](validate-flag-validates-nothing.md)
 - [A mistyped `--project` root is silently ignored](multi-root-skips-configless-root-silently.md)
 - [Cursor adapter hardcodes the devkit home path](cursor-adapter-hardcodes-devkit-home-path.md)
@@ -39,9 +37,6 @@ _None._
 - [`coder-gate`'s scratch exemption has no test](untested-coder-gate-scratch-exemption.md)
 - [The resolution core and three CLI entry points have no coverage](untested-install-and-resolve-paths.md)
 - [`adapters/README.md` is stale in four places](adapters-readme-describes-an-adapter-that-no-longer-exists.md)
-- [Private identifiers in shipped conduct](private-identifiers-in-shipped-conduct.md)
-- [The layout tree omits the css plugin and `tests/`](claude-md-layout-omits-css-plugin-and-tests.md)
-- [The `ralphex-` prefix is documented but unused](ralphex-prefix-documented-but-unused.md)
 
 ## Minor
 
@@ -50,9 +45,5 @@ _None._
 - [`settings.json` writes truncate before producing output](json-writes-truncate-before-producing-output.md)
 - [Cursor and Codex adapters ignore `paths.skills`](cursor-and-codex-adapters-ignore-paths-skills.md)
 - [`devkit-css` Cursor rule globs every file](devkit-css-cursor-rule-globs-every-file.md)
-- [Nine css skills drop the prefix, undocumented](css-skills-drop-the-prefix-undocumented.md)
-- [`examples/nuxt-css.json` enables no CSS plugin](examples-nuxt-css-enables-no-css-plugin.md)
-- [`--help` truncates the header block](install-help-truncates-the-header-block.md)
-- [The howto index links 7 of 13 docs](howto-index-reaches-7-of-13-docs.md)
 - [No test seams on the high-blast-radius scripts](no-test-seams-on-high-blast-radius-scripts.md)
 - [Tests assert documentation wording, not behaviour](tests-assert-documentation-wording-not-behaviour.md)

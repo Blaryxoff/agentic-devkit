@@ -36,7 +36,7 @@ export default defineConfig({
     use: {
       baseURL: "http://127.0.0.1:<project-port>", // Resolve from project config; do not guess the port.
       channel: "chrome",
-      // Required in unprivileged Firebat/Incus containers; omit where the Chrome sandbox works.
+      // Required in unprivileged/rootless containers; omit where the Chrome sandbox works.
       launchOptions: { args: ["--no-sandbox"] },
     },
   }],

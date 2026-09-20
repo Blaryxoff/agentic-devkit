@@ -41,7 +41,7 @@ for arg in "$@"; do
     --claude)    RUN_CLAUDE=1 ;;
     --project=*) PROJECT="${arg#--project=}" ;;
     -h|--help)
-      sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) echo "Unknown option: $arg" >&2; exit 1 ;;

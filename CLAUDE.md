@@ -24,20 +24,25 @@ plugins/                 All plugins (convention: plugins/*/plugin.json)
   vue/                   Vue component/state conventions
   inertia/               Inertia.js transport rules
   tailwind/              Tailwind CSS conventions
+  css/                   Vendored css.dev skills (unprefixed names; refreshed by update.sh)
+  {core,laravel,nuxt}/hooks/  Per-plugin hook scripts merged into the harness by the adapters
 bin/
   devkit-install           Global installer: core skills + devkit router + core subagents + slash commands + output styles + auto-update hook
   devkit-update            Timestamp-guarded `git pull --ff-only` for whichever clone contains it (SessionStart hook)
   devkit-resolve           CLI entry point for resolution and adapter generation (repeatable --project for multi-repo)
+  devkit-cleanup-visual-loop.mjs  Prunes visual-regression loop artifacts
 adapters/
   _lib/resolve.sh        Core resolution algorithm (bash + jq); multi-root union of enabled plugins
   _lib/hooks.sh          Shared hook merging + event translation (DRY adapter pattern)
   _lib/claude_agents.sh  Shared subagent generation (used by claude/generate + devkit-install)
+  _lib/mcp.sh            Shared MCP server merging
   claude/generate        Claude Code adapter (slim: per-project stack subagents, hooks, MCP — core is global)
   cursor/generate        Cursor IDE adapter
   codex/generate         OpenAI Codex adapter
 schemas/                 JSON schemas for toolkit.json and plugin.json
 examples/                Example .devkit/toolkit.json files
-howto/                   Developer guides (Russian)
+howto/                   Developer guides (mostly Russian; a few English)
+tests/                   Shell test suite — run tests/run-all.sh before pushing
 ```
 
 ## Key Conventions
@@ -53,8 +58,10 @@ howto/                   Developer guides (Russian)
 
 - Each skill lives in `plugins/<plugin>/skills/<skill-name>/SKILL.md`.
 - SKILL.md has YAML frontmatter (`name`, `description`) followed by the prompt body.
-- Skill names use the `devkit-` or `ralphex-` prefix in frontmatter. Exception: a skill whose short name is unambiguous
-  and user-facing may drop the prefix so Codex reaches it as `$<name>` (currently `wrapup`). Renaming an existing skill's
+- Skill names use the `devkit-` prefix in frontmatter. `ralphex` is a trigger token in the prompt
+  (`plugins/core/hooks/skill-eval.txt`), never a name prefix. Exceptions: a skill whose short name is unambiguous and
+  user-facing may drop the prefix so Codex reaches it as `$<name>` (currently `wrapup`); and the nine `css-*` skills,
+  vendored wholesale from css.dev by `update.sh`, which would be renamed back on the next vendor refresh. Renaming an existing skill's
   frontmatter name is a breaking migration — hooks, `skill-eval.txt`, generated subagents, and conduct references all key
   on it.
 - Shared skills (git, plan-creator, plan-reviewer, etc.) live ONLY in `core/` -- never duplicated.
@@ -118,7 +125,7 @@ The audience is an LLM. Optimise for signal density — every line spends contex
 
 ### Frontmatter (skills)
 
-- `name`: kebab-case, prefixed (`devkit-…` / `ralphex-…`).
+- `name`: kebab-case, prefixed `devkit-…` (see the naming exceptions above).
 - `description`: this is the trigger an LLM matches against — be specific about *when* to invoke. `bootstrap or audit a project's Docker deployment` beats `Docker helper`. Include the inputs/outputs and the situations that skip the skill.
 - A description carries exactly three things: **what** the skill does, **when** to invoke it (trigger phrases, in every
   language the team uses), and **how it differs** from a sibling skill that could be picked instead. Mechanics, output

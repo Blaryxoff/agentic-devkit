@@ -65,7 +65,7 @@ This documents breaking changes from the old Claude-Code-centric structure to th
 
 ### Shared skill symlinks removed
 
-Previously, shared skills (git, spec-creator, test-case-creator, reviewer-logging, plan-reviewer) existed as symlinks in `core/`, `backend/`, and `frontend/` pointing to canonical files in `shared/`. Note: `spec-creator` was later renamed to `plan-creator` (skill name `ralphex-plan-creator`) and `plan-reviewer` was renamed to `ralphex-plan-reviewer`.
+Previously, shared skills (git, spec-creator, test-case-creator, reviewer-logging, plan-reviewer) existed as symlinks in `core/`, `backend/`, and `frontend/` pointing to canonical files in `shared/`. Note: `spec-creator` was later renamed to `plan-creator` (skill name `devkit-plan-creator`); `plan-reviewer`'s skill name is `devkit-plan-reviewer`.
 
 Now: canonical files live directly in `plugins/core/skills/`. Per-plugin symlinks are gone. The resolver ensures `devkit-core` is always resolved, so its skills are always available.
 

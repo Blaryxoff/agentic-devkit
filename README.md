@@ -97,7 +97,8 @@ Supported adapters: `claude`, `cursor`, `codex`.
 }
 ```
 
-Resolves: `core -> frontend -> vue -> inertia -> laravel -> tailwind`
+Resolves: `core, frontend, inertia, laravel, vue, tailwind` — plugins are ordered by layer, then alphabetically
+within a layer, so a dependency is not necessarily listed before its dependent.
 
 ### Nuxt
 
@@ -110,7 +111,7 @@ Resolves: `core -> frontend -> vue -> inertia -> laravel -> tailwind`
 }
 ```
 
-Resolves: `core -> frontend -> vue -> nuxt`
+Resolves: `core, frontend, nuxt, vue`
 
 ### Laravel API only
 

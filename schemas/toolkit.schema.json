@@ -7,6 +7,10 @@
   "required": ["version", "enabled"],
   "additionalProperties": false,
   "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional path or URL to this schema, for editor completion."
+    },
     "version": {
       "type": "integer",
       "const": 1,

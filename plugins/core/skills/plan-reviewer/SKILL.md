@@ -52,7 +52,7 @@ Then identify the review context:
 If both a product plan and a dev plan exist for the same feature, review them together for cross-plan alignment (see
 §5).
 
-If the repository uses dated plan naming (for example from the `ralphex-plan-creator` skill), verify the file name
+If the repository uses dated plan naming (for example from the `devkit-plan-creator` skill), verify the file name
 follows that convention.
 
 ---
