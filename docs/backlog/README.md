@@ -22,14 +22,11 @@ _None._
 
 ## Significant
 
-- [`_collect_enabled` error paths are swallowed in a subshell](resolve-error-paths-swallowed-in-subshell.md)
-- [Project paths interpolated into `python3 -c` source](resolve-interpolates-paths-into-python-source.md)
 - [A failed fetch is stamped as a successful pull](devkit-update-stamps-failed-pull.md)
 - [A malformed global Cursor hooks file is reset to `{}`](install-resets-malformed-cursor-hooks.md)
 - [`update.sh` is an orphaned destructive vendor fetch](update-sh-orphaned-destructive-vendor-fetch.md)
 - [`paths.settings` and `paths.lspServers` are read by nothing](plugin-paths-settings-and-lsp-never-read.md)
 - [`--validate` performs no schema validation](validate-flag-validates-nothing.md)
-- [A mistyped `--project` root is silently ignored](multi-root-skips-configless-root-silently.md)
 - [Cursor adapter hardcodes the devkit home path](cursor-adapter-hardcodes-devkit-home-path.md)
 - [A dangling devkit symlink is misreported as the user's file](dangling-devkit-symlink-reported-as-user-file.md)
 - [Core subagent skills are registered twice](core-subagent-skills-registered-twice.md)

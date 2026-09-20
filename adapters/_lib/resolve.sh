@@ -28,7 +28,7 @@ toolkit_home_ref() { printf '%s\n' "$DEVKIT_HOME_REF"; }
 _check_jq() {
   if ! command -v jq &>/dev/null; then
     echo "ERROR: jq is required but not found. Install it: https://jqlang.github.io/jq/download/" >&2
-    exit 1
+    return 1
   fi
 }
 
@@ -71,16 +71,23 @@ _project_roots() {
 _collect_enabled() {
   local merged='[]'
   local found=0
+  local root_count
+  root_count=$(_project_roots | grep -c .)
   while IFS= read -r root; do
     [ -n "$root" ] || continue
     local config="$root/.devkit/toolkit.json"
-    [ -f "$config" ] || continue
+    if [ ! -f "$config" ]; then
+      if [ "$root_count" -gt 1 ]; then
+        echo "WARN: no .devkit/toolkit.json at $root — skipped" >&2
+      fi
+      continue
+    fi
     found=1
     local version
     version=$(jq -r '.version' "$config")
     if [ "$version" != "1" ]; then
       echo "ERROR: Unsupported toolkit.json version: $version (expected 1) at $config" >&2
-      exit 1
+      return 1
     fi
     merged=$(jq -n --argjson a "$merged" --slurpfile c "$config" \
       '($a + ($c[0].enabled // [])) | reduce .[] as $x ([]; if index($x) then . else . + [$x] end)')
@@ -88,22 +95,22 @@ _collect_enabled() {
 
   if [ "$found" -eq 0 ]; then
     local _hint
-    _hint=$(python3 -c "import os.path; print(os.path.relpath('$TOOLKIT_ROOT', '$PROJECT_ROOT'))")
+    _hint=$(python3 -c 'import os.path,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$TOOLKIT_ROOT" "$PROJECT_ROOT")
     echo "ERROR: No .devkit/toolkit.json found at $PROJECT_ROOT" >&2
     echo "Run:   $_hint/bin/devkit-resolve --init" >&2
-    exit 1
+    return 1
   fi
   echo "$merged"
 }
 
 resolve_plugins() {
-  _check_jq
+  _check_jq || return 1
 
   local plugin_index
   plugin_index=$(_build_plugin_index)
 
   local enabled_json
-  enabled_json=$(_collect_enabled)
+  enabled_json=$(_collect_enabled) || return 1
 
   echo "$plugin_index" | jq -r --argjson enabled "$enabled_json" '
     . as $plugins |
@@ -152,7 +159,7 @@ resolve_plugin_dirs() {
 }
 
 toolkit_relpath() {
-  python3 -c "import os.path; print(os.path.relpath('$TOOLKIT_ROOT', '$PROJECT_ROOT'))"
+  python3 -c 'import os.path,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$TOOLKIT_ROOT" "$PROJECT_ROOT"
 }
 
 # Ensure a path entry is present in PROJECT_ROOT/.gitignore.
