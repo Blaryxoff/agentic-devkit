@@ -44,3 +44,5 @@ For any reported bug or regression, write a failing test that reproduces the def
 ## Stack-specific commands
 
 This document defines the loop structure. Concrete commands (`pnpm run lint`, `php artisan test`, `cargo check`, etc.) are defined in each stack plugin's conduct docs or in the dev plan's `## Validation Commands` section. The implementer must use the correct commands for the active stack.
+
+Every one of those commands runs through a shell. [shell-invocation.md](./shell-invocation.md) governs how to invoke one so it cannot block the session.
