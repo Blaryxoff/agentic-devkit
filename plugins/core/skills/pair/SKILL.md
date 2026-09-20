@@ -3,8 +3,8 @@ name: devkit-pair
 description: >-
   converse with the other agent in this agterm split (Claude Code ↔ Codex) through peer-chat.py; its
   reply lands in your pane on its own. The pane the user asked is sole writer, the peer reviews
-  read-only and argues. Manual trigger ONLY: "work with codex", "talk to claude", "парой", or a
-  prompt opening "Chat from Codex:". Both agents must already be running. Not devkit-task's
+  read-only and argues. Manual trigger ONLY: "pair", "парой", "work with codex", "talk to claude", or
+  a prompt opening "Chat from Codex:". Both agents must already be running in one split. Not devkit-task's
   pipeline, nor devkit-crosscheck's one-shot subprocess peer.
 ---
 
@@ -52,6 +52,8 @@ peer-chat.py --prepare-message peer-chat-codex-a91f.txt   # prints the absolute 
 peer-chat.py --to claude --message-file peer-chat-codex-a91f.txt
 ```
 
+- **The reserved name must match `peer-chat-<sender>-<suffix>.txt`** — anything else exits 2 before
+  the file is created.
 - **Write one paragraph.** The script collapses whitespace, because a newline submits the fragment
   before it.
 - **Never write the `Chat from …:` label yourself.** The script adds it, and that label is what makes
