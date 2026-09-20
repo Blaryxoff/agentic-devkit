@@ -175,6 +175,8 @@ git push
 
 # Resolve plugins for a project (repeat --project for a multi-repo backend+frontend project)
 bin/devkit-resolve --validate
+bin/devkit-resolve --preset=<examples-name>       # non-interactive --init
+bin/devkit-resolve --enable=devkit-a,devkit-b     # non-interactive --init from an explicit list
 bin/devkit-resolve --dirs --project=<backend> --project=<frontend>
 
 # Per-project adapter generation (stack infra; core/router are already global)

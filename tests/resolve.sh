@@ -178,6 +178,31 @@ mkdir -p "$notgit"
 PROJECT_ROOT="$notgit" ensure_gitignore_entry '.codex/' >/dev/null
 [ -e "$notgit/.gitignore" ] && fail "a .gitignore was created outside a git work tree"
 
+# --- non-interactive --init ----------------------------------------------------
+# --init reads choices from `read -rp`; --preset and --enable are the scriptable path.
+
+init_a="$TMP_DIR/init-preset"
+mkdir -p "$init_a"
+resolve --preset=laravel-only --project="$init_a" >/dev/null || fail "--preset failed"
+[ -f "$init_a/.devkit/toolkit.json" ] || fail "--preset wrote no config"
+[ "$(jq -r '.enabled | index("devkit-laravel")' "$init_a/.devkit/toolkit.json")" != "null" ] \
+  || fail "--preset did not carry the preset's plugins"
+resolve --validate --project="$init_a" >/dev/null || fail "--preset produced a config that fails --validate"
+
+init_b="$TMP_DIR/init-enable"
+mkdir -p "$init_b"
+resolve --enable=devkit-laravel,devkit-vue --project="$init_b" >/dev/null || fail "--enable failed"
+[ "$(jq -c '.enabled' "$init_b/.devkit/toolkit.json")" = '["devkit-laravel","devkit-vue"]' ] \
+  || fail "--enable wrote the wrong list: $(jq -c '.enabled' "$init_b/.devkit/toolkit.json")"
+resolve --validate --project="$init_b" >/dev/null || fail "--enable produced a config that fails --validate"
+
+resolve --preset=no-such-preset --project="$TMP_DIR/init-bad" >/dev/null \
+  && fail "an unknown preset must exit non-zero"
+[ -e "$TMP_DIR/init-bad/.devkit/toolkit.json" ] && fail "a failed --preset still wrote a config"
+
+resolve --enable=devkit-laravel --project="$init_b" >/dev/null \
+  && fail "--enable must refuse to overwrite an existing config"
+
 # --- write_json ----------------------------------------------------------------
 # Every JSON write in the installer and the adapters goes through this. A plain
 # `producer > dest` truncates on setup, so the destination must survive a refusal.

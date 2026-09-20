@@ -19,7 +19,7 @@ async function exists(filePath) {
   }
 }
 
-async function cleanupProject(projectRoot) {
+async function cleanupProject(projectRoot, dryRun) {
   const resolved = path.resolve(projectRoot);
   const packageJsonPath = path.join(resolved, "package.json");
   const changes = [];
@@ -38,40 +38,48 @@ async function cleanupProject(projectRoot) {
     }
 
     if (removed > 0) {
-      pkg.scripts = scripts;
-      await fs.writeFile(packageJsonPath, `${JSON.stringify(pkg, null, 2)}\n`, "utf8");
-      changes.push(`removed ${removed} ui:* script(s) from package.json`);
+      if (!dryRun) {
+        pkg.scripts = scripts;
+        await fs.writeFile(packageJsonPath, `${JSON.stringify(pkg, null, 2)}\n`, "utf8");
+      }
+      changes.push(`${dryRun ? "would remove" : "removed"} ${removed} ui:* script(s) from package.json`);
     }
   }
 
   const authStatePath = path.join(resolved, "visual", ".auth-state.json");
   if (await exists(authStatePath)) {
-    await fs.unlink(authStatePath);
-    changes.push("removed visual/.auth-state.json");
+    if (!dryRun) {
+      await fs.unlink(authStatePath);
+    }
+    changes.push(`${dryRun ? "would remove" : "removed"} visual/.auth-state.json`);
   }
 
   return { projectRoot: resolved, changes };
 }
 
 function printHelp() {
-  console.log(`Usage: devkit-cleanup-visual-loop.mjs <project-root> [more-project-roots...]
+  console.log(`Usage: devkit-cleanup-visual-loop.mjs [--dry-run] <project-root> [more-project-roots...]
 
 Removes visual-loop / Playwright bootstrap artifacts from devkit consumer projects:
   - ui:check, ui:loop, ui:approve, ui:figma-map, ui:mcp-health from package.json
   - visual/.auth-state.json (Playwright auth cache)
 
-Keeps visual/config.json, baselines, and output — still used by chrome-devtools pixel skills.`);
+Keeps visual/config.json, baselines, and output — still used by chrome-devtools pixel skills.
+
+--dry-run reports what it would change and writes nothing.`);
 }
 
 async function main() {
-  const args = process.argv.slice(2);
-  if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
+  const argv = process.argv.slice(2);
+  const dryRun = argv.includes("--dry-run");
+  const args = argv.filter((a) => a !== "--dry-run");
+  if (args.length === 0 || argv.includes("--help") || argv.includes("-h")) {
     printHelp();
     process.exit(args.length === 0 ? 1 : 0);
   }
 
   for (const target of args) {
-    const result = await cleanupProject(target);
+    const result = await cleanupProject(target, dryRun);
     if (result.changes.length === 0) {
       console.log(`${result.projectRoot}: nothing to clean`);
       continue;

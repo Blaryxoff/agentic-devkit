@@ -4,6 +4,8 @@
 # Usage:
 #   devkit-resolve                     # List resolved plugin names
 #   devkit-resolve --init              # Create .devkit/toolkit.json interactively
+#   devkit-resolve --preset=<name>     # ... from examples/<name>.json, no prompts
+#   devkit-resolve --enable=a,b        # ... from an explicit list, no prompts
 #   devkit-resolve --dirs              # List resolved plugin directories
 #   devkit-resolve --validate          # Validate configs against schemas/, then resolve
 #   devkit-resolve --adapter=claude    # Resolve + generate Claude Code config
@@ -28,6 +30,8 @@ devkit-resolve — resolve devkit-toolkit plugins for a project
 Usage:
   devkit-resolve                     List resolved plugin names (one per line)
   devkit-resolve --init              Create .devkit/toolkit.json interactively
+  devkit-resolve --preset=<name>     Create it from examples/<name>.json, no prompts
+  devkit-resolve --enable=a,b        Create it from an explicit plugin list, no prompts
   devkit-resolve --dirs              List resolved plugin directories
   devkit-resolve --validate          Check every toolkit.json and plugin.json against
                                    schemas/, then resolve
@@ -45,6 +49,8 @@ EOF
   exit "${1:-0}"
 }
 
+INIT_PRESET=""
+INIT_ENABLE=""
 MODE="list"
 ADAPTER=""
 
@@ -55,6 +61,14 @@ for arg in "$@"; do
       ;;
     --init)
       MODE="init"
+      ;;
+    --preset=*)
+      MODE="init"
+      INIT_PRESET="${arg#--preset=}"
+      ;;
+    --enable=*)
+      MODE="init"
+      INIT_ENABLE="${arg#--enable=}"
       ;;
     --validate)
       MODE="validate"
@@ -102,6 +116,31 @@ _init_toolkit() {
   local examples_dir="$TOOLKIT_ROOT/examples"
   local -a preset_files=()
   local -a preset_labels=()
+
+  # --preset / --enable skip the prompts entirely, so this command is reachable from
+  # a script, a container bootstrap, or a test. Everything below stays interactive.
+  if [ -n "$INIT_PRESET" ] || [ -n "$INIT_ENABLE" ]; then
+    local enabled_json
+    if [ -n "$INIT_PRESET" ]; then
+      local preset_file="$examples_dir/$INIT_PRESET.json"
+      if [ ! -f "$preset_file" ]; then
+        echo "ERROR: no preset '$INIT_PRESET'. Available:" >&2
+        for f in "$examples_dir"/*.json; do
+          [ -f "$f" ] && echo "  - $(basename "$f" .json)" >&2
+        done
+        exit 1
+      fi
+      enabled_json=$(jq '.enabled' "$preset_file")
+    else
+      enabled_json=$(printf '%s' "$INIT_ENABLE" | jq -R 'split(",") | map(select(length > 0))')
+    fi
+    mkdir -p "$config_dir"
+    write_json "$config_file" "$(jq -n --arg schema "$schema_ref" --argjson enabled "$enabled_json" \
+      '{"$schema": $schema, version: 1, enabled: $enabled}')" || exit 1
+    echo "Created: .devkit/toolkit.json"
+    resolve_plugins | while read -r name; do echo "  - $name"; done
+    return 0
+  fi
 
   for f in "$examples_dir"/*.json; do
     [ -f "$f" ] || continue

@@ -60,6 +60,25 @@ run "$p" || fail "cleanup exited non-zero: $(cat "$TMP_DIR/out")"
 [ -f "$p/visual/config.json" ] || fail "visual/config.json must be kept"
 grep -q "removed 2 ui:\* script(s)" "$TMP_DIR/out" || fail "the removal was not reported: $(cat "$TMP_DIR/out")"
 
+# --- --dry-run -----------------------------------------------------------------
+# The real run above already consumed this project's artifacts, so use a fresh one.
+
+dry="$TMP_DIR/dry"
+mkdir -p "$dry/visual"
+printf '{"scripts":{"ui:check":"x","build":"b"}}\n' > "$dry/package.json"
+printf '{}\n' > "$dry/visual/.auth-state.json"
+before_pkg=$(cat "$dry/package.json")
+
+run --dry-run "$dry" || fail "--dry-run exited non-zero"
+grep -q "would remove" "$TMP_DIR/out" || fail "--dry-run did not report what it would do"
+[ "$(cat "$dry/package.json")" = "$before_pkg" ] || fail "--dry-run rewrote package.json"
+[ -f "$dry/visual/.auth-state.json" ] || fail "--dry-run deleted the auth cache"
+
+run "$dry" || fail "the real run after --dry-run exited non-zero"
+[ "$(jq -r '.scripts["ui:check"] // "gone"' "$dry/package.json")" = "gone" ] \
+  || fail "the real run did not apply what --dry-run reported"
+[ -e "$dry/visual/.auth-state.json" ] && fail "the real run did not remove the auth cache"
+
 # --- idempotence ---------------------------------------------------------------
 
 before=$(cat "$p/package.json")

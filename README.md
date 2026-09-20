@@ -24,6 +24,7 @@ run the adapter from the global clone:
 ```bash
 cd my-project
 ~/.claude/agentic-devkit/bin/devkit-resolve --init          # write .devkit/toolkit.json
+~/.claude/agentic-devkit/bin/devkit-resolve --preset=laravel-only   # same, no prompts
 
 ~/.claude/agentic-devkit/bin/devkit-install --cursor         # .cursor/ rules + skills + hooks
 ~/.claude/agentic-devkit/bin/devkit-install --codex          # .codex/ resolved skills + AGENTS.md
