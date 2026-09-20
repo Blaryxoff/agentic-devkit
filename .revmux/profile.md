@@ -9,9 +9,11 @@
   so an edit on `master` reaches every project and every agent session on every machine that pulls — within a day
   through the auto-update hook, immediately for anyone already on the clone. There is no staging environment and no
   release gate between a commit and every consumer.
-- `plugins/core/hooks/*.sh` run inside other people's sessions on every prompt and every edit, in Claude Code,
-  Codex and Cursor. A hook that blocks, exits non-zero when it should not, or emits malformed output degrades or
-  halts unrelated work in every repository at once.
+- `plugins/core/hooks/*.sh` run inside other people's sessions. `skill-eval.sh` is installed only as Claude
+  Code's `UserPromptSubmit` hook — Codex and Cursor get the instruction text in `skill-eval.txt` instead — while
+  `coder-gate.sh` and `comment-gate.sh` run as `PreToolUse` gates on edits in all three harnesses. A hook that
+  blocks, exits non-zero when it should not, or emits malformed output degrades or halts unrelated work in every
+  repository at once.
 - The adapters and `bin/devkit-install` write into user-owned configuration: `~/.claude/settings.json`,
   `~/.codex/config.toml`, `~/.cursor/hooks/hooks.json`, project `.gitignore`, `.claude/`, `.cursor/`, `.codex/`.
   Those files hold state devkit did not create and cannot reconstruct.
@@ -23,8 +25,10 @@
 
 - A generated write truncates, empties, or replaces a user-owned file — a failed producer emptying
   `settings.json`, `mv` replacing a symlink a dotfile repo depends on, a mode dropped, an unrelated key lost in a
-  merge, or a malformed existing file reset to `{}` instead of aborting. Every JSON write goes through
-  `write_json` in `adapters/_lib/resolve.sh` for exactly this reason; a new raw redirect is a defect.
+  merge, or a malformed existing file reset to `{}` instead of aborting. The bash installer and adapters route
+  every JSON write through `write_json` in `adapters/_lib/resolve.sh` for exactly this reason, and a new raw
+  redirect there is a defect. The invariant is not repo-wide: `bin/devkit-cleanup-visual-loop.mjs` rewrites a
+  project's `package.json` with a plain `fs.writeFile`, which is a real gap rather than a convention to respect.
 - A hook hangs or misfires: blocking on stdin, a coder-gate that blocks an edit it should exempt or exempts one it
   should gate, a debounce marker that never expires, or a fail-open path that now fails closed. These do not fail
   visibly — the session simply stops working.
@@ -60,8 +64,9 @@
   per tool is the anti-pattern the shared `_lib/hooks.sh` exists to prevent.
 - Prose comments in shell and script code are forbidden by `plugins/core/conduct/code-comments.md`. A comment that
   states a non-obvious constraint is allowed; narration of what the next line does is not.
-- Tests are shell scripts under `tests/`, run by `tests/run-all.sh`, and verified by mutation — patch one line,
-  assert the test fails. A test that passes against a broken implementation is worthless here.
+- Tests are shell scripts under `tests/`, run by `tests/run-all.sh`. A new regression test is expected to be
+  mutation-verified — patch the line it guards, assert the test fails — but that is not established for the whole
+  suite, so a vacuous assertion anywhere in `tests/` is a live finding, not settled ground.
 
 ## Reporting bar
 
