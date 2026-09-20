@@ -23,7 +23,9 @@ mkproject() {
 
 resolve() {
   set +e
-  bash "$ROOT/bin/devkit-resolve" "$@" 2>"$TMP_DIR/err"
+  # stdin closed on purpose: any path that falls through to an interactive prompt
+  # must fail the test rather than hang it.
+  bash "$ROOT/bin/devkit-resolve" "$@" < /dev/null 2>"$TMP_DIR/err"
   local status=$?
   set -e
   return $status
@@ -202,6 +204,30 @@ resolve --preset=no-such-preset --project="$TMP_DIR/init-bad" >/dev/null \
 
 resolve --enable=devkit-laravel --project="$init_b" >/dev/null \
   && fail "--enable must refuse to overwrite an existing config"
+
+# A rejected list must leave nothing behind. A config written before it is checked
+# is worse than no config: --init then refuses to replace it, so a typo can only be
+# undone by deleting the file by hand.
+init_reject() {
+  local dir="$TMP_DIR/init-reject-$1"
+  mkdir -p "$dir"
+  resolve "$2" --project="$dir" >/dev/null && fail "$2 should have been rejected"
+  [ -e "$dir/.devkit/toolkit.json" ] && fail "$2 was rejected but still wrote a config"
+  return 0
+}
+init_reject unknown --enable=devkit-bogus
+init_reject badname --enable=Foo
+init_reject commas --enable=,,
+
+# An empty flag value must not fall back to the interactive prompts — stdin is closed
+# in `resolve`, so a fall-through would read EOF instead of reporting the mistake, and
+# each flag has to name itself.
+init_reject empty --enable=
+grep -q "^ERROR: --enable needs at least one plugin name" "$TMP_DIR/err" \
+  || fail "an empty --enable did not report its own error: $(cat "$TMP_DIR/err")"
+init_reject nopreset --preset=
+grep -q "^ERROR: --preset needs a name" "$TMP_DIR/err" \
+  || fail "an empty --preset did not report its own error: $(cat "$TMP_DIR/err")"
 
 # --- write_json ----------------------------------------------------------------
 # Every JSON write in the installer and the adapters goes through this. A plain

@@ -51,6 +51,8 @@ EOF
 
 INIT_PRESET=""
 INIT_ENABLE=""
+INIT_NONINTERACTIVE=0
+INIT_PRESET_GIVEN=0
 MODE="list"
 ADAPTER=""
 
@@ -64,10 +66,13 @@ for arg in "$@"; do
       ;;
     --preset=*)
       MODE="init"
+      INIT_NONINTERACTIVE=1
+      INIT_PRESET_GIVEN=1
       INIT_PRESET="${arg#--preset=}"
       ;;
     --enable=*)
       MODE="init"
+      INIT_NONINTERACTIVE=1
       INIT_ENABLE="${arg#--enable=}"
       ;;
     --validate)
@@ -119,9 +124,21 @@ _init_toolkit() {
 
   # --preset / --enable skip the prompts entirely, so this command is reachable from
   # a script, a container bootstrap, or a test. Everything below stays interactive.
-  if [ -n "$INIT_PRESET" ] || [ -n "$INIT_ENABLE" ]; then
+  if [ "$INIT_NONINTERACTIVE" -eq 1 ]; then
     local enabled_json
-    if [ -n "$INIT_PRESET" ]; then
+    if [ "$INIT_PRESET_GIVEN" -eq 1 ] && [ -z "$INIT_PRESET" ]; then
+      echo "ERROR: --preset needs a name, e.g. --preset=laravel-only" >&2
+      exit 1
+    fi
+    if [ -n "$INIT_ENABLE" ] || [ -z "$INIT_PRESET" ]; then
+      enabled_json=$(printf '%s' "$INIT_ENABLE" | jq -R 'split(",") | map(select(length > 0))')
+      # An empty --enable= must be an error, not a silent fall-through to the prompts:
+      # this flag exists for contexts where nothing can answer them.
+      if [ -z "$enabled_json" ] || [ "$(printf '%s' "$enabled_json" | jq 'length')" -eq 0 ]; then
+        echo "ERROR: --enable needs at least one plugin name, e.g. --enable=devkit-laravel" >&2
+        exit 1
+      fi
+    else
       local preset_file="$examples_dir/$INIT_PRESET.json"
       if [ ! -f "$preset_file" ]; then
         echo "ERROR: no preset '$INIT_PRESET'. Available:" >&2
@@ -131,12 +148,30 @@ _init_toolkit() {
         exit 1
       fi
       enabled_json=$(jq '.enabled' "$preset_file")
-    else
-      enabled_json=$(printf '%s' "$INIT_ENABLE" | jq -R 'split(",") | map(select(length > 0))')
     fi
+
+    local candidate
+    candidate=$(jq -n --arg schema "$schema_ref" --argjson enabled "$enabled_json" \
+      '{"$schema": $schema, version: 1, enabled: $enabled}')
+
+    # Check the candidate in a throwaway root before it reaches the project. A bad
+    # --enable would otherwise leave a config behind that --init then refuses to
+    # replace, so a typo could only be undone by deleting the file by hand.
+    local probe
+    probe=$(mktemp -d) || exit 1
+    mkdir -p "$probe/.devkit"
+    printf '%s\n' "$candidate" > "$probe/.devkit/toolkit.json"
+    if ! ( PROJECT_ROOT="$probe" DEVKIT_PROJECT_ROOTS="$probe" validate_schemas >/dev/null \
+             2> >(sed "s#$probe/.devkit/toolkit.json#$config_file#g" >&2) ) ||
+       ! ( PROJECT_ROOT="$probe" DEVKIT_PROJECT_ROOTS="$probe" resolve_plugins >/dev/null ); then
+      rm -rf "$probe"
+      echo "ERROR: refusing to write $config_file — that plugin set does not resolve." >&2
+      exit 1
+    fi
+    rm -rf "$probe"
+
     mkdir -p "$config_dir"
-    write_json "$config_file" "$(jq -n --arg schema "$schema_ref" --argjson enabled "$enabled_json" \
-      '{"$schema": $schema, version: 1, enabled: $enabled}')" || exit 1
+    write_json "$config_file" "$candidate" || exit 1
     echo "Created: .devkit/toolkit.json"
     resolve_plugins | while read -r name; do echo "  - $name"; done
     return 0

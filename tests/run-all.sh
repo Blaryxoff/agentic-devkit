@@ -31,8 +31,10 @@ for bin in jq git python3; do
 done
 if command -v python3 >/dev/null 2>&1; then
   python3 -c 'import tomllib' 2>/dev/null || missing+=("python3 tomllib (needs Python 3.11+)")
-  python3 -c 'import yaml' 2>/dev/null || command -v ruby >/dev/null 2>&1 \
-    || missing+=("PyYAML or ruby (YAML frontmatter parsing)")
+  # PyYAML specifically, not "PyYAML or ruby": context-efficiency.sh measures the
+  # catalog metadata budget with it and has no ruby path, so ruby-only would pass
+  # the preflight and then skip the budget silently.
+  python3 -c 'import yaml' 2>/dev/null || missing+=("python3 PyYAML (YAML frontmatter parsing)")
 fi
 if [ "${#missing[@]}" -gt 0 ]; then
   printf 'MISSING DEPENDENCY: %s\n' "${missing[@]}" >&2

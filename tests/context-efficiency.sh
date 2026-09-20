@@ -131,7 +131,7 @@ else:
     print(f"catalog metadata: {total} chars across {len(rows)} registrations (target {TOTAL_TARGET})")
 PY
 else
-  echo "WARN: python3 PyYAML unavailable - catalog metadata budget not measured"
+  fail "python3 PyYAML is required to measure the catalog metadata budget"
 fi
 
 # Every emitted subagent must be valid YAML. A description containing ": " (e.g.
