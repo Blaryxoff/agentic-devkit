@@ -19,6 +19,13 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
+# No hook payload can arrive on a terminal, and `cat` would wait for one forever.
+# Undebounced is the right fallback here: the gate is the hook's whole output.
+if [ -t 0 ]; then
+  gate
+  exit 0
+fi
+
 input=$(cat)
 sid=$(printf '%s' "$input" | jq -r '.session_id // .sessionId // .conversation_id // empty' 2>/dev/null)
 

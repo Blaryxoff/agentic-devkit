@@ -183,6 +183,41 @@ PROJECT_ROOT="$notgit" ensure_gitignore_entry '.codex/' >/dev/null
 # --- non-interactive --init ----------------------------------------------------
 # --init reads choices from `read -rp`; --preset and --enable are the scriptable path.
 
+# Without a terminal the prompts can never be answered. A fifo opened read-write is
+# the shape an agent harness hands a backgrounded call: never EOF, never a writer, so
+# `read` blocks forever and the harness detaches rather than kills it. Assert that it
+# exits, not merely that it complains — a blocking --init would otherwise hang the suite.
+init_tty="$TMP_DIR/init-no-tty"
+mkdir -p "$init_tty"
+fifo="$TMP_DIR/init-no-tty.fifo"
+mkfifo "$fifo"
+exec 3<> "$fifo"
+bash "$ROOT/bin/devkit-resolve" --init --project="$init_tty" <&3 >"$TMP_DIR/init-tty.out" 2>&1 &
+init_pid=$!
+waited=0
+while kill -0 "$init_pid" 2>/dev/null && [ "$waited" -lt 50 ]; do
+  sleep 0.1
+  waited=$((waited + 1))
+done
+if kill -0 "$init_pid" 2>/dev/null; then
+  kill -9 "$init_pid" 2>/dev/null
+  exec 3>&-
+  fail "--init blocked on a terminal-less stdin instead of exiting"
+fi
+set +e
+wait "$init_pid"
+status=$?
+set -e
+exec 3>&-
+rm -f "$fifo"
+out=$(cat "$TMP_DIR/init-tty.out")
+[ "$status" -eq 0 ] && fail "--init without a terminal must exit non-zero"
+case "$out" in
+  *"needs a terminal"*) ;;
+  *) fail "--init without a terminal gave no usable error: $out" ;;
+esac
+[ -e "$init_tty/.devkit/toolkit.json" ] && fail "--init without a terminal still wrote a config"
+
 init_a="$TMP_DIR/init-preset"
 mkdir -p "$init_a"
 resolve --preset=laravel-only --project="$init_a" >/dev/null || fail "--preset failed"

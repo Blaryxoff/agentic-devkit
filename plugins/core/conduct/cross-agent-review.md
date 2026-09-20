@@ -47,7 +47,7 @@ Apply in any review skill (deep, fast, business-logic, logging, plan) after it h
 
 ## Peer CLI invocation
 
-Shared mechanics for driving the other CLI non-interactively and read-only. Applies to the review cross-check above and to `devkit-crosscheck`.
+Shared mechanics for driving the other CLI non-interactively and read-only. Applies to the review cross-check above and to `devkit-crosscheck`. Both invocations below are instances of [shell-invocation.md](./shell-invocation.md).
 
 ### Claude Code → Codex
 

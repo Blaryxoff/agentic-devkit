@@ -12,6 +12,11 @@
 # Fail-open by design: if jq is missing or the input is unparseable, allow the edit
 # rather than block every write. Runs alongside coder-gate.sh.
 
+# No hook payload can arrive on a terminal, and `cat` would wait for one forever.
+if [ -t 0 ]; then
+  exit 0
+fi
+
 input=$(cat)
 
 command -v jq >/dev/null 2>&1 || exit 0

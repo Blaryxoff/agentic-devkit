@@ -177,6 +177,13 @@ _init_toolkit() {
     return 0
   fi
 
+  # Everything below prompts. Without a terminal `read` never returns, and an agent
+  # harness detaches the call instead of killing it, so the shell survives the turn.
+  if [ ! -t 0 ]; then
+    echo "ERROR: --init needs a terminal. Use --preset=<name> or --enable=a,b instead." >&2
+    exit 1
+  fi
+
   for f in "$examples_dir"/*.json; do
     [ -f "$f" ] || continue
     local base
