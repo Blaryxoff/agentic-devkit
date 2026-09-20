@@ -9,6 +9,7 @@ SCRIPTS=(
   codex-adapter.sh
   comment-gate.sh
   context-efficiency.sh
+  cursor-adapter.sh
   devkit-update.sh
   estimate-skill.sh
   no-clobber.sh

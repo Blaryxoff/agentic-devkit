@@ -50,10 +50,13 @@ while IFS= read -r name; do
   [ -z "$name" ] && continue
   plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
   plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
-  skills_src="$plugin_dir/skills"
+  skills_src="$plugin_dir/$(echo "$plugin_data" | jq -r '.paths.skills // "./skills"')"
   [ -d "$skills_src" ] || continue
   for skill_dir in "$skills_src"/*/; do
-    [ -d "$skill_dir" ] || continue
+    # A directory without SKILL.md is not a skill. schemas/plugin.schema.json defines
+    # paths.skills as holding "skill subdirectories, each with SKILL.md", and the Claude
+    # adapter already enforces that; linking the rest publishes an empty catalog entry.
+    [ -f "$skill_dir/SKILL.md" ] || continue
     skill_dest="$skills_dir/${name}--$(basename "$skill_dir")"
     if { [ -e "$skill_dest" ] || [ -L "$skill_dest" ]; } && [ ! -L "$skill_dest" ]; then
       echo "ERROR: enabled skill destination is occupied by a non-symlink: $skill_dest" >&2
@@ -79,10 +82,13 @@ while IFS= read -r name; do
   [ -z "$name" ] && continue
   plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
   plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
-  skills_src="$plugin_dir/skills"
+  skills_src="$plugin_dir/$(echo "$plugin_data" | jq -r '.paths.skills // "./skills"')"
   [ -d "$skills_src" ] || continue
   for skill_dir in "$skills_src"/*/; do
-    [ -d "$skill_dir" ] || continue
+    # A directory without SKILL.md is not a skill. schemas/plugin.schema.json defines
+    # paths.skills as holding "skill subdirectories, each with SKILL.md", and the Claude
+    # adapter already enforces that; linking the rest publishes an empty catalog entry.
+    [ -f "$skill_dir/SKILL.md" ] || continue
     skill_name=$(basename "$skill_dir")
     skill_dest="$skills_dir/${name}--${skill_name}"
     ln -s "$(cd "$skill_dir" && pwd)" "$skill_dest"

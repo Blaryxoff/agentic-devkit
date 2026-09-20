@@ -55,10 +55,13 @@ while IFS= read -r name; do
   [ -z "$name" ] && continue
   plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
   plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
-  skills_src="$plugin_dir/skills"
+  skills_src="$plugin_dir/$(echo "$plugin_data" | jq -r '.paths.skills // "./skills"')"
   [ -d "$skills_src" ] || continue
   for skill_dir in "$skills_src"/*/; do
-    [ -d "$skill_dir" ] || continue
+    # A directory without SKILL.md is not a skill. schemas/plugin.schema.json defines
+    # paths.skills as holding "skill subdirectories, each with SKILL.md", and the Claude
+    # adapter already enforces that; linking the rest publishes an empty catalog entry.
+    [ -f "$skill_dir/SKILL.md" ] || continue
     skill_dest="$skills_dir/${name}--$(basename "$skill_dir")"
     if { [ -e "$skill_dest" ] || [ -L "$skill_dest" ]; } && [ ! -L "$skill_dest" ]; then
       echo "ERROR: enabled skill destination is occupied by a non-symlink: $skill_dest" >&2
@@ -98,10 +101,13 @@ while IFS= read -r name; do
   [ -z "$name" ] && continue
   plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
   plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
-  skills_src="$plugin_dir/skills"
+  skills_src="$plugin_dir/$(echo "$plugin_data" | jq -r '.paths.skills // "./skills"')"
   [ -d "$skills_src" ] || continue
   for skill_dir in "$skills_src"/*/; do
-    [ -d "$skill_dir" ] || continue
+    # A directory without SKILL.md is not a skill. schemas/plugin.schema.json defines
+    # paths.skills as holding "skill subdirectories, each with SKILL.md", and the Claude
+    # adapter already enforces that; linking the rest publishes an empty catalog entry.
+    [ -f "$skill_dir/SKILL.md" ] || continue
     skill_dest="$skills_dir/${name}--$(basename "$skill_dir")"
     ln -s "$(cd "$skill_dir" && pwd)" "$skill_dest"
     linked=$((linked + 1))
@@ -121,6 +127,7 @@ declare_globs() {
     devkit-vue)       echo '**/*.vue,**/*.ts,components/**,composables/**' ;;
     devkit-inertia)   echo '**/*.vue,**/*.ts,**/*.php,resources/**' ;;
     devkit-tailwind)  echo '**/*.vue,**/*.css,**/*.scss,**/*.html' ;;
+    devkit-css)       echo '**/*.css,**/*.scss,**/*.vue,**/*.html' ;;
     *)              echo '**/*' ;;
   esac
 }
@@ -197,7 +204,7 @@ if [ -f "$hooks_file" ]; then
 fi
 
 # Auto-update global clone (+ project submodule) on workspace open and agent session start.
-update_cmd="${HOME}/.claude/agentic-devkit/bin/devkit-update --if-stale"
+update_cmd="$(toolkit_abspath)/bin/devkit-update --if-stale"
 cursor_hooks=$(echo "$cursor_hooks" | jq --arg cmd "$update_cmd" '
   def ensure_event($event):
     .[$event] = (
@@ -208,7 +215,7 @@ cursor_hooks=$(echo "$cursor_hooks" | jq --arg cmd "$update_cmd" '
 ')
 
 gate_cmd() {
-  printf "sh '%s'" "$(printf '%s' "${HOME}/.claude/agentic-devkit/plugins/core/hooks/$1" | sed "s/'/'\\\\''/g")"
+  printf "sh '%s'" "$(printf '%s' "$(toolkit_abspath)/plugins/core/hooks/$1" | sed "s/'/'\\\\''/g")"
 }
 codergate_cmd=$(gate_cmd coder-gate.sh)
 commentgate_cmd=$(gate_cmd comment-gate.sh)
