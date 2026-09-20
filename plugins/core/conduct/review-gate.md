@@ -23,5 +23,4 @@ Before sending the final result for any implementation task, perform a review of
 
 ## Output requirement
 
-- If issues are found, list findings first by severity with file references.
-- If no issues are found, explicitly state that, plus any residual risks.
+Follow `review-findings-format.md` — severity buckets, file references, and the empty-bucket rule.

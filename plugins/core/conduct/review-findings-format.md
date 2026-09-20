@@ -89,4 +89,3 @@ Unless the user defines a different threshold:
 An explicit user threshold such as "fix Significant too" overrides only the severity threshold, not the 5-pass safety
 cap unless the user also explicitly changes the cap.
 
-See `plugins/core/skills/plan-reviewer/SKILL.md` (Steps 7–8) for the full pattern.
