@@ -60,8 +60,27 @@ expect 0 "machine-readable tags are exempt" "$(edit /tmp/a.php '/**
  * @param string $name
  * @return list<int>
  */')"
+# The Write branch reads $target from disk to subtract pre-existing content, so this
+# path must be one this test owns: a stray /tmp/new-xyz.ts on the host would become
+# the baseline and the licence-exemption branch would never run.
+new_file="$TMP_DIR/new-xyz.ts"
+[ -e "$new_file" ] && fail "fixture path $new_file already exists"
 expect 0 "licence header on a new file is exempt" \
-  "$(jq -cn '{tool_name:"Write",tool_input:{file_path:"/tmp/new-xyz.ts",content:"// SPDX-License-Identifier: MIT\n// Copyright (c) 2026 Example Holdings Limited\n// Licensed under the terms of the MIT licence agreement\nexport const a = 1;"}}')"
+  "$(jq -cn --arg p "$new_file" '{tool_name:"Write",tool_input:{file_path:$p,content:"// SPDX-License-Identifier: MIT\n// Copyright (c) 2026 Example Holdings Limited\n// Licensed under the terms of the MIT licence agreement\nexport const a = 1;"}}')"
+# The Write branch subtracts what is already on disk. Both halves are asserted, so a
+# regression in either direction is caught: rewriting the same prose is not an addition,
+# adding new prose on top of it is.
+existing_prose='// The scheduler retries each job three times before it gives up
+// and then it writes a line to the dead letter queue for later'
+printf '%s\n' "$existing_prose" > "$TMP_DIR/existing.ts"
+expect 0 "a Write that rewrites pre-existing prose adds nothing" \
+  "$(jq -cn --arg p "$TMP_DIR/existing.ts" --arg c "$existing_prose
+export const a = 1;" '{tool_name:"Write",tool_input:{file_path:$p,content:$c}}')"
+expect 2 "a Write adding new prose on top of pre-existing prose blocks" \
+  "$(jq -cn --arg p "$TMP_DIR/existing.ts" --arg c "$existing_prose
+// this narration is new and the gate has to notice it
+// together with this second new line of narration
+export const a = 1;" '{tool_name:"Write",tool_input:{file_path:$p,content:$c}}')"
 expect 0 "a lone prose line stays under the block threshold" \
   "$(edit /tmp/a.js '// this explains the whole thing in one long sentence
 const x = 1;')"

@@ -75,4 +75,52 @@ printf '%s\n' '{"type":"response_item","payload":{"type":"custom_tool_call_outpu
 
 [ "$(run_gate unavailable "$TMP_DIR/missing.jsonl")" = "0" ] || fail "missing transcript should fail open"
 
+# --- is_scratch_path: the exemption that lets an edit bypass the gate entirely ---
+# Every case below runs with no coder skill in the transcript, so exit 0 can only
+# come from the exemption and exit 2 means the gate held.
+# $1 is the hook's working directory: a relative path resolves against it, so the
+# case that proves relative paths are rejected only means something when the cwd
+# is itself inside tmp.
+run_edit_in() {
+  local cwd="$1" session_id="$2" path="$3" status
+  set +e
+  jq -nc --arg s "$session_id" --arg t "$empty_transcript" --arg p "$path" \
+    '{tool_name:"Write", session_id:$s, transcript_path:$t, tool_input:{path:$p}}' \
+    | (cd "$cwd" && TMPDIR="$TMP_DIR" sh "$ROOT/plugins/core/hooks/coder-gate.sh") >/dev/null 2>&1
+  status=$?
+  set -e
+  printf '%s\n' "$status"
+}
+
+run_edit() { run_edit_in "$ROOT" "$1" "$2"; }
+
+marker_for() {
+  printf '%s\n' "$TMP_DIR/devkit-coder-active-$(printf '%s' "$1" | tr -c 'A-Za-z0-9._-' '_')"
+}
+
+[ "$(run_edit scratch-plain "$TMP_DIR/scratch.ts")" = "0" ] || fail "plain tmp path should be exempt"
+[ -e "$(marker_for scratch-plain)" ] && fail "exempt edit must not create a session marker"
+
+mkdir -p "$TMP_DIR/repo"
+git -C "$TMP_DIR/repo" init -q
+[ "$(run_edit scratch-git "$TMP_DIR/repo/src.ts")" = "2" ] || fail "tmp path inside a git work tree must gate"
+
+mkdir -p "$TMP_DIR/repo/nested/deep"
+[ "$(run_edit scratch-git-deep "$TMP_DIR/repo/nested/deep/src.ts")" = "2" ] \
+  || fail "the upward walk must find .git above a nested tmp path"
+
+: > "$TMP_DIR/real.ts"
+ln -sf "$TMP_DIR/real.ts" "$TMP_DIR/link.ts"
+[ "$(run_edit scratch-symlink "$TMP_DIR/link.ts")" = "2" ] \
+  || fail "a symlinked final component must gate even when it points into tmp"
+
+[ "$(run_edit_in "$TMP_DIR" scratch-relative "scratch.ts")" = "2" ] \
+  || fail "a relative path must gate even when the cwd is tmp"
+# A fixed non-tmp absolute path, not $ROOT: a checkout living under /tmp would make
+# the $ROOT form exempt and the assertion would pass for the wrong reason.
+[ "$(run_edit scratch-outside "/usr/devkit-scratch-test.ts")" = "2" ] \
+  || fail "a path outside tmp must gate"
+[ "$(run_edit scratch-missing-dir "$TMP_DIR/no-such-dir/x.ts")" = "2" ] \
+  || fail "an unresolvable parent must gate, not fall through to exempt"
+
 echo "coder gate tests passed"

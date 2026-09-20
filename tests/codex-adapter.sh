@@ -176,7 +176,13 @@ ln -s "$ROOT/plugins/css/skills/css-a11y" "$project/.codex/skills/devkit-css--cs
 DEVKIT_PROJECT_ROOT="$project" bash "$ROOT/adapters/codex/generate" >/dev/null
 
 assert_contains "$project/.gitignore" 'project-local-entry'
-assert_contains "$project/.gitignore" '.codex/'
+# Exact-line count, not a substring: codex/generate runs three times against this
+# project, so a regression in ensure_gitignore_entry's normalisation awk would append
+# on every run and a presence check would still pass. '.codex/skills' also satisfies
+# a substring match without the entry ever being written.
+[ "$(grep -cxF '.codex/' "$project/.gitignore")" = "1" ] \
+  || fail "expected exactly one '.codex/' line in .gitignore, found $(grep -cxF '.codex/' "$project/.gitignore")"
+
 assert_absent "$project/.codex/skills/devkit-core--coder"
 assert_link "$project/.codex/skills/devkit-frontend--pixel-build" "$ROOT/plugins/frontend/skills/pixel-build"
 assert_link "$project/.codex/skills/devkit-laravel--architect" "$ROOT/plugins/laravel/skills/architect"
