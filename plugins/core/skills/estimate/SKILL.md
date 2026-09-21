@@ -22,8 +22,8 @@ person-day total with a generic AI multiplier.
 5. Default to one coding lane. Add a parallel lane only when the work is genuinely independent and splitting it
    measurably shortens the critical path; a small coupled change stays one lane. Do not state an agent count as an
    assumption — the reader's agents scale, their review and integration capacity does not. Cap concurrency by the
-   operator's capacity to specify, review, integrate, and recover lanes, and report operator load separately when the
-   user asks about capacity.
+   operator's capacity to specify, review, integrate, and recover lanes. Always report operator load beside the
+   calendar schedule; it is never inferred from it.
 6. Treat product decisions and unavailable inputs as schedule dependencies. Split materially different interpretations
    into scenarios instead of silently choosing one.
 
@@ -31,12 +31,12 @@ person-day total with a generic AI multiplier.
 
 Estimate each requested level separately. Never call a happy path production-ready.
 
-| Level | Required outcome |
-|---|---|
-| Demo | Controlled happy path is demonstrable; mocks/manual setup and known gaps are allowed. |
-| Alpha | Core end-to-end flow works on real data; limited edge-case and operational coverage is allowed. |
-| Beta | Intended flows, roles, states, migrations, automated tests, and integration contracts are complete. |
-| Production-ready | Beta plus the safeguards the changed paths actually require, drawn from authorization abuse cases, retries/idempotency, backfill, observability, browser/device QA, rollback/rollout safety, and fixes from final review. |
+| Level | Required outcome | Say it to the reader as |
+|---|---|---|
+| Demo | Controlled happy path is demonstrable; mocks/manual setup and known gaps are allowed. | Shows the flow to stakeholders; not for real users. Checked by a manual walkthrough. |
+| Alpha | Core end-to-end flow works on real data; limited edge-case and operational coverage is allowed. | A small internal group can use it on real data. Automated checks cover the main flow. |
+| Beta | Intended flows, roles, states, migrations, automated tests, and integration contracts are complete. | Releasable to users. Automated checks cover the flows, access rights, data migrations, and the joins between the parts. |
+| Production-ready | Beta plus the safeguards the changed paths actually require, drawn from authorization abuse cases, retries/idempotency, backfill, observability, browser/device QA, rollback/rollout safety, and fixes from final review. | Runs at full load unattended. Adds checks under heavy load and failure, monitoring, and a rollback that has been rehearsed. |
 
 Production-ready means the requested behavior is safe to release, not that every safeguard in the row was rebuilt.
 Reuse existing authorization, idempotency, observability, and rollout mechanisms and schedule zero days for them. Add
@@ -186,7 +186,11 @@ below only when this change actually touches it; drop the rest instead of pricin
 5. security/reliability review and fixes;
 6. rollout/backfill verification.
 
-Report aggregate agent-work only when the user asks for cost or capacity. Label it separately from elapsed calendar time.
+Compute operator occupancy alongside elapsed time: the full days the operator personally spends on decisions, review,
+merge, integration, acceptance, and recovery, summed across the schedule, plus the residual per-day supervision while
+agents run. It is a different quantity from elapsed time and is normally several times smaller. Report both. Report
+aggregate agent runtime or token cost only when the user asks for cost or capacity, and never sum it into either
+figure.
 
 ### 6. Apply external calibration
 
@@ -213,13 +217,32 @@ bury materially different scope inside one.
 ## Output
 
 Return only the audience-ready estimate. Do not preface it with investigation notes, skill names, or a description of
-the workflow used. Lead with one recommended planning commitment in calendar days. Then provide:
+the workflow used. The reader approves schedules and cuts scope; they do not read code. Write for that reader.
 
-1. a demo/alpha/beta/production table where relevant;
-2. what is already reusable and what remains;
-3. the parallel lanes and the actual critical path;
-4. assumptions and named risk deltas;
-5. confidence (`high`, `medium`, or `low`) and what would change it.
+Lead with one recommended planning commitment: one number, one scope, one maturity level, in the unit used everywhere
+after it. Other scopes and levels belong in the ladder, never bolded beside the headline — given four bold numbers a
+reader anchors on the largest and plans against it.
+
+Then deliver these as named sections, in this order:
+
+1. **What the number means.** State the unit — elapsed working days or elapsed calendar days — and that elapsed time is
+   not how long a person is occupied. Give operator occupancy as its own figure, itemized by what the operator
+   personally does: decisions, review and merge, integration, acceptance. Add the residual per-day supervision while
+   agents run. Someone planning people needs that figure, not the calendar one.
+2. **The ladder.** Demo/alpha/beta/production-ready for the levels that apply, each with what the reader can safely do
+   with that result. Say which levels are releasable and whether hardening can run as a separate later phase. "Can we
+   ship sooner and harden afterwards" is the first thing a product owner asks; answer it unasked.
+3. **What the number covers.** Name testing, review, QA, and rollout per level in the reader's words — the Maturity
+   levels table's third column is that wording — and say whether test and CI runtime counts against operator
+   occupancy. A reader who cannot find testing in an estimate assumes it was omitted.
+4. **What already exists and what remains**, in product language.
+5. **The critical path** — the parallel lanes and what actually sets the date.
+6. **Ways to shorten it.** Mandatory whenever any scope item can be deferred. List the product capabilities that can be
+   dropped or postponed and the days each one buys, computed by removing its lanes and recomputing. Name the
+   capability, not the lane. An estimate carrying only additive deltas answers "what if we want more" and leaves "how
+   do we hit the date" unanswered.
+7. **Assumptions and additive deltas** — scope beyond the literal request, each with its own delta.
+8. **Confidence** (`high`, `medium`, or `low`) and what would narrow it.
 
 Analogue selection, scope comparisons, and reconciliation arithmetic belong to the internal worksheet, never to the
 delivered text. Do not open the estimate with a section named after the method. Mention comparable delivered work only
@@ -227,6 +250,8 @@ when it changes the reader's decision, in plain language a non-engineer uses. Sh
 asks how the number was derived.
 
 Explicitly correct an earlier estimate when the evidence changes it. Do not preserve a familiar number for consistency.
+Name what changed and why the number moved, in its own sentence near the headline; a reader holding the previous figure
+will ask, and "it is described in the estimate" is not an answer.
 Do not create a report file unless the user asked for one.
 
 ### Paste-ready formatting
@@ -241,11 +266,21 @@ Do not create a report file unless the user asked for one.
    source paths, line numbers, commit and session IDs, and research URLs. Include them only when the user asks for an
    audit trail or names an engineering destination — then group them in a short appendix instead of interleaving them
    with the estimate.
-6. End with assumptions, risks, or confidence—not with an offer to do more work.
+6. Gloss or replace every engineering term on first use. `outbox`, `idempotency`, `presence TTL`, `backfill`,
+   `contract QA`, and `tenant isolation` carry no meaning for the reader who approves the schedule — write what the
+   thing does for the product instead.
+7. End with assumptions, risks, or confidence—not with an offer to do more work.
 
 ## Final checks
 
 - The recommended number lies inside the reported range.
+- The headline is one number, for one scope, at one maturity level, and no rival number is bolded beside it.
+- The unit is stated once and held throughout.
+- Operator occupancy is reported next to elapsed time, is itemized, and is not a fraction of it.
+- Testing, review, and QA are named per level in the reader's language.
+- Which levels are releasable is stated, and whether hardening can follow as a separate phase.
+- At least one way to shorten the schedule is offered whenever any scope item can be deferred.
+- Every engineering term surviving in the delivered text is glossed on first use.
 - Independent lanes were not summed into elapsed time; sequential dependencies were not parallelized.
 - No day in the schedule pays for behavior that already exists in the repository.
 - The schedule was compared against a delivered analogue internally, and the comparison is absent from the delivered text.
