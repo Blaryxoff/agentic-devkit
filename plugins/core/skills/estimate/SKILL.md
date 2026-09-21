@@ -1,16 +1,17 @@
 ---
 name: devkit-estimate
 description: >-
-  estimate calendar delivery time for a software feature or project, formatted for direct paste into a tracker
-  or Telegram. Use for "estimate this task", "how long will this take", agent-first, agent-only, or vibe-coding
-  delivery estimates. Produces demo, alpha, beta and production-ready ranges from the agent critical path. Does
-  not allocate people or edit sprint workbooks — that is devkit-sprint — and does not implement the work.
+  estimate developer time — the hours a developer is actually occupied — and the calendar window around it, for a
+  software feature or project, formatted for direct paste into a tracker or Telegram. Use for "estimate this task",
+  "how long will this take", agent-first, agent-only, or vibe-coding estimates at demo, alpha, beta or
+  production-ready. Does not implement the work, allocate people, or edit sprint workbooks — that is devkit-sprint.
 ---
 
 # Agent-First Estimator
 
-Estimate elapsed delivery time for the team that will actually execute the task. Do not convert a traditional
-person-day total with a generic AI multiplier.
+Estimate developer time first: the human hours your developer is occupied and cannot do anything else. Agent runtime
+is never developer time — agents run all night while the developer sleeps. Elapsed calendar time is derived second
+from the same graph; every other figure is an addition. Do not convert a person-day total with a generic AI multiplier.
 
 ## Boundaries
 
@@ -22,8 +23,8 @@ person-day total with a generic AI multiplier.
 5. Default to one coding lane. Add a parallel lane only when the work is genuinely independent and splitting it
    measurably shortens the critical path; a small coupled change stays one lane. Do not state an agent count as an
    assumption — the reader's agents scale, their review and integration capacity does not. Cap concurrency by the
-   operator's capacity to specify, review, integrate, and recover lanes. Always report operator load beside the
-   calendar schedule; it is never inferred from it.
+   developer's capacity to specify, review, integrate, and recover lanes. Developer time is computed from those
+   lanes, never inferred from the calendar schedule as a fraction of it.
 6. Treat product decisions and unavailable inputs as schedule dependencies. Split materially different interpretations
    into scenarios instead of silently choosing one.
 
@@ -76,7 +77,7 @@ Record:
 - requested maturity level and deadline unit;
 - in-scope repositories, roles, surfaces, and environments;
 - explicit exclusions such as design, client work, deployment, content entry, or vendor procurement;
-- agent/operator concurrency;
+- agent/developer concurrency;
 - acceptance criteria and unresolved decisions;
 - any prior estimate of this or an adjacent scope, its method, and the reason it changed.
 
@@ -127,7 +128,7 @@ Record:
 |---|---|
 | Scope | production surfaces, migrations, contracts, roles, tests, and QA covered |
 | Reuse | exact artifacts reused by the new task |
-| Topology | known operator and agent concurrency |
+| Topology | known developer and agent concurrency |
 | Delivery | credible implementation, integration, and hardening window |
 | Follow-ups | later fixes that reveal hidden stabilization cost |
 
@@ -147,26 +148,30 @@ line counts compare the new scope against the anchor slice; they never convert t
 
 Create one row per independent delivery lane:
 
-| Lane | Scope | Reuse | Prerequisites | Agent-work low/likely/high | Elapsed low/likely/high | Done evidence |
-|---|---|---|---|---:|---:|---|
+| Lane | Scope | Reuse | Prerequisites | Developer hours | Agent-work | Elapsed | Done evidence |
+|---|---|---|---|---:|---:|---:|---|
 
-Agent-work is the effort inside a lane; elapsed is that lane's own wall-clock. They diverge whenever a lane waits.
-Estimate both in hours. Neither column is summed into the delivery date.
+Developer hours are what the lane costs its human; agent-work is the effort inside it; elapsed is its wall-clock.
+Estimate all three in hours, low/likely/high. Neither agent-work nor elapsed is summed into the delivery date.
 
 Separate shared foundations from consumers. Typical lanes include domain/schema, backend/API, admin, client UI,
 integration/provider work, data migration/backfill, and tests/QA. A lane is parallel only when it can start without
 waiting for another lane's unresolved contract or artifact.
 
-### 5. Calculate elapsed time
+### 5. Calculate developer time, then elapsed
 
-Use the dependency graph, not the arithmetic sum of lane estimates:
+Total developer time across the lanes as one figure in hours: what the developer personally does — decisions, review,
+merge, integration, acceptance, recovery — plus the per-day supervision rate times the elapsed days it spans. Lane
+developer hours sum; no other column does. Unattended agent, test, and CI runtime is never developer time.
+
+Then derive elapsed from the dependency graph, not the arithmetic sum of lane estimates:
 
 ```text
 beta = product-decisions + longest parallel implementation path + integration/contract QA
 production = beta + hardening/final review fixes + rollout margin
 ```
 
-Pack ready lanes into explicit execution waves, capped by both agent slots and operator bandwidth; excess lanes wait
+Pack ready lanes into explicit execution waves, capped by both agent slots and developer bandwidth; excess lanes wait
 for the next wave. Forward-schedule the low, likely, and high cases separately. Never derive elapsed time by summing
 agent-hours, dividing aggregate work by eight, or dividing a total by the agent count.
 
@@ -186,11 +191,8 @@ below only when this change actually touches it; drop the rest instead of pricin
 5. security/reliability review and fixes;
 6. rollout/backfill verification.
 
-Compute operator occupancy alongside elapsed time as one total in hours: what the operator personally does —
-decisions, review, merge, integration, acceptance, recovery — plus the per-day supervision rate multiplied by the
-elapsed days it spans. Unattended agent, test, and CI runtime is elapsed time, never occupancy, and occupancy is
-normally several times smaller. Report both, and aggregate agent runtime or token cost only when the user asks for
-cost or capacity.
+Report developer time and elapsed together, developer time first. Report aggregate agent runtime or token cost only
+when the user asks for cost or capacity, and never sum it into either.
 
 ### 6. Apply external calibration
 
@@ -221,28 +223,26 @@ Return only the audience-ready estimate, with no investigation notes, skill name
 The reader approves schedules and cuts scope; they do not read code. Write for that reader. Be brief: the whole
 estimate fits on one screen, each item answered in one to three lines. Length is not thoroughness.
 
-Report in hours. Hours are schedulable; "about a week" is not a commitment. Effort figures are always hours: operator
-occupancy and per-lane work. Every other figure — the table, each delta, each shortening option — is elapsed time,
-because the reader is deciding a date, not buying hours. Elapsed is wall-clock: it holds overnight waits and
-unattended agent runtime, so bare hours invite the reader into the division step 5 forbids. Report elapsed in hours
-below 16, in working days at or above it, at 8 hours to the working day, one unit held across a range that straddles
-that line.
+Report developer time in hours, always, and lead with it. Hours are schedulable; "about a week" is not a commitment.
+Every delta and every cut is quoted in developer hours first. Elapsed is second and needs a guard: it is wall-clock,
+holds overnight waits and unattended agent runtime, and bare hours invite the division step 5 forbids. Report elapsed
+in hours below 16 and in working days at or above, at 8 hours to the day, one unit held across a straddling range.
 
 Open with one table carrying every number in the estimate: a row per applicable maturity level, marking the one you
-recommend. Nothing numeric precedes it, and no number in it is restated in the prose below.
+recommend. Developer time is the first column and the figure the recommendation is stated in. Nothing numeric
+precedes the table, and no number in it is restated in the prose below.
 
-| Level | Elapsed | Operator time | What you can do with it |
+| Level | Developer time | Elapsed | What you can do with it |
 |---|---:|---:|---|
 
 Then, one to three lines each:
 
-1. **What the numbers mean.** The unit and its conversion, that elapsed is not how long a person is occupied, and a
-   one-line itemization of the operator's hours. Say whether hardening can run as a separate later phase.
+1. **Where the developer's hours go.** A one-line itemization: decisions, review and merge, integration, acceptance.
+   Then elapsed, with its unit and conversion, and whether hardening can run as a separate later phase.
 2. **What they cover.** Testing, review, QA, and rollout per level in the reader's words — the Maturity levels
-   table's third column is that wording. Say that unattended test and CI runtime is elapsed time, not the operator's.
-3. **Ways to shorten it.** Mandatory whenever any scope item can be deferred. One line each: the product capability
-   to drop or postpone, and the elapsed time it buys, from removing its lanes and recomputing the schedule. Name the
-   capability, not the lane. A capability off the critical path buys nothing — say that instead of quoting its effort.
+   table's third column is that wording. Say that unattended test and CI runtime costs the developer nothing.
+3. **Ways to cut it.** Mandatory when any scope item can be deferred. One line each: the user-facing capability to
+   drop or postpone, the developer hours it frees, and the elapsed it buys — stated as zero when off the critical path.
 4. **Assumptions and additive deltas** — scope beyond the literal request only, each with its own delta.
 5. **Confidence** (`high`, `medium`, or `low`) and the one thing that would narrow it.
 
@@ -278,8 +278,8 @@ reader holding the previous figure. Do not create a report file unless the user 
 
 - The recommended number lies inside the reported range.
 - Every number is in the opening table; the Output items follow, in order, none past three lines.
-- Operator occupancy is reported next to elapsed time, is itemized, and is not a fraction of it.
-- Every shortening option moves the date; none quotes effort saved on a lane that is off the critical path.
+- Developer time leads, is itemized, and is not a fraction of elapsed.
+- Every cut quotes the developer hours it frees, and says plainly when it does not move the date.
 - One display unit holds across each range, and every engineering term surviving the draft is glossed once.
 - Independent lanes were not summed into elapsed time; sequential dependencies were not parallelized.
 - No day in the schedule pays for behavior that already exists in the repository.
