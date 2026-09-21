@@ -45,7 +45,7 @@ schema changes, migrations, backfill, external integrations, cross-client work, 
 scope or the code requires them.
 
 Skip levels the user does not need, but always distinguish the requested result from the next-lower level. Report a
-level only when you can name the work it adds over the level below. Never print a level and disclaim it in the same
+level above Demo only when you can name the work it adds over the level below. Never print a level and disclaim it in the same
 breath: a rung you would immediately call redundant for this surface is dropped, not footnoted — the reader quotes the
 number, not the caveat. When the
 remaining work is a bounded change to existing code — no new entity, no new integration, no schema migration — the
@@ -131,6 +131,7 @@ Record:
 |---|---|
 | Scope | production surfaces, migrations, contracts, roles, tests, and QA covered |
 | Reuse | exact artifacts reused by the new task |
+| Developer cost | the anchor's actual developer hours, when the record shows them |
 | Topology | known developer and agent concurrency |
 | Delivery | credible implementation, integration, and hardening window, recorded as the anchor's delivered span |
 | Follow-ups | later fixes that reveal hidden stabilization cost |
@@ -141,7 +142,8 @@ never add the analogue's span to the new schedule, and never treat it as a floor
 Estimate the remaining unimplemented critical path from current code first, then compare it against the analogue. When
 a materially smaller scope lands above the analogue, the scope or the lane list is wrong — re-check both and recompute
 rather than reporting the higher number. Name the single lane that accounts for any excess over the anchor's
-recorded span; when no lane does, the decomposition is wrong and the schedule is recomputed before it is published.
+developer hours, and then over its delivered span; when no lane does, the decomposition is wrong and the schedule is
+recomputed before it is published.
 Do not price invented blockers to justify the gap, and do not express the
 comparison as a numeric ratio: counting "contours" or files produces arithmetic that looks measured and is not.
 
@@ -156,8 +158,9 @@ Create one row per independent delivery lane:
 | Lane | Scope | Reuse | Prerequisites | Developer hours | Agent-work | Elapsed | Done evidence |
 |---|---|---|---|---:|---:|---:|---|
 
-Developer hours are what the lane costs its human; agent-work is the effort inside it; elapsed is its wall-clock.
-Estimate all three in hours, low/likely/high. Neither agent-work nor elapsed is summed into the delivery date.
+Developer hours are the lane's attended human work; agent-work is the agent effort inside it; elapsed is its
+wall-clock, including waiting and unattended runtime. Estimate all three in hours, low/likely/high. Neither
+agent-work nor elapsed is summed into the delivery date.
 
 Separate shared foundations from consumers, then apply Boundary 5: derive lanes from the artifacts this change
 actually produces, never from a checklist of layers. Work that lands in one service and one screen and is reviewed
@@ -167,19 +170,21 @@ artifact.
 
 Price a lane by what resists an agent, not by how many rows, endpoints, or screens it covers. Read-only work over a
 schema that already exists — queries, aggregations, report pages, exports — is among the cheapest output an agent
-produces, and a long list of such rows is one lane priced once, never a lane per row. Charge hours for the three
-things that genuinely resist:
+produces, and a long list of such rows is one lane priced once, never a lane per row. Developer hours go where the
+work needs the developer's own judgement — new domain rules, state transitions, authorization, failure handling, and
+above all every figure that must reconcile with an artifact the reader already holds, because each mismatch returns
+the developer to the definition.
 
-- every figure that must reconcile with an artifact the reader already holds, because each mismatch returns the
-  developer to the definition;
-- inputs with no source in the system, which need an integration, a manual entry surface, or removal from scope;
-- work on another party's side, whose date you do not set.
+Two things cost elapsed time without costing developer hours, and belong in the assumptions rather than the total:
+inputs with no source in the system, which need an integration, a manual entry surface, or removal from scope; and
+work on another party's side, whose date you do not set. Charge only the developer's own coordination on those.
 
 ### 5. Calculate developer time, then elapsed
 
-Total developer time across the lanes as one figure in hours: what the developer personally does — decisions, review,
-merge, integration, acceptance, recovery — plus the per-day supervision rate times the elapsed days it spans. Lane
-developer hours sum; no other column does. Unattended agent, test, and CI runtime is never developer time.
+Total developer time as the sum of the lanes' developer hours plus the gates below that need the developer. Count
+attended touchpoints only — specifying, answering the agent, reviewing, merging, integrating, accepting, recovering —
+never a share of elapsed. A lane that runs longer unattended costs no more developer hours, so unattended agent, test
+and CI runtime never enters this figure. Lane developer hours sum; no other column does.
 
 Then derive elapsed from the dependency graph, not the arithmetic sum of lane estimates:
 
@@ -221,10 +226,8 @@ decomposition, or the confidence rating.
 - Skip this step entirely when a credible local anchor exists and the scope is mostly `exact`, `continuation`, or
   `foundation`, unless a lane exceeds the cited autonomy horizon — that trigger outranks the skip. Those sources
   measure new work and inflate a scope that is already largely built.
-- Use vendor case studies as evidence for achievable demo/MVP speed, never as a production multiplier.
-- Use independent/empirical research to bound autonomy and uncertainty, not to replace local evidence.
-- Prefer local high-context throughput over low-context benchmarks.
 - Increase decomposition or uncertainty when a lane exceeds the reliable task horizon of the cited benchmark.
+- Apply that file's own Application rules to anything taken from it; they are not restated here.
 
 ### 7. Add uncertainty and risk deltas
 
@@ -245,9 +248,10 @@ Every delta and every cut is quoted in developer hours first. Elapsed is second 
 holds overnight waits and unattended agent runtime, and bare hours invite the division step 5 forbids. Report elapsed
 in hours below 16 and in working days at or above, at 8 hours to the day, one unit held across a straddling range.
 
-Open with one table carrying every number in the estimate: a row per applicable maturity level, marking the one you
+Open with one table carrying the schedule figures: a row per applicable maturity level, marking the one you
 recommend. Developer time is the first column and the figure the recommendation is stated in. Nothing numeric
-precedes the table, and no number in it is restated in the prose below.
+precedes the table, and no figure in it is restated in the prose below. Cuts and deltas carry their own numbers on
+their own lines; they never go in the table.
 
 | Level | Developer time | Elapsed | What you can do with it |
 |---|---:|---:|---|
@@ -296,18 +300,18 @@ reissue the affected rows. Do not create a report file unless the user asked for
 ## Final checks
 
 - The recommended number lies inside the reported range.
-- Every number is in the opening table; the Output items follow, in order, none past three lines.
+- The schedule figures are in the opening table; the Output items follow, in order, none past three lines.
 - Developer time leads, is itemized, and is not a fraction of elapsed.
 - Every cut quotes the developer hours it frees, and says plainly when it does not move the date.
 - One display unit holds across each range, and every engineering term surviving the draft is glossed once.
 - Independent lanes were not summed into elapsed time; sequential dependencies were not parallelized.
-- No day in the schedule pays for behavior that already exists in the repository.
+- No hour in the schedule pays for behavior that already exists in the repository.
 - The schedule was compared against a delivered analogue internally, and the comparison is absent from the delivered text.
 - The recommendation covers the literal requested scope; expansions appear below it and none is labelled recommended.
 - Every scheduled gate traces to a path this change actually touches.
 - Each lane names the artifact it produces; none exists because a layer checklist named it.
 - No maturity level was reported next to a disclaimer that the work it adds is redundant.
-- Read-only aggregation was priced as one lane, and the hours sit on reconciliation, missing sources, and other parties.
+- Read-only aggregation was priced as one lane, and no developer hour was charged for another party's own work.
 - No figure was produced by multiplying another figure, by adding a delivered analogue's span, or by pricing a blocker
   invented to justify a gap.
 - The estimate was reconciled against any superseded prior estimate.
