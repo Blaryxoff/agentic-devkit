@@ -242,7 +242,7 @@ policy_end="<!-- devkit-skill-policy:end -->"
 skill_policy=$(< "$DEVKIT_HOME/plugins/core/hooks/skill-eval.txt")
 skill_policy=${skill_policy//\{\{DEVKIT_HOME\}\}/$DEVKIT_HOME}
 policy_section="${policy_start}
-## devkit skill policy
+## devkit policy
 
 ${skill_policy}
 ${policy_end}"
