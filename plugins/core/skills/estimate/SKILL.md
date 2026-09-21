@@ -222,28 +222,29 @@ The reader approves schedules and cuts scope; they do not read code. Write for t
 estimate fits on one screen, each item answered in one to three lines. Length is not thoroughness.
 
 Report in hours. Hours are schedulable; "about a week" is not a commitment. Effort figures are always hours: operator
-occupancy and per-lane work. Every other figure the reader sees — the headline, the ladder, each delta, each
-shortening option — is elapsed time, because the reader is deciding a date, not buying hours. Elapsed is wall-clock:
-it holds overnight waits and unattended agent runtime, so bare hours invite the reader into the division step 5
-forbids. Report elapsed in hours below 16, in working days at or above it, at 8 hours to the working day. Hold one
-unit across a low/likely/high range even when the range straddles that line, and state the conversion once.
+occupancy and per-lane work. Every other figure — the table, each delta, each shortening option — is elapsed time,
+because the reader is deciding a date, not buying hours. Elapsed is wall-clock: it holds overnight waits and
+unattended agent runtime, so bare hours invite the reader into the division step 5 forbids. Report elapsed in hours
+below 16, in working days at or above it, at 8 hours to the working day, one unit held across a range that straddles
+that line.
 
-Lead with one recommended planning commitment: one number, one scope, one maturity level. Other scopes and levels
-belong in the ladder, never bolded beside the headline — given four bold numbers a reader anchors on the largest.
+Open with one table carrying every number in the estimate: a row per applicable maturity level, marking the one you
+recommend. Nothing numeric precedes it, and no number in it is restated in the prose below.
 
-Answer these, in this order:
+| Level | Elapsed | Operator time | What you can do with it |
+|---|---:|---:|---|
 
-1. **The number, and what it means.** The unit, and that elapsed time is not how long a person is occupied. Give
-   operator occupancy in hours as its own figure with a one-line itemization.
-2. **The ladder.** One row per applicable level: the figure, and what the reader can safely do with it. Say which
-   levels are releasable and whether hardening can run as a separate later phase.
-3. **What the number covers.** Testing, review, QA, and rollout per level in the reader's words — the Maturity levels
+Then, one to three lines each:
+
+1. **What the numbers mean.** The unit and its conversion, that elapsed is not how long a person is occupied, and a
+   one-line itemization of the operator's hours. Say whether hardening can run as a separate later phase.
+2. **What they cover.** Testing, review, QA, and rollout per level in the reader's words — the Maturity levels
    table's third column is that wording. Say that unattended test and CI runtime is elapsed time, not the operator's.
-4. **Ways to shorten it.** Mandatory whenever any scope item can be deferred. One line each: the product capability
+3. **Ways to shorten it.** Mandatory whenever any scope item can be deferred. One line each: the product capability
    to drop or postpone, and the elapsed time it buys, from removing its lanes and recomputing the schedule. Name the
    capability, not the lane. A capability off the critical path buys nothing — say that instead of quoting its effort.
-5. **Assumptions and additive deltas** — scope beyond the literal request only, each with its own delta.
-6. **Confidence** (`high`, `medium`, or `low`) and the one thing that would narrow it.
+4. **Assumptions and additive deltas** — scope beyond the literal request only, each with its own delta.
+5. **Confidence** (`high`, `medium`, or `low`) and the one thing that would narrow it.
 
 Add what already exists, what remains, or the critical path only when the reader's decision turns on it, capped at a
 few lines. Feature inventories, option comparisons, vendor and legal analysis, infrastructure pricing, and readiness
@@ -255,29 +256,28 @@ when it changes the reader's decision, in plain language a non-engineer uses. Sh
 asks how the number was derived.
 
 Explicitly correct an earlier estimate when the evidence changes it. Do not preserve a familiar number for consistency.
-Name what changed and why the number moved, near the headline; "it is described in the estimate" is not an answer to a
+Name what changed and why the number moved, beside the table; "it is described in the estimate" is not an answer to a
 reader holding the previous figure. Do not create a report file unless the user asked for one.
 
 ### Paste-ready formatting
 
 1. Use the destination the user names. If none is named, use a tracker/Telegram-compatible subset: short headings,
    complete sentences, bullets, numbered lists, and plain ranges.
-2. For Telegram or chat, use short bold headings and bullets. Do not use Markdown tables.
-3. For a tracker, use headings, bullets, and checklists. Use a table only when it is materially clearer and the named
-   tracker renders it reliably.
-4. Never emit Markdown horizontal rules (`---`, `***`, or `___`) or decorative dash-divider lines.
-5. Evidence is mandatory internally; publishing it is not. Describe verified capabilities in product language and omit
+2. For Telegram or chat, use short bold headings and bullets, and give the opening table as one bullet per row. For
+   a tracker, use headings and bullets, and a table only where the named tracker renders it reliably.
+3. Never emit Markdown horizontal rules (`---`, `***`, or `___`) or decorative dash-divider lines.
+4. Evidence is mandatory internally; publishing it is not. Describe verified capabilities in product language and omit
    source paths, line numbers, commit and session IDs, and research URLs. Include them only when the user asks for an
    audit trail or names an engineering destination — then group them in a short appendix instead of interleaving them
    with the estimate.
-6. Gloss or replace every engineering term on first use. `outbox`, `idempotency`, `presence TTL`, `backfill`,
+5. Gloss or replace every engineering term on first use. `outbox`, `idempotency`, `presence TTL`, `backfill`,
    `contract QA`, `tenant isolation` — write what the thing does for the product instead.
-7. End with assumptions, risks, or confidence—not with an offer to do more work.
+6. End with assumptions, risks, or confidence—not with an offer to do more work.
 
 ## Final checks
 
 - The recommended number lies inside the reported range.
-- Every Output item is present, in order, none past three lines, and no rival number is bolded beside the headline.
+- Every number is in the opening table; the Output items follow, in order, none past three lines.
 - Operator occupancy is reported next to elapsed time, is itemized, and is not a fraction of it.
 - Every shortening option moves the date; none quotes effort saved on a lane that is off the critical path.
 - One display unit holds across each range, and every engineering term surviving the draft is glossed once.
