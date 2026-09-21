@@ -100,11 +100,14 @@ sys.exit(1 if elapsed > 3 else 0)
 printf 'not json at all, codex exec' | sh "$HOOK" >/dev/null 2>&1
 [ $? = 0 ] || fail "an unparseable payload must fail open"
 
-# A terminal on stdin is never a hook payload; it must not make `cat` block.
-if command -v script >/dev/null 2>&1; then
-  script -q /dev/null sh "$HOOK" >/dev/null 2>&1 </dev/null
-  [ $? = 0 ] || fail "a tty on stdin must exit 0"
-fi
+# A terminal on stdin is never a hook payload; it must not make `cat` block. Driven
+# through pty.spawn rather than `script`, whose argument order differs between the
+# BSD and util-linux builds — the containers ship the latter.
+python3 - "$HOOK" <<TTY >/dev/null 2>&1 </dev/null
+import os, pty, sys
+sys.exit(os.waitstatus_to_exitcode(pty.spawn(["sh", sys.argv[1]])))
+TTY
+[ $? = 0 ] || fail "a tty on stdin must exit 0"
 
 [ "$failures" = 0 ] || exit 1
 echo "peer-cli-gate: all checks passed"
