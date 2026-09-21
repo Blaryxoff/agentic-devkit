@@ -44,7 +44,10 @@ Reuse existing authorization, idempotency, observability, and rollout mechanisms
 schema changes, migrations, backfill, external integrations, cross-client work, or device QA only when the literal
 scope or the code requires them.
 
-Skip levels the user does not need, but always distinguish the requested result from the next-lower level. When the
+Skip levels the user does not need, but always distinguish the requested result from the next-lower level. Report a
+level only when you can name the work it adds over the level below. Never print a level and disclaim it in the same
+breath: a rung you would immediately call redundant for this surface is dropped, not footnoted — the reader quotes the
+number, not the caveat. When the
 remaining work is a bounded change to existing code — no new entity, no new integration, no schema migration — the
 ladder collapses: report one implementation lane plus focused verification, and do not decompose it into four rungs.
 
@@ -129,7 +132,7 @@ Record:
 | Scope | production surfaces, migrations, contracts, roles, tests, and QA covered |
 | Reuse | exact artifacts reused by the new task |
 | Topology | known developer and agent concurrency |
-| Delivery | credible implementation, integration, and hardening window |
+| Delivery | credible implementation, integration, and hardening window, recorded as the anchor's delivered span |
 | Follow-ups | later fixes that reveal hidden stabilization cost |
 
 Name one delivered analogue and use it only as a plausibility check. Work already delivered contributes zero days:
@@ -137,7 +140,9 @@ never add the analogue's span to the new schedule, and never treat it as a floor
 
 Estimate the remaining unimplemented critical path from current code first, then compare it against the analogue. When
 a materially smaller scope lands above the analogue, the scope or the lane list is wrong — re-check both and recompute
-rather than reporting the higher number. Do not price invented blockers to justify the gap, and do not express the
+rather than reporting the higher number. Name the single lane that accounts for any excess over the anchor's
+recorded span; when no lane does, the decomposition is wrong and the schedule is recomputed before it is published.
+Do not price invented blockers to justify the gap, and do not express the
 comparison as a numeric ratio: counting "contours" or files produces arithmetic that looks measured and is not.
 
 Use commit timestamps as boundaries only when session/plan evidence makes the work window credible. Never infer coding
@@ -154,9 +159,21 @@ Create one row per independent delivery lane:
 Developer hours are what the lane costs its human; agent-work is the effort inside it; elapsed is its wall-clock.
 Estimate all three in hours, low/likely/high. Neither agent-work nor elapsed is summed into the delivery date.
 
-Separate shared foundations from consumers. Typical lanes include domain/schema, backend/API, admin, client UI,
-integration/provider work, data migration/backfill, and tests/QA. A lane is parallel only when it can start without
-waiting for another lane's unresolved contract or artifact.
+Separate shared foundations from consumers, then apply Boundary 5: derive lanes from the artifacts this change
+actually produces, never from a checklist of layers. Work that lands in one service and one screen and is reviewed
+once is one lane, however many layers it crosses; splitting it inflates the schedule and the developer's acceptance
+time together. A lane is parallel only when it can start without waiting for another lane's unresolved contract or
+artifact.
+
+Price a lane by what resists an agent, not by how many rows, endpoints, or screens it covers. Read-only work over a
+schema that already exists — queries, aggregations, report pages, exports — is among the cheapest output an agent
+produces, and a long list of such rows is one lane priced once, never a lane per row. Charge hours for the three
+things that genuinely resist:
+
+- every figure that must reconcile with an artifact the reader already holds, because each mismatch returns the
+  developer to the definition;
+- inputs with no source in the system, which need an integration, a manual entry surface, or removal from scope;
+- work on another party's side, whose date you do not set.
 
 ### 5. Calculate developer time, then elapsed
 
@@ -257,7 +274,9 @@ asks how the number was derived.
 
 Explicitly correct an earlier estimate when the evidence changes it. Do not preserve a familiar number for consistency.
 Name what changed and why the number moved, beside the table; "it is described in the estimate" is not an answer to a
-reader holding the previous figure. Do not create a report file unless the user asked for one.
+reader holding the previous figure. When the reader disputes a figure, re-derive the decomposition before answering:
+defending a number you have not recomputed is the failure, and if it moves, say which lane or rung was soft and
+reissue the affected rows. Do not create a report file unless the user asked for one.
 
 ### Paste-ready formatting
 
@@ -286,6 +305,9 @@ reader holding the previous figure. Do not create a report file unless the user 
 - The schedule was compared against a delivered analogue internally, and the comparison is absent from the delivered text.
 - The recommendation covers the literal requested scope; expansions appear below it and none is labelled recommended.
 - Every scheduled gate traces to a path this change actually touches.
+- Each lane names the artifact it produces; none exists because a layer checklist named it.
+- No maturity level was reported next to a disclaimer that the work it adds is redundant.
+- Read-only aggregation was priced as one lane, and the hours sit on reconciliation, missing sources, and other parties.
 - No figure was produced by multiplying another figure, by adding a delivered analogue's span, or by pricing a blocker
   invented to justify a gap.
 - The estimate was reconciled against any superseded prior estimate.
