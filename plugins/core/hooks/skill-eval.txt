@@ -7,7 +7,6 @@ Devkit policy:
 - After reading the selected `SKILL.md`, begin grounding in the user's target immediately. Load references and conduct only when a specific file, layer, risk, or decision requires them; never scan a conduct directory wholesale.
 - Review/test/QA routing follows `plugins/core/conduct/review-routing.md`: `docs/plans/**` uses plan-reviewer; code or a whole branch uses reviewer-deep plus reviewer-business-logic; "test"/"протестируй" uses browser.
 - `devkit-plan-creator` and `devkit-plan-reviewer` require the literal token `ralphex`, except that a review target under `docs/plans/**` may invoke plan-reviewer. Claude Code's built-in `/plan` mode invokes neither.
-- Launch a peer CLI with stdin closed: `codex exec … "<prompt>" < /dev/null`, `claude -p … < /dev/null`. Both read stdin even when the prompt is a positional argument, so an inherited harness pipe leaves them blocked on `Reading additional input from stdin…` forever while the tool timeout detaches rather than kills. Write the prompt to a file in a separate command first; a heredoc in the same compound command as the launch is the usual cause. A hang here never means the prompt failed to arrive.
 - When a skill applies, state which one and why, then activate it. When none applies, proceed without mentioning skill evaluation.
 - Before a top-level final response when completed work may have revealed durable project knowledge, apply
   `{{DEVKIT_HOME}}/plugins/core/conduct/learning-capture-gate.md`. When a candidate passes, Claude Code calls
