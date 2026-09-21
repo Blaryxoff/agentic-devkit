@@ -151,7 +151,7 @@ Create one row per independent delivery lane:
 |---|---|---|---|---:|---:|---|
 
 Agent-work is the effort inside a lane; elapsed is that lane's own wall-clock. They diverge whenever a lane waits.
-Neither column is summed into the delivery date.
+Estimate both in hours. Neither column is summed into the delivery date.
 
 Separate shared foundations from consumers. Typical lanes include domain/schema, backend/API, admin, client UI,
 integration/provider work, data migration/backfill, and tests/QA. A lane is parallel only when it can start without
@@ -186,7 +186,7 @@ below only when this change actually touches it; drop the rest instead of pricin
 5. security/reliability review and fixes;
 6. rollout/backfill verification.
 
-Compute operator occupancy alongside elapsed time: the full days the operator personally spends on decisions, review,
+Compute operator occupancy alongside elapsed time: the hours the operator personally spends on decisions, review,
 merge, integration, acceptance, and recovery, plus the residual per-day supervision while agents run. It is a
 different quantity, normally several times smaller. Report both. Report aggregate agent runtime or token cost only
 when the user asks for cost or capacity, and never sum it into either figure.
@@ -210,31 +210,34 @@ decomposition, or the confidence rating.
 Give low/likely/high ranges. Model each scope choice — reusable library versus one-off configuration, managed
 provider versus custom infrastructure, one client versus multiple clients, beta versus production rollout — by
 replacing the affected lanes and gates and recomputing the schedule. Report the difference between the two schedules
-as the delta. Never append a free-floating day allowance, multiplier, or blanket percentage contingency, and never
+as the delta. Never append a free-floating allowance, multiplier, or blanket percentage contingency, and never
 bury materially different scope inside one.
 
 ## Output
 
 Return only the audience-ready estimate. Do not preface it with investigation notes, skill names, or a description of
-the workflow used. The reader approves schedules and cuts scope; they do not read code. Write for that reader.
+the workflow used. The reader approves schedules and cuts scope; they do not read code. Write for that reader. Be
+brief: the whole estimate fits on one screen, each item below answered in one to three lines. Length is not
+thoroughness.
 
-Be brief. The whole estimate fits on one screen. Answer each item below in one to three lines and stop. Length is not
-thoroughness: the investigation was thorough, the estimate is short.
+Report in hours. Hours are schedulable; "about a week" is not a commitment. Every effort figure is hours — operator
+occupancy, per-lane work, each delta, each shortening option. Elapsed time is the exception: it is wall-clock and
+holds overnight waits and unattended agent runtime, so bare hours invite the reader into the division step 5 forbids.
+Give elapsed in hours under roughly two working days; past that, give working days and define the working day once.
 
-Lead with one recommended planning commitment: one number, one scope, one maturity level, in the unit used everywhere
-after it. Other scopes and levels belong in the ladder, never bolded beside the headline — given four bold numbers a
-reader anchors on the largest and plans against it.
+Lead with one recommended planning commitment: one number, one scope, one maturity level. Other scopes and levels
+belong in the ladder, never bolded beside the headline — given four bold numbers a reader anchors on the largest.
 
 Answer these, in this order:
 
-1. **The number, and what it means.** The unit — elapsed working days or calendar days — and that elapsed time is not
-   how long a person is occupied. Give operator occupancy as its own figure with a one-line itemization.
-2. **The ladder.** One row per applicable level: days, and what the reader can safely do with that result. Say which
+1. **The number, and what it means.** The unit, and that elapsed time is not how long a person is occupied. Give
+   operator occupancy in hours as its own figure with a one-line itemization.
+2. **The ladder.** One row per applicable level: the figure, and what the reader can safely do with it. Say which
    levels are releasable and whether hardening can run as a separate later phase.
 3. **What the number covers.** Testing, review, QA, and rollout per level in the reader's words — the Maturity levels
    table's third column is that wording. Say whether test and CI runtime counts against operator occupancy.
 4. **Ways to shorten it.** Mandatory whenever any scope item can be deferred. One line each: the product capability to
-   drop or postpone, and the days it buys, computed by removing its lanes and recomputing. Name the capability, not
+   drop or postpone, and the hours it buys, computed by removing its lanes and recomputing. Name the capability, not
    the lane.
 5. **Assumptions and additive deltas** — scope beyond the literal request only, each with its own delta.
 6. **Confidence** (`high`, `medium`, or `low`) and the one thing that would narrow it.
@@ -249,9 +252,8 @@ when it changes the reader's decision, in plain language a non-engineer uses. Sh
 asks how the number was derived.
 
 Explicitly correct an earlier estimate when the evidence changes it. Do not preserve a familiar number for consistency.
-Name what changed and why the number moved, in its own sentence near the headline; a reader holding the previous figure
-will ask, and "it is described in the estimate" is not an answer.
-Do not create a report file unless the user asked for one.
+Name what changed and why the number moved, near the headline; "it is described in the estimate" is not an answer to a
+reader holding the previous figure. Do not create a report file unless the user asked for one.
 
 ### Paste-ready formatting
 
@@ -266,8 +268,7 @@ Do not create a report file unless the user asked for one.
    audit trail or names an engineering destination — then group them in a short appendix instead of interleaving them
    with the estimate.
 6. Gloss or replace every engineering term on first use. `outbox`, `idempotency`, `presence TTL`, `backfill`,
-   `contract QA`, and `tenant isolation` carry no meaning for the reader who approves the schedule — write what the
-   thing does for the product instead.
+   `contract QA`, `tenant isolation` — write what the thing does for the product instead.
 7. End with assumptions, risks, or confidence—not with an offer to do more work.
 
 ## Final checks
@@ -275,12 +276,11 @@ Do not create a report file unless the user asked for one.
 - The recommended number lies inside the reported range.
 - The estimate fits on one screen, and no section runs longer than the decision it supports.
 - The headline is one number, for one scope, at one maturity level, and no rival number is bolded beside it.
-- The unit is stated once and held throughout.
+- Every effort figure is in hours, and no elapsed figure invites a division by eight.
 - Operator occupancy is reported next to elapsed time, is itemized, and is not a fraction of it.
-- Testing, review, and QA are named per level in the reader's language.
+- Testing, review, and QA are named per level in the reader's language, and every surviving term is glossed once.
 - Which levels are releasable is stated, and whether hardening can follow as a separate phase.
 - At least one way to shorten the schedule is offered whenever any scope item can be deferred.
-- Every engineering term surviving in the delivered text is glossed on first use.
 - Independent lanes were not summed into elapsed time; sequential dependencies were not parallelized.
 - No day in the schedule pays for behavior that already exists in the repository.
 - The schedule was compared against a delivered analogue internally, and the comparison is absent from the delivered text.
