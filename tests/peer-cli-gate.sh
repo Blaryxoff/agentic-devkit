@@ -44,6 +44,8 @@ probe 2 'inside command substitution'   'reply=$(codex exec "p")'            # (
 probe 2 'after || is not a pipe'        'false || codex exec "p"'            # (codex)
 probe 2 'codex head of a pipeline'      'codex exec "p" | tee /tmp/log'
 probe 2 '/dev/null inside the prompt'   'codex exec "send the log to /dev/null"'
+probe 2 'output, not stdin, to null'    'codex exec "p" > /dev/null 2>&1 &'
+probe 2 'prompt quotes the redirect'   'codex exec "always add < /dev/null"'
 
 # --- launches whose stdin is accounted for ------------------------------------
 probe 0 'stdin closed'                  'codex exec -m sol "review" < /dev/null'

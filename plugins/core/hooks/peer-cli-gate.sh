@@ -7,9 +7,9 @@
 # blocks on "Reading additional input from stdin…" while the tool timeout detaches
 # the process instead of killing it.
 #
-# The gate asks one question — does the command name /dev/null — rather than modelling
-# shell redirection. Adding `< /dev/null` to a peer launch is never wrong, so an
-# over-strict refusal costs one harmless token; a shell grammar would cost far more.
+# The gate asks one question — is stdin redirected from /dev/null — rather than
+# modelling shell redirection. Adding `< /dev/null` to a peer launch is never
+# wrong, so an over-strict refusal costs one harmless token; a shell grammar would cost far more.
 #
 # Fail-open by design: a missing tool, an oversized command, or anything unparseable
 # allows the call. This runs on every Bash call; a false block is worse than a miss.
@@ -25,19 +25,23 @@ fi
 
 input=$(cat)
 
-# Cheap prefilter: skip jq and awk entirely on the Bash calls that cannot match.
-case "$input" in
+command -v jq >/dev/null 2>&1 || exit 0
+
+# One jq pass for both fields. The payload cannot be prefiltered in the shell: it
+# carries transcript_path, which lives under ~/.claude, so every Bash call matches
+# "claude". Prefilter the extracted command instead — that keeps awk off the calls
+# that cannot match, which is the expensive half.
+cmd=$(printf '%s' "$input" | jq -r '
+  if (.tool_name // .toolName) == "Bash"
+  then (.tool_input.command // .toolInput.command // "")
+  else "" end
+' 2>/dev/null)
+[ -n "$cmd" ] || exit 0
+
+case "$cmd" in
   *codex* | *claude*) ;;
   *) exit 0 ;;
 esac
-
-command -v jq >/dev/null 2>&1 || exit 0
-
-tool=$(printf '%s' "$input" | jq -r '.tool_name // .toolName // empty' 2>/dev/null)
-[ "$tool" = "Bash" ] || exit 0
-
-cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // .toolInput.command // empty' 2>/dev/null)
-[ -n "$cmd" ] || exit 0
 
 offender=$(printf '%s\n' "$cmd" | awk '
 function trim(s) { sub(/^[ \t\r]+/, "", s); sub(/[ \t\r]+$/, "", s); return s }
@@ -60,7 +64,7 @@ function check(t, piped,   w1, w2, base) {
   if (found == "") found = base
 }
 
-BEGIN { SQ = sprintf("%c", 39); DQ = sprintf("%c", 34); MARK = sprintf("%c", 2); hq = 0; hi = 0 }
+BEGIN { MARK = sprintf("%c", 2); hq = 0; hi = 0 }
 
 # Drop heredoc bodies: documentation that quotes a peer launch is not a launch.
 # Openers are read before quote masking, because the delimiter of the common
@@ -80,7 +84,7 @@ BEGIN { SQ = sprintf("%c", 39); DQ = sprintf("%c", 34); MARK = sprintf("%c", 2);
     rest = substr(rest, RSTART + RLENGTH)
     dash = (tok ~ /^<<-/)
     sub(/^<<-?[ \t]*/, "", tok)
-    gsub("[" SQ DQ "\\\\]", "", tok)
+    gsub(/['\''"\\]/, "", tok)
     if (tok != "") { hq++; hd[hq] = tok; htab[hq] = dash }
   }
   buf = buf $0 "\n"
@@ -92,11 +96,14 @@ END {
   # Blank out quoted spans in one left-to-right pass, so a separator, a "#" or a
   # "/dev/null" inside a prompt string is not read as shell syntax.
   s = buf
-  gsub(SQ "[^" SQ "]*" SQ "|" DQ "(\\\\.|[^" DQ "\\\\])*" DQ, " Q ", s)
+  # A literal regex, not a computed one: backslash handling inside a dynamic
+  # regex string is where BWK, mawk and gawk diverge, and a silent divergence
+  # here brings back the false-positive class this masking exists to prevent.
+  gsub(/'\''[^'\'']*'\''|"(\\.|[^"\\])*"/, " Q ", s)
   gsub(/[ \t\n]#[^\n]*/, " ", s)
   sub(/^#[^\n]*/, "", s)
 
-  if (index(s, "/dev/null") > 0) exit           # stdin is accounted for; nothing to say
+  if (s ~ /<[ \t]*\/dev\/null/) exit           # stdin is accounted for; nothing to say
 
   gsub(/\|\|/, "\n", s)
   gsub(/\|&/, "\n" MARK " ", s)
