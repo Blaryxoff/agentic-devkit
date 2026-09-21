@@ -25,6 +25,7 @@ will rescue a command. Make it unable to block instead.
 - Never launch an editor, pager, or REPL. Pass `--no-pager`, or set `GIT_PAGER=cat`, `PAGER=cat`,
   `GIT_EDITOR=true` when a command might reach for one.
 - Do not build a workflow on `timeout`; stock macOS does not ship it.
+- Launch a peer CLI with stdin closed: `codex exec … "$(cat <prompt-file>)" < /dev/null`, `claude -p … < /dev/null`. Both read stdin even when the prompt is a positional argument. Write the prompt file in a separate call; a heredoc in the same compound command as the launch is the usual cause. `plugins/core/hooks/peer-cli-gate.sh` refuses the launch when the redirect is missing, so a hang here never means the prompt failed to arrive.
 - A script this repository ships obeys the same rule: when it needs a terminal it does not have, it exits with
   a message naming the non-interactive flag. Guard with `[ -t 0 ]`; never prompt into the void. That refusal
   stands even for a caller piping answers in — a menu's numbering is not a contract, the flag is.

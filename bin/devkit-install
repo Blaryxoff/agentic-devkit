@@ -332,6 +332,23 @@ updated=$(jq --arg cmd "$commentgate_cmd" --arg script "comment-gate.sh" '
 write_json "$SETTINGS" "$updated" || exit 1
 echo "    Hook:    ~/.claude/settings.json (PreToolUse comment-gate)"
 
+# --- PreToolUse peer-cli-gate hook in ~/.claude/settings.json ---
+# Refuses a peer CLI launched without stdin; it would inherit the harness socket and hang.
+peercli_cmd=$(hook_command peer-cli-gate.sh)
+updated=$(jq --arg cmd "$peercli_cmd" --arg script "peer-cli-gate.sh" '
+  .hooks //= {} |
+  .hooks.PreToolUse = (
+    ((.hooks.PreToolUse // []) | map(
+      .hooks = ((.hooks // []) | map(select(
+        (.command // "") | contains("plugins/core/hooks/" + $script) | not
+      )))
+    ) | map(select((.hooks | length) > 0)))
+    + [ { matcher: "Bash", hooks: [ { type: "command", command: $cmd } ] } ]
+  )
+' "$SETTINGS")
+write_json "$SETTINGS" "$updated" || exit 1
+echo "    Hook:    ~/.claude/settings.json (PreToolUse peer-cli-gate)"
+
 # --- Global + project Cursor preToolUse edit gates ---
 CURSOR_HOOKS_DIR="$CURSOR_DIR/hooks"
 CURSOR_HOOKS_FILE="$CURSOR_HOOKS_DIR/hooks.json"

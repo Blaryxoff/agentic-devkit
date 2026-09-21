@@ -16,6 +16,7 @@ SCRIPTS=(
   no-clobber.sh
   nontech.sh
   output-style.sh
+  peer-cli-gate.sh
   resolve.sh
   skill-eval.sh
   sprint-skill.sh
