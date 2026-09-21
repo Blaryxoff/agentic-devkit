@@ -103,8 +103,10 @@ printf 'not json at all, codex exec' | sh "$HOOK" >/dev/null 2>&1
 # A terminal on stdin is never a hook payload; it must not make `cat` block. Driven
 # through pty.spawn rather than `script`, whose argument order differs between the
 # BSD and util-linux builds — the containers ship the latter.
-python3 - "$HOOK" <<TTY >/dev/null 2>&1 </dev/null
-import os, pty, sys
+python3 - "$HOOK" <<TTY >/dev/null 2>&1
+import os, pty, signal, sys
+signal.signal(signal.SIGALRM, lambda *a: os._exit(70))
+signal.alarm(10)
 sys.exit(os.waitstatus_to_exitcode(pty.spawn(["sh", sys.argv[1]])))
 TTY
 [ $? = 0 ] || fail "a tty on stdin must exit 0"
