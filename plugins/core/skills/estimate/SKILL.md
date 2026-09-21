@@ -187,10 +187,9 @@ below only when this change actually touches it; drop the rest instead of pricin
 6. rollout/backfill verification.
 
 Compute operator occupancy alongside elapsed time: the full days the operator personally spends on decisions, review,
-merge, integration, acceptance, and recovery, summed across the schedule, plus the residual per-day supervision while
-agents run. It is a different quantity from elapsed time and is normally several times smaller. Report both. Report
-aggregate agent runtime or token cost only when the user asks for cost or capacity, and never sum it into either
-figure.
+merge, integration, acceptance, and recovery, plus the residual per-day supervision while agents run. It is a
+different quantity, normally several times smaller. Report both. Report aggregate agent runtime or token cost only
+when the user asks for cost or capacity, and never sum it into either figure.
 
 ### 6. Apply external calibration
 
@@ -219,30 +218,30 @@ bury materially different scope inside one.
 Return only the audience-ready estimate. Do not preface it with investigation notes, skill names, or a description of
 the workflow used. The reader approves schedules and cuts scope; they do not read code. Write for that reader.
 
+Be brief. The whole estimate fits on one screen. Answer each item below in one to three lines and stop. Length is not
+thoroughness: the investigation was thorough, the estimate is short.
+
 Lead with one recommended planning commitment: one number, one scope, one maturity level, in the unit used everywhere
 after it. Other scopes and levels belong in the ladder, never bolded beside the headline — given four bold numbers a
 reader anchors on the largest and plans against it.
 
-Then deliver these as named sections, in this order:
+Answer these, in this order:
 
-1. **What the number means.** State the unit — elapsed working days or elapsed calendar days — and that elapsed time is
-   not how long a person is occupied. Give operator occupancy as its own figure, itemized by what the operator
-   personally does: decisions, review and merge, integration, acceptance. Add the residual per-day supervision while
-   agents run. Someone planning people needs that figure, not the calendar one.
-2. **The ladder.** Demo/alpha/beta/production-ready for the levels that apply, each with what the reader can safely do
-   with that result. Say which levels are releasable and whether hardening can run as a separate later phase. "Can we
-   ship sooner and harden afterwards" is the first thing a product owner asks; answer it unasked.
-3. **What the number covers.** Name testing, review, QA, and rollout per level in the reader's words — the Maturity
-   levels table's third column is that wording — and say whether test and CI runtime counts against operator
-   occupancy. A reader who cannot find testing in an estimate assumes it was omitted.
-4. **What already exists and what remains**, in product language.
-5. **The critical path** — the parallel lanes and what actually sets the date.
-6. **Ways to shorten it.** Mandatory whenever any scope item can be deferred. List the product capabilities that can be
-   dropped or postponed and the days each one buys, computed by removing its lanes and recomputing. Name the
-   capability, not the lane. An estimate carrying only additive deltas answers "what if we want more" and leaves "how
-   do we hit the date" unanswered.
-7. **Assumptions and additive deltas** — scope beyond the literal request, each with its own delta.
-8. **Confidence** (`high`, `medium`, or `low`) and what would narrow it.
+1. **The number, and what it means.** The unit — elapsed working days or calendar days — and that elapsed time is not
+   how long a person is occupied. Give operator occupancy as its own figure with a one-line itemization.
+2. **The ladder.** One row per applicable level: days, and what the reader can safely do with that result. Say which
+   levels are releasable and whether hardening can run as a separate later phase.
+3. **What the number covers.** Testing, review, QA, and rollout per level in the reader's words — the Maturity levels
+   table's third column is that wording. Say whether test and CI runtime counts against operator occupancy.
+4. **Ways to shorten it.** Mandatory whenever any scope item can be deferred. One line each: the product capability to
+   drop or postpone, and the days it buys, computed by removing its lanes and recomputing. Name the capability, not
+   the lane.
+5. **Assumptions and additive deltas** — scope beyond the literal request only, each with its own delta.
+6. **Confidence** (`high`, `medium`, or `low`) and the one thing that would narrow it.
+
+Add what already exists, what remains, or the critical path only when the reader's decision turns on it, capped at a
+few lines. Feature inventories, option comparisons, vendor and legal analysis, infrastructure pricing, and readiness
+checklists are an appendix at most and usually omitted outright — they are what you read, not what was asked.
 
 Analogue selection, scope comparisons, and reconciliation arithmetic belong to the internal worksheet, never to the
 delivered text. Do not open the estimate with a section named after the method. Mention comparable delivered work only
@@ -274,6 +273,7 @@ Do not create a report file unless the user asked for one.
 ## Final checks
 
 - The recommended number lies inside the reported range.
+- The estimate fits on one screen, and no section runs longer than the decision it supports.
 - The headline is one number, for one scope, at one maturity level, and no rival number is bolded beside it.
 - The unit is stated once and held throughout.
 - Operator occupancy is reported next to elapsed time, is itemized, and is not a fraction of it.
