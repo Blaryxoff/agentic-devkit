@@ -1,17 +1,17 @@
 ---
 name: devkit-estimate
 description: >-
-  estimate developer time — the hours a developer is actually occupied — and the calendar window around it, for a
-  software feature or project, formatted for direct paste into a tracker or Telegram. Use for "estimate this task",
+  estimate developer working hours — the time a developer is actually occupied — with calendar elapsed as secondary
+  planning context, for a software feature or project, formatted for direct paste into a tracker or Telegram. Use for "estimate this task",
   "how long will this take", agent-first, agent-only, or vibe-coding estimates at demo, alpha, beta or
   production-ready. Does not implement the work, allocate people, or edit sprint workbooks — that is devkit-sprint.
 ---
 
 # Agent-First Estimator
 
-Estimate developer time first: the human hours your developer is occupied and cannot do anything else. Agent runtime
-is never developer time — agents run all night while the developer sleeps. Elapsed calendar time is derived second
-from the same graph; every other figure is an addition. Do not convert a person-day total with a generic AI multiplier.
+Estimate developer working hours first as low/likely/high: the time the developer is occupied and cannot do anything
+else. Agent runtime is never developer time — agents run all night while the developer sleeps. Derive calendar elapsed
+second only when it helps planning. Do not convert a person-day total with a generic AI multiplier.
 
 ## Boundaries
 
@@ -30,26 +30,8 @@ from the same graph; every other figure is an addition. Do not convert a person-
 
 ## Maturity levels
 
-Estimate each requested level separately. Never call a happy path production-ready.
-
-| Level | Required outcome | Say it to the reader as |
-|---|---|---|
-| Demo | Controlled happy path is demonstrable; mocks/manual setup and known gaps are allowed. | Shows the flow to stakeholders; not for real users. Checked by a manual walkthrough. |
-| Alpha | Core end-to-end flow works on real data; limited edge-case and operational coverage is allowed. | A small internal group can use it on real data. Automated checks cover the main flow. |
-| Beta | Intended flows, roles, states, migrations, automated tests, and integration contracts are complete. | Releasable to users. Automated checks cover the flows, access rights, data migrations, and the joins between the parts. |
-| Production-ready | Beta plus the safeguards the changed paths actually require, drawn from authorization abuse cases, retries/idempotency, backfill, observability, browser/device QA, rollback/rollout safety, and fixes from final review. | Runs at full load unattended. Adds checks under heavy load and failure, monitoring, and a rollback that has been rehearsed. |
-
-Production-ready means the requested behavior is safe to release, not that every safeguard in the row was rebuilt.
-Reuse existing authorization, idempotency, observability, and rollout mechanisms and schedule zero days for them. Add
-schema changes, migrations, backfill, external integrations, cross-client work, or device QA only when the literal
-scope or the code requires them.
-
-Skip levels the user does not need, but always distinguish the requested result from the next-lower level. Report a
-level above Demo only when you can name the work it adds over the level below. Never print a level and disclaim it in the same
-breath: a rung you would immediately call redundant for this surface is dropped, not footnoted — the reader quotes the
-number, not the caveat. When the
-remaining work is a bounded change to existing code — no new entity, no new integration, no schema migration — the
-ladder collapses: report one implementation lane plus focused verification, and do not decompose it into four rungs.
+Estimate only the requested outcome by default. Read [maturity-levels.md](references/maturity-levels.md) when the user
+asks for multiple maturity levels or the choice between them changes the decision.
 
 ## Evidence hierarchy
 
@@ -136,6 +118,9 @@ Record:
 | Delivery | credible implementation, integration, and hardening window, recorded as the anchor's delivered span |
 | Follow-ups | later fixes that reveal hidden stabilization cost |
 
+Calibrate developer hours only from anchors that record actual developer hours. Commit spans and session duration
+calibrate elapsed only. Without an actual-hours anchor, use the bottom-up ledger below and cap confidence at `medium`.
+
 Name one delivered analogue and use it only as a plausibility check. Work already delivered contributes zero days:
 never add the analogue's span to the new schedule, and never treat it as a floor.
 
@@ -155,12 +140,11 @@ line counts compare the new scope against the anchor slice; they never convert t
 
 Create one row per independent delivery lane:
 
-| Lane | Scope | Reuse | Prerequisites | Developer hours | Agent-work | Elapsed | Done evidence |
-|---|---|---|---|---:|---:|---:|---|
+| Lane | Scope | Reuse | Prerequisites | Developer hours | Elapsed | Done evidence |
+|---|---|---|---|---:|---:|---|
 
-Developer hours are the lane's attended human work; agent-work is the agent effort inside it; elapsed is its
-wall-clock, including waiting and unattended runtime. Estimate all three in hours, low/likely/high. Neither
-agent-work nor elapsed is summed into the delivery date.
+Developer hours are the lane's attended human work; elapsed is its wall-clock, including waiting and unattended
+runtime. Estimate both in hours, low/likely/high. Do not estimate agent-work unless the user asks for cost or capacity.
 
 Separate shared foundations from consumers, then apply Boundary 5: derive lanes from the artifacts this change
 actually produces, never from a checklist of layers. Work that lands in one service and one screen and is reviewed
@@ -181,10 +165,10 @@ work on another party's side, whose date you do not set. Charge only the develop
 
 ### 5. Calculate developer time, then elapsed
 
-Total developer time as the sum of the lanes' developer hours plus the gates below that need the developer. Count
-attended touchpoints only — specifying, answering the agent, reviewing, merging, integrating, accepting, recovering —
-never a share of elapsed. A lane that runs longer unattended costs no more developer hours, so unattended agent, test
-and CI runtime never enters this figure. Lane developer hours sum; no other column does.
+Build a developer-hour ledger with one row per attended session: decisions/specification, agent briefing and recovery,
+review plus rework, manual QA, and merge/rollout. Give each row low/likely/high hours and evidence. Sum the rows; count
+one session once when it covers review, integration, and acceptance. Passive agent, test, and CI runtime costs zero; a
+lane that runs longer unattended costs no more developer hours.
 
 Then derive elapsed from the dependency graph, not the arithmetic sum of lane estimates:
 
@@ -213,21 +197,14 @@ below only when this change actually touches it; drop the rest instead of pricin
 5. security/reliability review and fixes;
 6. rollout/backfill verification.
 
-Report developer time and elapsed together, developer time first. Report aggregate agent runtime or token cost only
-when the user asks for cost or capacity, and never sum it into either.
+Report developer working hours first. Add elapsed only when the user asks for a delivery window or dependencies make
+it materially different. Report agent runtime or token cost only when the user asks for cost or capacity.
 
 ### 6. Apply external calibration
 
-Read [agent-first-calibration.md](references/agent-first-calibration.md) when the user asks for current-market
-evidence, no credible local analogue exists, or a lane exceeds a measured autonomy horizon. Otherwise stop at local
-calibration. Re-fetch cited sources when web access is available and cite only the pages that moved a range, a
-decomposition, or the confidence rating.
-
-- Skip this step entirely when a credible local anchor exists and the scope is mostly `exact`, `continuation`, or
-  `foundation`, unless a lane exceeds the cited autonomy horizon — that trigger outranks the skip. Those sources
-  measure new work and inflate a scope that is already largely built.
-- Increase decomposition or uncertainty when a lane exceeds the reliable task horizon of the cited benchmark.
-- Apply that file's own Application rules to anything taken from it; they are not restated here.
+Read [agent-first-calibration.md](references/agent-first-calibration.md) only when the user asks for market evidence,
+no credible local analogue exists, or a lane exceeds its measured autonomy horizon. Follow its Application rules and
+re-fetch any cited source. Otherwise stop at local calibration.
 
 ### 7. Add uncertainty and risk deltas
 
@@ -244,22 +221,26 @@ The reader approves schedules and cuts scope; they do not read code. Write for t
 estimate fits on one screen, each item answered in one to three lines. Length is not thoroughness.
 
 Report developer time in hours, always, and lead with it. Hours are schedulable; "about a week" is not a commitment.
-Every delta and every cut is quoted in developer hours first. Elapsed is second and needs a guard: it is wall-clock,
-holds overnight waits and unattended agent runtime, and bare hours invite the division step 5 forbids. Report elapsed
-in hours below 16 and in working days at or above, at 8 hours to the day, one unit held across a straddling range.
+Every delta and every cut is quoted in developer hours first. When elapsed is useful, label it as wall-clock and report
+it in hours below 16 or working days at or above, at 8 hours to the day.
 
 Open with one table carrying the schedule figures: a row per applicable maturity level, marking the one you
 recommend. Developer time is the first column and the figure the recommendation is stated in. Nothing numeric
 precedes the table, and no figure in it is restated in the prose below. Cuts and deltas carry their own numbers on
 their own lines; they never go in the table.
 
-| Level | Developer time | Elapsed | What you can do with it |
-|---|---:|---:|---|
+Default to one recommended row for the literal requested outcome. Add maturity rows only when the user asks for them
+or choosing a maturity level changes the decision; never print demo, alpha, beta, and production-ready by default.
+
+| Level | Developer time | What you can do with it |
+|---|---:|---|
+
+Add an `Elapsed` column only when the estimate includes a delivery window.
 
 Then, one to three lines each:
 
 1. **Where the developer's hours go.** A one-line itemization: decisions, review and merge, integration, acceptance.
-   Then elapsed, with its unit and conversion, and whether hardening can run as a separate later phase.
+   When elapsed is included, say whether hardening can run as a separate later phase.
 2. **What they cover.** Testing, review, QA, and rollout per level in the reader's words — the Maturity levels
    table's third column is that wording. Say that unattended test and CI runtime costs the developer nothing.
 3. **Ways to cut it.** Mandatory when any scope item can be deferred. One line each: the user-facing capability to
@@ -300,27 +281,19 @@ reissue the affected rows. Do not create a report file unless the user asked for
 ## Final checks
 
 - The recommended number lies inside the reported range.
-- The schedule figures are in the opening table; the Output items follow, in order, none past three lines.
-- Developer time leads, is itemized, and is not a fraction of elapsed.
 - Every cut quotes the developer hours it frees, and says plainly when it does not move the date.
-- One display unit holds across each range, and every engineering term surviving the draft is glossed once.
 - Independent lanes were not summed into elapsed time; sequential dependencies were not parallelized.
 - No hour in the schedule pays for behavior that already exists in the repository.
-- The schedule was compared against a delivered analogue internally, and the comparison is absent from the delivered text.
 - The recommendation covers the literal requested scope; expansions appear below it and none is labelled recommended.
 - Every scheduled gate traces to a path this change actually touches.
 - Each lane names the artifact it produces; none exists because a layer checklist named it.
-- No maturity level was reported next to a disclaimer that the work it adds is redundant.
-- Read-only aggregation was priced as one lane, and no developer hour was charged for another party's own work.
+- Developer hours are the sum of named attended sessions, with overlapping touchpoints counted once.
+- Confidence is not `high` without an anchor that records actual developer hours.
 - No figure was produced by multiplying another figure, by adding a delivered analogue's span, or by pricing a blocker
   invented to justify a gap.
 - The estimate was reconciled against any superseded prior estimate.
 - Existing work was discounted once and only with named evidence.
-- Demo evidence was not used to claim production readiness.
-- Tests, integration, authorization, migration/backfill, and rollout were included at the appropriate maturity level.
 - Every non-trivial reuse or throughput claim was verified against a repository path, commit/session, or current web
   source, whether or not that citation appears in the delivered text.
-- The delivered text carries no file paths, line numbers, or commit IDs unless the user asked for an audit trail.
-- The response is directly pasteable into the requested destination and contains no horizontal-rule divider.
 - The deliverable passes `../../conduct/readiness-gate.md`. Apply that gate internally; never append its table to
   the audience-ready estimate.

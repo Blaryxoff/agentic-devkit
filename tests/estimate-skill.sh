@@ -5,6 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILL="$ROOT/plugins/core/skills/estimate/SKILL.md"
 REFERENCE="$ROOT/plugins/core/skills/estimate/references/agent-first-calibration.md"
+MATURITY="$ROOT/plugins/core/skills/estimate/references/maturity-levels.md"
 
 fail() {
   echo "FAIL: $*" >&2
@@ -13,14 +14,16 @@ fail() {
 
 [ -f "$SKILL" ] || fail "estimate skill is missing"
 [ -f "$REFERENCE" ] || fail "estimate calibration reference is missing"
+[ -f "$MATURITY" ] || fail "estimate maturity reference is missing"
 
-python3 - "$SKILL" "$REFERENCE" <<'PY'
+python3 - "$SKILL" "$REFERENCE" "$MATURITY" <<'PY'
 from pathlib import Path
 import sys
 import yaml
 
 skill = Path(sys.argv[1]).read_text()
 reference = Path(sys.argv[2]).read_text()
+maturity = Path(sys.argv[3]).read_text()
 assert skill.startswith("---\n")
 _, frontmatter, body = skill.split("---\n", 2)
 metadata = yaml.safe_load(frontmatter)
@@ -39,6 +42,8 @@ assert "does not implement" in description
 assert "direct paste" in description
 
 normalized_body = " ".join(body.lower().split())
+normalized_maturity = " ".join(maturity.lower().split())
+normalized_rules = f"{normalized_body} {normalized_maturity}"
 for rule in (
     "demo",
     "alpha",
@@ -66,14 +71,11 @@ for rule in (
     "omit source paths, line numbers, commit and session ids",
     "a high-context maintainer's scoped statement about this codebase",
     "no hour in the schedule pays for behavior that already exists in the repository",
-    "no developer hour was charged for another party's own work",
     "never reach a production figure by scaling demo, alpha, or beta by a factor",
-    "skip this step entirely when a credible local anchor exists",
-    "estimate all three in hours, low/likely/high",
+    "estimate both in hours, low/likely/high",
     "pack ready lanes into explicit execution waves",
     "never append a free-floating allowance",
     "never append its table to the audience-ready estimate",
-    "apply that file's own application rules to anything taken from it; they are not restated here",
     "do not create a report file unless the user asked for one",
     "return only the audience-ready estimate",
     "the reader approves schedules and cuts scope; they do not read code",
@@ -91,31 +93,27 @@ for rule in (
     "for telegram or chat",
     "never emit markdown horizontal rules",
     "decorative dash-divider lines",
-    "that trigger outranks the skip",
-    "one display unit holds across each range, and every engineering term surviving the draft is glossed once",
-    "and whether hardening can run as a separate later phase",
+    "when elapsed is included, say whether hardening can run as a separate later phase",
     "**what they cover.**",
     "give the opening table as one bullet per row",
-    "the schedule figures are in the opening table; the output items follow, in order, none past three lines",
-    "estimate developer time first: the human hours your developer is occupied and cannot do anything else",
+    "estimate developer working hours first as low/likely/high",
     "agent runtime is never developer time — agents run all night while the developer sleeps",
-    "elapsed calendar time is derived second from the same graph",
+    "derive calendar elapsed second only when it helps planning",
     "developer time is computed from those lanes, never inferred from the calendar schedule as a fraction of it",
-    "| lane | scope | reuse | prerequisites | developer hours | agent-work | elapsed | done evidence |",
+    "| lane | scope | reuse | prerequisites | developer hours | elapsed | done evidence |",
     "### 5. calculate developer time, then elapsed",
-    "lane developer hours sum; no other column does",
-    "report developer time and elapsed together, developer time first",
+    "sum the rows; count one session once",
+    "report developer working hours first. add elapsed only when the user asks for a delivery window",
     "report developer time in hours, always, and lead with it",
     "every delta and every cut is quoted in developer hours first",
     "hours are schedulable; \"about a week\" is not a commitment",
-    "bare hours invite the division step 5 forbids",
-    "in hours below 16 and in working days at or above, at 8 hours to the day, one unit held across a straddling range",
-    "| level | developer time | elapsed | what you can do with it |",
+    "when elapsed is useful, label it as wall-clock",
+    "| level | developer time | what you can do with it |",
+    "add an `elapsed` column only when the estimate includes a delivery window",
     "**where the developer's hours go.**",
     "say that unattended test and ci runtime costs the developer nothing",
     "**ways to cut it.** mandatory when any scope item can be deferred",
     "the developer hours it frees, and the elapsed it buys — stated as zero when off the critical path",
-    "developer time leads, is itemized, and is not a fraction of elapsed",
     "every cut quotes the developer hours it frees, and says plainly when it does not move the date",
     "derive lanes from the artifacts this change actually produces, never from a checklist of layers",
     "is one lane, however many layers it crosses",
@@ -127,11 +125,16 @@ for rule in (
     "when the reader disputes a figure, re-derive the decomposition before answering",
     "defending a number you have not recomputed is the failure",
     "each lane names the artifact it produces",
-    "no maturity level was reported next to a disclaimer that the work it adds is redundant",
     "report a level above demo only when you can name the work it adds over the level below",
-    "total developer time as the sum of the lanes' developer hours",
-    "count attended touchpoints only",
-    "never a share of elapsed",
+    "give each row low/likely/high hours and evidence",
+    "passive agent, test, and ci runtime costs zero",
+    "calibrate developer hours only from anchors that record actual developer hours",
+    "without an actual-hours anchor, use the bottom-up ledger below and cap confidence at `medium`",
+    "build a developer-hour ledger with one row per attended session",
+    "count one session once when it covers review, integration, and acceptance",
+    "do not estimate agent-work unless the user asks for cost or capacity",
+    "default to one recommended row for the literal requested outcome",
+    "never print demo, alpha, beta, and production-ready by default",
     "a lane that runs longer unattended costs no more developer hours",
     "developer hours are the lane's attended human work",
     "elapsed is its wall-clock, including waiting and unattended runtime",
@@ -145,7 +148,7 @@ for rule in (
     "cuts and deltas carry their own numbers on their own lines; they never go in the table",
     "../../conduct/readiness-gate.md",
 ):
-    assert rule in normalized_body, rule
+    assert rule in normalized_rules, rule
 
 normalized_reference = " ".join(reference.lower().split())
 for banned in (
