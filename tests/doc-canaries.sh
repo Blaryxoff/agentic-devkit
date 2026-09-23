@@ -125,6 +125,11 @@ assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'identity block
 assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'revalidate the full pin'
 assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'Production is read-only by default'
 assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" "If a click's effects are uncertain, treat it as a mutation and do not click."
+assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'A spot pass drops only the coverage ledger'
+assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'Never edit a previous brief into a new one'
+assert_contains "$ROOT/plugins/core/conduct/browser-ui-oracles.md" 'Rasterise colours before computing contrast'
+assert_contains "$ROOT/plugins/core/conduct/browser-ui-oracles.md" 'Count rendered nodes, not presence'
+assert_contains "$ROOT/plugins/core/conduct/browser-ui-oracles.md" 'A probe that cannot fire on the defect it targets certifies nothing'
 assert_contains "$ROOT/plugins/core/conduct/review-specialist-fanout.md" 'maximum independent set in parallel waves'
 assert_contains "$ROOT/plugins/core/conduct/review-specialist-fanout.md" 'Never nest orchestration or dispatch the same axis twice.'
 assert_contains "$ROOT/plugins/core/conduct/review-specialist-fanout.md" 'Every prompt must require read-only operation'

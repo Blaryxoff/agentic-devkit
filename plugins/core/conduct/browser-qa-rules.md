@@ -10,9 +10,22 @@ Canonical rules for the `devkit-browser` QA skill. The skill cites sections here
 
 1.3. Apply `plugins/core/conduct/inputs-grounding-gate.md` before mapping the QA surface.
 
-1.4. Classify the pass before preflight. **Targeted** means the user explicitly says `smoke`, `only`, incremental, or names a regression/route/viewport to check while work is still changing. **Exhaustive** means the user says `full`, `e2e`, `exhaustive`, `final`, requests the whole project, or asks for feature QA without a narrower boundary.
+1.4. Classify the pass before preflight; the first match wins, and the skill cites this list instead of restating it.
+
+1. **Exhaustive** — the request says `full`, `e2e`, `exhaustive` or `final`, names the whole project, or asks for feature
+   QA with no narrower boundary.
+2. **Targeted** — the request names roles, a user flow or entity lifecycle, a regression set, permissions or security, a
+   design reference, or says `smoke`, `only` or incremental.
+3. **Spot** — the scope is exactly one page, route, section or component and none of the above applies.
 
 1.5. A targeted pass verifies every explicitly selected matrix cell plus its directly adjacent regression path, reports every omitted dimension, and never claims final acceptance. Run the exhaustive pass once the implementation is stable; do not repeat the whole matrix after each intermediate fix.
+
+1.6. A spot pass drops only the coverage ledger and the planner, executor and reviewer dispatch; run it in the current
+session. Every other rule still binds: §2 preflight, environment pin and surface choice, §3 when the pass mutates data,
+§6 evidence, all §9 hard rules, and §10 cleanup of whatever the pass started. Choose oracles by
+`browser-ui-oracles.md` §2, scope the probe to the changed root, measure at two viewports, exercise the changed
+interaction once for real, and check console errors. Report findings with the §7 fields and end with the skill's
+one-line spot result. A spot pass never claims acceptance and never replaces a targeted or exhaustive pass.
 
 ## 2. Preflight
 
@@ -222,6 +235,11 @@ intentional scroll regions can overflow by design. Confirm each candidate agains
 reference, or project intent. A clean audit does not prove visual fidelity because paint, icons, imagery, shadows, and
 pseudo-elements can differ without changing DOM geometry.
 
+Then run the UI oracles in `plugins/core/conduct/browser-ui-oracles.md`: those its §2 selects for the change on a spot
+or targeted pass, and every applicable §5 oracle — scripted keys and the manual §5.1 states and §5.9 language — on an
+exhaustive pass. Apply its §4 measurement rules to every colour, shadow and height you report, including ones measured by
+hand.
+
 6.4. Reuse a `take_snapshot` result until navigation, submission, modal state, role, viewport, or another DOM-changing action invalidates it. Do not snapshot unchanged state before consecutive read-only assertions.
 
 6.5. Batch independent browser reads in one tool-call batch when the harness supports it. Prefer one structured DOM
@@ -230,7 +248,10 @@ synthetic DOM mutation.
 
 6.6. Capture pixels only for a supplied design-reference comparison, a local visual-regression baseline/diff, or evidence
 for a confirmed visual finding. Pass `filePath` so chrome-devtools saves the image instead of attaching it to the model
-response. Do not open or attach a passing capture. When interpretation is still required after snapshot, geometry, and
+response. `filePath` must resolve inside the MCP server's writable root, normally the project directory; a path outside
+it is refused. A lane that must not write into the repository captures inline instead. Also capture the smallest
+element crop needed to decide a candidate the DOM cannot settle: native control chrome, or a measurement the UI oracle
+probe marks `indeterminate`. Do not open or attach a passing capture. When interpretation is still required after snapshot, geometry, and
 local diff evidence, inspect the smallest useful crop of the diff plus the matching reference crop; use a full-frame image
 only for whole-frame composition.
 
@@ -362,3 +383,41 @@ sessions. Report the concrete binding, pre-existing tabs preserved, and pass-cre
 
 11.5. When the browser tools are already gone because a server was killed, stop. Do not respawn chrome-devtools by hand
 and do not use Playwright Test as an interactive fallback (§2.6). Report the loss and tell the user to reconnect via `/mcp`.
+
+## 12. Lane briefs
+
+12.1. Derive every brief field from its own target. Never edit a previous brief into a new one: its lane ID, account,
+project and expectations are the fields that silently stop applying.
+
+12.2. Before dispatch, verify three facts: the lane ID is unused by any existing brief, report or log; the account is
+the one whose fixture owns the route (demo and QA-fixture accounts often use different credentials); and the fixture
+holds the state the lane measures, not an empty list.
+
+12.3. Scope a lane to at most five routes, two viewports and two or three oracles. Name every route and state
+explicitly; a lane left to choose tests something out of scope, or code that is still changing.
+
+12.4. Inline the probe bytes (`browser-ui-oracles.md` §3.1). Cite conduct sections by path when the executor can read
+the toolkit; copy an excerpt verbatim only when it cannot. Never summarise a rule into a brief.
+
+12.5. State the acceptance question plainly and, where possible, as a count: "how many filled primary buttons are
+visible at rest", not "check the hierarchy". A presence question cannot find the extra one.
+
+12.6. A dispatched lane writes its result into a pass-owned temporary directory outside the repository, named in its
+brief as an exception to the skill's no-report-file rule. The top-level pass ingests the result, reports in chat, and
+deletes the directory unless the user asked to keep it.
+
+12.7. When another harness's CLI executes the lane, end the invocation with `< /dev/null`
+(`cross-agent-review.md` **Peer CLI invocation**), give browser tools a non-interactive approval policy or the lane
+stalls on its first call, wrap it in a timeout, and keep each attempt's log under its own name — shell redirection
+truncates the previous one. Compare pixels only between captures from the same headless or headed mode with the device
+scale pinned.
+
+12.8. Watch every terminal state: result written, process exited, provider error, timeout. Confirm each signal is
+written to the file being watched; an exit line echoed by the wrapper never reaches the lane's own log.
+
+12.9. On a provider error, probe the provider with a one-line request before re-dispatching, and stop after a second
+consecutive failure instead of retrying.
+
+12.10. Run lanes in parallel only when their browsers (§10.7), accounts, record namespaces and datastore writes are
+isolated; lanes that share mutable state run sequentially. Do not serialise isolated read-only lanes behind a global
+lock — queued lanes time out while waiting.

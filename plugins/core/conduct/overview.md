@@ -17,6 +17,7 @@ Start with `conduct-loading.md`, then open only the documents routed by the acti
 | Communication style | [communication-style.md](./communication-style.md) |
 | Browser QA | [browser-qa-rules.md](./browser-qa-rules.md) |
 | Browser layout audit | [browser-layout-audit.md](./browser-layout-audit.md) |
+| Browser UI oracles (states, rhythm, boundaries, hierarchy, navigation) | [browser-ui-oracles.md](./browser-ui-oracles.md) |
 | Docker deployment | [docker-deployment.md](./docker-deployment.md) |
 
 Enabled core conduct is not an instruction to load every row. Selected skills may cite a document directly; otherwise

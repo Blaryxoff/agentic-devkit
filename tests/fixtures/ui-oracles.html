@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.4 sans-serif; background: #f2f0e9; }
+  button { font: inherit; border: 0; background: transparent; padding: 0 12px; }
+  input { font: inherit; border: 0; outline: 0; background: transparent; }
+  .fx { width: 700px; padding: 12px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .panel { background: #fffef9; padding: 12px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+  .edge { border: 1px solid #444; background: #fff; height: 40px; }
+  .field { display: inline-flex; align-items: center; border: 1px solid #444; background: #fff; height: 40px; padding: 0 8px; }
+  .pseudo { position: relative; }
+  .pseudo::after { content: ""; position: absolute; inset: 0; border: 1px solid #333; }
+  .pseudo-bg { position: relative; }
+  .pseudo-bg::before { content: ""; position: absolute; inset: 0; background: #000; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<main id="main">
+  <div class="fx" id="rhythm-bad"><div class="row"><button class="edge" style="height:48px">Tall</button><button class="edge">Short</button></div></div>
+  <div class="fx" id="rhythm-ok"><div class="row"><button class="edge">A</button><button class="edge">B</button></div></div>
+  <div class="fx" id="rhythm-composite"><label class="row field"><input aria-label="Password"><button aria-label="Show" style="height:28px;width:28px"></button></label></div>
+  <div class="fx" id="rhythm-hit-area"><label class="row field"><input aria-label="Date"><button aria-label="Open calendar" style="height:40px;width:40px;margin:-8px"><span class="sr">Open calendar</span></button></label></div>
+  <div class="fx" id="rhythm-toolbar"><div class="row" style="border:1px solid #444;background:#fff;padding:4px"><span class="field"><input aria-label="Search"></span><button class="edge" style="height:48px">Go</button></div></div>
+
+  <div class="fx" id="bnd"><div class="panel">
+    <button id="b-recessed" style="height:40px;background:#e9e6dc;box-shadow:0 0 0 0 rgba(0,0,0,0),0 0 0 0 rgba(0,0,0,0)">Recessed</button>
+    <button id="b-oklch" style="height:40px;background:oklch(0.93 0.012 90)">Oklch</button>
+    <button id="b-spread" style="height:40px;background:#fffef9;box-shadow:0 22px 48px -30px rgba(23,23,20,.72)">Spread</button>
+    <button id="b-zero" style="height:40px;background:#fffef9;box-shadow:0 0 0 0 rgba(0,0,0,.9)">Zero</button>
+    <button id="b-shadow" style="height:40px;background:#fffef9;box-shadow:0 1px 0 rgba(23,23,20,.16),0 8px 18px -14px rgba(23,23,20,.7)">Shadowed</button>
+    <button id="b-border" style="height:40px;border:1px solid #646464;background:#e9e6dc">Bordered</button>
+    <button id="b-inset" style="height:40px;background:#fffef9;box-shadow:inset 0 0 0 1px #333">Inset</button>
+    <button id="b-bottom" style="height:40px;background:#fffef9;border-bottom:2px solid #222">Underlined</button>
+    <div style="display:flex;gap:4px;border:1px solid #333;background:#fff;padding:4px"><span class="field" style="border:0;background:transparent"><input aria-label="Filter"></span><button style="height:40px">Naked</button><button style="height:40px">Naked2</button></div>
+    <div style="display:flex;gap:4px;align-items:center;border:1px solid #333;background:#fff;padding:4px"><span class="field" style="border:0;background:transparent"><input aria-label="Query"></span><button style="height:28px">Go</button><button aria-label="Pin" style="height:28px;width:28px;background:#e9e6dc"></button></div>
+    <button id="b-faint" style="height:40px;background:#fffef9;box-shadow:0 1px 2px rgba(0,0,0,.03)">Faint</button>
+    <button id="b-far" style="height:40px;background:#fffef9;box-shadow:0 40px 0 0 rgba(0,0,0,.6)">Detached</button>
+    <button id="b-pseudo" class="pseudo" style="height:40px;background:#fffef9">Pseudo</button>
+    <button id="b-faded" style="height:40px;background:#fffef9;box-shadow:0 1px 0 rgba(0,0,0,.5),0 0 0 1px #000;opacity:.1">Faded</button>
+    <div class="pseudo-bg" style="padding:8px"><button style="position:relative;height:40px;border:1px solid #333;background:#fff">OnPseudo</button></div>
+    <div style="display:flex;gap:4px;align-items:center;border:1px solid #333;background:#fff;padding:4px"><span class="field" style="border:0;background:transparent"><input aria-label="Query2"></span><button aria-label="Tag" class="pseudo" style="height:28px;width:28px"></button></div>
+  </div></div>
+
+  <div class="fx" id="surf-bad"><div style="width:400px;height:100px;border:1px solid rgba(0,0,0,.1);border-radius:8px;background:rgba(255,255,255,.3)">bare</div></div>
+  <div class="fx" id="surf-opaque"><div style="width:400px;height:100px;border:1px solid rgba(0,0,0,.1);border-radius:8px;background:#f2f0e9">opaque same colour</div></div>
+  <div class="fx" id="surf-fill"><div style="width:400px;height:100px;border-radius:8px;background:#fff">separating fill</div></div>
+  <div class="fx" id="surf-nested"><div style="background:#2a2a2a;padding:12px"><div style="width:400px;height:100px;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:#2a2a2a">nested bare</div></div></div>
+  <div class="fx" id="surf-in-card"><div style="background:#fffef9;padding:12px;box-shadow:0 1px 0 rgba(23,23,20,.18),0 12px 24px -12px rgba(23,23,20,.5)"><div style="width:400px;height:100px;border:1px solid rgba(0,0,0,.1);border-radius:8px">section inside a card</div></div></div>
+  <div class="fx" id="surf-faded"><div style="width:400px;height:100px;border:1px solid #000;border-radius:8px;background:#222;opacity:.05">faded</div></div>
+  <div class="fx" id="surf-ok"><div style="width:400px;height:100px;border-radius:8px;background:#fffef9;box-shadow:0 1px 0 rgba(23,23,20,.18),0 12px 24px -12px rgba(23,23,20,.5)">card</div></div>
+
+  <div class="fx" id="rep-bad"><ul><li>Planned · 20.09.2026, 07:06</li><li>Planned · 20.09.2026, 07:07</li><li>Planned · 20.09.2026, 07:07</li><li>Planned · 20.09.2026, 07:09</li><li>Planned · 20.09.2026, 07:12</li><li>Planned · 20.09.2026, 07:15</li></ul></div>
+  <div class="fx" id="rep-ok"><ul><li>Created by Ann</li><li>Paid in full</li><li>Cancelled on request</li><li>Accepted after review</li><li>Closed</li></ul></div>
+
+  <div class="fx" id="pairs-bad" style="width:260px"><div style="display:flex;flex-direction:column">
+    <div style="display:flex;flex-wrap:wrap;gap:8px"><span style="font-size:12px">Short</span><span>Value</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px"><span style="font-size:12px">A very long label that cannot fit on one line</span><span>Wrapped value here</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px"><span style="font-size:12px">Tag</span><span>Third</span></div></div></div>
+  <div class="fx" id="pairs-ok"><dl style="display:grid;grid-template-columns:120px 1fr;margin:0"><dt>One</dt><dd style="margin:0">1</dd><dt>Two</dt><dd style="margin:0">2</dd><dt>Three</dt><dd style="margin:0">3</dd></dl></div>
+  <div class="fx" id="stack-bad"><div style="display:flex;flex-direction:column;gap:8px">
+    <label style="display:flex;gap:8px;align-items:center">Date <span class="field"><input style="width:120px"></span></label>
+    <div><button class="edge">Apply</button></div></div></div>
+  <div class="fx" id="stack-ok"><div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+    <span class="field"><input aria-label="From"></span><button class="edge">Apply</button></div></div>
+
+  <div class="fx" id="transport-bad"><p>Due 2026-09-20, volume 100.000 m3, state in_progress, c++ build</p></div>
+  <div class="fx" id="transport-ok"><p>Due 20.09.2026, volume 100 m³, state In progress</p></div>
+
+  <div class="fx" id="mute-bad"><span class="field"><input id="m-empty" aria-label="Number"></span></div>
+  <div class="fx" id="mute-ok"><span class="field"><input aria-label="Number" placeholder="e.g. 3"></span></div>
+
+  <div class="fx" id="groups-bad">
+    <button class="edge" style="width:40px"></button>
+    <button class="edge" style="width:40px" aria-labelledby="missing-id"></button>
+    <input type="checkbox">
+    <select><option>Only option text</option></select>
+    <button class="edge" style="width:40px"><span aria-hidden="true">×</span></button>
+    <table><thead><tr><th>Code</th><th>Type</th></tr></thead><tbody><tr><td>N-1</td><td>Block</td></tr><tr><td>N-2</td><td>Block</td></tr><tr><td>N-3</td><td>Block</td></tr></tbody></table>
+    <ul><li style="display:flex;flex-wrap:wrap;width:170px"><span>A very long node name</span><span style="display:flex"><button aria-label="Edit" style="width:32px;height:32px"></button><button aria-label="Delete" style="width:32px;height:32px"></button></span></li></ul>
+  </div>
+  <div class="fx" id="groups-ok">
+    <span id="lbl">Close dialog</span><button class="edge" style="width:40px" aria-labelledby="lbl"></button>
+    <label><input type="checkbox"> Remember me</label>
+    <label>Size <select><option>Large</option></select></label>
+    <button class="edge" style="width:40px"><span aria-hidden="true">×</span><span class="sr">Remove</span></button>
+    <table><thead><tr><th>Code</th><th>Type</th></tr></thead><tbody><tr><td>N-1</td><td>Block</td></tr><tr><td>N-2</td><td>Floor</td></tr><tr><td>N-3</td><td>Room</td></tr></tbody></table>
+  </div>
+
+  <div class="fx" id="prim">
+    <button style="background:#f05a24;height:40px">Main one</button>
+    <button style="background:#f05a24;height:40px">Main two</button>
+    <button style="background:#dc2626;height:40px">Delete</button>
+    <div style="opacity:0"><button style="background:#f05a24;height:40px">Hidden</button></div>
+    <button style="background:#f05a24;height:40px;clip-path:inset(100%)">Clipped</button>
+    <span class="sr"><button style="background:#f05a24;height:40px">SrOnly</button></span>
+    <a href="/" style="clip-path:circle(0)">Clipped home</a>
+  </div>
+</main>
+<pre id="qa-result"></pre>
+<script>
+window.__probe = /*PROBE*/;
+(() => {
+  const P = window.__probe, list = v => Array.isArray(v) ? v : (v && v.items) || [];
+  const has = (v, t) => list(v).some(x => x.t === t);
+  const c = {};
+  const run = (root, only, opts) => P(root, only, opts);
+  try {
+    c.root_missing_blocked = run("#nope").blocked === "root-not-found";
+    c.root_invalid_blocked = run("##bad").blocked === "invalid-root";
+    c.root_default_main = run(null, ["mute"]).root === "main";
+    const only = run("#rhythm-ok", ["rhythm"]); c.only_limits_keys = "rhythm" in only && !("boundaries" in only);
+
+    c.rhythm_fires = list(run("#rhythm-bad", ["rhythm"]).rhythm).some(r => r.heights.includes(48) && r.heights.includes(40));
+    c.rhythm_silent_equal = list(run("#rhythm-ok", ["rhythm"]).rhythm).length === 0;
+    c.rhythm_silent_composite_field = list(run("#rhythm-composite", ["rhythm"]).rhythm).length === 0;
+    c.rhythm_silent_adornment_with_hit_area = list(run("#rhythm-hit-area", ["rhythm"]).rhythm).length === 0 &&
+      !has(run("#rhythm-hit-area", ["boundaries"]).boundaries, "Date");
+    c.rhythm_fires_styled_toolbar = list(run("#rhythm-toolbar", ["rhythm"]).rhythm).some(r => r.heights.length > 1);
+
+    const b = run("#bnd", ["boundaries"], { cap: 50 }).boundaries;
+    c.bnd_fires_recessed = has(b, "Recessed");
+    c.bnd_fires_oklch = has(b, "Oklch");
+    c.bnd_fires_spread_erased = has(b, "Spread");
+    c.bnd_fires_zero_area_shadow = has(b, "Zero");
+    c.bnd_fires_button_on_bordered_toolbar = has(b, "Naked");
+    c.bnd_silent_real_shadow = !has(b, "Shadowed");
+    c.bnd_silent_strong_border = !has(b, "Bordered");
+    c.bnd_silent_inset_edge = !has(b, "Inset");
+    c.bnd_silent_bottom_border = !has(b, "Underlined");
+    c.bnd_fires_field_beside_compact_button = has(b, "Query");
+    c.bnd_fires_styled_compact_icon = has(b, "Pin");
+    c.bnd_fires_faint_shadow = has(b, "Faint");
+    c.bnd_fires_detached_shadow = has(b, "Detached");
+    c.bnd_pseudo_indeterminate = list(b).some(x => x.t === "Pseudo" && x.indeterminate);
+    c.bnd_faded_shadow_indeterminate = list(b).some(x => x.t === "Faded" && x.indeterminate);
+    c.bnd_ancestor_pseudo_indeterminate = list(b).some(x => x.t === "OnPseudo" && x.indeterminate);
+    c.bnd_fires_field_beside_pseudo_painted_button = has(b, "Query2");
+    c.bnd_ratio_below_three = list(b).every(x => x.edge < 3 || x.indeterminate);
+
+    c.surf_fires_bare = list(run("#surf-bad", ["surfaces"]).surfaces.bare).length === 1;
+    c.surf_fires_opaque_same_colour = list(run("#surf-opaque", ["surfaces"]).surfaces.bare).length === 1;
+    c.surf_silent_separating_fill = list(run("#surf-fill", ["surfaces"]).surfaces.bare).length === 0;
+    c.surf_fires_nested_same_colour = list(run("#surf-nested", ["surfaces"]).surfaces.bare).length === 1;
+    c.surf_silent_inside_card = list(run("#surf-in-card", ["surfaces"]).surfaces.bare).length === 0;
+    c.surf_faded_indeterminate = list(run("#surf-faded", ["surfaces"]).surfaces.bare).some(x => x.indeterminate);
+    c.surf_silent_card = list(run("#surf-ok", ["surfaces"]).surfaces.bare).length === 0;
+
+    c.rep_fires = list(run("#rep-bad", ["repeated"]).repeated).some(x => x.items === 6);
+    c.rep_silent_varied = list(run("#rep-ok", ["repeated"]).repeated).length === 0;
+
+    c.pairs_fire_mixed_wrap = list(run("#pairs-bad", ["alignment"]).alignment.pairs).some(p => p.mixedWrap);
+    c.pairs_silent_grid = list(run("#pairs-ok", ["alignment"]).alignment.pairs).length === 0;
+    c.stack_fires = list(run("#stack-bad", ["alignment"]).alignment.stacks).length === 1;
+    c.stack_silent_aligned = list(run("#stack-ok", ["alignment"]).alignment.stacks).length === 0;
+
+    const tb = run("#transport-bad", ["transport"], { forbidden: ["m3", "c++"] }).transport;
+    c.tr_iso = tb.isoDates.includes("2026-09-20");
+    c.tr_machine = tb.machineNumbers.includes("100.000");
+    c.tr_slug = tb.slugs.includes("in_progress");
+    c.tr_forbidden_escaped = tb.forbidden.includes("m3");
+    const tok = run("#transport-ok", ["transport"]).transport;
+    c.tr_silent_formatted = !tok.isoDates.length && !tok.machineNumbers.length && !tok.slugs.length && !tok.forbidden.length;
+    c.tr_no_default_forbidden = run("#transport-bad", ["transport"]).transport.forbidden.length === 0;
+
+    c.mute_fires = list(run("#mute-bad", ["mute"]).mute.empty).length === 1;
+    c.mute_silent_placeholder = list(run("#mute-ok", ["mute"]).mute.empty).length === 0;
+
+    const gb = run("#groups-bad", ["groups"]).groups, go = run("#groups-ok", ["groups"]).groups;
+    c.names_fire_empty_and_dangling_ref = list(gb.unnamed).filter(x => x.tag === "button").length === 3;
+    c.names_fire_unlabelled_select = list(gb.unnamed).some(x => x.tag === "select");
+    c.names_fire_unlabelled_checkbox = list(gb.unnamed).some(x => x.type === "checkbox");
+    c.names_silent_resolved = list(go.unnamed).length === 0;
+    c.const_col_fires = list(gb.constantColumns).some(x => x.column === "Type");
+    c.const_col_silent = list(go.constantColumns).length === 0;
+    c.detached_fires = list(gb.detached).length === 1;
+
+    const pr = run("#prim", ["primaries"], { primaryFills: ["#f05a24"] }).primaries;
+    c.prim_counts_token_fill = pr.count === 2;
+    c.prim_excludes_hidden_and_other_fills = !list(pr.items).some(x => ["Hidden", "Delete", "Clipped", "SrOnly"].includes(x.t));
+    c.prim_heuristic_without_tokens = "heuristic" in run("#prim", ["primaries"]).primaries;
+
+    const nav0 = run(null, ["navigation"]).navigation.waysUp;
+    const a = document.createElement("a"); a.href = "/"; a.textContent = "Home"; document.getElementById("main").prepend(a);
+    const nav1 = run(null, ["navigation"]).navigation.waysUp; a.remove();
+    c.nav_counts_way_up = nav0 === 0 && nav1 === 1;
+
+    c.cap_truncates = run("#groups-bad", ["groups"], { cap: 1 }).groups.unnamed.truncated >= 1;
+    c.budget_truncates = run(null, ["mute"], { maxNodes: 5 }).truncatedNodes > 0;
+  } catch (e) { c.probe_threw = String(e && e.stack || e); }
+  document.getElementById("qa-result").textContent = JSON.stringify(c);
+})();
+</script>
+</body>
+</html>
