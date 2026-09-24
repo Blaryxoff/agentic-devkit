@@ -18,6 +18,7 @@ SCRIPTS=(
   no-clobber.sh
   nontech.sh
   output-style.sh
+  peer-chat.sh
   peer-cli-gate.sh
   resolve.sh
   skill-eval.sh

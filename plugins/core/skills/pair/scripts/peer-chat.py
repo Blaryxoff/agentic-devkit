@@ -34,6 +34,9 @@ RETRY_DELAY = 10.0
 BOX_LINES = 80
 EMPTY_CURSOR_COLUMN = 2
 MAX_MESSAGE_BYTES = 64 * 1024
+CLAUDE_MAX_MESSAGE_UNITS = 9000
+CLEANUP_RETRY_ATTEMPTS = 4
+CLEANUP_RETRY_DELAY = 15.0
 # Claude can put a short context label inside the top composer rule, for example `e2e`.
 RULE_RE = re.compile(r"^\s*[─\u2014-]{10,}(?:\s+[^─\u2014-].*?\s+[─\u2014-]+)?\s*$")
 # Codex draws the composer prompt as `›`; with reasoning effort set to ultra it upgrades
@@ -1092,6 +1095,13 @@ def normalize(profile: Profile, message: str) -> str:
         line = line[len(prefix) :].lstrip(": ").strip()
     if not line:
         raise ValueError("chat message is empty")
+    units = len((profile.label + line).encode("utf-16-le")) // 2
+    if profile.agent == "claude" and units > CLAUDE_MAX_MESSAGE_UNITS:
+        raise ValueError(
+            f"chat message is {units} characters; Claude's composer truncates past 10000, "
+            f"so the limit is {CLAUDE_MAX_MESSAGE_UNITS}: put the detail in a file and send "
+            "its path; nothing was typed"
+        )
     return profile.label + line
 
 
@@ -1102,17 +1112,22 @@ def raise_after_composer_dirty(
     dirty: ComposerDirty,
     window: str | None = None,
 ) -> None:
-    """Attempt guarded cleanup, then raise with the resulting composer state."""
-    try:
-        cleared = clear_composer(
-            sid, profile, initial, dirty.owned_text, window
-        )
-    except KeyboardInterrupt as cleanup_err:
-        raise KeyboardInterrupt(
-            f"{dirty}; composer cleanup interrupted"
-        ) from cleanup_err
-    except (OSError, subprocess.SubprocessError, ValueError, RuntimeError):
-        cleared = False
+    """Attempt guarded cleanup, retrying while agterm is unreachable, then raise."""
+    cleared = False
+    for attempt in range(CLEANUP_RETRY_ATTEMPTS):
+        try:
+            if attempt:
+                time.sleep(CLEANUP_RETRY_DELAY)
+            cleared = clear_composer(
+                sid, profile, initial, dirty.owned_text, window
+            )
+            break
+        except KeyboardInterrupt as cleanup_err:
+            raise KeyboardInterrupt(
+                f"{dirty}; composer cleanup interrupted"
+            ) from cleanup_err
+        except (OSError, subprocess.SubprocessError, ValueError, RuntimeError):
+            continue
     detail = "composer cleared" if cleared else "composer cleanup failed"
     if dirty.interrupted:
         raise KeyboardInterrupt(f"{dirty}; {detail}") from dirty

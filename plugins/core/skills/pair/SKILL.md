@@ -60,6 +60,9 @@ peer-chat.py --to claude --message-file peer-chat-codex-a91f.txt
 - **The message is capped at 64 KiB of UTF-8**, and the file is consumed before its mode, size, decoding and
   body are validated — so an oversized, unreadable or permissive file is destroyed by the failure that
   rejects it. Reserve a fresh name and refill it; never expect the old one to survive.
+- **A message to Claude is capped at 9000 characters, label included.** Claude Code truncates a longer
+  composer into `[...Truncated text #N]`, where the script can neither verify nor clean up what it typed.
+  Put detail — a review, a diff summary, a status — in a file and send its path with a one-line ask.
 - **Write one paragraph.** The script collapses whitespace, because a newline submits the fragment
   before it.
 - **Never write the `Chat from …:` label yourself.** The script adds it, and that label is what makes
@@ -138,7 +141,7 @@ exit 130 is an interrupt.
 |---|---|---|
 | A pre-write refusal | Nothing was typed | From `--stdin`, retry once the named cause is fixed. From `--message-file`, the file was already consumed — reserve a **new** name and refill it |
 | `composer cleared` after a body failure | Its backspaces restored the empty prompt | Report; do not re-send blind |
-| `composer cleanup failed` | Text may remain in that pane | Read the pane, report, stop |
+| `composer cleanup failed` | Text may remain in that pane; cleanup was already retried three times, 15 s apart, while agterm was unreachable | Read the pane, report, stop |
 | Anything saying `do not resend` | The message may have landed, or did | Stop. Report it. Never re-send |
 
 The five retries at ten-second intervals cover **only an occupied or unrecognisable composer** — a pane on a
