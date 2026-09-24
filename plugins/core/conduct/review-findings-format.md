@@ -35,8 +35,8 @@ Empty buckets may be omitted. If all buckets are empty, state that explicitly pl
 
 ## Review completion gate
 
-Apply this gate to static code review. It does not replace terminal conditions owned by PR babysitting, browser QA, or
-interactive git review.
+Apply this gate to static code review. It does not replace terminal conditions owned by browser QA or interactive git
+review.
 
 Evaluate the outcome only after every requested reviewer and mandatory cross-agent check has finished. For a full code
 review, combine deep and business-logic findings before deciding. If an external reviewer calls a finding `Critical`,
