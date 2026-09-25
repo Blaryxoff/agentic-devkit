@@ -87,5 +87,7 @@ Ask each with numbers for every option; never decide silently:
 ## Norm and overtime
 
 - Norm = working days of the production calendar in the period − vacation working days, × hours per day.
-- Worked days = calendar days with ≥ `min_day_hours` (default 0.25) of target time.
+- Worked days = calendar days with ≥ `min_day_hours` (default 0.5, compared in whole minutes) of measured target
+  time. A few minutes of alert replies on a day off is not a worked day; the report states the threshold, and its
+  hours stay in the total.
 - Overtime = total − norm, split into hours above the norm on working days and hours on weekends/vacation.

@@ -18,7 +18,8 @@ cfg = json.load(open(a.config))
 K = cfg.get('overhead_factor', 1.0)
 hours = json.load(open(f'{a.inp}/hours.json'))
 tasks = json.load(open(f'{a.inp}/tasks.json'))
-days = {dt.date.fromisoformat(k): v * K for k, v in json.load(open(f'{a.inp}/days.json')).items()}
+measured = {dt.date.fromisoformat(k): v for k, v in json.load(open(f'{a.inp}/days.json')).items()}
+days = {d: v * K for d, v in measured.items()}
 bullets = cfg['bullets']
 order = [p for p in cfg.get('order', list(bullets)) if p in hours or p in bullets]
 months = sorted({m for mv in hours.values() for m in mv})
@@ -62,7 +63,8 @@ is_work = lambda d: (d.weekday() < 5 and d not in hol) or d in wk
 on_vac = lambda d: any(x <= d <= y for x, y in vac)
 calendar_days = [d for d in cal if is_work(d)]
 norm_days = [d for d in calendar_days if not on_vac(d)]
-worked = [d for d, v in days.items() if v >= cfg.get('min_day_hours', 0.25)]
+min_day_minutes = round(cfg.get('min_day_hours', 0.5) * 60)
+worked = [d for d, v in measured.items() if round(v * 60) >= min_day_minutes]
 extra = [d for d in worked if d not in norm_days]
 total = sum(x['total'] for x in projects)
 hpd = cfg.get('hours_per_day', 8)
@@ -74,7 +76,8 @@ report = dict(
                   worked_days=len(worked), worked_norm_days=len([d for d in norm_days if d in worked]),
                   extra_days=len(extra), extra_weekend=len([d for d in extra if not on_vac(d)]),
                   extra_vacation=len([d for d in extra if on_vac(d)]),
-                  extra_hours=round(sum(days[d] for d in extra)),
+                  extra_hours=round(sum(days[d] for d in extra)), min_day_minutes=min_day_minutes,
+                  short_off_hours=round(sum(v for d, v in days.items() if d not in norm_days and d not in extra)),
                   norm_day_hours=round(sum(days.get(d, 0) for d in norm_days)),
                   worked_by_month={m: len([d for d in norm_days if d in worked and d.strftime('%Y-%m') == m]) for m in months}),
     projects=projects, overhead_factor=K)

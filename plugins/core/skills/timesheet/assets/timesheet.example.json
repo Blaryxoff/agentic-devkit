@@ -7,7 +7,7 @@
   "holidays": [],
   "extra_workdays": [],
   "hours_per_day": 8,
-  "min_day_hours": 0.25,
+  "min_day_hours": 0.5,
   "transcript_cutoff": "2026-08-25",
   "gap_minutes": 30,
   "tail_minutes": 15,

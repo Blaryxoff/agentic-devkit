@@ -84,6 +84,8 @@ for p in report["projects"]:
     assert sum(h for _, h in p["bullets"]) == p["total"], p
     assert sum(p["months"].values()) == p["total"], p
 assert sum(p["total"] for p in report["projects"]) == report["total"]
+# 09-01 has 55 min, 09-02 only the 15 min bot tail: below the 30 min worked-day threshold
+assert report["calendar"]["worked_days"] == 1, report["calendar"]
 md = open(f"{out}/report.md").read()
 assert "otherclient" not in md.lower()
 PY
@@ -95,6 +97,16 @@ cfg = json.load(open(f"{tmp}/cfg.json"))
 cfg["vacation"] = [["2026-09-01", "2026-09-02"]]
 cfg["chrome_binary"] = "/usr/bin/true"
 json.dump(cfg, open(f"{tmp}/cfg0.json", "w"))
+cfg = json.load(open(f"{tmp}/cfg.json"))
+cfg["overhead_factor"] = 1.15
+cfg["min_day_hours"] = 17 / 60
+json.dump(cfg, open(f"{tmp}/cfgk.json", "w"))
+PY
+python3 "$S/allocate.py" --config "$TMP/cfgk.json" --in "$TMP/out" --out "$TMP/out/reportk.json" >/dev/null
+python3 - "$TMP/out/reportk.json" <<'PY'
+import json, sys
+# 09-02 measures 15 min; the overhead factor lifts it to 17, which must not turn it into a worked day
+assert json.load(open(sys.argv[1]))["calendar"]["worked_days"] == 1
 PY
 mkdir -p "$TMP/out0"
 python3 "$S/allocate.py" --config "$TMP/cfg0.json" --in "$TMP/out" --out "$TMP/out0/report.json" >/dev/null

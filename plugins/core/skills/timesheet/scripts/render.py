@@ -41,7 +41,10 @@ notes = [
 ]
 if c['extra_days']:
     parts = [f"{c['extra_weekend']} выходных"] + ([f"{c['extra_vacation']} дня отпуска"] if c['extra_vacation'] else [])
-    notes.append(f"Ещё {c['extra_days']} дней работы вне графика: {' и '.join(parts)} — ~{c['extra_hours']} {L['h']}")
+    notes.append(f"Ещё {c['extra_days']} дней работы вне графика: {' и '.join(parts)} — ~{c['extra_hours']} {L['h']}"
+                 + (f"; короткие подключения в другие выходные — ~{c['short_off_hours']} {L['h']}" if c.get('short_off_hours') else ''))
+if c.get('min_day_minutes'):
+    notes.append(f"Отработанным считается день, в котором не меньше {c['min_day_minutes']} минут работы")
 
 rows = ''.join(
     f"<tr><td>{e(x['title'])}</td>" + ''.join(f"<td class=n>{num(x['months'][m]) if x['total'] else '&lt;1'}</td>" for m in r['months'])
