@@ -1,0 +1,80 @@
+{
+  "_notes": "Copy to the scratchpad, never commit a filled copy: it names clients. Keys starting with _ are ignored.",
+  "person": "Jane Doe",
+  "period": {"from": "2026-08-01", "to": "2026-09-25"},
+  "tz_offset_hours": 3,
+  "vacation": [["2026-08-09", "2026-08-23"]],
+  "holidays": [],
+  "extra_workdays": [],
+  "hours_per_day": 8,
+  "min_day_hours": 0.25,
+  "transcript_cutoff": "2026-08-25",
+  "gap_minutes": 30,
+  "tail_minutes": 15,
+  "parallel_other_clients": "union",
+  "overhead_factor": 1.0,
+
+  "target_repo_rx": "acme-platform",
+  "outside_repo_rx": "^(infra|hermes)$",
+  "target_mention_rx": "acme|alpha|beta|acme-stage\\.example",
+  "other_client_rx": "otherclient|second-client",
+  "outside_task": "DevOps from the infra repo",
+  "hermes_cwd": "hermes",
+
+  "auto_prefixes": ["<command-", "<task-notification", "Chat from", "[Artifact comment", "<local-command", "# AGENTS.md",
+    "<environment_context", "<user_instructions", "<system-reminder", "Caveat:", "<<autonomous", "<turn_aborted", ">>REQ",
+    "<<RPY", "<recommended_plugins>", "<timestamp>", "<system_notification>", "[IMPORTANT", "[Cron delivery",
+    "[CONTEXT COMPACTION"],
+  "exec_skip_prefixes": ["<user_action>", "Review the code changes for", "You are one reviewer"],
+
+  "common_project": "Core (all brands)",
+  "devops_project": "DevOps",
+  "calls_project": "Calls and team syncs",
+  "devops_weak_rx": "deploy|\\bci\\b|runner|docker|\\bssh\\b|staging|production|server|mysql|redis|nginx|\\bdns\\b|backup|monitoring|alert",
+
+  "projects": {
+    "Platform": {"prompt": "platform|tenant|school|superadmin", "agent": "platform|tenant", "agent_weight": 0.3, "path": "platform"},
+    "Alpha": {"prompt": "alpha", "agent": "alpha", "path": "alpha"},
+    "Beta": {"prompt": "beta", "agent": "beta", "path": "beta"},
+    "DevOps": {"prompt": "ddos|load balancer|\\bnlb\\b|proxy|billing account", "agent": "ddos|\\bnlb\\b|proxy"}
+  },
+
+  "tasks": [
+    {"re": "\\bmcp\\b", "project": "Platform", "name": "MCP access"},
+    {"re": "redesign|new cabinet", "name": "Cabinet redesign"},
+    {"re": "backlog", "name": "Backlog"},
+    {"re": "proxy", "project": "DevOps", "name": "Proxy"},
+    {"re": "renewal|subscription", "name": "Renewal"},
+    {"re": "deploy|\\bci\\b|build", "name": "Build and deploy"},
+    {"re": "\\btests?\\b|phpunit", "name": "Tests"}
+  ],
+  "generic_tasks": ["Build and deploy", "Tests", "Renewal"],
+  "reroute": [
+    {"re": "\\bvpn\\b|wireguard", "project": "DevOps", "task": "Proxy"},
+    {"re": "personal errand", "drop": true}
+  ],
+
+  "browser": {
+    "history_globs": ["~/Library/Application Support/Google/Chrome/Profile 1/History"],
+    "domains_regex": "^https?://([a-z0-9.-]+\\.)?(acme-stage\\.example|alpha\\.example|beta\\.example)(/|:|$)|^https://github\\.com/acme/platform",
+    "exclude_regex": "otherclient",
+    "project_rules": [["alpha", "Alpha"], ["beta", "Beta"], ["admin\\.acme", "Platform"]],
+    "gap_minutes": 10,
+    "tail_minutes": 5,
+    "task": "Browser work on the projects"
+  },
+  "calls": {"include": ["ghostflow:*", "telemost:1234567890@2026-08-26"]},
+
+  "order": ["Platform", "Core (all brands)", "DevOps", "Alpha", "Beta", "Calls and team syncs"],
+  "titles": {"Core (all brands)": "Общее ядро (все бренды)", "DevOps": "DevOps и инфраструктура"},
+  "bullets": {
+    "Platform": [["MCP access for schools (TASK-1)", ["MCP access"]], ["Admin fixes", []]],
+    "Core (all brands)": [["Backlog: closed 12 of 20 items", ["Backlog"]], ["Browser work on the projects: tracker, GitHub", ["Browser work on the projects"]], ["Tests and CI", ["Tests", "Build and deploy"]]],
+    "DevOps": [["Builds and deploys", ["Build and deploy", "Tests"]], ["Proxy for the brands", ["Proxy"]]],
+    "Alpha": [["Cabinet redesign (TASK-2)", ["Cabinet redesign"]], ["Renewal window", ["Renewal"]]],
+    "Beta": [["Renewal and tariffs", ["Renewal"]]],
+    "Calls and team syncs": [["Team syncs", ["ghostflow:1", "ghostflow:2"]], ["Brand calls", ["telemost:1234567890"]]]
+  },
+  "labels": {},
+  "method_text": "Time reconstructed from AI-agent logs, prompt history, commits, browser history and calls. Parallel work counted once. Project hours are measured; task hours distribute each project's time."
+}

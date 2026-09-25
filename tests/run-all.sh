@@ -23,6 +23,7 @@ SCRIPTS=(
   resolve.sh
   skill-eval.sh
   sprint-skill.sh
+  timesheet-skill.sh
 )
 
 # One preflight for the whole suite. Individual scripts used to handle interpreter
