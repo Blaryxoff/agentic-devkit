@@ -59,10 +59,11 @@ CODEX_CHOICE_RE = re.compile(r"^\d+\.\s")
 CODEX_PARTICLE_RE = re.compile(r"[\u2800-\u28FF]")
 CODEX_INDENT_RE = re.compile(r"^[\s\u2800-\u28FF]{0,2}")
 CODEX_EMPTY_PROMPT = "Ask Codex to do anything"
-# Codex prefixes footer rows with two spaces. Only the final row is stripped: a
-# multi-row shortcut overlay is indistinguishable from indented modal choices and
-# therefore fails closed instead of weakening the live-prompt guard.
-CODEX_FOOTER_RE = re.compile(r"^ {2}\S.*$")
+# Codex indents footer rows by at least two spaces; a lone notice is right-aligned. A
+# configured `status_line` adds a second row above the hints; anything taller, like the
+# shortcut overlay, is indistinguishable from indented modal choices and fails closed.
+CODEX_FOOTER_RE = re.compile(r"^ {2,}\S.*$")
+CODEX_FOOTER_ROWS = 2
 CLAUDE_PROMPT_RE = re.compile(r"^\s*❯[\s ]*(.*?)\s*$")
 # status-line commands can add padding beyond Claude Code's two-space indent.
 CLAUDE_FOOTER_RE = re.compile(r"^ {2,}\S.*$")
@@ -482,18 +483,34 @@ def codex_row_is_blank(line: str) -> bool:
     return not CODEX_PARTICLE_RE.sub(" ", line).strip()
 
 
+def codex_block_above(lines: list[str], end: int) -> list[str]:
+    while end and codex_row_is_blank(lines[end - 1]):
+        end -= 1
+    start = end
+    while start and not codex_row_is_blank(lines[start - 1]):
+        start -= 1
+    return lines[start:end]
+
+
 def trailing_input_block(text: str) -> list[str]:
     lines = text.splitlines()[-BOX_LINES:]
     while lines and codex_row_is_blank(lines[-1]):
         lines.pop()
+    end = len(lines) - CODEX_FOOTER_ROWS
+    if (
+        end > 0
+        and codex_row_is_blank(lines[end - 1])
+        and all(
+            CODEX_FOOTER_RE.match(row) and not CODEX_CHOICE_RE.match(row.strip())
+            for row in lines[end:]
+        )
+    ):
+        block = codex_block_above(lines, end)
+        if block and CODEX_PROMPT_RE.match(block[0]):
+            return block
     if lines and CODEX_FOOTER_RE.match(lines[-1]):
-        lines.pop()
-        while lines and codex_row_is_blank(lines[-1]):
-            lines.pop()
-    start = len(lines)
-    while start and not codex_row_is_blank(lines[start - 1]):
-        start -= 1
-    return lines[start:]
+        return codex_block_above(lines, len(lines) - 1)
+    return codex_block_above(lines, len(lines))
 
 
 def codex_live_prompt_text(text: str) -> str | None:

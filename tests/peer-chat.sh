@@ -55,6 +55,26 @@ try:
 except chat.ComposerDirty as err:
     assert str(err).endswith("composer cleanup failed"), err
 assert len(calls) == 1, "an unrecognisable composer must not be retried"
+
+status = "  GPT-6-Sol high · Context 0% used · weekly 88% left …"
+hints = "  ← for agents · ? for shor  ⚠ 1 warning · f2 to view"
+def pane(*rows):
+    return "\n".join(["  >_ OpenAI Codex (v0.158.0)", "", *rows])
+assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", hints)) == "Ask Codex to do anything"
+assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", status, hints)) == "Ask Codex to do anything"
+assert chat.codex_live_prompt_text(pane("› first half", "  second half", " ", status, hints)) == "first half\nsecond half"
+typing = pane(
+    "› Chat from Claude: Pair channel smoke test from the",
+    "  Claude pane after fixing the two-row footer parser. No",
+    "  task, nothing to change; please reply through peer-",
+    "  chat.py with one line [peer-check:0]",
+    " ",
+    "  GPT-6-Sol high · Context 0% used · weekly 88% left · 0…",
+    "                                ⚠ 1 warning · f2 to view",
+)
+assert chat.codex_live_prompt_text(typing).endswith("chat.py with one line [peer-check:0]")
+assert chat.codex_live_prompt_text(pane("› 1. Yes, proceed", "  2. No", " ", "  Press enter to confirm", "  or esc to cancel")) is None
+assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", "  / for commands", "  ! for shell", hints)) is None
 PY
 
 echo "peer-chat tests passed"
