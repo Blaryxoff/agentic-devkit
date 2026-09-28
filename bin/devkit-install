@@ -13,10 +13,10 @@
 # Global layout:
 #   $HOME/.claude/skills/devkit-core--<skill>/     symlinks to core skills for Claude
 #   $HOME/.claude/agents/<name>.md                 core subagent wrappers
-#   $HOME/.claude/settings.json                    SessionStart hook → devkit-update --if-stale
+#   $HOME/.claude/settings.json                    SessionStart hook → devkit-update --if-stale; env DEVKIT_HOME
 #   $HOME/.claude/commands/<name>.md               slash commands (e.g. /wrapup)
 #   $HOME/.codex/skills/devkit-core--<skill>/      symlinks to core skills for Codex
-#   $HOME/.codex/config.toml                       PreToolUse hooks + headless chrome-devtools defaults
+#   $HOME/.codex/config.toml                       PreToolUse hooks, DEVKIT_HOME, headless chrome-devtools defaults
 #   $HOME/.cursor/skills/devkit-core--<skill>/     symlinks to core skills for Cursor
 #   $HOME/.cursor/hooks/hooks.json                 preToolUse coder/comment gates
 #
@@ -234,6 +234,10 @@ else
   echo "    Hook:    ~/.claude/settings.json created (SessionStart auto-update)"
 fi
 
+updated=$(jq --arg home "$DEVKIT_HOME" '.env //= {} | .env.DEVKIT_HOME = $home' "$SETTINGS")
+write_json "$SETTINGS" "$updated" || exit 1
+echo "    Env:     ~/.claude/settings.json (DEVKIT_HOME)"
+
 # --- Static skill policy in ~/.claude/CLAUDE.md ---
 # Anthropic recommends CLAUDE.md for instructions that do not change. Keep one
 # managed section globally instead of injecting the same policy on every prompt.
@@ -371,6 +375,7 @@ CODEX_CONFIG_FILE="$CODEX_CONFIG" \
 CODEX_LEGACY_HOOKS_FILE="$CODEX_LEGACY_HOOKS" \
 CODEX_CODER_GATE_CMD="$codergate_cmd" \
 CODEX_COMMENT_GATE_CMD="$commentgate_cmd" \
+CODEX_DEVKIT_HOME="$DEVKIT_HOME" \
 python3 - <<'PY'
 import ast
 import errno
@@ -458,6 +463,18 @@ def normalize_chrome_devtools_args(content):
     raise SystemExit("malformed chrome-devtools args array in Codex config")
 
 
+def accepted_by_codex(text, base):
+    try:
+        import tomllib
+    except ModuleNotFoundError:
+        return "shell_environment_policy" not in base
+    try:
+        tomllib.loads(text)
+    except tomllib.TOMLDecodeError:
+        return False
+    return True
+
+
 content = config_path.read_text() if config_path.exists() else ""
 original = content
 content = normalize_chrome_devtools_args(content)
@@ -497,8 +514,7 @@ if legacy_exists:
             if kept_hooks:
                 migrated.append(render_group(event, {**group, "hooks": kept_hooks}))
 
-managed = f'''{managed_start}
-[[hooks.PreToolUse]]
+hooks_body = f'''[[hooks.PreToolUse]]
 matcher = "apply_patch|Edit|Write"
 
 [[hooks.PreToolUse.hooks]]
@@ -512,11 +528,23 @@ matcher = "apply_patch|Edit|Write"
 [[hooks.PreToolUse.hooks]]
 type = "command"
 command = {toml_value(os.environ["CODEX_COMMENT_GATE_CMD"])}
-statusMessage = "Checking comment rules"
-{managed_end}'''
+statusMessage = "Checking comment rules"'''
+env_body = f'''
 
-sections = [content.strip(), *migrated, managed]
-updated = "\n\n".join(section for section in sections if section) + "\n"
+[shell_environment_policy.set]
+DEVKIT_HOME = {toml_value(os.environ["CODEX_DEVKIT_HOME"])}'''
+
+
+def render(env):
+    managed = f"{managed_start}\n{hooks_body}{env}\n{managed_end}"
+    sections = [content.strip(), *migrated, managed]
+    return "\n\n".join(section for section in sections if section) + "\n"
+
+
+updated = render(env_body)
+env_set = accepted_by_codex(updated, content)
+if not env_set:
+    updated = render("")
 config_path.parent.mkdir(parents=True, exist_ok=True)
 tmp_path = config_path.with_name(config_path.name + ".devkit.tmp")
 tmp_path.write_text(updated)
@@ -547,6 +575,10 @@ except OSError as exc:
 if legacy_exists:
     legacy_path.unlink()
 print("    Hooks:   ~/.codex/config.toml (PreToolUse gates; review with /hooks)")
+if env_set:
+    print("    Env:     ~/.codex/config.toml (DEVKIT_HOME via shell_environment_policy.set)")
+else:
+    print(f"    NOTICE: {config_path} already configures shell_environment_policy or is not valid TOML; add DEVKIT_HOME = {toml_value(os.environ['CODEX_DEVKIT_HOME'])} to its set table yourself.")
 PY
 
 # --- Output styles → ~/.claude/output-styles (symlinks) + default selection ---

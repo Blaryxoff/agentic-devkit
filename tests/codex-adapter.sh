@@ -102,6 +102,10 @@ assert_not_contains "$codex_home/config.toml" '--headless=false'
 [ "$(grep -Fc 'coder-gate.sh' "$codex_home/config.toml")" = "1" ] || fail "expected one Codex coder gate"
 [ "$(grep -Fc 'comment-gate.sh' "$codex_home/config.toml")" = "1" ] || fail "expected one Codex comment gate"
 python3 -c 'import sys, tomllib; tomllib.load(open(sys.argv[1], "rb"))' "$codex_home/config.toml"
+[ "$(python3 -c 'import sys, tomllib; print(tomllib.load(open(sys.argv[1], "rb"))["shell_environment_policy"]["set"]["DEVKIT_HOME"])' "$codex_home/config.toml")" = "$ROOT" ] \
+  || fail "Codex shell environment does not export DEVKIT_HOME"
+[ "$(jq -r '.env.DEVKIT_HOME' "$claude_home/settings.json")" = "$ROOT" ] \
+  || fail "Claude settings do not export DEVKIT_HOME"
 [[ "$install_output" == *"Cursor stack skills are now project-scoped"* ]] \
   || fail "Cursor project-skill migration notice was not emitted"
 assert_contains "$claude_home/CLAUDE.md" 'personal global guidance'
@@ -287,5 +291,15 @@ fi
   || fail "Codex collision path was mutated"
 [ -d "$collision_project/.cursor/skills/devkit-css--css-a11y" ] \
   || fail "Cursor collision path was mutated"
+
+own_env_home="$TMP_DIR/own-env-home"
+mkdir -p "$own_env_home/.codex" "$own_env_home/.claude"
+printf '%s\n' '[shell_environment_policy]' 'set = { EDITOR = "vim" }' > "$own_env_home/.codex/config.toml"
+own_env_output=$(HOME="$own_env_home" CODEX_HOME="$own_env_home/.codex" CURSOR_HOME="$own_env_home/.cursor" DEVKIT_HOME_DIR="$ROOT" \
+  bash "$ROOT/bin/devkit-install")
+python3 -c 'import sys, tomllib; tomllib.load(open(sys.argv[1], "rb"))' "$own_env_home/.codex/config.toml" \
+  || fail "installer broke a Codex config that owns shell_environment_policy.set"
+assert_contains "$own_env_home/.codex/config.toml" 'set = { EDITOR = "vim" }'
+[[ "$own_env_output" == *"add DEVKIT_HOME"* ]] || fail "installer did not report the skipped Codex DEVKIT_HOME"
 
 echo "codex adapter tests passed"
