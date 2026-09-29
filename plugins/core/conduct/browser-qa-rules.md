@@ -126,6 +126,23 @@ are allowed solely to establish the pin, including on production; perform these 
    a mismatched pre-existing tab; select or create the right tab, rebuild the pin, and repeat both checks. Apply the
    production gate in §9.5.
 
+2.10. Check host resource usage before dispatch and between waves; include other active QA passes.
+
+- Choose concurrency from independent ledger lanes and the operator's requested parallelism; do not impose a fixed
+  per-host executor cap or serialise isolated lanes solely to keep the desktop responsive.
+- Report sustained memory pressure, paging, and desktop slowdown without automatically throttling the pass. Preserve
+  requested parallelism and coverage unless the operator asks to reduce them; executor model cost does not predict
+  local browser resource usage.
+- Keep global MCP availability intact. For a dedicated worker, resolve inherited server names and suppress only
+  unrelated local stdio servers for that invocation (`-c 'mcp_servers.<name>.enabled=false'` in Codex CLI). A browser-only
+  lane does not need a local mobile MCP process. HTTP MCPs do not launch local server processes; retain their availability
+  unless the lane explicitly restricts its tools. Tool discovery is not evidence of lazy process startup.
+- Reuse the lane's owned browser for its sequential routes, viewports, and dependent cells. Close pass-created tabs
+  after their evidence is captured when they are no longer needed; do not spawn a browser per cell. Revalidate the
+  environment/account pin when changing role or route and clean the owned browser after the lane's final call (§10).
+- Keep concurrently executing lanes on distinct profiles and dedicated MCP trees (§10.7). Do not attach independent
+  workers to one browser to save memory; tabs alone do not isolate cookies or accounts.
+
 ## 3. Seed strategy
 
 3.1. Discover existing seeders; prefer dev/test fixture sets.
