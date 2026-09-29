@@ -78,7 +78,7 @@ tests/                   Shell test suite — run tests/run-all.sh before pushin
   that name (`/wrapup` is one). Author a command only when it needs its own wording, `argument-hint`, or arguments
   contract.
 - `SHORT_COMMAND_DENY` in `bin/devkit-install` keeps a skill long-form. It holds generic names that collide with harness
-  built-ins or third-party skills (`browser`, `coder`, `design`, `git`, `init`, `learn`, `plan`, `release-notes`,
+  built-ins or third-party skills (`browser`, `coder`, `design`, `git`, `init`, `jev`, `learn`, `plan`, `release-notes`,
   `review`, `run`, `verify`, `devkit-router`) and token-gated skills (`plan-creator`, `plan-reviewer` — they require
   `ralphex`, see `plugins/core/hooks/skill-eval.txt`). `/release-notes` is a Claude Code built-in.
 - A generated command's `description` is a fixed one-liner (`Run the devkit <name> workflow.`), never a copy of the

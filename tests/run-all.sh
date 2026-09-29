@@ -15,6 +15,7 @@ SCRIPTS=(
   devkit-update.sh
   doc-canaries.sh
   estimate-skill.sh
+  jev-skill.sh
   no-clobber.sh
   nontech.sh
   output-style.sh
