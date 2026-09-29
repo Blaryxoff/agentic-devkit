@@ -50,7 +50,7 @@ class Handler(BaseHTTPRequestHandler):
         payload = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
         assert self.path == "/v1/systemone", self.path
         assert self.headers["Authorization"] == "Bearer test-key"
-        items = payload["state"]["items"]
+        items = payload["state"].get("items") or payload["state"]["blocks"]
         answers = {name: {"type": "noul", "noul": 0.9 if "needle" in items[name] else 0.1}
                    for name in payload["questions"]}
         body = json.dumps({"model": payload["model"], "answers": answers,
@@ -82,6 +82,12 @@ grep -q 'best score 0.10' "$TMP/stderr" || fail "empty result does not report th
 
 seq 1 400 | sed 's/^/line /' | "$JEV" filter --task "t" --chunk-chars 2000 >/dev/null 2>"$TMP/stderr"
 grep -q 'kept 0/400 lines' "$TMP/stderr" || fail "chunked filter lost lines: $(cat "$TMP/stderr")"
+
+{ for i in $(seq 1 60); do echo "filler line $i"; done; echo; echo "def target():"; echo "    return 'needle'"; echo; for i in $(seq 1 60); do echo "more filler $i"; done; } > "$TMP/big.py"
+out=$("$JEV" locate "$TMP/big.py" --task "find the needle" 2>"$TMP/stderr")
+printf '%s\n' "$out" | grep -q "big.py:.*0.90" || fail "locate did not rank the needle block: $out"
+[ "$(printf '%s\n' "$out" | wc -l | tr -d ' ')" = "1" ] || fail "locate kept blocks below the threshold: $out"
+grep -q 'best score 0.90' "$TMP/stderr" || fail "locate summary missing: $(cat "$TMP/stderr")"
 
 calls=$("$JEV" usage | python3 -c 'import json,sys; print(json.load(sys.stdin)["calls"])')
 [ "$calls" -gt 3 ] || fail "usage log did not record the calls: $calls"

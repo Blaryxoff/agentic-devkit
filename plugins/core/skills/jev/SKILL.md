@@ -24,6 +24,7 @@ Pipe large output through `filter` and read only what it keeps. The full output 
 ```bash
 grep -rn "retry" src | "$JEV" filter --task "where are HTTP 429 responses retried?"
 git ls-files | "$JEV" filter --task "which files implement the Codex adapter?" --top 5
+git log --oneline -300 | "$JEV" filter --task "which commit changed how sessions expire?" --top 5
 ```
 
 - `--task` names what you are looking for, as a specific question. A vague task keeps vague lines.
@@ -33,6 +34,22 @@ git ls-files | "$JEV" filter --task "which files implement the Codex adapter?" -
 - Add `--scores` to see each line's probability. Tune with `--top` (default 15) and `--threshold` (default 0.5).
 - Input over one request's budget is split into several requests automatically.
 - Kept lines are leads. Open the file at the kept location before you rely on it.
+
+## Locate inside a large file
+
+When you need one place in a file longer than about 500 lines and no keyword pins it down, rank its blocks instead
+of reading the whole file:
+
+```bash
+"$JEV" locate app/Services/Billing.php --task "where is a failed renewal retried?"
+```
+
+- Output: `path:start-end<TAB>score<TAB>first line of the block`, best first, at most `--top` (default 3).
+- Read only the returned ranges, e.g. with an offset and limit. The first line is the block's start, not
+  necessarily the matching symbol.
+- No output with a low best score: the file most likely does not contain it.
+- A keyword that grep finds in a handful of lines is still cheaper; use `locate` when grep returns nothing or
+  dozens of hits.
 
 ## Ask typed questions
 

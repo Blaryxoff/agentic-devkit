@@ -191,6 +191,62 @@ def cmd_filter(args: argparse.Namespace) -> int:
     return 0
 
 
+def blocks(lines: list[str], target: int = 40, hard: int = 80) -> list[tuple[int, int]]:
+    spans: list[tuple[int, int]] = []
+    start = 0
+    for end in range(1, len(lines) + 1):
+        size = end - start
+        following = lines[end] if end < len(lines) else ""
+        top_level_start = (not lines[end - 1].strip() and following.strip()
+                           and len(following) - len(following.lstrip()) <= 4)
+        if end == len(lines) or size >= hard or (size >= target // 2 and top_level_start):
+            spans.append((start, end))
+            start = end
+    return spans
+
+
+def cmd_locate(args: argparse.Namespace) -> int:
+    lines = Path(args.file).read_text(errors="replace").splitlines()
+    if not lines:
+        print(f"jev locate: {args.file} is empty", file=sys.stderr)
+        return 0
+    spans = blocks(lines)
+    scores: dict[int, float] = {}
+    tokens = 0
+    seconds = 0.0
+    group: list[int] = []
+    size = 0
+
+    def score(members: list[int]) -> None:
+        nonlocal tokens, seconds
+        state = {"task": args.task, "file": args.file,
+                 "blocks": {f"b{k}": f"lines {spans[k][0] + 1}-{spans[k][1]}:\n"
+                            + "\n".join(lines[spans[k][0]:spans[k][1]])[: args.block_chars] for k in members}}
+        questions = {f"b{k}": {"type": "noul", "instructions": f"Does block b{k} contain the code or text that answers the task?"}
+                     for k in members}
+        answers, used, took = run({"state": state, "questions": questions})
+        tokens += used
+        seconds += took
+        scores.update({int(name[1:]): answer["noul"] for name, answer in answers.items()})
+
+    for k, (first, last) in enumerate(spans):
+        cost = min(args.block_chars, sum(len(line) + 1 for line in lines[first:last])) + 80
+        if group and size + cost > args.chunk_chars:
+            score(group)
+            group, size = [], 0
+        group.append(k)
+        size += cost
+    score(group)
+    ranked = sorted(scores, key=lambda k: -scores[k])
+    kept = [k for k in ranked if scores[k] >= args.threshold][: args.top]
+    for k in kept:
+        first, last = spans[k]
+        print(f"{args.file}:{first + 1}-{last}\t{scores[k]:.2f}\t{lines[first].strip()[:100]}")
+    print(f"jev locate: {len(kept)}/{len(spans)} blocks (best score {scores[ranked[0]]:.2f}), "
+          f"{tokens} input tokens, {round(seconds * 1000)} ms", file=sys.stderr)
+    return 0
+
+
 def cmd_usage(_: argparse.Namespace) -> int:
     calls = tokens = 0
     try:
@@ -220,6 +276,14 @@ def main() -> int:
     filt.add_argument("--max-line", type=int, default=400, help="truncate each input line to this many chars")
     filt.add_argument("--chunk-chars", type=int, default=45000, help="input characters per request")
     filt.set_defaults(func=cmd_filter)
+    locate = sub.add_parser("locate", help="rank the blocks of one large file for --task and print their line ranges")
+    locate.add_argument("file")
+    locate.add_argument("--task", required=True, help="what you need to find in the file")
+    locate.add_argument("--top", type=int, default=3, help="print at most this many blocks (default 3)")
+    locate.add_argument("--threshold", type=float, default=0.3, help="minimum score 0-1 (default 0.3)")
+    locate.add_argument("--block-chars", type=int, default=1500, help="characters of each block sent to Jev")
+    locate.add_argument("--chunk-chars", type=int, default=45000, help="input characters per request")
+    locate.set_defaults(func=cmd_locate)
     usage = sub.add_parser("usage", help="print call count, input tokens and estimated spend")
     usage.set_defaults(func=cmd_usage)
     args = parser.parse_args()
