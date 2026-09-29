@@ -238,7 +238,7 @@ updated=$(jq --arg home "$DEVKIT_HOME" '.env //= {} | .env.DEVKIT_HOME = $home' 
 write_json "$SETTINGS" "$updated" || exit 1
 echo "    Env:     ~/.claude/settings.json (DEVKIT_HOME)"
 
-# --- Static skill policy in ~/.claude/CLAUDE.md ---
+# --- Static skill policy in ~/.claude/CLAUDE.md and ~/.codex/AGENTS.md ---
 # Anthropic recommends CLAUDE.md for instructions that do not change. Keep one
 # managed section globally instead of injecting the same policy on every prompt.
 policy_start="<!-- devkit-skill-policy:start -->"
@@ -251,13 +251,16 @@ policy_section="${policy_start}
 ${skill_policy}
 ${policy_end}"
 
-if [ -f "$CLAUDE_GUIDANCE" ]; then
-  if grep -qF "$policy_start" "$CLAUDE_GUIDANCE"; then
-    DEVKIT_REPLACEMENT="$policy_section" CLAUDE_GUIDANCE_FILE="$CLAUDE_GUIDANCE" \
-      POLICY_START="$policy_start" POLICY_END="$policy_end" \
-      python3 -c '
+write_policy_section() {
+  local guidance="$1"
+  mkdir -p "$(dirname "$guidance")"
+  if [ -f "$guidance" ]; then
+    if grep -qF "$policy_start" "$guidance"; then
+      DEVKIT_REPLACEMENT="$policy_section" GUIDANCE_FILE="$guidance" \
+        POLICY_START="$policy_start" POLICY_END="$policy_end" \
+        python3 -c '
 import os, re
-path = os.environ["CLAUDE_GUIDANCE_FILE"]
+path = os.environ["GUIDANCE_FILE"]
 start = os.environ["POLICY_START"]
 end = os.environ["POLICY_END"]
 replacement = os.environ["DEVKIT_REPLACEMENT"]
@@ -269,14 +272,19 @@ if count != 1:
     raise SystemExit("managed devkit skill policy is malformed")
 with open(path, "w") as f:
     f.write(updated)
-'
+' || return 1
+    else
+      printf '\n\n%s\n' "$policy_section" >> "$guidance"
+    fi
   else
-    printf '\n\n%s\n' "$policy_section" >> "$CLAUDE_GUIDANCE"
+    printf '%s\n' "$policy_section" > "$guidance"
   fi
-else
-  printf '%s\n' "$policy_section" > "$CLAUDE_GUIDANCE"
-fi
+}
+
+write_policy_section "$CLAUDE_GUIDANCE" || exit 1
 echo "    Guidance: ~/.claude/CLAUDE.md (managed devkit skill policy)"
+write_policy_section "$CODEX_DIR/AGENTS.md" || exit 1
+echo "    Guidance: ~/.codex/AGENTS.md (managed devkit skill policy)"
 
 # Managed hooks are matched by script name rather than by absolute path, so relocating
 # DEVKIT_HOME replaces the old command instead of leaving a dangling one behind, and

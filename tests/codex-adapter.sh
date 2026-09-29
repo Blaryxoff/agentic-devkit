@@ -67,6 +67,7 @@ ln -s "$ROOT/plugins/core/skills/coder" "$codex_home/skills/devkit-core--retired
 ln -s "$ROOT/plugins/laravel/skills/architect" "$cursor_home/skills/devkit-laravel--architect"
 ln -s "$ROOT/plugins/core/skills/coder" "$codex_home/skills/user-skill"
 printf '%s\n' 'personal global guidance' > "$claude_home/CLAUDE.md"
+printf '%s\n' 'personal codex guidance' > "$codex_home/AGENTS.md"
 legacy_skill_eval="sh $ROOT/plugins/core/hooks/skill-eval.sh"
 jq -n --arg legacy "$legacy_skill_eval" '{hooks:{UserPromptSubmit:[{hooks:[{type:"command",command:$legacy},{type:"command",command:"custom-prompt-hook"}]}]}}' \
   > "$claude_home/settings.json"
@@ -126,6 +127,10 @@ assert_contains "$claude_home/CLAUDE.md" 'Skill selection starts from the catalo
 assert_contains "$claude_home/CLAUDE.md" "$ROOT/plugins/core/conduct/learning-capture-gate.md"
 assert_contains "$claude_home/CLAUDE.md" 'Skill(devkit-core--learn)'
 assert_not_contains "$claude_home/CLAUDE.md" '{{DEVKIT_HOME}}'
+assert_contains "$codex_home/AGENTS.md" 'personal codex guidance'
+assert_contains "$codex_home/AGENTS.md" '<!-- devkit-skill-policy:start -->'
+assert_contains "$codex_home/AGENTS.md" "$ROOT/plugins/core/skills/jev/scripts/jev.py filter"
+assert_not_contains "$codex_home/AGENTS.md" '{{DEVKIT_HOME}}'
 assert_contains "$claude_home/settings.json" 'skill-eval.sh'
 assert_contains "$claude_home/settings.json" 'custom-prompt-hook'
 [ "$(jq '[.hooks.UserPromptSubmit[]?.hooks[]? | select(.command | contains("skill-eval.sh"))] | length' "$claude_home/settings.json")" = "1" ] \
