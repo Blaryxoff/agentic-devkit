@@ -21,8 +21,9 @@ labels frozen before any Jev call, current behaviour as the baseline) before cha
 | Browser QA page vs reference | 200 mutated real snapshots | accuracy 0.93, tied with uid-stripped `diff`; flags timestamp changes as mismatches |
 | Automatic output filtering (hook, description as task) | 183 real outputs of 100-500 lines | 61% needed whole; of the rest, all needed lines kept 14-34%; whole-output guard cannot separate |
 | Policy text asking agents to pipe output through Jev | 20 fresh Codex Luna runs, 2 wordings | 0/20 used Jev before reading raw output |
+| Root-cause log triage with a known literal error | 40 cases from 12 real Laravel logs, 16 signatures | `rg -F -m1` + read 15 lines: 40/40, 16 lines, 8 ms; `locate` 38/40, 240 lines, 2.6 s; `rg -F -C5` piped into `filter` 13/40 |
 | jegrep for known-file location | 60 tasks | 25/60 within 100 read lines; median first span 216 lines |
 | Transcript compaction pruning | external evidence | keep/drop agreement 56.3%; plugin author advises against |
 
 Raw data from these runs lived in session scratchpads and `/tmp/jev-bench-codex/` (round reports `REPORT.md`,
-`ROUND2.md`, `ROUND3.md`); they are not preserved in the repository.
+`ROUND2.md`, `ROUND3.md`, `ROUND4.md`); they are not preserved in the repository.
