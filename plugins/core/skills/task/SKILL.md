@@ -105,12 +105,6 @@ Export the diffs and untracked new files first — a peer cannot see your workin
 | Operator did not name revmux | Codex adversarial review/fix loop; say the revmux stage was skipped and why |
 | Implementation still churning, revmux authorized for later | one Codex loop now, revmux once against the final diff |
 
-revmux is strictly stronger than the Codex loop and subsumes it: the `codex-led` roster already carries codex on
-architecture, quality, docs/tests and adversarial lenses, adds a claude `bugs+impl` lens no single codex run has, and
-ends in a verify stage that opens the cited code and can return `rejected` / `immaterial`. Running a Codex loop first
-and revmux after spends the operator's time twice on the same defects and makes you hand-triage findings verify would
-have filtered.
-
 The one thing that never changes: `plugins/core/conduct/revmux-review.md` forbids any devkit skill from reaching for
 revmux on its own judgement, and being inside this pipeline is not an exemption. If the operator did not name it, do
 not run it — fall back to the Codex loop.

@@ -11,7 +11,7 @@ description: >-
 
 Jev (TypeSafe System One) answers typed questions about a `state`: `choice` picks one named option with a
 probability per option, `score` places the state on an ordered scale of at most 10 levels, and `noul` returns
-the probability of yes. It writes no text. A call takes about 0.5-3 s and costs about $0.0005 per 10k input tokens.
+the probability of yes. It writes no text. A call takes 0.5-3 s and costs a fraction of a cent.
 
 ```
 JEV="$DEVKIT_HOME/plugins/core/skills/jev/scripts/jev.py"
@@ -32,8 +32,6 @@ the file's blocks instead of reading the whole file:
 - Output: `path:start-end<TAB>score<TAB>first line of the block`, best first, at most `--top` (default 3).
 - Read the returned ranges in order with an offset and limit, and stop once you have the answer. The first line
   is the block's start, not necessarily the matching symbol.
-- Measured on 188 real "where is X" tasks in PHP, Vue/TS, Python and shell files: the answer was in the top 3
-  blocks 93-98% of the time, reading about 105 lines instead of about 800.
 - No output with a low best score: the answer is probably not in this file. Search elsewhere before reading it.
 
 ## Order bulky output before reading it
@@ -44,8 +42,7 @@ the file's blocks instead of reading the whole file:
 grep -rn "retry" src | "$JEV" filter --task "where are HTTP 429 responses retried?" --scores --top 30
 ```
 
-- It orders output; it does not replace reading it. On 51 real grep outputs of about 400 lines with a precise
-  task, the answer line was in the top 5 only 61% of the time and among the default kept lines 69%.
+- It orders output; it does not replace reading it. It misses the answer line about a third of the time.
 - Read the top lines first. If they do not answer the task, narrow the search or read the rest.
 - Never conclude that the output lacks the answer because `filter` kept nothing.
 - Keep options: `--top` (default 15), `--threshold` (default 0.5), `--scores`.
@@ -76,15 +73,9 @@ JSON
 - Writing, summarizing or explaining anything. It returns no text.
 - Counting, arithmetic, dates or exact matching. `grep -F` on a literal string beats it.
 - A decision about a few lines already in your context. Deciding it yourself is cheaper than the call.
-- Checks measured as no better than the current approach:
-
-  | Use | Measured against | Result |
-  |---|---|---|
-  | Choosing a subagent's model tier | fixed tier rule; the agent's own pick | 69% vs 62%; own pick 84% (21/25) |
-  | Choosing which skill to activate | "no skill" baseline | 53% vs 50% |
-  | Choosing conduct docs | the plugin's routing table | 92% recall at 51% precision |
-  | Browser QA: page vs reference | plain `diff` without element ids | tie at 93%; flags timestamps |
-  | Filtering output automatically, with the command's description as the task | lines the agent used next | 14-34% of needed lines kept |
+- Choosing models, skills or conduct docs, checking browser pages against a reference, or filtering output
+  automatically. Each was measured as no better than the current approach; the evidence is in
+  `references/benchmarks.md`, which you read only before proposing a new Jev use.
 - Anything holding secrets. Every call sends the state to TypeSafe. Never pipe `.env` files, key files,
   credential output or customer data.
 

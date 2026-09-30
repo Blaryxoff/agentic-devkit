@@ -14,23 +14,6 @@ description: >-
 
 Interactive, annotation-based review: the user writes review comments directly into a diff, you fix the code, repeat until the diff comes back clean.
 
-## When to use
-
-- "git review", "review my changes", "review changes"
-- "annotate changes", "annotate diff", "interactive review", "review diff"
-
-For a one-shot reviewer report (correctness, regressions, architecture, security) use `devkit-reviewer-fast` or `devkit-reviewer-deep` — those do not loop through the editor.
-
-## How it works
-
-1. Script generates a cleaned-up diff file (friendly headers, no technical noise).
-2. Opens it in `$EDITOR` via tmux popup, kitty overlay, or wezterm split-pane.
-3. User adds annotations (comments, change requests) directly in the file.
-4. Script returns the user's annotations as a git diff on stdout.
-5. You read the annotations and fix the code in the real repo.
-6. Script regenerates a fresh diff (reflecting the fixes) and opens again.
-7. Loop until the user closes the editor without changes (no stdout).
-
 ## Workflow
 
 ### 1. Run the script

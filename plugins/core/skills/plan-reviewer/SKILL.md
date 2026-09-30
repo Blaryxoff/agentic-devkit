@@ -71,8 +71,8 @@ Before forming findings, read the relevant codebase areas, sibling plans, and re
 - If the project has a schema snapshot file (for example `database/schema.snapshot.json`), cross-check dev-plan schema
   assumptions against it and flag mismatches.
 
-If direct access to a cited design source is not available, mark that reference as **user-verification required** rather
-than assuming it is invalid.
+If a cited design source is accessible, open the referenced node or screen and verify it against the plan. If it is
+not, mark that reference as **user-verification required** rather than assuming it is invalid.
 
 ---
 
@@ -348,33 +348,9 @@ Do not write to the file until the user confirms. When confirmed, apply all upda
 
 ---
 
-## Quality bar
-
-A plan that passes this review should score 10/10 across:
-
-| Dimension           | 10/10 means                                                                                |
-|---------------------|--------------------------------------------------------------------------------------------|
-| Scope               | In-scope and out-of-scope boundaries are clear enough to prevent accidental scope creep    |
-| Behaviour           | User-visible outcomes and implementation expectations are explicit for the relevant states |
-| Acceptance criteria | Outcomes are testable and concrete, without relying on reviewer guesswork                  |
-| Consistency         | One name per concept unless distinctions are intentional and documented                    |
-| References          | Citations are valid, descriptive, and usable                                               |
-| Codebase alignment  | No material item is already implemented, contradicted, or based on stale assumptions       |
-| Stack alignment     | When project context exists, the plan fits the actual stack and repository rules           |
-| Type hygiene        | Product plans stay user-facing; dev plans stay implementation-focused                      |
-| Ralphex format      | Dev plans pass all structural requirements from the "Dev plan checks" section              |
-| Completeness        | No blocking open questions and no invented behaviour                                       |
-| Implementability    | Another engineer or agent can execute the plan without guessing the next step              |
-
----
-
 ## Capability-aware notes
 
-- **Design references:** if direct design access is available in the current environment, verify referenced
-  nodes/screens when needed. If not available, explicitly mark design references as `user-verification required`.
 - **Tool portability:** if a named tool is unavailable, use the closest equivalent tool and preserve the same
   interaction pattern: small concrete question batches, explicit context, no invented answers.
 - **Schema snapshot:** if the project has `database/schema.snapshot.json`, prefer it as the primary source of truth for
   current database structure over reading individual migrations.
-- **Project rules discovery:** look for `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/`, conduct docs, or equivalent
-  repository guidance before enforcing stack-specific rules.

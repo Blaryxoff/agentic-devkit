@@ -8,7 +8,7 @@ description: >-
 
 # XLSX / Spreadsheet Workflows
 
-Use this skill for spreadsheet files. Keep the workflow boring, verifiable, and loss-aware: spreadsheets are tiny databases with a GUI and a long history of ruining afternoons.
+Use this skill for spreadsheet files. Keep the workflow verifiable and loss-aware.
 
 ## Decision tree
 

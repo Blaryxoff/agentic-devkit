@@ -8,7 +8,7 @@ description: >-
 
 # Skill Creator
 
-Use this skill to create or refactor **agentic-devkit** skills. The goal is not to collect instructions like a digital hoarder. The goal is to make Claude/Codex reliably do a specific kind of work with less prompt steering.
+Use this skill to create or refactor **agentic-devkit** skills.
 
 ## What belongs in a skill
 

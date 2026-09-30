@@ -33,19 +33,3 @@ Weigh both sides into an objective conclusion:
 ### 3. Verify against the code
 
 **Required.** Before presenting the synthesis, read the specific files and lines both sides cited. Confirm the evidence exists, the flow matches the claims, and no context was misread. Revise the synthesis if verification reveals inaccuracies.
-
-## Examples
-
-```
-devkit-dialectic this microservice split improves maintainability
-devkit-dialectic the connection pool fixes the timeout issue
-devkit-dialectic this implementation is thread-safe
-devkit-dialectic review the changes in <file>
-```
-
-## Principles
-
-- **Eliminate confirmation bias** — examining both sides at once prevents anchoring.
-- **Evidence-based** — cite files, lines, facts; not general claims.
-- **Verification required** — check the synthesis against actual code before presenting.
-- **Objective conclusion** — truth over either side.
