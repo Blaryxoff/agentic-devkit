@@ -1,55 +1,54 @@
 ---
 name: devkit-jev
 description: >-
-  filter, rank and triage with Jev, a sub-second typed-decision model (choice, score, yes/no probability; no
-  prose). Use before reading a grep, log or file listing over about 100 lines, when picking files to open, or
-  when classifying many items at once, instead of reading it all or spawning an exploration subagent. Invoke
-  on "ask jev". Not for writing text, arithmetic, or judging a few lines already in context.
+  find the right lines in a large file or rank bulky output with Jev, a typed-decision model (choice,
+  score, yes/no probability; no prose). Use when you need one place in a file over about 500 lines that no keyword
+  pins down, when ordering a long grep or log by relevance before reading it, or when classifying many items in
+  one call. Invoke on "ask jev". Not for writing text, arithmetic, or judging a few lines already in context.
 ---
 
 # Jev
 
 Jev (TypeSafe System One) answers typed questions about a `state`: `choice` picks one named option with a
 probability per option, `score` places the state on an ordered scale of at most 10 levels, and `noul` returns
-the probability of yes. It writes no text. A call takes about 0.5 s and costs about $0.00002 per 500 input tokens.
+the probability of yes. It writes no text. A call takes about 0.5-3 s and costs about $0.0005 per 10k input tokens.
 
 ```
 JEV="$DEVKIT_HOME/plugins/core/skills/jev/scripts/jev.py"
 ```
 
-## Filter before you read
-
-Pipe large output through `filter` and read only what it keeps. The full output never enters your context.
-
-```bash
-grep -rn "retry" src | "$JEV" filter --task "where are HTTP 429 responses retried?"
-git ls-files | "$JEV" filter --task "which files implement the Codex adapter?" --top 5
-git log --oneline -300 | "$JEV" filter --task "which commit changed how sessions expire?" --top 5
-```
-
-- `--task` names what you are looking for, as a specific question. A vague task keeps vague lines.
-- Output: kept lines best first, verbatim. stderr reports `kept K/N lines (best score S)`.
-- Nothing kept with a low best score means the input most likely does not contain the answer. Change the search.
-  If you still suspect a miss, rerun with `--threshold 0.2 --scores` before reading the raw output.
-- Add `--scores` to see each line's probability. Tune with `--top` (default 15) and `--threshold` (default 0.5).
-- Input over one request's budget is split into several requests automatically.
-- Kept lines are leads. Open the file at the kept location before you rely on it.
+Jev pays only when you give it a precise question. Write `--task` as the exact thing you are looking for, not as
+the purpose of the command.
 
 ## Locate inside a large file
 
-When you need one place in a file longer than about 500 lines and no keyword pins it down, rank its blocks instead
-of reading the whole file:
+When you need one place in a file longer than about 500 lines and grep returns nothing or dozens of hits, rank
+the file's blocks instead of reading the whole file:
 
 ```bash
 "$JEV" locate app/Services/Billing.php --task "where is a failed renewal retried?"
 ```
 
 - Output: `path:start-end<TAB>score<TAB>first line of the block`, best first, at most `--top` (default 3).
-- Read only the returned ranges, e.g. with an offset and limit. The first line is the block's start, not
-  necessarily the matching symbol.
-- No output with a low best score: the file most likely does not contain it.
-- A keyword that grep finds in a handful of lines is still cheaper; use `locate` when grep returns nothing or
-  dozens of hits.
+- Read the returned ranges in order with an offset and limit, and stop once you have the answer. The first line
+  is the block's start, not necessarily the matching symbol.
+- Measured on 188 real "where is X" tasks in PHP, Vue/TS, Python and shell files: the answer was in the top 3
+  blocks 93-98% of the time, reading about 105 lines instead of about 800.
+- No output with a low best score: the answer is probably not in this file. Search elsewhere before reading it.
+
+## Order bulky output before reading it
+
+`filter` scores each input line against `--task` and prints the best lines first:
+
+```bash
+grep -rn "retry" src | "$JEV" filter --task "where are HTTP 429 responses retried?" --scores --top 30
+```
+
+- It orders output; it does not replace reading it. On 51 real grep outputs of about 400 lines with a precise
+  task, the answer line was in the top 5 only 61% of the time and among the default kept lines 69%.
+- Read the top lines first. If they do not answer the task, narrow the search or read the rest.
+- Never conclude that the output lacks the answer because `filter` kept nothing.
+- Keep options: `--top` (default 15), `--threshold` (default 0.5), `--scores`.
 
 ## Ask typed questions
 
@@ -75,17 +74,24 @@ JSON
 ## Do not use Jev for
 
 - Writing, summarizing or explaining anything. It returns no text.
-- Counting, arithmetic, dates or exact matching. Keep those in code or `grep`.
+- Counting, arithmetic, dates or exact matching. `grep -F` on a literal string beats it.
 - A decision about a few lines already in your context. Deciding it yourself is cheaper than the call.
-- Picking a subagent's model tier, deciding which skill to activate, or choosing conduct docs. Measured
-  against the agent's own choice, the static tier rule and the conduct routing tables, Jev was not better.
+- Checks measured as no better than the current approach:
+
+  | Use | Measured against | Result |
+  |---|---|---|
+  | Choosing a subagent's model tier | fixed tier rule; the agent's own pick | 69% vs 62%; own pick 84% (21/25) |
+  | Choosing which skill to activate | "no skill" baseline | 53% vs 50% |
+  | Choosing conduct docs | the plugin's routing table | 92% recall at 51% precision |
+  | Browser QA: page vs reference | plain `diff` without element ids | tie at 93%; flags timestamps |
+  | Filtering output automatically, with the command's description as the task | lines the agent used next | 14-34% of needed lines kept |
 - Anything holding secrets. Every call sends the state to TypeSafe. Never pipe `.env` files, key files,
   credential output or customer data.
 
 ## Failures
 
-`jev: no API key` or any HTTP error: proceed without Jev, reading the output the normal way, and mention the
-failure once. The script already retries 429 and 5xx.
+`jev: no API key`, an HTTP error, or `request failed` (no network, for example a read-only sandbox): proceed
+without Jev and mention it once. The script already retries 429 and 5xx.
 
 Configuration: the key is read from `JEV_API_KEY` or `~/.config/jev/typesafe-key`. `JEV_BASE_URL` and
 `JEV_MODEL` override the endpoint and the pinned model (`jev-1.13.0`).

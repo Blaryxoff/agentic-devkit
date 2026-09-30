@@ -129,7 +129,7 @@ assert_contains "$claude_home/CLAUDE.md" 'Skill(devkit-core--learn)'
 assert_not_contains "$claude_home/CLAUDE.md" '{{DEVKIT_HOME}}'
 assert_contains "$codex_home/AGENTS.md" 'personal codex guidance'
 assert_contains "$codex_home/AGENTS.md" '<!-- devkit-skill-policy:start -->'
-assert_contains "$codex_home/AGENTS.md" "$ROOT/plugins/core/skills/jev/scripts/jev.py filter"
+assert_contains "$codex_home/AGENTS.md" 'Skill selection starts from the catalog metadata.'
 assert_not_contains "$codex_home/AGENTS.md" '{{DEVKIT_HOME}}'
 assert_contains "$claude_home/settings.json" 'skill-eval.sh'
 assert_contains "$claude_home/settings.json" 'custom-prompt-hook'
