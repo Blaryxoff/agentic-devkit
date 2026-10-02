@@ -74,7 +74,7 @@ Confirm association from transcript `cwd` metadata where present; accept the rep
 | Codex | `$CODEX_HOME/sessions/YYYY/MM/DD/*.jsonl`, or `$HOME/.codex/sessions/...` when unset | `session_meta` / `turn_context` `cwd`; record `timestamp` |
 | Cursor | `$HOME/.cursor/projects/<encoded-root>/agent-transcripts/<session>/<session>.jsonl` | project directory; file mtime is only a shortlist when records lack timestamps |
 
-- Shortlist files by cutoff before reading them; do not crawl unrelated project stores or the whole home directory.
+- Shortlist files by cutoff before reading them, and limit inspection to relevant project stores.
 - Read top-level sessions first. Skip subagent transcripts when their parent summary already covers the work.
 - Extract user/assistant natural-language messages first. Ignore system/developer prompts, hidden reasoning, and bulk tool
   output. Inspect the smallest relevant tool result only to prove a claimed deploy, release, import, or manual action.
@@ -123,7 +123,7 @@ If a release tag was cut after the cutoff date, prefer `<tag>..origin/<branch>` 
   the team already uses (admin section names, URLs, integration names) are fine.
 - **One change per line.** No paragraphs, no multi-clause sentences.
 - **No preamble, no summary, no «Итого», no evidence block.** The date line and the sections are the whole post.
-- **Never group by repo.** The reader neither knows nor cares which repo shipped what.
+- **Group by product area across repos.** Readers need the user-facing change rather than its repository location.
 - Report what you dropped as noise or unverified session-only work in one line *outside* the post, so the user can
   object.
 

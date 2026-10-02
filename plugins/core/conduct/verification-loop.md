@@ -11,7 +11,7 @@ After completing an implementation task (or a coherent subset), run these checks
 3. **Test** — existing tests pass; new tests pass if written.
 4. **Security** — no obvious security regressions (exposed secrets, raw SQL, missing auth).
 
-Do not run a separate build command. Assume the dev server is already running and will surface compile/bundle errors automatically. If the dev server reports errors, fix them.
+Use the already-running dev server to surface compile and bundle errors automatically; fix any errors it reports.
 
 ## Reproduce before fixing
 
@@ -20,7 +20,7 @@ For any reported bug or regression, write a failing test that reproduces the def
 - The test must fail on the current code for the reason in the bug report. A green test on the first run means it does not cover the bug — rewrite it.
 - The fix is complete only when that test passes and the rest of the suite stays green.
 - If the bug surface cannot be tested (UI glitch, infra, third-party flake), state explicitly why no test was added, then describe the manual reproduction steps you ran before and after the fix.
-- Do not skip this step because the fix "looks obvious". The test is what proves the diagnosis was correct, not just the patch.
+- Reproduce the reported failure with a test before changing production code, even when the fix looks obvious. The test should prove the diagnosis as well as the patch.
 
 ## When to run
 
@@ -38,8 +38,8 @@ For any reported bug or regression, write a failing test that reproduces the def
 ## Failure handling
 
 - If any step fails, fix the issue before proceeding to the next task.
-- Do not accumulate failures across tasks — each task should leave the codebase in a passing state.
-- If a failure is pre-existing and unrelated to the current change, note it explicitly and continue. Do not silently ignore it.
+- Resolve failures before moving to the next task so each task leaves the codebase in a passing state.
+- Record pre-existing failures unrelated to the current change explicitly before continuing.
 
 ## Stack-specific commands
 

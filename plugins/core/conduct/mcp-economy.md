@@ -11,8 +11,8 @@ Keep the MCP tool surface small. Every enabled MCP server loads its full tool de
 ## Prefer a direct endpoint over a full server for a single operation
 
 - When the task needs one specific operation (read one table, fetch one document, post one message), call the API endpoint directly via a script or skill instead of mounting the whole MCP server.
-- A whole server exposes every operation it supports; loading all of them to use one wastes context on definitions that are never invoked.
-- Keep the credential handling for direct calls inside config/env per `security.md`-equivalent rules — never inline a token.
+- A whole server exposes every operation it supports; load the server only when the task needs its broader operation set.
+- Keep credentials for direct calls in config or environment variables as specified by `security.md`; pass tokens through those mechanisms.
 
 ## Audit when context feels bloated
 

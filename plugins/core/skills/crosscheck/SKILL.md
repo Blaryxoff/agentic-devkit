@@ -43,7 +43,7 @@ on the direction, because only one of the two CLIs can be backgrounded safely.
 | Codex | Write your own answer **first**, then run the peer. `claude -p` prints into your transcript — running it first makes the invariant unenforceable. |
 
 Commands, flags, sandbox requirements, and failure modes: `plugins/core/conduct/cross-agent-review.md` → "Peer CLI
-invocation". Ground your own pass in real evidence; do not let the peer do the reading for you.
+invocation". Ground your own pass in real evidence before reading the peer's work.
 
 ### 3. Verify both sides against primary evidence
 
@@ -82,7 +82,7 @@ e.g. `Cross-check (codex): 1 point merged, 2 discarded as unevidenced; no contra
 - **The peer never writes to the repo** — `--sandbox read-only` (Codex) or `--permission-mode plan` (Claude). The Claude
   side is a tool-level refusal, not an OS sandbox: that process runs unsandboxed with network access and may persist a
   file under `~/.claude/plans/`. It will not touch the repository; do not describe it as sandboxed.
-- **Blind own pass.** Reading the peer before finishing your own defeats the entire mechanism.
+- **Blind own pass.** Finish your evidence-based pass before reading the peer's work; this preserves an independent comparison.
 
 ## When not to use
 

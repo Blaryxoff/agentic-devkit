@@ -16,7 +16,7 @@ This is **complementary** to `devkit-reviewer-deep` and `devkit-reviewer-fast`. 
 
 When the user named revmux as the review engine, this skill does not run unless they asked for both passes: routing hands that pass to the upstream revmux skill, which replaces this fan-out rather than adding to it (`plugins/core/conduct/revmux-review.md`).
 
-**NEVER change code, ONLY review it.**
+Return review findings and the pass outcome; leave fixes to a separate implementation request under `devkit-coder`.
 
 ---
 
@@ -33,8 +33,8 @@ When the user named revmux as the review engine, this skill does not run unless 
    `review-specialist-fanout.md`. When paired with deep review for a full review, register them with the shared top-level
    fan-out and do not dispatch them independently.
 4. Present each report unchanged under `## Laravel — Business-logic review`, `## Frontend — Business-logic review`, or
-   `## Design-reference fidelity`. Omit unopened gates. Reports are **sequential and clearly separated** — do not merge
-   findings or produce a cross-wire pairing section.
+   `## Design-reference fidelity`. Omit unopened gates. Keep reports **sequential and clearly separated**, with findings
+   in their matching sections and no cross-wire pairing section.
 5. **Cross-check in Codex.** Once the variant reports are assembled, run the cross-agent cross-check per `plugins/core/conduct/cross-agent-review.md`, using Codex skill slug `devkit-core--reviewer-business-logic`. Merge kept findings into the matching stack section, tagged `(via Codex)`. **This step is mandatory when the gate holds** — the gate requires that you are Claude Code, so when this skill runs inside Codex it is closed and you review natively without a cross-check. Otherwise run `command -v codex`, do not treat it as optional or proportional, and state the gate outcome explicitly. Skip only when a gating condition genuinely fails, naming which.
 6. Apply the review completion gate in `plugins/core/conduct/review-findings-format.md` after all requested review skills finish. When paired with deep review, wait for both reports before deciding the combined pass outcome.
 7. Stop only when no stack variant, generic implementation fallback, or visual-reference specialist applies. Report
@@ -43,6 +43,4 @@ When the user named revmux as the review engine, this skill does not run unless 
 Use the same requested entity/flow set for every stack by default. Ask about independent scopes only when the user names
 different targets or the repository layout makes one shared scope ambiguous.
 
-Return findings and the pass outcome. This reviewer never repairs findings or invokes `devkit-coder`.
-
-**NEVER change code, ONLY review it.**
+Return findings and the pass outcome. Leave repairs to a separate implementation request under `devkit-coder`.

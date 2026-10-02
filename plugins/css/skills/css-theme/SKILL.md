@@ -288,10 +288,10 @@ Support Windows High Contrast mode. System colors replace your custom colors:
 Key system color keywords: `Canvas`, `CanvasText`, `LinkText`, `ButtonFace`, `ButtonText`, `Highlight`, `HighlightText`, `GrayText`.
 
 Rules in forced-colors mode:
-- Custom colors are overridden — don't fight it
+- Let system colors override custom colors and use borders or outlines for important distinctions.
 - Borders and outlines become the primary visual indicators
 - Ensure interactive elements remain distinguishable
-- `background-image` is removed — don't rely on it for meaning
+- Convey meaning through text, borders, or other surviving styles; reserve `background-image` for decoration.
 
 ## Step 7: Multiple Themes (Beyond Light/Dark)
 
@@ -340,9 +340,9 @@ When building a theme system, deliver:
 ## Rules
 
 - Always declare `color-scheme: light dark` on `:root` when using `light-dark()`
-- Never hardcode colors in components — always reference tokens
-- Use `oklch()` for all color definitions, never hex/rgb/hsl
-- Use `color-mix(in oklch, ...)` for derived colors, not manually computed values
+- Reference design tokens for component colors.
+- Define colors with `oklch()`.
+- Derive colors with `color-mix(in oklch, ...)`.
 - Test that contrast ratios meet WCAG: 4.5:1 for normal text, 3:1 for large
 - Component tokens use underscore prefix (`--_bg`) to signal internal scope
 - Semantic tokens use `--color-` prefix for discoverability

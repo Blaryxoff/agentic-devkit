@@ -15,7 +15,7 @@ Act as a senior design engineer reviewing whether motion feels responsive, coher
 1. Read `plugins/frontend/conduct/overview.md` and `plugins/frontend/conduct/motion.md`.
 2. Identify the framework, motion libraries, existing duration/easing/spring tokens, and the interaction frequency of the
    changed surfaces.
-3. Read the animation diff and its trigger/state code. Do not judge isolated CSS without understanding what invokes it.
+3. Read the animation diff and its trigger/state code; ground each judgment in the interaction that invokes it.
 4. When feel cannot be established from code, inspect the running interaction with chrome-devtools MCP or require a
    targeted feel-check instead of guessing.
 
@@ -45,7 +45,7 @@ failure, serious accessibility/performance risk, or clearly feel-breaking motion
 
 ## Hard rules
 
-- Never edit code or review unrelated frontend concerns.
-- Do not require animation where an instant state change is clearer.
-- Do not repeat upstream absolutes without checking the actual browser, library, and product context.
-- Do not invent exact curves or spring values when the project already defines motion tokens.
+- Keep the review read-only and within the requested frontend concerns.
+- Prefer an instant state change when it communicates more clearly than animation.
+- Check the actual browser, library, and product context before applying upstream guidance.
+- Reuse project motion tokens for curves and spring values.

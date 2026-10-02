@@ -17,22 +17,21 @@ Frontend code should explain itself through precise names, TypeScript types, sma
 ## Type-first documentation
 
 - use expressive TypeScript types as primary documentation
-- do not add JSDoc to private/internal implementation
-- do not add JSDoc merely because a symbol is exported
+- Reserve JSDoc for public contracts or metadata that TypeScript cannot express; exported visibility alone is not a reason to add it.
 
 ## Examples
 
 - put compact usage examples in tests or markdown documentation
 - use markdown docs for larger patterns and architecture decisions
 
-## DO / DO NOT
+## Apply these practices
 
-DO:
 - refactor unclear implementation instead of explaining it in a comment
 - document only contracts that types and code cannot express
 
-DO NOT:
-- leave stale comments after refactors
-- write obvious comments that duplicate code line-by-line
-- write paragraph-form explanations of business logic or change history
-- copy nearby verbose comments as a style convention
+## Replace these patterns
+
+- Update or remove comments when a refactor makes them stale.
+- Express intent through code and types instead of line-by-line comments.
+- Put longer explanations of business logic or change history in external documentation.
+- Keep comments concise even when nearby examples are verbose.

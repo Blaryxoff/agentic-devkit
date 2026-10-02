@@ -356,7 +356,7 @@ Always use logical properties instead of physical ones.
 
 ## Spacing Rules
 
-- Use `gap` for space between grid/flex children — never margin hacks.
+- Use `gap` for space between grid/flex children.
 - Use custom properties for all spacing values: `var(--space-s)`, `var(--space-m)`, etc.
 - Use `clamp()` for fluid spacing that adapts without breakpoints.
 - Reference the spacing scale from [modern-patterns.md](../css-expert/references/modern-patterns.md).

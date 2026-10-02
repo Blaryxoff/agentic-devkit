@@ -12,10 +12,10 @@ copy, user-provided literals, URLs, and commands in their source language becaus
 ```markdown
 # Browser QA: <feature>
 
-Test the local environment in a real browser. You are the QA reviewer and must not edit code. For every item return
-PASS/FAIL with structured evidence in this order: accessibility snapshot identity, DOM/layout audit, console/network
+Test the local environment in a real browser. You are the QA reviewer; return findings and leave code unchanged. For
+every item, return PASS/FAIL with structured evidence in this order: accessibility snapshot identity, DOM/layout audit, console/network
 result, existing Playwright Test assertion/diff, then a saved screenshot crop only for a design comparison or confirmed
-visual finding. Do not open or attach passing screenshots.
+visual finding. Attach screenshots only for design comparisons or confirmed visual findings.
 
 ## Environment
 
@@ -44,7 +44,7 @@ interstitial to dismiss.>
 
 <Which account to use, or how to create one.>
 
-## Already verified — do not repeat
+## Already verified — skip unless invalidated
 
 <Verbatim list of what you already verified yourself, with the result. Without this
 the peer burns its run re-testing solved ground.>
@@ -70,8 +70,8 @@ open it as another user, expect 403/redirect and no data on screen.>
 ## Response format
 
 List every item as PASS/FAIL. For FAIL include observed result, expected result, reproduction steps, and the strongest
-structured evidence. Save screenshots only for a design-reference comparison or confirmed visual defect. Do not critique
-unscoped styling or design; test only the named items.
+structured evidence. Save screenshots only for a design-reference comparison or confirmed visual defect. Report styling
+or design findings only when they are in scope; test the named items.
 ```
 
 ---
@@ -93,8 +93,8 @@ unscoped styling or design; test only the named items.
 
 ## Invocation
 
-Launch the peer with a sandbox that permits browser control, and point it at the brief by path — do not inline the
-brief into the prompt, or the two copies drift.
+Launch the peer with a sandbox that permits browser control, and point it at the brief by path so both agents use the
+same source.
 
 Flags, stdin handling (`< /dev/null`), and failure modes: `plugins/core/conduct/cross-agent-review.md` →
 "Peer CLI invocation".

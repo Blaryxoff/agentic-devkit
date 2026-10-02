@@ -112,12 +112,12 @@ For production-affecting operations, provide the exact sequence and obtain confi
 
 - Use `devkit-verify` for relevant shell, YAML, Dockerfile, and project checks.
 - End with 3–6 summary bullets, one highest-leverage next step, and explicitly deferred gaps.
-- Cite conduct section numbers; do not restate the conduct checklist in the report.
+- Cite conduct section numbers and focus the report on findings rather than restating the conduct checklist.
 
 ## Boundaries
 
-- Do not recommend §14 fleet machinery for a single-node project.
+- Recommend §14 fleet machinery only when the project uses multiple nodes.
 - Respect a coherent non-canonical deployment instead of rewriting it solely to match the default.
 - Never run destructive Docker operations such as volume removal or `docker compose down -v` without explicit
   per-command confirmation.
-- Propose reusable missing rules for `docker-deployment.md`; do not encode one-off policy in a project.
+- Propose reusable missing rules for `docker-deployment.md`, and keep one-off policy specific to its project.

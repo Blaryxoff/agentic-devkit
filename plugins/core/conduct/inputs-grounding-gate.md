@@ -15,8 +15,8 @@ Apply at the start of every skill that depends on project context (planners, rev
     - the source files, tests, or routes being changed or reviewed
     - a Figma node, design token file, or visual baseline when UI is involved
     - test-case documents when implementing tests
-2. **Read each input** before forming output. Do not infer structure, naming, or behaviour without reading.
-3. **Stop on missing required input.** If a required input is absent, tell the user what to produce (and which skill produces it) instead of guessing.
+2. **Read each input** before forming output. Ground statements about structure, naming, or behaviour in those inputs.
+3. **Request missing required input.** When a required input is absent, tell the user what to produce and which skill produces it, then resume once it is available.
 
 ## Forbidden
 

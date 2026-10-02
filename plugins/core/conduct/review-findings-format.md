@@ -21,7 +21,7 @@ Every finding must cite evidence. A finding without evidence is a guess and must
 
 `MISSING` | `VAGUE` | `INCONSISTENT` | `STALE` | `FORBIDDEN` | `STACK MISMATCH` | `SECURITY` | `REGRESSION` | `DUPLICATION` | `PERFORMANCE`
 
-Skill-specific taxonomies (for example `RALPHEX FORMAT` in plan-reviewer, `IDEMPOTENCY RISK` in business-logic reviewers) may extend this list. Do not rename or drop the shared types.
+Use these shared types as written. Skill-specific taxonomies (for example `RALPHEX FORMAT` in plan-reviewer, `IDEMPOTENCY RISK` in business-logic reviewers) may extend this list.
 
 ## Severity buckets
 
@@ -44,16 +44,15 @@ normalize it to **Blocking**. Never promote Significant or Minor findings merely
 
 ### Significant-finding adjudication
 
-Blocking/Critical findings always fail the review. Minor findings never fail it. Significant findings require reviewer
-judgment after all retained review findings are combined:
+Blocking/Critical findings fail the review. Minor findings remain non-blocking. Assess Significant findings after all retained review
+findings are combined:
 
 - Promote a Significant finding to Blocking when it threatens a required acceptance criterion or user flow, security,
   permissions, data integrity, irreversible state, or a broad regression.
 - Promote a related cluster of Significant findings when their combined impact makes the change unsafe to hand off.
 - Keep a finding Significant when the change remains safe and usable, the impact is limited to a non-critical edge case,
   or the evidence/likelihood does not justify blocking handoff.
-- Finding count alone never decides the outcome. Many Significant findings require an explicit cluster assessment, not
-  an automatic pass or failure.
+- Assess clusters of Significant findings by combined impact; use evidence and risk rather than finding count alone.
 - Verify every retained finding against the code before adjudicating it. A review source's severity label is evidence
   for the decision, not the decision itself.
 
@@ -63,10 +62,9 @@ State one line in the final outcome: `Significant gate: pass — <reason>` or
 ### Review-only mode — default
 
 Reviewers are read-only. A plain review request runs one complete pass, returns findings and the outcome, and stops.
-Phrases such as "review until satisfied" or "review until clean" do not authorize edits.
+Require an explicit request to fix or repair findings before editing files. Phrases such as "review until satisfied" or "review until clean" describe review scope and leave the reviewer read-only.
 
-A review execution only returns issues and its outcome. It never invokes the coder skill, edits files, or starts a repair
-loop.
+Return issues and the review outcome from a review execution. Keep the reviewer read-only; invoke the coder skill, edit files, or start a repair loop only in a separate workflow after an explicit repair request.
 
 ### Explicit repair/recheck mode
 

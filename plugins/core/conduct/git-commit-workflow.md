@@ -8,7 +8,7 @@ Only create commits when the user explicitly asks. If the request is ambiguous, 
 - Never run destructive or irreversible git commands (`push --force`, `reset --hard`, etc.) unless the user explicitly requests them in the query or a standing user rule.
 - Never skip hooks (`--no-verify`, `--no-gpg-sign`, etc.) unless the user explicitly requests it.
 - Never force-push to `main`/`master`; warn the user if they request it.
-- Never use interactive flags (`git rebase -i`, `git add -i`) — they require input this environment cannot provide.
+- Use non-interactive git commands with explicit targets; `git rebase -i` and `git add -i` require input this environment cannot provide.
 - Never commit files that likely contain secrets (`.env`, `credentials.json`, tokens). Warn the user if they specifically request committing those.
 
 ## 2. Amend rules
@@ -39,7 +39,7 @@ Avoid `git commit --amend`. Use `--amend` only when ALL of these hold:
 - Pass intended paths to both `git add --` and `git commit --`. A bare `git commit` sweeps the whole index, including unrelated work staged before this task.
 - Pass file names as literal pathspecs (`:(literal)path`) when constructing commands. Reject empty path arguments; an empty pathspec can match the whole current directory.
 - After any hook runs, inspect `git show --name-status --format= HEAD` and `git status --short`. Hooks can modify or stage files; never discard, unstage, or absorb unexpected paths without inspecting them.
-- Run only git shell commands during a commit — do not read or explore code beyond git output.
+- Limit commit-phase commands to git commands and use their output for inspection; conduct code exploration before the commit phase.
 - Do not push to the remote unless the user explicitly asks.
 - Pass every commit message via a HEREDOC to preserve formatting:
 

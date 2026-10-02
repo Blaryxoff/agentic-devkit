@@ -63,11 +63,13 @@ Before touching any code, confirm baselines exist for every page affected by the
 For each page × viewport:
 1. Run `take_snapshot` and the DOM/layout audit from `visual-implementation.md` §3.
 2. Run the focused Playwright Test visual assertion against the approved baseline.
-3. Read the textual result and diff path; do not open passing images.
+3. Read the textual result and diff path. Open images only when the diff identifies a discrepancy that needs visual
+   inspection.
 
 If all viewports match, baselines are current — proceed.
 
-If baselines are missing, ask the user whether to approve the current state first. Never auto-approve.
+If baselines are missing, ask the user whether to approve the current state. Create baselines only after explicit user
+confirmation.
 
 ## Step 2: Plan Changes
 
@@ -87,7 +89,7 @@ Classify the task:
 
 Implement the requested modifications. Follow project conventions and the active plugin conduct docs.
 
-Keep changes atomic — do not mix unrelated refactoring with the requested task.
+Keep the requested changes atomic and leave unrelated code unchanged.
 
 ## Step 4: Verify
 
@@ -117,7 +119,7 @@ For any unintentional diff:
 
 1. Read the failing assertion and diff path.
 2. Inspect the affected live elements' boxes and computed styles.
-3. Open only the smallest useful diff/baseline crop when DOM evidence cannot explain the paint delta.
+3. When DOM evidence cannot explain a paint delta, open the smallest useful diff or baseline crop.
 4. Trace the cause back to your code changes and fix it without reverting intentional changes.
 5. Rerun the affected audit and assertion.
 
@@ -127,9 +129,9 @@ Repeat until all unintentional diffs are resolved.
 
 When only intentional visual changes remain and the user confirms they are correct, update baselines per `visual-implementation.md` §6.3.
 
-**Never approve without explicit user confirmation.** Always show the user what changed and why before asking to approve.
+Show the user what changed and why, then request explicit confirmation before approving.
 
-If the task was a pure refactor, all viewports should match without needing approval. If they do not, something regressed — go back to Step 6.
+For a pure refactor, require all viewports to match without approval. Treat any difference as a regression and return to Step 6.
 
 ## Step 8: Report
 
@@ -145,9 +147,9 @@ Summarize:
 ## Rules
 
 - Current baselines are the source of truth. Every visual change must be justified.
-- Never silently approve new baselines.
-- Keep changes atomic. Do not mix unrelated refactoring.
+- Require explicit user confirmation before approving new baselines.
+- Keep the requested changes atomic and leave unrelated code unchanged.
 - If a pure refactor produces any visual diff, treat it as a bug until proven otherwise.
-- Keep all configured viewports passing; do not fix one viewport at the expense of another.
+- Keep all configured viewports passing; resolve each regression without sacrificing another viewport.
 - Prefer design token / layout fixes over one-off pixel hacks.
 - Use Playwright Test only under `visual-implementation.md` §4; keep chrome-devtools MCP as the interactive browser.

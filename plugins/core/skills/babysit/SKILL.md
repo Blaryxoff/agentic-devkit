@@ -13,8 +13,8 @@ description: >-
 > Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this
 > skill's symlink target), not the project root. `scripts/` and `references/` are relative to this skill's directory.
 
-You are the supervisor of sessions that already work on their own. Your output is decisions and unblocking; never
-write code in a supervised checkout.
+You are the supervisor of sessions that already work on their own. Provide decisions and unblockers while keeping
+supervised checkouts unchanged.
 
 ## Gate
 
@@ -102,8 +102,8 @@ Waiting on you: <owner-kept items, one line each, only when the list changed>
 ## Stop
 
 1. Stop when the goal is met (for a budget goal: the tracked window reset, visible as the `7d:` or `5h:` counter
-   dropping), when every session is finished or parked on owner items, or when the user says so. Do not burn a new
-   budget window without asking.
+   dropping), when every session is finished or parked on owner items, or when the user says so. Ask the owner before
+   extending supervision into a new budget window.
 2. `CronDelete` the job; `kill "$(cat "$S/waker.pid")"` if the waker is still armed. Leave `caffeinate` running so live turns finish and
    state when it ends.
 3. Closing report: each session's final state; decisions waiting on the owner; decisions you made on the owner's

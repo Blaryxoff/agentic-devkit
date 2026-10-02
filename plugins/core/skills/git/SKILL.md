@@ -29,7 +29,7 @@ When the user asks to commit, follow `plugins/core/conduct/git-commit-workflow.m
 - **PR/MR body**: includes Problem, Solution, Risks, and Verification steps.
 - **Wording**: write commit messages and PR/MR text per `plugins/core/conduct/communication-style.md` — direct, brief, no AI-speak.
 - **Tagging**: semantic versioning (`vMAJOR.MINOR.PATCH`), annotated tags for releases.
-- **Hygiene**: never force-push shared master branch; keep history clean; avoid unrelated file churn.
+- **Hygiene**: protect the shared master branch from force-pushes; keep history clean and limit changes to related files.
 - **Forbidden**: committing secrets (`.env`, credentials, tokens), generated noise, or local machine artifacts.
 
 When the user asks to commit or prepare a PR/MR, proactively validate these rules (and any active plugin conduct rules) and warn about violations before proceeding.

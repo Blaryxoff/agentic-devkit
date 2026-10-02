@@ -4,7 +4,7 @@ This document defines the thin controller and thin model architectural rules for
 
 ## Thin controller rule
 
-A controller method must only: authenticate/authorise, delegate to Action(s), and assemble an HTTP response. It must not contain business logic.
+Keep controller methods focused on authentication/authorization, delegation to Action(s), and HTTP response assembly; place business logic in Actions.
 
 **Red-flag patterns — flag or rewrite when any of these appear inside a controller method body rather than in a dedicated Action class:**
 
@@ -35,7 +35,7 @@ Controller method:
 
 - **In code reviews:** Flag as architecture violation. Evidence: this document + `architecture.md`.
 - **In plan reviews:** Flag as `STACK MISMATCH`. Proposed fix: extract to `[SuggestedActionName]Action`; controller calls the action and maps its typed exception to an HTTP response.
-- **In spec writing:** Never prescribe business logic inside a controller method. Split task steps into Action creation + controller wiring.
+- **In spec writing:** Prescribe business logic through Action creation and controller wiring.
 
 ### Correct task step shape for plans and specs
 
@@ -52,7 +52,7 @@ Controller method:
 
 ## Thin model rule
 
-Eloquent models may contain: `$fillable`/`$casts`/`$dates`, relationships, query scopes, simple accessors/mutators, and `scopeX()` methods. They must not contain business workflows.
+Keep Eloquent models focused on `$fillable`/`$casts`/`$dates`, relationships, query scopes, simple accessors/mutators, and `scopeX()` methods; place business workflows in Actions or Services.
 
 **Flag any of the following in a model method as a violation — belongs in an Action or Service:**
 

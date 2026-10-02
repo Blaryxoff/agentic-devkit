@@ -4,7 +4,7 @@ Test permission and execution policy are owned by the consuming project. Test-au
 
 ## Hard rule: tests are the final coding phase
 
-During continuous implementation, do not create or update tests alongside each production-code iteration.
+During continuous implementation, complete production-code iterations first and reserve test creation or updates for the final coding phase.
 
 When tests are intended by the task and allowed by project policy:
 
@@ -13,7 +13,7 @@ When tests are intended by the task and allowed by project policy:
 3. Only then, at the commit-ready handoff stage, create or update the tests in one focused pass.
 4. Run the eligible test command according to project policy.
 
-If a late production-code change invalidates the new tests, finish that production-code iteration and restore the non-test checks before revisiting the tests. Do not alternate production edits and test rewrites as a red/green development loop.
+If a late production-code change invalidates the new tests, finish that production-code iteration and restore the non-test checks before revisiting the tests. Keep production edits and test rewrites in separate phases rather than alternating them in a red/green loop.
 
 A test-only task for already-complete production code starts at the final test phase, but the agent must still establish that the related implementation is complete and its applicable non-test checks are green before editing tests.
 
@@ -24,7 +24,7 @@ Each project declares its own test rules in its root agent-memory files:
 - `CLAUDE.md` — for Claude Code
 - `AGENTS.md` — for OpenAI Codex / Cursor (when applicable)
 
-If neither file exists, or neither contains a `## Tests` (or equivalent) section, the **default fallback** is: *do not create test files and do not run test suites unless the user explicitly asks*.
+If neither file exists, or neither contains a `## Tests` (or equivalent) section, the **default fallback** is: *run test suites and create test files only when the user explicitly asks*.
 
 A copy-pasteable template that projects can adopt lives at [`howto/project-test-rules.md`](../../../howto/project-test-rules.md).
 
@@ -37,7 +37,7 @@ Before running any test command or generating any test artifact, the agent must 
 3. **What to do on failure** — fix, report, hand off to the user.
 4. **Whether new test files may be created** — and under what conditions.
 
-If the project file is silent on any of these, apply the conservative default: do not run tests, do not create test files, ask the user.
+If the project file is silent on any of these, apply the conservative default: ask the user before running tests or creating test files.
 
 ## What is NEVER deferred (always expected without being asked)
 

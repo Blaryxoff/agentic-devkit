@@ -15,19 +15,19 @@ Read the user's target and the smallest useful source slice first: the named fil
 
 Match the conventions of the surrounding code: naming, file layout, and error handling. Existing verbose comments are not a convention to copy; apply the no-prose default in `code-comments.md`.
 
-When the change uses a third-party library/framework API whose current signature you are not certain of, fetch up-to-date docs first per `plugins/core/conduct/library-docs.md` (Context7 when available) — do not rely on training-cutoff memory.
+When the change uses a third-party library/framework API whose current signature you are not certain of, fetch up-to-date docs first per `plugins/core/conduct/library-docs.md` (Context7 when available) and ground implementation in that documentation.
 
-Do not inventory conduct directories or read documents speculatively. Every conduct file opened must answer a concrete question raised by the target code.
+Open only conduct documents that answer a concrete question raised by the target code.
 
 ## Step 2 — Apply core coding-conduct (every edit, every stack)
 
 These rules are complete enough for a local in-place edit. Apply them directly; open the referenced core conduct files only when an edge case needs the fuller rule:
 
 - Before writing new code, climb the existence ladder in `solid-dry.md` and stop at the first rung that resolves the need: does it need to exist → is it already in the codebase → standard library → platform/framework native → installed dependency → one expression. Validation, error handling, security, and accessibility are never dropped or thinned to make a change smaller.
-- Change only what the task requires. Do not improve adjacent code or reformat untouched regions. Remove only orphans created by this change (`surgical-changes.md`).
-- For fixes, make the smallest code change sufficient to resolve the root cause; do not broaden the fix beyond what is necessary.
+- Keep changes limited to the task's requirements and leave unrelated code and formatting intact. Remove only orphans created by this change (`surgical-changes.md`).
+- For fixes, make the smallest code change sufficient to resolve the root cause, scoped to the necessary path.
 - Do not add prose comments or explanatory docblocks to implementation code. Express intent through names, types, extracted concepts, and simpler control flow. Never convert what you learned while making the change — the mechanism you traced, why the fix works, the edge case you hit — into a comment; state it in the chat response instead, where it costs the reader nothing to skip. Private/internal narrative comments are forbidden; public docblocks are allowed only for machine-required metadata or contracts that code cannot express (`code-comments.md`).
-- Match sibling abstractions and error handling. Reuse an existing utility when it already fits; do not create abstractions or configurability for one use (`solid-dry.md`).
+- Match sibling abstractions and error handling. Reuse an existing utility when it fits; add an abstraction when the task exposes multiple real uses or requires a clear extension seam (`solid-dry.md`).
 - Never hardcode secrets or environment-specific credentials. Do not add dependencies without explicit approval.
 - Treat tests as the final coding phase: do not create or update them during continuous production-code iterations. Finish the requested implementation and make non-test checks green first; only then author intended, project-permitted tests in one commit-ready pass (`agent-test-restraint.md`).
 
@@ -59,7 +59,7 @@ Resolve the active plugins, identify which layers the target actually touches, t
 - Before handing a long implementation thread to exhaustive browser QA, emit a compact handoff with scope, acceptance criteria, changed files, routes, roles, seed/login paths, and known risks so QA can start in a fresh session without rediscovering implementation history. Keep small related fixes in the current thread.
 - Edits are minimal and reversible; every changed line traces to the task.
 - Code matches local conventions in sibling files; no DRY/SOLID violations introduced.
-- The stack's lint and typecheck pass (use the project's own commands — do not hardcode them here).
+- The stack's lint and typecheck pass (use the project's own commands rather than hardcoded commands).
 - If tests are intended and permitted by project policy, create or update them only after every preceding implementation and non-test verification item is complete and green, then run the eligible focused tests.
 - Before the final response, run `plugins/core/conduct/learning-capture-gate.md` from the top-level session. Invoke
   `devkit-learn` only when a durable candidate passes. Offer a fix or backlog deferral in one line when the finding is

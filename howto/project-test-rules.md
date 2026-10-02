@@ -7,9 +7,9 @@ This toolkit deliberately does **not** dictate when an agent may run tests or wh
 
 Paste the block below into your project's `CLAUDE.md` (and mirror it into `AGENTS.md` if you use both) and edit the three placeholders. The toolkit's `agent-test-restraint` conduct and `devkit-verify` skill look up exactly this section before they consider touching the test suite.
 
-If no such section exists in either file, the toolkit applies the conservative fallback: do not create test files, do not run test suites, ask the user.
+If no such section exists in either file, the toolkit applies the conservative fallback: ask the user for test permission before creating test files or running suites.
 
-Regardless of the project setting, test authoring is a finalization phase: agents finish production work and make applicable non-test checks green before creating or updating tests. They do not rewrite tests after every production-code iteration.
+Regardless of the project setting, test authoring is a finalization phase: agents finish production work and make applicable non-test checks green before creating or updating tests. Agents return to test authoring only after production work and non-test checks are complete.
 
 ---
 
@@ -22,7 +22,7 @@ Regardless of the project setting, test authoring is a finalization phase: agent
 
 - `always` — agents run the test suite automatically as part of verification after any non-trivial change.
 - `on-request` — agents run tests only when the user explicitly asks. The default verification loop skips them.
-- `never` — agents never run tests automatically; the human runs them. Useful when tests are slow, flaky, or require external services.
+- `never` — leave test execution to the human. Useful when tests are slow, flaky, or require external services.
 
 **Command:** `{{exact invocation}}`
 
@@ -77,7 +77,7 @@ If multiple commands are needed (e.g. PHP + frontend), list them in run-order an
 ## Tests
 
 **Policy:** never
-**Command:** `pnpm test` (for humans — agents do not invoke)
+**Command:** `pnpm test` (human invocation only)
 **On failure:** handoff
 **Creating new test files:** forbidden
 ```

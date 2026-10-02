@@ -19,9 +19,9 @@ The user's shell is for the loop's **target** (remote host, ops box, non-repo di
 
 ## Core principle: no fabrication (every phase, non-negotiable)
 
-- Never invent commands, subcommands, flags, option names, paths, package names, service names, config keys, file locations, or version-specific syntax.
+- Emit commands, flags, paths, package names, service names, config keys, and version-specific syntax only after confirming them from observed help/version output or authoritative documentation.
 - Phrases like *I think*, *usually*, *by default* are red flags — if you are not precise, verify before emitting.
-- When uncertain, do **exactly one of**: (a) ask the user to run a probe and paste the output: `<tool> --version`, `<tool> --help`, `<tool> <subcmd> --help`, `man <tool>`, `which`, `command -v`, `uname -a`, `sw_vers`, `cat /etc/os-release`, package-manager detection; (b) fetch authoritative docs for the **observed** version; (c) ask the user. **Guessing is forbidden**, including for "obvious" flags.
+- When uncertain, choose exactly one next step: (a) ask the user to run a probe and paste the output: `<tool> --version`, `<tool> --help`, `<tool> <subcmd> --help`, `man <tool>`, `which`, `command -v`, `uname -a`, `sw_vers`, `cat /etc/os-release`, package-manager detection; (b) fetch authoritative docs for the **observed** version; (c) ask the user. Ground every command in that evidence, including seemingly obvious flags.
 - Pin behavior to observed versions. If new output contradicts a prior assumption, **stop**, restate the [State block](#state-block), re-plan from the affected step.
 - This overrides convenience: an extra probe batch is better than a wrong command.
 
@@ -31,7 +31,7 @@ Follow `plugins/core/conduct/clarification-protocol.md`. Before any commands: a 
 
 ## Phase 2 — Ground in the environment
 
-The first **non-clarification** batch is a **read-only probe batch**: OS + version, shell, target host(s) reachability, and `--version` (or equivalent) for every tool the plan will use. Write results into the [State block](#state-block). Do not emit a **mutating** command until the relevant tool's version and help surface are observed, **unless** the user explicitly waives a probe and confirms. Redefine the probe list if the task scope changes (new tool).
+The first **non-clarification** batch is a **read-only probe batch**: OS + version, shell, target host(s) reachability, and `--version` (or equivalent) for every tool the plan will use. Write results into the [State block](#state-block). Emit a **mutating** command only after observing the relevant tool's version and help surface, unless the user explicitly waives and confirms the probe. Redefine the probe list if the task scope changes (new tool).
 
 ## Phase 3 — Plan
 
@@ -49,7 +49,7 @@ Numbered **step batches**. Per batch: goal, expected success signals, rollback o
 
 **Batch sizing (speed vs. safety; default: merge when safe):**
 
-- **Merge** into the largest **safe** single paste: read-only probes, idempotent steps, steps that are useless apart, cheap rollbacks, or lines that must share a shell (same `VAR` scope). Do not split trivially reversible work across turns without reason.
+- **Merge** into the largest **safe** single paste: read-only probes, idempotent steps, steps that are useless apart, cheap rollbacks, or lines that must share a shell (same `VAR` scope). Keep trivially reversible work in one batch unless an intermediate result or safety boundary requires a split.
 - **Split** when: destructive/irreversible; intermediate output is needed before the next move; crossing a trust boundary (e.g. local → remote, prod); output must be read to decide the next command; blast radius differs a lot. At most one destructive op, one secret prompt, and one `sudo` context per batch (unless a single elevated session is shared for all).
 - In-batch order: probes → reversible setup → mutation → quick check of that mutation. If unsure merge vs. split, **one extra batch beats an unsafe merge** — the no-fabrication principle wins over speed.
 
@@ -75,7 +75,7 @@ Before any `/compact` or major trim, **restate the State block in full** so the 
 - **From a trusted source** — `VAR=$(...)` (e.g. `ssh` + `awk`/`sed` on a file, `yc`, `op read`, `aws ssm get-parameter`, vault). Persists in the shell; no file needed. **Only** emit a capture command after that CLI’s `--help`/docs match the **observed** version.
 - **Generated** — e.g. `VAR=$(openssl rand -base64 32)`; persist via project process if the value must outlive the session.
 
-**Hand-off — do not put secrets in argv in ways visible in `ps` / history** unless the user accepts the risk. Prefer the tool’s documented **env** or **stdin** channel: verify per version (`MYSQL_PWD`, `PGPASSWORD`, `--password-stdin`, etc. — do not assume names). One-process form: `TOOL_VAR="$SECRET" tool ...args...`.
+**Hand-off — keep secrets out of argv visible in `ps` / history** unless the user accepts that risk. Prefer the tool’s documented **env** or **stdin** channel: verify per version (`MYSQL_PWD`, `PGPASSWORD`, `--password-stdin`, etc. — confirm the exact names). One-process form: `TOOL_VAR="$SECRET" tool ...args...`.
 
 **SSH** (outer doubles expand locally; inner singles protect the value on the remote): `ssh user@host "TOOL_VAR='$SECRET' tool ..."`. Forbid echoing the secret, `--password=...`, URL userinfo, or unencrypted exfil not agreed with the user.
 

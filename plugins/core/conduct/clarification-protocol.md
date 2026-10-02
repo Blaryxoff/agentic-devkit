@@ -8,7 +8,7 @@ Apply whenever a skill cannot ground a decision in code, plan, conduct doc, or d
 
 ## Required steps
 
-1. **Collect all ambiguities first.** Do not ask the first question that comes up; finish reading the inputs, then build the full list.
+1. **Collect all ambiguities first.** Finish reading the inputs, then build the full list before asking questions.
 2. **Decide per item:**
     - If the item is a clear defect with an obvious correction, fix it without asking.
     - If the item requires a product, UX, architectural, or scope decision, ask.
@@ -18,12 +18,12 @@ Apply whenever a skill cannot ground a decision in code, plan, conduct doc, or d
     - what is unclear or missing,
     - why it blocks the skill's output,
     - the available options when known.
-5. **Never invent an answer.** Never write `TBD`, `???`, or a placeholder into the output as a resolution.
+5. **Resolve ambiguities from evidence or user input.** Leave `TBD`, `???`, and placeholders out of the output as resolutions; ask the user when the inputs do not settle a blocking decision.
 
-## Forbidden
+## Question limits
 
-- Batching more than 4 questions at once.
-- Asking open-ended questions when a small set of concrete options exists.
-- Continuing past an unresolved blocking ambiguity.
+- Batch at most 4 questions at once; run follow-up rounds when needed.
+- Offer concrete options when a small set of choices covers the ambiguity.
+- Resume output after the user resolves each blocking ambiguity.
 
 See `plugins/core/skills/plan-reviewer/SKILL.md` (Step 6) for the full pattern.

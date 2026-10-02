@@ -19,7 +19,7 @@ and report the results clearly.
 
 Resolve the eligible plugin set first: read `.devkit/toolkit.json` from each active project root, expand only the enabled
 plugins' transitive `dependencies` from their `plugin.json` manifests, and include default-enabled plugins such as
-`devkit-core`. Do not infer eligibility from changed file extensions alone.
+`devkit-core`. Determine eligibility from this plugin configuration; use changed file extensions only as supporting clues.
 
 Resolve executable commands and required checks separately:
 
@@ -28,13 +28,11 @@ Resolve executable commands and required checks separately:
    `composer.json`, or other project manifests.
 3. **Conduct requirements** — always follow `plugins/core/conduct/conduct-loading.md` for touched plugins. Read their
    `overview.md` and the exact testing, CLI, or Makefile rule that defines mandatory check categories, flags, or safety
-   constraints. Add those requirements to the real project commands; never replace configured commands with generic
-   examples or scan conduct directories wholesale.
+   constraints. Apply those requirements to the configured project commands and read only the conduct files needed.
 
 ## Build assumption
 
-Do not run a separate build command. Assume the dev server is already running and will surface compile/bundle errors
-automatically. If the dev server reports errors, fix them.
+Rely on the already-running dev server to surface compile/bundle errors. If it reports errors, fix them.
 
 ## The loop
 
@@ -58,7 +56,7 @@ Test execution is governed by the **project's own rules**, not by this skill. Be
 3. If the policy says "only on explicit request" (or the file is silent), and the user did not ask for tests in this turn, skip this step and mark it as `⏭️ skipped — not requested by project policy`.
 4. If the policy says "never automatically", skip and mark as `⏭️ skipped — disabled by project policy`.
 
-Never create new test files or write test code as part of verification. See [agent-test-restraint](../../conduct/agent-test-restraint.md) for the fallback default and the project-rule template at `howto/project-test-rules.md`.
+Keep verification focused on existing tests; create test files or test code only during a separately authorized implementation task. See [agent-test-restraint](../../conduct/agent-test-restraint.md) for the fallback default and the project-rule template at `howto/project-test-rules.md`.
 
 ### 4. Security spot-check
 

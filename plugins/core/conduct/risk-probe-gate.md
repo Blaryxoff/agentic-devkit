@@ -8,8 +8,8 @@ Their purpose is to discover overlooked risks, not to produce a compliance appen
 ### A. First-break
 
 Ask what concrete real-world scenario is most likely to break first for a specific user, client, job, or integration.
-Treat it as a finding only when code, product requirements, or observed behaviour supports both the failure and its
-relative likelihood. Do not invent or rank speculative candidates merely to answer the probe.
+Ground each finding in code, product requirements, or observed behaviour that supports both the failure and its
+relative likelihood. Use the probe to surface evidence-backed risks.
 
 ### B. Chaos
 
@@ -28,6 +28,5 @@ failure.
 - Fold each newly discovered, evidence-backed risk into the normal findings format.
 - Use the review's existing severity rubric; a probe does not raise severity by itself.
 - Cite the relevant file and line, requirement, or observed behaviour.
-- Do not append a separate Risk Probes block.
-- Do not report covered, resolved, or not-applicable cases.
-- If the probes reveal nothing new, emit nothing.
+- Report newly discovered risks in the normal findings format; omit covered, resolved, and not-applicable cases.
+- Emit findings only when a probe reveals a new, evidence-backed risk.

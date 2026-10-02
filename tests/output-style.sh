@@ -24,7 +24,7 @@ required = (
     "short but grammatical",
     "one fact per line",
     "lists over paragraphs",
-    "never compress",
+    "preserve exact values",
     "order-critical",
     "natural, complete sentences",
     "material trade-offs",

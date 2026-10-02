@@ -16,7 +16,7 @@ Analyze a statement objectively by gathering evidence for and against it indepen
 
 ### 1. Launch two opposing analyses in parallel
 
-Run both at once. If your harness exposes subagents (e.g. Claude Code's Agent tool), dispatch both **in a single tool-call batch** so they run concurrently and their context stays out of this session. Do not run them sequentially, and do not run them in the background. If subagents are unavailable, perform both passes yourself, one after the other, without letting the first conclusion anchor the second.
+Run both at once. If your harness exposes subagents (e.g. Claude Code's Agent tool), dispatch both **in a single tool-call batch** and await both reports before synthesis. If subagents are unavailable, perform both passes yourself, one after the other, without letting the first conclusion anchor the second.
 
 - **Thesis** — find all POSITIVE evidence: what works, supporting facts, proof the statement is TRUE, benefits, strengths.
 - **Antithesis** — find all NEGATIVE evidence: problems, risks, anti-patterns, edge cases, proof the statement is FALSE, weaknesses, failure modes, hidden costs.

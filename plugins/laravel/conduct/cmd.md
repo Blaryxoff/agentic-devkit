@@ -7,8 +7,8 @@ The application bootstrap layer is the composition root of the application — i
 - Bootstrap/Providers are the **only place** allowed to load env-driven config for wiring (`config/*` + container bindings)
 - Bootstrap/Providers are the **only place** allowed to define global logger channels/handlers wiring — logger is then used in lower layers
 - Entrypoints (`public/index.php`, `artisan`) are the **only place** allowed to terminate process flow directly with exit codes
-- No business logic, conditionals, or data transformations in bootstrap/providers — if you feel the need, it belongs in a service/use-case
-- All errors during startup must fail fast with descriptive exceptions/log entries — never silently ignored
+- Keep bootstrap/providers focused on wiring; move business logic, conditionals, and data transformations into services/use-cases.
+- Fail fast on startup errors with descriptive exceptions or log entries.
 
 ## Structure
 
@@ -67,38 +67,36 @@ public function register(): void
 - Config files in `config/*.php` aggregate env-driven values
 - `env()` is read only in config files; app code uses `config(...)`
 - Bootstrap/providers are the **only place** where low-level wiring decisions should be made from config
-- Services and repositories never read env directly — they receive primitive values/dependencies via DI
+- Inject primitive configuration values or dependencies into services and repositories.
 
 ## Graceful shutdown
 
 - HTTP lifecycle is terminated by Laravel Kernel (`$kernel->terminate($request, $response)`)
-- Nginx and PHP-FPM handle worker/process lifecycle externally; app code should not implement custom process signal loops for normal web requests
+- Let Nginx and PHP-FPM manage web worker/process lifecycle; use framework lifecycle hooks for application cleanup.
 - Queue workers and long-running consumers must support graceful stop (`php artisan queue:work` with proper timeout/retry/stop settings)
 - If a component needs cleanup on shutdown (closing sockets, flushing buffers), encapsulate it behind framework lifecycle hooks (terminating middleware, queue events, service destructor patterns)
 
 ## Constructor rules
 
-- Constructors should follow explicit dependency injection and type hints — never hide dependencies via service locators in domain/application code
+- Use explicit dependency injection and type hints in constructors so domain/application dependencies stay visible.
 - Config primitives should be passed explicitly (from `config(...)`) or wrapped in typed config objects
-- Avoid passing request context into constructors; pass request-scoped values to methods
-- Never perform heavy I/O in constructors — defer side effects to explicit methods
+- Pass request-scoped values to methods rather than constructors.
+- Defer heavy I/O from constructors to explicit methods.
 
 ## Entrypoints
 
 - `public/index.php` and `artisan` must stay minimal — only bootstrap framework and dispatch
 - All wiring lives in service providers/container bindings, not in entry files directly
 
-## DO / DO NOT
+## Apply these practices
 
-**DO:**
 - follow the 8-step wiring order strictly
 - fail fast with descriptive startup errors
 - bind contracts to implementations in providers
 - pass config/dependencies via DI, not globals
 
-**DO NOT:**
-- put business logic in bootstrap/providers
-- read `env()` outside config files
-- terminate process flow from domain/application layers
-- hide dependencies behind facades/service locator in domain core
-- skip lifecycle cleanup for long-running workers/consumers
+## Replace these patterns
+
+- Keep business logic in services/use-cases, configuration reads in config files, and process termination in entrypoints.
+- Pass dependencies through provider wiring and dependency injection.
+- Add lifecycle cleanup for long-running workers/consumers.

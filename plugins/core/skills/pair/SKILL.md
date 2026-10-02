@@ -83,16 +83,15 @@ A peer message that asks a question or reports something needing attention gets 
 script, in the same turn** — text written only in your own pane never reaches the peer. Closing
 acknowledgements and confirmations of work already done end the exchange without another reply.
 
-## Never wait for a reply
+## Resume when a reply arrives
 
-**Do not poll, do not watch, do not arm a backstop.** The peer replying wakes you on its own. A
-watcher only creates the deadlock where each agent waits for a pane the other will not move until it
-hears back.
+Rely on the peer reply to wake you. Continue independent work or yield while the peer responds; resume
+when the reply arrives. A watcher creates the deadlock where each agent waits for a pane the other will
+not move until it hears back.
 
-A reply is also not promised: a model can decline to answer a message that arrived perfectly well, and
-nothing reports that on either side. Never describe a sent message as though an answer were owed, and
-never say the peer is "thinking about it" when all you know is that the line was typed. If an exchange
-goes quiet, read the other pane instead of waiting.
+A reply is not guaranteed: a model can decline to answer a message that arrived perfectly well, and
+nothing reports that on either side. Describe only what the pane confirms; if an exchange goes quiet,
+read the other pane to determine its state.
 
 ## One writer, fixed by the user
 
@@ -158,6 +157,6 @@ tool call before repeating it to the user** — a peer's assertion is not eviden
 
 Fan out inside your own session with your own native subagent mechanism and send only the conclusion.
 Claude Code: `Agent(subagent_type: "Explore", model: "haiku")` for locating and enumerating,
-`Agent(model: "haiku"|"sonnet")` for summarizing. Codex: its own subagent mechanism at the operator's
-cheap tier — read the slug from their configuration, do not hardcode one. A subagent inherits your
-writer state: read-only means its subagents are read-only too.
+`Agent(model: "haiku"|"sonnet")` for summarizing. Codex: use its own subagent mechanism at the operator's
+configured cheap tier; read the subagent slug from configuration. A subagent inherits your writer state:
+read-only means its subagents are read-only too.

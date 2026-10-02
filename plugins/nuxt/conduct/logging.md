@@ -24,13 +24,13 @@ Include relevant non-sensitive context:
 ## Frontend logging rules
 
 - centralize logging via utility/composable wrapper.
-- avoid direct `console.log` in production paths.
-- log once per failure path; avoid duplicates.
+- Use the central logging utility instead of direct `console.log` in production paths.
+- Emit one meaningful log per failure path and enrich it with new context when needed.
 - prefer structured objects over string concatenation.
 
 ## Sensitive data policy
 
-Never log:
+Log only the metadata needed for diagnosis; exclude:
 
 - auth tokens or secrets
 - passwords
@@ -39,16 +39,16 @@ Never log:
 
 ## Performance notes
 
-- do not log inside hot loops unless sampled.
-- avoid logging large objects and binary data.
+- Sample logs from hot loops.
+- Log summaries or metadata instead of large objects and binary data.
 - strip heavy nested fields before logging.
 
-## DO / DO NOT
+## Apply these practices
 
-DO:
 - use consistent fields across modules
 - connect logs with error handling and observability docs
 
-DO NOT:
-- leave debug logs in release code paths
-- log sensitive values
+## Replace these patterns
+
+- Remove debug logs from release code paths.
+- Keep sensitive values out of logs.

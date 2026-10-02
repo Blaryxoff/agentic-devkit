@@ -24,7 +24,7 @@ The final answer must not contain:
 - commands, code snippets, SQL, configuration fragments, stack traces, exception names, or raw error messages;
 - line numbers, raw log excerpts, test names, or links into the codebase.
 
-Do not merely shorten or pseudonymize a technical identifier. Replace it with the concept the reader needs: "customer data", "payment processing", "background processing", "the external integration", "access settings", or another plain business-level term.
+Translate technical identifiers into the concept the reader needs: "customer data", "payment processing", "background processing", "the external integration", "access settings", or another plain business-level term.
 
 You may inspect technical evidence to establish the facts. Keep raw artifacts private and translate the facts they establish before answering.
 
@@ -32,7 +32,7 @@ This boundary applies to implementation vocabulary, not to factual detail. Trans
 
 ## Hard boundary: preserve actionable instructions
 
-Direct instructions are essential content, not technical noise. When the source tells the reader what to do, preserve the instruction directly with the same actor, target, sequence, and conditions. Do not replace a concrete instruction with a summary of its intended outcome: "открыть операцию №4352 и нажать «Повторить завершение»" must not become "вручную повторить обработку операции".
+Direct instructions are essential content, not technical noise. When the source tells the reader what to do, preserve the instruction directly with the same actor, target, sequence, and conditions. For example, retain "открыть операцию №4352 и нажать «Повторить завершение»" rather than summarizing it as "вручную повторить обработку операции".
 
 - Keep exact user-visible names of buttons, links, menu items, tabs, screens, settings, and other controls, including their spelling, capitalization, and interface language. Quote them with «ёлочки» in Russian prose.
 - Keep operational identifiers, navigation context, prerequisites, and fallback branches that the reader needs to complete or escalate the action.
@@ -54,9 +54,9 @@ Preserve the relevant subset of:
 7. **Timing** — only when a real deadline, duration, or ETA is known.
 8. **Confidence** — one or two understandable observations or ruled-out exceptions when they materially support the conclusion.
 
-Do not invent impact, scope, cause, dates, percentages, or ETA. Say "the exact scope is still being checked" when it is genuinely unknown. Do not turn uncertainty into reassurance.
+State impact, scope, cause, dates, percentages, and ETA only when supported. Say "the exact scope is still being checked" when it is genuinely unknown, and preserve that uncertainty in the wording.
 
-Make the rewrite modestly shorter than a detailed technical source. Group related facts, remove repetition, and omit secondary proof that does not change the content contract. Do not compress the result to generic statements that leave the cause unsupported or hide a material exception.
+Make the rewrite modestly shorter than a detailed technical source. Group related facts, remove repetition, and omit secondary proof that does not change the content contract. Keep enough detail to support the cause and retain material exceptions.
 
 ## Translation rules
 
@@ -65,15 +65,15 @@ Make the rewrite modestly shorter than a detailed technical source. Group relate
 - Explain consequences before causes. The audience usually needs impact and status before the internal reason.
 - Use familiar words. Prefer "data was incomplete" over storage terminology and "the external service responded too slowly" over protocol details.
 - Keep necessary business terms, product names, customer-visible feature names, money, dates, and measured impact exact.
-- Summarize technical evidence as observable behaviour; never include its raw representation.
-- Avoid blame. Describe the failed process or missing safeguard unless personal responsibility is a verified and relevant fact.
-- Avoid euphemisms. A serious outage remains a serious outage after simplification.
+- Summarize technical evidence as observable behaviour, and keep raw representations private.
+- Describe the failed process or missing safeguard; attribute responsibility only when it is verified and relevant.
+- Name the severity plainly; a serious outage remains serious after simplification.
 
 ## Workflow
 
 ### 1. Select the source
 
-Use source text or task parameters supplied with the invocation. When neither is supplied, including a bare `/nontech` or `$devkit-nontech`, rewrite the immediately preceding assistant response. Do not ask the user to paste it again. If no preceding assistant response exists, ask for the source instead of inventing one.
+Use source text or task parameters supplied with the invocation. When neither is supplied, including a bare `/nontech` or `$devkit-nontech`, use the immediately preceding assistant response. If no preceding assistant response exists, ask the user for the source.
 
 ### 2. Establish the audience and purpose
 
@@ -95,13 +95,13 @@ Then compare the result with the content contract and source. Restore any materi
 
 ### 6. Deliver the message
 
-Output only the audience-ready text. Do not preface it with "simplified version", explain the transformation, include a technical appendix, or mention what details were removed.
+Begin directly with the audience-ready text; keep transformation commentary, technical appendices, and explanations of removed details out of the answer.
 
 ## Response shapes
 
 ### Incident or failure
 
-For a multi-fact update, prefer three to six short paragraphs or bullets. Use labels when they improve navigation, but do not force every fact into a separate status field:
+For a multi-fact update, use three to six short paragraphs or bullets. Add labels when they improve navigation, and group related facts in the same field:
 
 ```text
 Что произошло: [видимая проблема]
@@ -128,7 +128,7 @@ Lead with the recommendation. Follow with the business reason, material trade-of
 
 ### Simple question
 
-Answer in one or two plain paragraphs. Do not force a status template onto a small answer.
+Answer a simple question in one or two plain paragraphs.
 
 ## Quality check
 

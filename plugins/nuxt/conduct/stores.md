@@ -18,7 +18,7 @@ This project uses Pinia (`@pinia/nuxt`) for cross-page state.
 - Export stores as `useXxxStore` from `stores/xxx.ts`.
 - Define explicit TypeScript types for state shape.
 - Keep actions focused: one action = one operation.
-- Do not call `$fetch` / `useFetch` directly in stores — delegate to a composable or service and call it from the action.
+- Delegate network requests to a composable or service and call that boundary from the store action.
 
 ```ts
 // stores/catalog.ts
@@ -39,9 +39,9 @@ export const useCatalogStore = defineStore('catalog', () => {
 })
 ```
 
-## Forbidden patterns
+## Replace these patterns
 
-| Forbidden | Use instead |
+| Pattern | Required implementation |
 |---|---|
 | Options API store (`state()`, `actions: {}`) | Composition store (`setup` function) |
 | Direct `$fetch` calls inside store actions | Composable/service layer |
@@ -49,14 +49,14 @@ export const useCatalogStore = defineStore('catalog', () => {
 | Global UI state for single-component concerns | Component-local `ref` |
 | Mutating store state outside actions | Actions only |
 
-## DO / DO NOT
+## Apply these practices
 
-DO:
 - keep stores typed end-to-end
 - keep store files in `stores/` with `useXxxStore` naming
 - reset store state on logout or session expiry where applicable
 
-DO NOT:
-- create stores for data that is only needed on one page
-- duplicate API calls across store and composable for the same resource
-- store sensitive data (tokens, PII) in Pinia state
+## Replace these patterns
+
+- Keep page-scoped data in composables instead of creating a store.
+- Route each resource's API request through one store or composable boundary.
+- Keep tokens and PII out of Pinia state.

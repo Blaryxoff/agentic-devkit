@@ -68,7 +68,7 @@ Reuse project tokens. When none exist, start from the ranges and curves below, t
 }
 ```
 
-Do not introduce a parallel token scale when the project already has equivalent values.
+Reuse the project's equivalent motion tokens instead of introducing a parallel scale.
 
 ## Patterns
 
@@ -92,7 +92,7 @@ Do not introduce a parallel token scale when the project already has equivalent 
 }
 ```
 
-Keep press feedback subtle. Do not animate surrounding layout.
+Keep press feedback subtle and limit its animation to the pressed component; preserve surrounding layout.
 
 ### Origin-aware entry
 
@@ -112,7 +112,7 @@ Keep press feedback subtle. Do not animate surrounding layout.
 }
 ```
 
-Use the component library's transform-origin variable when it provides one. Do not enter from `scale(0)`.
+Use the component library's transform-origin variable when it provides one, and enter from a subtle scale near `1` such as `scale(0.96)`.
 
 ### Scroll-linked enhancement
 
@@ -140,7 +140,7 @@ Content must be visible without animation. Add the enhancement only when the bro
 }
 ```
 
-Do not apply the same reveal mechanically to every section. Match the motion to the content and frequency.
+Match each reveal to the content and frequency so repeated sections do not receive a mechanical, identical treatment.
 
 ### View transitions
 
@@ -166,10 +166,10 @@ elements visible.
 ## Performance
 
 - Prefer `transform` and `opacity` for continuous motion.
-- Do not animate `width`, `height`, `margin`, `padding`, `top`, or `left` frame by frame.
+- Animate `transform` and `opacity` frame by frame; reserve layout properties for discrete state changes.
 - `clip-path`, color, filter, blur, mask, and shadow are allowed only for bounded effects verified on target browsers.
-- Avoid `transition: all`; list intended properties.
-- Scope `will-change` to an imminent animation. Never apply it globally.
+- List intended properties in each transition instead of using `transition: all`.
+- Scope `will-change` to elements with an imminent animation, then remove it when that animation ends.
 - Use percentage transforms when movement should follow the element's own size.
 
 ## Reduced motion
@@ -194,7 +194,7 @@ position changes, and decorative choreography.
 
 - [ ] The animation has a named UX purpose appropriate to its frequency.
 - [ ] Existing duration/easing tokens are reused or deliberately extended.
-- [ ] Repeated triggers and rapid reversals do not jump or restart incorrectly.
+- [ ] Repeated triggers and rapid reversals keep animation state stable without unexpected jumps or restarts.
 - [ ] Popovers and menus use the correct spatial origin.
 - [ ] Content is visible when animation support or observation fails.
 - [ ] Hover motion is gated for fine pointers.

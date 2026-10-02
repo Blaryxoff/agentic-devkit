@@ -28,7 +28,7 @@ Each must:
 - follow the project's idioms and existing architecture
 - match the surrounding code's style (per `plugins/core/conduct/surgical-changes.md`)
 - solve the exact problem without over-engineering (per `plugins/core/conduct/solid-dry.md`)
-- avoid shortcuts and hacks
+- Use established APIs and project patterns; explain any justified exception.
 
 ### 4. Explain trade-offs
 
@@ -41,6 +41,6 @@ Which approach is most appropriate, and why.
 ## Guidelines
 
 - Production-quality, idiomatic solutions — not proofs of concept.
-- Scope changes surgically; do not rewrite working code that isn't part of the problem.
+- Keep changes limited to the failing path and the integration points needed to fix it.
 - Ask clarifying questions before proceeding when the problem is underspecified — resolve via `plugins/core/conduct/clarification-protocol.md`.
 - For a non-trivial chosen approach, use the harness's native plan mode when available; otherwise present the plan in chat and get approval before implementing.

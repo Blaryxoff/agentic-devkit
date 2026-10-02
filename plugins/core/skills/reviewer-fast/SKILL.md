@@ -17,7 +17,7 @@ Fast review focuses on correctness, regressions, and major convention violations
 
 When the user named revmux as the review engine, this skill does not run unless they asked for both passes: routing hands that pass to the upstream revmux skill, which replaces this fan-out rather than adding to it (`plugins/core/conduct/revmux-review.md`).
 
-**NEVER change code, ONLY review it.**
+Return review findings and the pass outcome; leave code unchanged.
 
 ---
 
@@ -36,6 +36,4 @@ When the user named revmux as the review engine, this skill does not run unless 
 6. Apply the review completion gate in `plugins/core/conduct/review-findings-format.md` to the combined current pass.
 7. If no stack variant or specialist is active, stop and tell the user no compatible stack plugin is enabled and which plugins this skill supports.
 
-Return findings and the pass outcome. This reviewer never repairs findings or invokes `devkit-coder`.
-
-**NEVER change code, ONLY review it.**
+Return findings and the pass outcome. Leave fixes to a separate implementation request under `devkit-coder`.

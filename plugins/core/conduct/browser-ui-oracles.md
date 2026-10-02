@@ -15,7 +15,7 @@ leave the layout unchanged: use `emulate` with `"<w>x<h>x1,mobile,touch"` and as
 `document.documentElement.clientWidth` before trusting any measurement.
 
 1.4. Measure in the data state the change targets. An empty list passes every density, repetition and alignment oracle
-vacuously — report the cell as not reached, with the missing fixture, never as passed.
+vacuously — mark the cell not reached and name the missing fixture; obtain the required populated state before verifying it.
 
 ## 2. Which oracles to run
 
@@ -32,7 +32,7 @@ vacuously — report the cell as not reached, with the missing fixture, never as
 ## 3. Running the probe
 
 3.1. The probe is `plugins/core/skills/browser/scripts/ui-oracles.js`, one arrow-function expression. Paste it into
-`evaluate_script` byte-for-byte; never retype, trim or paraphrase it.
+`evaluate_script` byte-for-byte, preserving the exact expression.
 
 ```js
 () => { const probe = /* contents of ui-oracles.js */; return probe("#target", ["rhythm", "boundaries"], { scale: [36, 40, 48, 56] }); }
@@ -54,7 +54,7 @@ means coverage was partial;
 `untested.shadowRoots` and `untested.iframes` count content the probe did not enter — check it by hand or report it
 untested; `indeterminate: true` on a measurement means gradients, images, filters, blending, opacity or a painted
 `::before`/`::after` — on the element or behind it — sit in the paint, so the ratio is not trustworthy and the value
-needs a manual measurement. An indeterminate measurement is always returned as a candidate, never dropped as clean.
+needs a manual measurement. Return an indeterminate measurement as a candidate requiring manual verification.
 
 3.4. Probe output is candidates. Confirm each against the requirement, design reference, tokens and neighbouring screens
 before filing it, and cite the source that confirmed it.

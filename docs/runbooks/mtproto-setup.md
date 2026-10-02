@@ -14,8 +14,8 @@ The maintained deployment artifacts live in the sibling `domovoy` repository:
 - `facts.md` — current fleet topology;
 - `decisions.md` — routing history and rejected alternatives.
 
-Do not rebuild live definitions from examples in this runbook. Copy the matching `domovoy/deploy/mtproto` artifact,
-inspect the current host, and preserve its secret-bearing `telemt.toml`.
+Use the matching maintained `domovoy/deploy/mtproto` artifact for live definitions. Inspect the current host and
+preserve its secret-bearing `telemt.toml`; treat runbook examples as reference only.
 
 ## Verified fleet
 
@@ -104,8 +104,8 @@ Use `domovoy/deploy/mtproto/docker-compose.platforma.yml` for both Platforma nod
 - loopback ports `9443` and `19091`;
 - the existing log rotation and file-descriptor limits.
 
-The two definitions are deliberately different. Do not normalize the Platforma nodes to the nn99 layout during an
-image upgrade.
+Preserve each node’s existing deployment layout during an image upgrade: the Platforma and nn99 definitions differ
+deliberately.
 
 ## Shared port 443
 
@@ -133,7 +133,7 @@ server {
 }
 ```
 
-Do not replace this with a two-route example: `edge.nn99.ru` still needs the Xray backend.
+Preserve all three SNI routes: `edge.nn99.ru` still needs the Xray backend.
 
 ### Platforma primary and secondary
 

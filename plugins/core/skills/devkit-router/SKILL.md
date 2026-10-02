@@ -46,11 +46,11 @@ to find the clone root.
 
 5. **Load and apply the child.** Read the matched child skill's full `SKILL.md` body and follow it. Apply
    `plugins/core/conduct/conduct-loading.md`: load only conduct cited by the child or required by a concrete touched
-   layer or risk; never scan a conduct directory wholesale. Skill and conduct content always come from `$DEVKIT_HOME`,
-   never from the repos, so cross-plugin references resolve regardless of which repo triggered the request.
+   layer or risk; open only conduct files cited by the child or required by that concrete layer or risk. Load skill and conduct content from `$DEVKIT_HOME` so cross-plugin
+   references resolve regardless of which repo triggered the request.
 
 ## Notes
 
 - A child skill marked `claudeSubagent: true` is also generated as a real subagent per project (`.claude/agents/`) by the
   Claude adapter — prefer invoking that subagent when it exists; only inline-load when it does not.
-- Do not re-resolve on every turn within one task; resolve once and reuse the menu.
+- Resolve the plugin menu once per task and reuse it on later turns.

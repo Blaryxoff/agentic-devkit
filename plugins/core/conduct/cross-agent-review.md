@@ -56,9 +56,9 @@ codex exec --sandbox read-only --skip-git-repo-check "<prompt>" < /dev/null
 ```
 
 - Always end the invocation with `< /dev/null`. `codex exec` reads stdin to append a `<stdin>` block even when the prompt is a positional arg, so an inherited open pipe (common when launching in the background) never closes and codex blocks forever on "Reading additional input from stdin…"; `/dev/null` gives immediate EOF.
-- Never pipe a peer run through `tail`/`head`: they buffer until EOF, so a run that is blocked on stdin looks
-  like a run that is thinking, and the one line naming the cause never appears. Redirect to a file and read it.
-  A blocked peer shows near-zero CPU (`ps -o time=`) against minutes of elapsed time.
+- Redirect peer output to a file and read it directly. `tail`/`head` wait for EOF before showing buffered output, so a
+  slow or blocked run may not reveal the line naming the cause. A blocked peer shows near-zero CPU (`ps -o time=`)
+  against minutes of elapsed time.
 - `--sandbox read-only` is the write boundary. Never grant `workspace-write` or `--dangerously-bypass-approvals-and-sandbox` to a peer review/cross-check run.
 - Add `-c tools.web_search=true` only when the task genuinely needs the network (reading a URL, checking upstream docs).
 - Codex prints its reasoning trace before the answer; the final message is the last block. Use `-o <file>` (`--output-last-message`) when only the answer matters.
@@ -101,9 +101,8 @@ codex exec resume "$PEER" --json --skip-git-repo-check -c sandbox_mode='"read-on
 - **`codex exec resume` has no `--sandbox` flag.** It falls back to `sandbox_mode` in `~/.codex/config.toml`, which on
   many machines is `danger-full-access`. Pass `-c sandbox_mode='"read-only"'` on **every** resume — the flag is the write
   boundary, and omitting it silently hands the peer full write access to the repo.
-- Never read the session id out of `~/.codex/sessions/` by modification time. `codex exec` writes a rollout file per
-  internal subagent as well, and resuming a subagent id fails with `cannot resume an unloaded multi-agent v2 sub-agent`.
-  `--json`'s `thread.started` is the only reliable source.
+- Read the session id from `--json`'s `thread.started` event. Codex writes a rollout file for each internal subagent too,
+  so modification time can identify a subagent id that fails to resume with `cannot resume an unloaded multi-agent v2 sub-agent`.
 - `--json` also yields the answer without the reasoning trace:
   `jq -r 'select(.type=="item.completed" and .item.type=="agent_message") | .item.text'`.
 - `-m <model>` works on `resume`, so a cheap tier can answer a cheap round in the same thread.

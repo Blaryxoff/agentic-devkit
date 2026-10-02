@@ -4,7 +4,7 @@ Implementation code is self-explanatory by default. These rules are language-agn
 
 ## Default: write code, not prose
 
-Do not add comments or docblocks to explain a method, branch, business rule, data flow, or design choice. If local code needs a paragraph to be understood, improve the code instead:
+Express methods, branches, business rules, data flow, and design choices through code rather than comments or docblocks. When local code needs a paragraph to be understood, improve it by:
 
 1. rename symbols after the domain concept;
 2. extract a well-named predicate or operation;
@@ -12,7 +12,7 @@ Do not add comments or docblocks to explain a method, branch, business rule, dat
 4. simplify control flow;
 5. make the behavior executable in a focused test when the project permits tests.
 
-Private and internal members must not have narrative docblocks. Never turn investigation notes, ticket context, or reasoning from the current task into a comment sheet above the resulting code — state that reasoning in the response to the user, where the reader can skip it and it never drifts from the code. Existing verbose comments are not precedent to add more.
+Keep private and internal members free of narrative docblocks. Put investigation notes, ticket context, and task reasoning in the response to the user, where they do not drift from the code. Follow the no-prose default even when existing comments are verbose.
 
 ## Narrow exceptions
 
@@ -22,28 +22,28 @@ A comment is allowed only when the information cannot be encoded in names, types
 - an externally imposed protocol, vendor, legal, security, or compatibility constraint whose surprising implementation must remain exact;
 - a public integration contract that consumers need and the language signature cannot express.
 
-Keep an exception to the shortest useful form and cite the external source, issue, or invariant when practical. Do not write paragraph-form docblocks for an exception. A public or exported symbol does not automatically need a docblock.
+Keep exceptions to the shortest useful form and cite the external source, issue, or invariant when practical. Use a brief annotation or comment rather than a paragraph-form docblock. Add docblocks to public or exported symbols only when a listed narrow exception applies.
 
 **Container build files are outside the no-prose default.** `Dockerfile*`, `*.dockerfile` and `Containerfile*` state base-image quirks, arch selection, builder and layer-cache behaviour — constraints no instruction, name, or structure can carry, and which the next reader needs before editing a layer. Match the surrounding file's comment density there. Everything else still applies: no change narration, and no notes about the task that produced the layer.
 
-## Always forbidden
+## Keep comments timeless and concise
 
-Do not write comments that narrate edits, progress, or what used to be there. The diff and git history already record that.
+For a permitted exception, state the enduring constraint; keep edit and progress history in the diff and git history.
 
 - ❌ `// new function`, `// added test`, `// updated handler`
 - ❌ `// now we changed this to use X`, `// previously used Y, now using Z`
 - ❌ `// temporary fix`, `// TODO: was broken before`, `// refactored from the old version`
 
-A comment must read the same whether it was written today or three years ago. If removing the words "new", "added", "now", "previously", or "changed" empties the comment, the comment was describing history — delete it.
+Keep every allowed comment valid regardless of when it was written. Remove it when it only describes history, such as text that becomes empty when "new", "added", "now", "previously", or "changed" is removed.
 
-- Do not restate the next line or paraphrase the symbol name.
-- Do not explain why a private helper exists; give the helper a name that states the rule.
-- Do not preserve superseded behavior, migration history, or admin/ticket context in source comments.
-- Do not use a docblock as a substitute for a precise type, named value, or smaller operation.
+- Give each comment information beyond the next line or symbol name.
+- Name private helpers after the rule they express.
+- Keep superseded behavior, migration history, and admin/ticket context out of source comments.
+- Express contracts through precise types, named values, or smaller operations instead of docblocks when those forms suffice.
 
 ## Match the project's existing comment style
 
-For a narrow exception, follow the surrounding code's placement and syntax. Project rules may require specific machine-readable annotations, but nearby explanatory comments do not weaken the no-prose default. Per `surgical-changes.md`, do not add or reformat comments on code you did not otherwise have to touch.
+For a narrow exception, follow the surrounding code's placement and syntax. Project rules may require specific machine-readable annotations; keep nearby explanatory comments under the same no-prose default. Per `surgical-changes.md`, leave comments on otherwise untouched code unchanged.
 
 ## Enforcement
 

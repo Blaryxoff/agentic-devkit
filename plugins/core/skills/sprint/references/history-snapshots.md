@@ -2,8 +2,8 @@
 
 ## Purpose
 
-Persist expensive historical evidence by workbook. Re-audit the XLSX mechanically on every run, but do not repeatedly
-open unchanged historical specifications or rescan old Git/session history.
+Persist expensive historical evidence by workbook. Re-audit the XLSX mechanically on every run, and reuse cached
+summaries for unchanged historical specifications and Git/session history.
 
 ## Discovery
 
@@ -12,8 +12,8 @@ Resolve snapshots in this order:
 1. `SPRINT_HISTORY_SNAPSHOT` when it names a readable file.
 2. `docs/sprint-history.json` in each related repository root.
 
-Reject a snapshot whose `schema_version` or `workbook_id` does not match. Do not put project-specific history inside the
-global devkit clone.
+Use a snapshot only when its `schema_version` and `workbook_id` match. Store project-specific history with the project,
+outside the global devkit clone.
 
 Validate the stored quality gates before using evidence:
 
@@ -34,9 +34,9 @@ python3 "$DEVKIT_HOME/plugins/core/skills/sprint/scripts/audit_workbook.py" work
 ```
 
 Require `snapshot_comparison.compatible == true`. Research only `changed_sheets`, `new_sheets`, and sources newly linked
-from those sheets or the target. A missing archived sheet is evidence to report; do not silently delete it from history.
+from those sheets or the target. Report missing archived sheets as evidence and preserve their history.
 
-Query the snapshot surgically; do not load a large project snapshot wholesale. Examples:
+Query the snapshot surgically, selecting only records relevant to the task. Examples:
 
 ```bash
 jq --arg id "$TASK_ID" '.task_history[] | select(.task_id == $id)' docs/sprint-history.json

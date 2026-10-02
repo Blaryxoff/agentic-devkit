@@ -7,8 +7,8 @@ env optionally on the same VM as prod. Most projects (Laravel API, optional
 Nuxt SSR, mysql, redis) fit this shape.
 
 The multi-node / load-balanced / brand-multiplexed shape is a separate
-appendix at the bottom (§14). **Do not pull those rules into a single-node
-setup** — they trade simplicity for resilience you don't need at one box.
+appendix at the bottom (§14). Apply those rules only when the deployment uses
+that shape; a single-node setup uses the simpler baseline.
 
 Skill `devkit-docker-deploy` enforces this document when bootstrapping a new
 stack or auditing an existing one.
@@ -77,8 +77,8 @@ hashed Vite files in production.
 
 ### 1.5 Image tagging
 
-- Immutable: `${env}-${sha}` (e.g. `prod-abc1234`). Never overwritten — this
-  is the rollback target.
+- Immutable: `${env}-${sha}` (e.g. `prod-abc1234`). Preserve each tag as the
+  rollback target.
 - Rolling: `${env}-latest` — what `deploy.sh` pulls.
 - On-disk markers: `/var/www/<app>/.deploy/<image>.digest` record the local
   image ID after a successful deploy. Next deploy compares against these and
@@ -89,11 +89,10 @@ nginx. Each gets its own digest marker.
 
 ### 1.6 Registry namespace must be lowercase, hardcoded
 
-GHCR rejects uppercase in the namespace path. The workflow must
-**hardcode** `REGISTRY=ghcr.io/<lowercase-owner>` — do not interpolate
-`${{ github.repository_owner }}` because GitHub usernames can be mixed-case
-(e.g. `<github-org>`). The remote `bin/deploy.sh` receives `REGISTRY` as an env
-var, lowercased.
+GHCR rejects uppercase in the namespace path. Set
+`REGISTRY=ghcr.io/<lowercase-owner>` as a literal workflow value so a mixed-case
+GitHub username (e.g. `<github-org>`) cannot enter the namespace. The remote
+`bin/deploy.sh` receives `REGISTRY` as an env var, lowercased.
 
 ### 1.7 Slim the runtime image
 
@@ -105,7 +104,7 @@ RUN rm -rf tests/ node_modules/ .git/ docker/ docs/ toolkits/ visual/ \
     resources/js/ resources/css/ storage/logs/*.log
 ```
 
-Never copy `.env` or any secret material into the image.
+Keep `.env` and all secret material out of the image.
 
 ### 1.8 Asset-build stage — heap ceiling, memory headroom, where it runs
 
@@ -205,9 +204,8 @@ Leaf-mount and the image's `Dockerfile` can `mkdir -p` whatever it needs.
 
 ### 2.2 Public-asset shadowing — the same trap, separately
 
-Do not share `public/build/` between nginx and app (see §1.4). The
-`app-public` volume is **only** for user uploads. nginx serves user uploads
-read-only from it:
+Bake `public/build/` into the nginx image as described in §1.4. Reserve the
+`app-public` volume for user uploads, which nginx serves read-only:
 
 ```yaml
 nginx:
@@ -343,12 +341,12 @@ A stray `REDIS_HOST=127.0.0.1` in `.env` can't break this — the compose
 `environment:` value wins.
 
 Multi-tenant safety: namespace your keys (`REDIS_PREFIX=<app>-database-`,
-`<app>-cache-`) — never assume the redis instance is yours alone.
+`<app>-cache-`) because the redis instance may be shared with other apps.
 
 ### 4.4 Block container access to cloud IMDS
 
 Cloud metadata services (`169.254.169.254`) can mint short-lived IAM
-tokens. **Containers must not be able to reach them**, even if the host VM
+tokens. **Block containers from reaching these services**, even when the host VM
 can:
 
 ```bash
@@ -366,10 +364,9 @@ tenant container can mint host IAM tokens and exfiltrate cloud resources.
 
 `env_file:` injects into the container's environment **once**, at start.
 Editing `/var/www/<app>/.env` on the host doesn't reach a running container.
-`docker compose restart` does **not** re-read `env_file`. Always recreate
-the affected services. Provide `make reload-env-test` / `make reload-env-prod`
-targets (see §7.5) so operators never reach for `docker compose restart`
-muscle-memory.
+`docker compose restart` does **not** re-read `env_file`. Recreate the
+affected services with `make reload-env-test` / `make reload-env-prod` targets
+(see §7.5) so operators use the supported reload path.
 
 ### 5.2 `env_file:` doesn't populate compose's own substitution scope
 
@@ -405,7 +402,7 @@ deploy with the resolved `BACKEND_IMAGE`/`FRONTEND_IMAGE`/`NGINX_IMAGE` +
 `API_HOST`/`FRONTEND_HOST`/`HTTP_PORT`. Both layers source both files →
 substitution is reproducible from any operator path.
 
-### 5.3 Never commit secrets
+### 5.3 Keep secrets out of commits
 
 `.gitignore` `.env*` (with `.env.example` checked in as documentation).
 Same for `*.json` SA keys, `letsencrypt/.secrets/`, mail API keys. A
@@ -483,9 +480,8 @@ The deploy logic lives in **one file** — `bin/deploy.sh` on the host (or
 Makefile wraps it via `gh workflow run` (or via direct SSH as a fallback).
 **Same code path, three entry points.**
 
-This is non-negotiable: never put deploy logic inside the workflow YAML or
-inside the Makefile recipe. Both must remain **thin wrappers** that pass
-env vars and call the script.
+Keep deploy logic in the host script. The workflow YAML and Makefile remain
+**thin wrappers** that pass env vars and call the script.
 
 The script + `docker/compose.yml` are scp'd to the host by the workflow on
 every run (via `install -m 755 /dev/stdin /var/www/<app>/bin/deploy.sh` to
@@ -688,8 +684,8 @@ Builds + pushes `<app>-backend`, `<app>-frontend`, `<app>-nginx` to GHCR.
   (moby/buildkit #2370). The dependency-**install layer** is still reused via
   layer cache (keyed on the lockfile `COPY`), so a code-only change skips
   install entirely; only a *lockfile change*, or eviction of the store mount,
-  forces a re-download. Don't set `docker buildx prune --reserved-space` so
-  tight that the store is evicted every cleanup; grow the disk instead. (Cold
+  forces a re-download. Set `docker buildx prune --reserved-space` high enough
+  to keep the store through cleanup; grow the disk when needed. (Cold
   install is often cheap anyway — ~10 s on the project above — so a
   `pnpm fetch`-style restructure to "fix" store caching is usually not worth
   the deploy-path risk.)
@@ -701,7 +697,7 @@ Builds + pushes `<app>-backend`, `<app>-frontend`, `<app>-nginx` to GHCR.
   newer wins). Deploys are NOT cancelled (they have their own concurrency
   group).
 
-### 7.8 Plain `docker compose restart` is forbidden
+### 7.8 Use deployment targets to reload Compose services
 
 It does not reload `env_file:` (§5.1), it does not pull new images, and it
 recreates nothing. Operators reach for it because it sounds right; the
@@ -770,16 +766,16 @@ MySQL: `innodb_buffer_pool_size ≈ 50–70%` of the limit. PostgreSQL:
 `read_only: true` + explicit `tmpfs:` for writable scratch. Reduces RCE
 blast radius.
 
-### 9.4 Pin base images, never `latest`
+### 9.4 Pin base image versions
 
-`FROM php:8.4-fpm-alpine`, never `FROM php:latest`. For greater paranoia
+`FROM php:8.4-fpm-alpine`, with versions pinned instead of `latest`. For greater paranoia
 pin by digest (`@sha256:…`) and renew deliberately.
 
-### 9.5 Never expose docker.sock to a container
+### 9.5 Keep docker.sock out of containers
 
-If you think you need to, you don't. Use a proxy with explicit allowlisted
-endpoints (e.g. `tecnativa/docker-socket-proxy`) and treat it as tier-1
-attack surface.
+When a container needs Docker API access, constrain it through a proxy with
+explicit allowlisted endpoints (e.g. `tecnativa/docker-socket-proxy`) and treat
+that proxy as tier-1 attack surface.
 
 ---
 
@@ -899,8 +895,7 @@ Each item maps to a source section above.
 - [ ] Image tags: `${env}-${sha}` immutable + `${env}-latest` rolling;
       digest markers under `/var/www/<app>/.deploy/`; registry hardcoded
       lowercase in workflow. (§1.5, §1.6)
-- [ ] Runtime image excludes dev-only files and never contains `.env` or
-      other secrets; base images are version-pinned, never `latest`. (§1.7,
+- [ ] Runtime image excludes dev-only files and secrets; base images are version-pinned. (§1.7,
       §9.4)
 - [ ] Asset stage sets `--max-old-space-size`; if it builds on the serving
       node, that box has persistent swap (sized to overcommit gap + build
@@ -915,7 +910,7 @@ Each item maps to a source section above.
 - [ ] Failed deploy healthchecks capture recent container logs under
       `storage/logs/container/`; application file logs have rotation or
       cleanup. (§3.3)
-- [ ] Host ports bind `127.0.0.1`; mysql/redis never `0.0.0.0`. (§4.1)
+- [ ] Host ports bind `127.0.0.1`; mysql/redis are unreachable on `0.0.0.0`. (§4.1)
 - [ ] `REDIS_HOST` pinned in service `environment:` if redis is on a
       shared network, and that host-level network is declared external.
       (§4.2, §4.3)
@@ -988,8 +983,8 @@ done
 
 On failure inside the loop, **the drained node stays drained**. Alert
 fires. Recovery is explicit (rollback or fix-forward + redeploy). There
-must be an env-var override (`PROD_AUTO_RESTORE_ON_FAILURE=true`) for true
-emergencies, never the default.
+provide an env-var override (`PROD_AUTO_RESTORE_ON_FAILURE=true`) for true
+emergencies and keep automatic restore disabled by default.
 
 ### 14.2 `/healthz/ready` is the NLB target
 
@@ -1060,5 +1055,5 @@ Document this loudly in INFRASTRUCTURE.md.
 A brand-multiplexed setup runs N brands on the same nodes via per-brand
 loopback ports and per-brand compose projects (`docker compose -p <brand>`).
 This is a real tax on operator UX (`brand=<brand>` on every command,
-per-brand env files, per-brand cert SANs). Don't replicate it unless the
-business actually demands it; a separate VM per brand is usually simpler.
+per-brand env files, per-brand cert SANs). Use brand multiplexing when the
+business requires it; a separate VM per brand is usually simpler.

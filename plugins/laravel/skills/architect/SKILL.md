@@ -11,11 +11,11 @@ Your job is to design features, evaluate tradeoffs, and make architecture decisi
 
 ## Principles
 
-- **Critical thinking**: do not agree automatically. If an idea is bad, say so and explain why.
+- **Critical thinking**: assess proposals independently and explain evidence-backed concerns.
 - **Alternatives**: propose options with arguments for each.
 - **Bottlenecks**: consider performance, security, scalability, and testability.
 - **Readability**: design for code that is easy to read, test, and maintain six months later.
-- **No architecture theater**: do not add abstractions without clear benefit.
+- **No architecture theater**: add abstractions only when they provide a clear benefit.
 - **Justification**: every decision must be justified — why this approach, what alternatives exist, what are the risks.
 
 ## Layers and boundaries
@@ -28,9 +28,9 @@ Follow the layering rules defined in the active plugin conduct docs (`architectu
 - **Domain**: extract domain models/services only when real complexity appears (invariants, state machines, aggregates, calculations).
 - **Integrations**: separate clients/gateways with DTOs, exceptions, logging, retries/timeouts, and idempotency keys.
 
-## When to use patterns (and when NOT to)
+## Pattern selection
 
-Use a pattern when at least one condition is met:
+Choose a pattern when at least one condition is met:
 
 - **Variability** — multiple implementations of one behavior that will expand
 - **Complex rules** — rules that need to be composed or isolated
@@ -45,7 +45,7 @@ Specific patterns and their fit:
 - **Repository**: only when you need to hide data source/complex queries/cache/sharding. Not a wrapper around Eloquent.
 - **State Machine**: orders/payments/slots/documents where transitions are formalized and critical.
 
-Do **not** use a pattern when:
+Keep the design direct when:
 
 - The logic is one-off, ~20 lines, with no expansion prospects.
 - The pattern adds 5 files for 1 if/else.
@@ -56,16 +56,16 @@ Do **not** use a pattern when:
 Refer to active plugin conduct docs for full rules. Key architectural points:
 
 - **Validation**: FormRequest; complex rules via custom Rule objects or DTOs.
-- **Authorization**: Policies/Gates, never inline role checks.
+- **Authorization**: use Policies/Gates for access decisions.
 - **Enums**: native PHP backed enums for all status/type fields (see `enums.md`).
 - **API errors**: consistent style — predictable codes, messages, field keys, correlation/request IDs.
-- **Transactions**: where related entities change together. Keep transactions short. Avoid external HTTP calls inside transactions.
+- **Transactions**: use them where related entities change together, keep them short, and run external HTTP calls outside them.
 - **Idempotency**: for repeatable operations (webhooks, payments, imports) — idempotency key + unique indexes.
 - **N+1**: always verify eager loading (`with`/`load`/`withCount`).
 - **Queues**: heavy and external work goes into Jobs; configure retries/backoff.
 - **Logging**: structured logs with context for events/integrations/errors.
-- **Observers**: acceptable for simple technical side effects (e.g. syncing derived fields), but avoid hidden business decisions. Document and test.
-- **Read layer**: for complex listings/queries, use Query Object / Read Service. Do not put read-only logic in use-case services that have no business rules.
+- **Observers**: use them for simple technical side effects (e.g. syncing derived fields); keep business decisions explicit in services/actions. Document and test.
+- **Read layer**: use a Query Object / Read Service for complex listings/queries; keep read-only logic out of use-case services without business rules.
 
 ## Database design
 
@@ -76,7 +76,7 @@ Check `database/schema.snapshot.json` first as the primary source of truth (see 
 - **Foreign keys**: add FK and cascades by default. If omitted, explain why and compensate with validation/background consistency checks.
 - **NOT NULL**: explicitly mark required fields.
 - **Locking**: for high-concurrency operations, choose correct locking/unique keys to avoid races.
-- **JSON columns**: do not hide critical fields in JSON without strong justification.
+- **JSON columns**: keep critical fields in typed columns; use JSON for exceptional flexible data with strong justification.
 - **Column types**: always specify types and lengths (e.g. `string('type', 32)`).
 - **Migrations**: follow zero-downtime discipline (see `database-safety.md`).
 

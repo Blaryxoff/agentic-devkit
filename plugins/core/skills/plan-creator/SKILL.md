@@ -31,7 +31,7 @@ All plan files **must** be named using the format `YYYYMMDD-kebab-case-title.md`
 - Correct: `20260326-homework-create-fixes.md`
 - Wrong: `20260326_homework_create_fixes.md`, `homework-create-fixes.md`
 
-Never omit the date prefix.
+Include the date prefix in every plan filename.
 
 ## Plan directory
 
@@ -72,8 +72,8 @@ The first line must be `# Plan: <Title>`.
 
 ### Sections before tasks — no checkboxes
 
-The following sections use prose, bullets, or code blocks. **Never place `- [ ]` checkboxes in these sections** — they
-cause extra agent loop iterations.
+Write the following sections in prose, bullets, or code blocks, and reserve `- [ ]` checkboxes for task sections to
+prevent extra agent loop iterations.
 
 1. **`## Overview`** — what is being implemented and why. Prose only.
 2. **`## Context`** (when applicable) — codebase state, assumptions, constraints, links. Prose only.
@@ -84,7 +84,7 @@ cause extra agent loop iterations.
 4. Use `### Task N: <title>` headers for implementation work.
     - `### Iteration N: <title>` is also allowed when explicitly needed.
     - N can be an integer or non-integer (e.g. `2.5`, `2a`).
-    - Do **not** use phase-only structure as the main execution format.
+    - Organize implementation work into ordered task sections; phases alone are not an execution format.
     - Tasks must be ordered dependency-first.
 
 5. Under each task include:
@@ -171,7 +171,7 @@ from concerns already written into the draft.
 - Read only the relevant specification documents for contracts or behaviour covered by the plan.
 - Load database, security, configuration, dependency, state, testing, deployment, or other specialist rules when the
   requested behaviour or affected artifacts imply that concern, even if the user or draft omitted it.
-- Do not load logging, git, CLI, Makefile, documentation, or language-style rules unless the plan directly changes them.
+- Load logging, git, CLI, Makefile, documentation, and language-style rules only when the plan directly changes them.
 
 ### How to apply
 
@@ -185,15 +185,15 @@ from concerns already written into the draft.
 
 ## Rules
 
-- Never start coding while in this skill.
+- Use this skill to produce plans; implement code in the implementation workflow.
 - Ground in real inputs before drafting — see `plugins/core/conduct/inputs-grounding-gate.md`.
 - Resolve ambiguities via `plugins/core/conduct/clarification-protocol.md` (no `TBD`, no invented answers).
 - Pass `plugins/core/conduct/readiness-gate.md` before declaring the plan ready.
 - Use `plugins/core/conduct/risk-probe-gate.md` as a thinking tool only. Mentally run the probes (first-break, chaos,
   user-assumption); when a probe surfaces a risk worth eliminating, fold the mitigation into normal plan content
-  (acceptance criteria, edge cases, task steps, or the Risks section). **Do not write a Risk Probes block into the
-  plan.**
-- Confirm with the user before writing the plan file.
+  (acceptance criteria, edge cases, task steps, or the Risks section). The plan contains mitigations, not a separate
+  Risk Probes block.
+- Write the plan file after the user confirms it.
 - Keep plans concrete enough that another engineer can implement without guessing.
 - Ensure stack implications (types, conventions, BEM/Tailwind/etc.) are covered for all affected layers.
 - Optimize for first-pass acceptance by ralphex: task-based format, explicit files, checkbox traceability.

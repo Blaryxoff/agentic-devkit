@@ -157,8 +157,8 @@ new_section="${SECTION_START}
 ${skill_policy}
 
 Enabled plugins define eligible conduct, not mandatory context. Follow the loading policy below only when the task
-touches that plugin. Start from its index and open further documents only for concrete layers or risks; never read a
-conduct directory wholesale.
+touches that plugin. Start from its index and open further documents only to resolve concrete layers, risks or decisions
+raised by the target.
 $(echo -e "$conduct_lines")$(echo -e "$hook_instructions")
 ${SECTION_END}"
 

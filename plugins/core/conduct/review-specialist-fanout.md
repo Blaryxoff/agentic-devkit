@@ -1,7 +1,7 @@
 # Risk-Gated Review Specialist Fan-out
 
 Use this playbook from the top-level session for deep or full code review. The top-level session owns reviewer dispatch;
-subagents never dispatch reviewers. Resolve the complete reviewer set once, then launch it in one parallel batch when
+subagents perform assigned reviews and leave dispatch to the top-level session. Resolve the complete reviewer set once, then launch it in one parallel batch when
 capacity permits. When capacity is smaller than the reviewer set, launch the maximum independent set in parallel waves.
 If the harness has no subagents, run the same reviewers sequentially.
 
@@ -16,23 +16,23 @@ If the harness has no subagents, run the same reviewers sequentially.
 5. Add the documentation specialist only when its gate opens.
 6. Add the visual-reference specialist only when its gate opens.
 7. Launch all applicable read-only reviewers in one batch or the minimum capacity-bounded waves. Give every reviewer the
-   same scope and intent. Never nest orchestration or dispatch the same axis twice.
+   same scope and intent. Keep orchestration at the top level and dispatch each reviewer axis once.
 8. Keep reports separated by reviewer axis. Deduplicate only identical `file:line` plus defect findings, preserving all
    contributing reviewer names.
 
 Every prompt must require read-only operation, real context beyond the diff, and `review-findings-format.md`. Require
-`file:line` for source-backed findings and the evidence contract below for visual-reference findings. Never pass one
-reviewer's conclusions to another before both have independently reviewed the scope.
+`file:line` for source-backed findings and the evidence contract below for visual-reference findings. Let each reviewer
+independently inspect the scope before sharing conclusions across reviewers.
 
 ## Generic fallbacks
 
 Use these read-only roles only for changed scope that no active stack reviewer covers:
 
 - **Generic quality** — review architecture, security, data correctness, error handling, performance, and simplification.
-  Apply `code-smells.md` and local project conventions. Do not repeat scope owned by a stack quality variant.
+  Apply `code-smells.md` and local project conventions. Limit this review to scope not covered by a stack quality variant.
 - **Generic implementation** — review behavioral completeness against the request, plan, acceptance criteria, and nearby
-  call sites. Check success/failure paths, permissions, state transitions, compatibility, and user-visible outcomes. Do
-  not repeat scope owned by a stack business-logic variant.
+  call sites. Check success/failure paths, permissions, state transitions, compatibility, and user-visible outcomes.
+  Limit this review to scope not covered by a stack business-logic variant.
 
 Generic fallbacks make core-toolkit, shell, Python, Go, documentation-backed behavior, and unsupported-stack changes
 reviewable without pretending a Laravel or frontend variant applies.
@@ -63,8 +63,8 @@ installation/upgrade procedure, operational workflow, breaking contract, or user
 human documentation changed.
 
 Prompt the specialist to compare the changed contract with its canonical README, API, CLI, configuration, migration, and
-operations documentation. Report only missing, stale, or contradictory human documentation. Do not request `CLAUDE.md`
-entries; route durable project knowledge through `learning-capture-gate.md`.
+operations documentation. Report only missing, stale, or contradictory human documentation. Route durable project knowledge
+through `learning-capture-gate.md` rather than requesting `CLAUDE.md` entries.
 
 ## Visual-reference specialist
 
@@ -83,13 +83,13 @@ Prompt the specialist to:
 - cite the reference, route/state, viewport, expected versus actual measurement or appearance, screenshot evidence, and
   `file:line` when the source cause is traceable;
 - list unchecked reference states/viewports as unverified. If the reference or running page is inaccessible, report the
-  blocked gate and never infer a clean visual result from source code alone.
+  blocked gate and mark the visual result unverified until browser evidence is available.
 
 Keep this specialist read-only. It reports implementation deltas, not subjective redesign preferences, and never
 updates baselines or fixes CSS.
 
 ## Simplification
 
-Do not launch a separate simplification reviewer by default. Stack and generic quality reviewers apply `code-smells.md`,
-including over-engineering and unnecessary-indirection checks. A separate simplification pass is justified only when the
-user asks for it or the change is primarily an abstraction/refactor audit.
+Use the stack and generic quality reviewers' `code-smells.md` checks for over-engineering and unnecessary indirection.
+Add a separate simplification pass only when the user asks for it or the change is primarily an abstraction/refactor
+audit.

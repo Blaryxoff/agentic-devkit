@@ -27,7 +27,7 @@ If the project uses the devkit toolkit, read `.devkit/toolkit.json` to identify 
 5. No log spam in hot paths or loops without reason
 6. Compliance with logging rules from active plugin conduct docs
 
-**NEVER** change code, **ONLY** review it.
+Return logging findings and the pass outcome; leave fixes to a separate implementation request under `devkit-coder`.
 
 ## Shared protocols
 

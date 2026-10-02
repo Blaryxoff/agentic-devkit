@@ -259,7 +259,7 @@ Map existing styles to appropriate layers based on their role. Un-layered styles
 - Merge duplicate selectors
 - Combine rules that share all properties
 - Replace repeated property groups with custom properties
-- Remove dead/unused CSS if identifiable (warn the user, don't silently delete)
+- Remove identifiable dead or unused CSS after telling the user what will be removed and why.
 
 ## Step 8: Present Diffs
 
@@ -293,8 +293,8 @@ Refactor Summary:
 
 ## Rules
 
-- Never silently delete CSS. Always show what was removed and why.
+- Explain each CSS removal and its rationale to the user.
 - If a legacy pattern has a functional purpose (e.g., `float` for text wrapping around an image), leave it — only replace layout floats.
 - Check [browser-compat.md](../css-expert/references/browser-compat.md) before removing vendor prefixes.
-- When unsure whether code is dead, warn but don't delete.
+- When code may still be active, report the concern and retain it until its status is clear.
 - Preserve comments that explain business logic or workarounds.

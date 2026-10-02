@@ -36,8 +36,8 @@ python3 "$DEVKIT_HOME/plugins/core/skills/sprint/scripts/audit_workbook.py" <wor
 ```
 
 Use an existing environment that provides `openpyxl`; if installation is not authorized or possible, inspect the XLSX
-OOXML directly and explicitly report that the bundled audit was unavailable. Do not use an active CSV export as the
-workbook authority; it can return a stale or different sheet.
+OOXML directly and explicitly report that the bundled audit was unavailable. Use the XLSX export as workbook authority;
+an active CSV export is only a supporting view because it can show a stale or different sheet.
 
 ## Historical evidence snapshot
 
@@ -47,8 +47,8 @@ Locate the workbook snapshot before dispatching research. Check `SPRINT_HISTORY_
 
 1. Validate the snapshot quality gates, match `workbook_id`, and compare the audit's `content_fingerprint` for every
    archived sheet recorded in the snapshot.
-2. Reuse matching historical task, estimate, ownership, specification, and Git evidence. Do not re-open or re-summarize
-   a cached specification whose exact identity is complete, immutable, and sufficiently specific for the target task.
+2. Reuse matching historical task, estimate, ownership, specification, and Git evidence. Use the cached summary for a
+   specification whose exact identity is complete, immutable, and sufficiently specific for the target task.
 3. Refresh only new sheets, mismatched sheet fingerprints, new exact source identities, and Git/session evidence after
    the recorded baseline. Reinspect incomplete, mutable, generic, or low-confidence sources when the target depends on
    missing detail. A changed sheet does not invalidate unchanged linked-source summaries.
@@ -78,8 +78,8 @@ The primary agent must directly inspect the target sprint, capacity block, propo
 summaries do not replace final verification. Evidence collection rules and failure patterns are in
 [evidence-and-pitfalls.md](references/evidence-and-pitfalls.md).
 
-Before dispatch, query only the matching task, title, epic, source, and Git-baseline records. Give each lane that scoped
-evidence packet and delta; never make descendants load the complete snapshot.
+Before dispatch, query only the matching task, title, epic, source, and Git-baseline records. Give each lane its scoped
+evidence packet and delta instead of the complete snapshot.
 
 ## Evidence ledger
 
@@ -102,8 +102,8 @@ Match evidence in this order:
 4. Recent repeated ownership of the same feature area.
 5. Broader executor history only as a tie-breaker.
 
-Treat a repeated task ID across sprints as a continuation unless evidence proves separate work. Do not collapse duplicate
-IDs with different task/subtask context.
+Treat a repeated task ID across sprints as a continuation unless evidence proves separate work. Keep duplicate IDs distinct
+when their task/subtask context differs.
 
 ## Direction
 
@@ -136,19 +136,20 @@ Write only a value allowed by the target sheet's validation; map `common` to the
 6. Prefer completed analogues with the same task ID and scope. Weight exact scope and recency above repository-wide
    frequency. Use the workbook's observed estimate increments instead of inventing a new scale.
 7. Freeze the estimate ledger before capacity allocation. Record its total and task identities. Capacity, desired
-   equality, executor availability, or a convenient shared-foundation claim must never change the frozen estimates.
+   freeze estimates before capacity allocation and preserve them while balancing, regardless of desired equality, executor
+   availability, or a shared-foundation claim.
 8. Treat a human planner revision as strong calibration evidence, not an actual coding duration. Declare an estimate
    over/under only when an actual coding-hours field exists; otherwise report the point/range disagreement and its scope
    evidence.
-9. Use Git/session evidence to understand scope and continuity, not as a stopwatch. Never sum parallel subagent time,
-   review waits, merge commits, generated lines, or raw LOC into developer hours.
-10. Keep large tasks honest. Do not shrink estimates to fit capacity, turn a blank into zero, or delete a scoped task
-    without recording it as moved, removed, deferred, or overflow.
+9. Use Git/session evidence to understand scope and continuity, not as a stopwatch. Calculate developer hours from
+   attributable work, excluding parallel subagent time, review waits, merge commits, generated lines, and raw LOC.
+10. Keep large tasks honest. Preserve estimates under capacity pressure, keep blank estimates blank until supported,
+    and record every scoped task as moved, removed, deferred, or overflow when it leaves the current plan.
 
 ## Assignment and capacity
 
 1. Calculate each executor's real coding capacity after meetings, leave, and other explicit reservations. Calculate actual
-   assigned coding hours from task rows; do not trust summary formulas until independently reproduced.
+   assigned coding hours from task rows and independently reproduce summary formulas.
    Independently prove that assigned plus unassigned coding hours equals the frozen estimate total; `SUMIF` by executor
    silently omits blank assignments.
 2. Balance real coding hours as equally as the discrete work permits, while keeping every executor at or below available
@@ -169,9 +170,9 @@ Write only a value allowed by the target sheet's validation; map `common` to the
 Apply the prepared mutation ledger surgically.
 
 1. Select the exact target sheet and revalidate its `gid` immediately before editing.
-2. Paste bounded column ranges for numeric estimates, directions, and executors. Avoid stale formula-bar locators for bulk
-   constants. Re-export and compare every touched row after each logical batch.
-3. Preserve existing dropdown/validation values and cell formatting. Do not edit formulas unless the requested result
+2. Paste bounded column ranges for numeric estimates, directions, and executors. Use those ranges for bulk constants;
+   re-export and compare every touched row after each logical batch.
+3. Preserve existing dropdown/validation values and cell formatting. Edit formulas only when the requested result
    requires it.
 4. Use identical bounded criteria and sum ranges in capacity formulas. Infer the live Sheets argument separator from an
    existing formula; XLSX export normalizes formula syntax and does not prove the live locale.
@@ -183,13 +184,13 @@ Apply the prepared mutation ledger surgically.
    parameters.
 3. Wait until Sheets visibly offers `replace with`/`заменить на`; only then press `Tab` to create the native file chip.
    Sending `Tab` early leaves a raw URL.
-4. Never use `HYPERLINK()` when neighboring rows use native Drive chips; it renders as underlined text.
+4. Use native Drive chips when neighboring rows use them; `HYPERLINK()` renders as underlined text.
 5. Verify every mutated chip visually and inspect its live popover URL against the ledger. XLSX export flattens chip
    metadata and can omit the fragment even when the live chip retains it.
 
 ## Verification
 
-Do not report completion until all checks pass:
+Report completion after all checks pass:
 
 - every worksheet and hidden row was mechanically inventoried, and every historical fingerprint is either matched or
   covered by the incremental research delta;

@@ -16,7 +16,7 @@ Layouts:
 ```
 
 - Which pages/components are new vs modified?
-- Which shared components should be reused (do NOT duplicate UI patterns)?
+- Which shared components should be reused to keep UI patterns consistent?
 
 ## UI-2. Navigation & Routing Behavior
 

@@ -1,6 +1,6 @@
 # Browser QA
 
-Canonical rules for the `devkit-browser` QA skill. The skill cites sections here; do not duplicate these rules in its body.
+Canonical rules for the `devkit-browser` QA skill. Cite the relevant sections from the skill and keep these rules canonical here.
 
 ## 1. Scope
 
@@ -18,7 +18,7 @@ Canonical rules for the `devkit-browser` QA skill. The skill cites sections here
    design reference, or says `smoke`, `only` or incremental.
 3. **Spot** — the scope is exactly one page, route, section or component and none of the above applies.
 
-1.5. A targeted pass verifies every explicitly selected matrix cell plus its directly adjacent regression path, reports every omitted dimension, and never claims final acceptance. Run the exhaustive pass once the implementation is stable; do not repeat the whole matrix after each intermediate fix.
+1.5. A targeted pass verifies every explicitly selected matrix cell plus its directly adjacent regression path, reports every omitted dimension, and never claims final acceptance. Run the exhaustive pass once the implementation is stable; scope intermediate rechecks to affected cells under §1.7.
 
 1.6. A spot pass drops only the coverage ledger and the planner, executor and reviewer dispatch; run it in the current
 session. Every other rule still binds: §2 preflight, environment pin and surface choice, §3 when the pass mutates data,
@@ -31,7 +31,7 @@ one-line spot result. A spot pass never claims acceptance and never replaces a t
 outcomes and visual/runtime audit dimensions separately: a missing hover or layout check leaves that dimension
 incomplete, without erasing an evidenced functional result. The pass remains incomplete until all required dimensions
 are reconciled. Follow-up briefs name exact missing, conflicting or invalidated cell/dimension IDs and only the setup
-dependencies needed to reach them; do not replay completed functional lanes to collect a missing audit. A changed
+dependencies needed to reach them; collect the missing audit while preserving completed functional results. A changed
 implementation, fixture state, origin or role invalidates only the checks it can affect; record why each check needs
 rerunning. A resume or permission/config recovery alone does not invalidate earlier application evidence. A new full
 pass requires an explicit request or a documented change affecting the whole matrix.
@@ -41,7 +41,7 @@ and either a verified recovered prerequisite or a specific alternative method su
 Verify fixture IDs and required persisted state before dependent execution (§3.1); a fresh worker or another report
 of the same gap is not recovery. Attempt authorised fixture/setup recovery before declaring blocked (§2.5). If those
 paths fail and no concrete recovery method remains, retain the blocked cells and finish with QA Pass Incomplete after
-the other lanes and cleanup conclude; do not keep retrying merely to obtain a green report.
+the other lanes and cleanup conclude. Treat evidenced failures as findings and exhausted recovery paths as incomplete outcomes.
 
 Review the aggregated first-wave results for coverage and finding evidence, then review only new or invalidated
 cell/dimension results, results potentially affected by new fixes, and newly disputed findings. Before selecting
@@ -64,12 +64,12 @@ dimensions have evidenced outcomes, finish QA with the confirmed findings; findi
 2. **Codex browser-client.** Without an explicit choice, use the browser-client when an existing authenticated session,
    extension-dependent/browser-native UI, or visible user-browser state is required and the selected concrete binding
    supports every action and evidence type in the dependent lane. Follow its installed Browser/Chrome skill to select and
-   record the concrete binding; Codex Bridge means only the external Chrome/extension binding, never the in-app Browser.
+   record the concrete binding; Codex Bridge means only the external Chrome/extension binding.
 3. **chrome-devtools.** Otherwise default to chrome-devtools MCP, especially for isolated or mutation-heavy flows,
    append-only test data, multi-role work, viewport emulation, DOM/layout evaluation, console/network evidence, and
    parallel lanes.
-4. **Mixed pass.** A pass may use different surfaces for independent lanes, but never both on the same tab or dependent
-   stateful lane. Probe required capabilities before execution. A missing capability does not waive evidence.
+4. **Mixed pass.** Assign one surface to each tab and dependent stateful lane; use different surfaces only across
+   independent lanes. Probe required capabilities before execution. A missing capability does not waive evidence.
    Move the entire dependent lane to a capable surface when the user's explicit choice permits it, or report it blocked.
 
 A request to **show a screenshot** stays on the selected surface and returns captured evidence in chat; it does not require
@@ -88,20 +88,20 @@ what this QA pass started. During cleanup, stop only those recorded processes/se
 running (for example on the user's Mac), leave it running.
 
 2.3. Verify fixture readiness for every data-dependent local lane under §3.1–§3.2 before execution. An existing
-seeder/factory is preferred, never a prerequisite. Read-only browser assertions and worker shell sandboxes do not waive
-local fixture preparation. Production observation and explicitly data-read-only scopes use existing data only.
+seeder/factory is preferred; use the supported ORM/console, API or UI when one is unavailable. Prepare required local
+fixtures even for read-only browser assertions or workers with read-only shell sandboxes. Production observation and explicitly data-read-only scopes use existing data only.
 
 2.4. When the user supplies a design reference, verify it is accessible before starting. Figma URLs require Figma MCP;
 attached or repository screenshots/mockups require a readable image at its original resolution.
 
 2.5. Recover missing local fixtures through §3.1–§3.2 before declaring a prerequisite missing. If safe setup remains
 unavailable, stop via `plugins/core/conduct/clarification-protocol.md` with the attempted paths and exact denial/error.
-Never test against an unverified environment or claim uncovered cells passed.
+Verify the environment before testing and count only evidenced cells as passed.
 
-2.6. Keep the surface selected under §2.1 as the lane's sole interactive browser authority. Do not alternate
-chrome-devtools and browser-client against one stateful flow or use one to recover the other's tab. Playwright Test may
-run committed deterministic regression checks and produce local expected/actual/diff artifacts; it must not drive
-exploratory QA, replace the selected surface's actions, or become a fallback when that browser connection is unavailable.
+2.6. Keep the surface selected under §2.1 as the lane's sole interactive browser authority throughout each stateful
+flow, including tab recovery. Use Playwright Test only for committed deterministic regression checks and local
+expected/actual/diff artifacts. Perform exploratory QA and user actions on the selected surface; if its connection is
+unavailable, recover that connection or report the lane blocked under §11.5.
 
 2.7. chrome-devtools MCP: per-project `.mcp.json` / `.cursor/mcp.json` (from `devkit-install --claude|--cursor`) overrides the global entry. Current adapters pass `--headless --isolated`, keeping Chrome in the background and giving every server a throwaway profile. `devkit-install` normalises an existing Codex `~/.codex/config.toml` chrome-devtools entry to the same defaults. Configs generated before that change may omit `--headless` or pin a fixed `--userDataDir=~/.cache/chrome-devtools-mcp/profiles/<project>`; regenerate them rather than working around a visible window or profile collision (§11).
 
@@ -158,8 +158,8 @@ are allowed solely to establish the pin, including on production; perform these 
 
 2.10. Check host resource usage before dispatch and between waves; include other active QA passes.
 
-- Choose concurrency from independent ledger lanes and the operator's requested parallelism; do not impose a fixed
-  per-host executor cap or serialise isolated lanes solely to keep the desktop responsive.
+- Choose concurrency from independent ledger lanes and the operator's requested parallelism; run isolated lanes
+  concurrently within the available harness slots.
 - Report sustained memory pressure, paging, and desktop slowdown without automatically throttling the pass. Preserve
   requested parallelism and coverage unless the operator asks to reduce them; executor model cost does not predict
   local browser resource usage.
@@ -168,7 +168,7 @@ are allowed solely to establish the pin, including on production; perform these 
   lane does not need a local mobile MCP process. HTTP MCPs do not launch local server processes; retain their availability
   unless the lane explicitly restricts its tools. Tool discovery is not evidence of lazy process startup.
 - Reuse the lane's owned browser for its sequential routes, viewports, and dependent cells. Close pass-created tabs
-  after their evidence is captured when they are no longer needed; do not spawn a browser per cell. Revalidate the
+  after their evidence is captured when they are no longer needed; keep one owned browser for the connected lane. Revalidate the
   environment/account pin when changing role or route and clean the owned browser after the lane's final call (§10).
 - Keep concurrently executing lanes on distinct profiles and dedicated MCP trees (§10.7). Do not attach independent
   workers to one browser to save memory; tabs alone do not isolate cookies or accounts.
@@ -176,10 +176,10 @@ are allowed solely to establish the pin, including on production; perform these 
 ## 3. Seed strategy
 
 3.1. **Prepare required local fixtures.** A local QA request authorises and requires append-only test-data preparation
-when existing records cannot exercise an assigned case; do not ask for separate seeding permission. Prefer existing
+when existing records cannot exercise an assigned case; proceed with that authorised setup before dependent tests. Prefer existing
 dev/test seeders and factories. If none covers the case, use the project's ORM/console, supported API or real UI to
 create namespaced test users, related entities, files and required states. Inspect the relevant models and invariants
-before creating records. Fixture preparation is QA setup, not a source-code fix; do not modify application code.
+before creating records. Treat fixture preparation as QA setup and preserve application source.
 Explicit user/project data restrictions and §9.5 still bind.
 
 The QA lead owns fixture readiness before dispatching dependent test lanes. It may prepare fixtures directly or
@@ -204,9 +204,9 @@ and affected cell IDs; keep those cells blocked/uncovered and the pass incomplet
 
 3.5. Prefer realistic fixtures over toy placeholders: enough roles, statuses, dates, permissions, files, and related entities to make the UI stateful and clickable.
 
-3.6. **Test password.** Every account this pass creates gets the password `asdasdasd`. This is a devkit convention, not a project secret — do not discover it and do not vary it per project. When the app's password policy rejects it, derive the shortest compliant variant (`Asdasdasd1!`) and carry the exact string forward. Report the identifier and password of every test-created account with the seed command, marked test-only.
+3.6. **Test password.** Every account this pass creates gets the password `asdasdasd`. Use this fixed devkit test convention directly across projects. When the app's password policy rejects it, derive the shortest compliant variant (`Asdasdasd1!`) and carry the exact string forward. Report the identifier and password of every test-created account with the seed command, marked test-only.
 
-3.7. **Login ladder.** A redirect to a login page is the cue to authenticate, never a blocker — walk the ladder before calling anything blocked. Rung 6 is the only legitimate stop. Never loop on the login form: two failed submits with the same credentials mean that rung is dead — move to the next rung. Stop at the first rung that authenticates, and record which rung was used.
+3.7. **Login ladder.** Authenticate when redirected to a login page: walk the ladder before reporting a blocker. Rung 6 is the only legitimate stop. After two failed submits with the same credentials, move to the next rung. Stop at the first rung that authenticates, and record which rung was used.
 
 1. **Discover.** Read credentials from seeders, factories, `.env.example`, `.env.testing`, `docs/`, README. Use them verbatim.
 2. **Register.** When public registration exists, sign up through the UI as a new test-only user with the §3.6 password.
@@ -246,7 +246,7 @@ Exhaustive coverage requires all dimensions below; neither skill may skip a dime
 
 5.2. **Unauthed public routes** — load anonymously; probe IDOR, exposed data, missing auth on actions/links, reflected input.
 
-5.3. **Per role** — login via real form (`navigate_page` → `fill_form` → submit → `wait_for`). Login fails twice with the same credentials → walk the §3.7 ladder; never re-submit the same form a third time.
+5.3. **Per role** — login via real form (`navigate_page` → `fill_form` → submit → `wait_for`). Login fails twice with the same credentials → move to the next §3.7 ladder rung.
 
 5.4. **Per page × viewport** — `resize_page`/`emulate`; `take_snapshot`; run the §6.3 DOM/layout audit; check adaptive
 layout. Run existing Playwright Test visual assertions when the project provides them. Capture pixels only under §6.6.
@@ -269,12 +269,11 @@ layout. Run existing Playwright Test visual assertions when the project provides
 every mapped reference × route/state × viewport from §4.8. For Figma, use `get_design_context` or `get_screenshot`.
 Apply every check, in order, from `plugins/frontend/conduct/design-quality.md` **Reference fidelity**. Record the
 whole-frame composition and element-inventory result before any element-level assertions; local matches cannot close the
-cell without that evidence. Capture design measurements plus rendered DOM/computed styles when available; do not approve
-by casual visual resemblance. Compare stable reference elements against live bounding boxes and alignment anchors, then
+cell without that evidence. Establish fidelity through design measurements plus rendered DOM/computed styles when available. Compare stable reference elements against live bounding boxes and alignment anchors, then
 run the project's existing offline pixel diff, or a Playwright expected snapshot, only when reference and live captures
 can be normalised to the same viewport, DPR, crop, and dimensions. Otherwise use measured geometry/inventory plus the
-smallest matching reference/live crops. Report every unexplained delta and every untested reference state/viewport; never
-silently fix CSS.
+smallest matching reference/live crops. Report every unexplained delta and every untested reference state/viewport;
+leave CSS fixes to an authorised coding workflow.
 
 ## 6. Browser session
 
@@ -307,7 +306,7 @@ or targeted pass, and every applicable §5 oracle — scripted keys and the manu
 exhaustive pass. Apply its §4 measurement rules to every colour, shadow and height you report, including ones measured by
 hand.
 
-6.4. Reuse a `take_snapshot` result until navigation, submission, modal state, role, viewport, or another DOM-changing action invalidates it. Do not snapshot unchanged state before consecutive read-only assertions.
+6.4. Reuse a `take_snapshot` result until navigation, submission, modal state, role, viewport, or another DOM-changing action invalidates it. Use the cached snapshot for consecutive read-only assertions on unchanged state.
 Cells may reference the same snapshot, layout/oracle audit or console/network batch when its implementation,
 origin/account/role, relevant data state and viewport apply. Record these pins and covered cell/dimension IDs once,
 with action-specific results for each functional cell. Capture layout/control-state evidence once per distinct rendered
@@ -325,7 +324,7 @@ for a confirmed visual finding. Pass `filePath` so chrome-devtools saves the ima
 response. `filePath` must resolve inside the MCP server's writable root, normally the project directory; a path outside
 it is refused. A lane that must not write into the repository captures inline instead. Also capture the smallest
 element crop needed to decide a candidate the DOM cannot settle: native control chrome, or a measurement the UI oracle
-probe marks `indeterminate`. Do not open or attach a passing capture. When interpretation is still required after snapshot, geometry, and
+probe marks `indeterminate`. Keep passing captures as local artifacts and report their textual assertion or path. When interpretation is still required after snapshot, geometry, and
 local diff evidence, inspect the smallest useful crop of the diff plus the matching reference crop; use a full-frame image
 only for whole-frame composition.
 
@@ -362,7 +361,7 @@ acceptance criteria, project/business rules, supplied design reference, or an ap
 Require a reproducible expected-versus-actual failure in the pinned environment, account, fixture state and viewport,
 with §6 browser evidence. Apply `browser-ui-oracles.md` §3.4 to every visual probe candidate. Styling preference,
 speculation, source inspection alone and reviewer agreement are not browser proof. Keep uncertain candidates separate
-from confirmed findings and request a named follow-up cell; never report them as clean or silently omit them.
+from confirmed findings, retain them as unresolved, and request a named follow-up cell.
 
 Give coverage and evidence reviewers the canonical §5–§7 rules plus the applicable UI/layout oracles and expectation
 sources. The invoking agent applies the same gates when reconciling their reports, rejects unsupported findings,
@@ -376,18 +375,18 @@ being outside the changed diff does not waive its user impact during scoped brow
 **Codex browser-client:** when the Codex Browser or Chrome skill is available and connected, follow that skill's
 bootstrap, browser-selection, full documentation-read, and tab APIs. Record the selected concrete binding: in-app Browser
 (`iab`) or external Chrome/extension. "Codex Bridge" in these rules means only the external Chrome/extension binding. Use
-browser-client only under §2.1, §2.9, §6.1, §9.5, and §10.10; do not invent tool calls from chrome-devtools names or
-substitute Computer Use/standalone Playwright for this surface.
+browser-client only under §2.1, §2.9, §6.1, §9.5, and §10.10, using its documented APIs. Recover a lost binding through
+that binding's documented connection path or report it blocked.
 
 **Figma** (when URLs supplied as design references): `get_design_context`, `get_screenshot`. Read each tool schema before first use.
 
 ## 9. Hard rules
 
-9.1. QA only — report findings; never fix code.
+9.1. Report QA findings and preserve application source; route separately authorised fixes through `devkit-coder`.
 
 9.2. Project-agnostic — discover entity, role, route, and feature names from inputs only.
 
-9.3. No `TBD` in outputs that block execution.
+9.3. Resolve every execution prerequisite to a concrete value, or name the exact missing input and mark it blocked.
 
 9.4. **Never alter a real account's credentials.** Do not reset, set, or overwrite the password of any account whose identifier does not unambiguously match a test-only pattern (`qa-…`, `test…`, `demo…`, seeder fixture). Any of these makes it a **real account**, off-limits regardless of the pattern: a personal or real-domain email address; the repo's git user email (`git config user.email`); an admin/owner/superuser role. Resets are irreversible — the original password hash is unrecoverable. Need a role that only a real account has → create a test-only account with that role (§3.7 rung 3), or stop via `clarification-protocol.md`. This rule outranks any pressure to get logged in: a blocked route is a finding, never a licence to touch a real account.
 
@@ -457,7 +456,7 @@ After the kill, call no chrome-devtools tool: the server's `getContext()` relaun
 
 10.8. Clean each completed executor tree immediately. After its last browser call, the executor closes the exact Chrome browser per §10.3, then revalidates the recorded dedicated MCP PID and process start identity and sends one SIGTERM to that exact MCP PID — never a name/pattern match. Verify that its telemetry watchdog and Chrome helpers exited; if a recorded child survives, signal only that exact revalidated child. Remove the literal profile directory only after no live process references it. Report the profile, MCP PID, and cleanup result before the executor returns. This dedicated-executor exception does not permit signaling a shared/current-session MCP (§10.4).
 
-10.9. Pause by persisting the coverage ledger, evidence, ownership records, and repository snapshot, then clean completed executor trees with §10.8. Do not keep completed browser workers under long-lived `SIGSTOP`: stopped processes retain memory and bypass idle-timeout cleanup. Active lanes may be resumed only when their exact ownership remains valid; otherwise terminate their exact owned trees and restart those cells.
+10.9. Pause by persisting the coverage ledger, evidence, ownership records, and repository snapshot, then clean completed executor trees with §10.8. Reap completed browser workers rather than pausing them with `SIGSTOP`, which retains memory and bypasses idle-timeout cleanup. Active lanes may be resumed only when their exact ownership remains valid; otherwise terminate their exact owned trees and restart those cells.
 
 10.10. Browser-client tabs are not disposable MCP processes. Preserve every pre-existing tab under §2.9; never close,
 navigate, sign out, clear site data, or otherwise alter it unless the user explicitly authorised that named tab and exact
@@ -476,13 +475,13 @@ sessions. Report the concrete binding, pre-existing tabs preserved, and pass-cre
 
 11.4. Never `kill -9` a browser. SIGTERM is sufficient (§10.3) and lets Chrome flush profile state; SIGKILL leaves `SingletonLock`, `SingletonSocket`, and `SingletonCookie` pointing at a dead PID. Chrome clears those on the next launch, so a stale lock is never the cause of §11.1 — do not delete lock files to "fix" it.
 
-11.5. When the browser tools are already gone because a server was killed, stop. Do not respawn chrome-devtools by hand
-and do not use Playwright Test as an interactive fallback (§2.6). Report the loss and tell the user to reconnect via `/mcp`.
+11.5. When the browser tools are already gone because a server was killed, stop browser execution, report the loss and
+tell the user to reconnect via `/mcp`. Resume on the selected surface after reconnection under §2.6.
 
 ## 12. Lane briefs
 
-12.1. Derive every brief field from its own target. Never edit a previous brief into a new one: its lane ID, account,
-project and expectations are the fields that silently stop applying.
+12.1. Create each brief from its own target and resolve its lane ID, account, project and expectations independently.
+Reuse canonical references while grounding every target-specific field afresh.
 
 12.2. Before dispatch, verify three facts: the lane ID is unused by any existing brief, report or log; the account is
 the one whose fixture owns the route (demo and QA-fixture accounts often use different credentials); and the fixture
@@ -490,14 +489,13 @@ holds the state the lane measures, not an empty list.
 
 12.3. Scope a lane to at most five routes, two viewports and two or three oracles. Name every route and state
 explicitly; a lane left to choose tests something out of scope, or code that is still changing.
-Keep a page or connected flow's applicable controls, hover/keyboard-focus states and assigned viewports in the same
-executor. Do not dispatch one agent per element or control state within the original page/flow matrix; use independent
-roles/flows for parallelism. An explicit spot scope or named follow-up under §1.7 can cover a single control.
+Assign each page or connected flow to one executor, covering its applicable controls, hover/keyboard-focus states and
+assigned viewports in the same lane. Parallelise across independent roles and flows. An explicit spot scope or named follow-up under §1.7 can cover a single control.
 For a follow-up, include §1.7, accepted evidence references and only the remaining actions/dimensions plus necessary
-setup. Do not carry over the original lane's full matrix or unrelated audit obligations.
+setup. Scope the follow-up to those remaining checks and retain accepted results from the original matrix.
 
 12.4. Inline the probe bytes (`browser-ui-oracles.md` §3.1) only when an assigned check needs that probe. Cite applicable conduct sections by path when the executor can read
-the toolkit; copy an excerpt verbatim only when it cannot. Never summarise a rule into a brief.
+the toolkit; copy the applicable excerpt verbatim when it cannot, preserving the canonical rule.
 
 12.5. State the acceptance question plainly and, where possible, as a count: "how many filled primary buttons are
 visible at rest", not "check the hierarchy". A presence question cannot find the extra one.
@@ -507,7 +505,7 @@ brief as an exception to the skill's no-report-file rule. The top-level pass ing
 deletes the directory unless the user asked to keep it.
 Before cleanup, reconcile collected evidence against the assigned checks. Complete any still-available missing checks
 in the same owned browser, including hover/focus and lazy-loaded panels reached through real scrolling and readiness
-checks. Do not close the browser and defer an available assigned check to another worker. If a prerequisite prevents
+checks. Keep ownership through completion of the available assigned checks, then clean up. If a prerequisite prevents
 completion, report the exact blocked check and attempted recovery under §1.7; cleanup still remains mandatory.
 
 12.7. Launch every Codex QA worker with full filesystem/network access and browser tools approved without prompts:
@@ -522,7 +520,7 @@ codex exec --sandbox danger-full-access -c 'approval_policy="never"' \
 - Resolve per-tool overrides before dispatch; `approval_policy="never"` alone rejects tools that still require approval.
 - Keep the lane's task scope and mutation policy; full runtime access does not authorise application-source edits or production mutation (§9.5).
 - Keep each attempt's log under its own name; shell redirection truncates the previous one.
-- Supervise progress and process exit (§12.8); do not impose a fixed wall-clock timeout on a progressing lane. Stop only at an explicit user deadline or after confirming a stalled process/provider; preserve evidence and rerun incomplete cells.
+- Supervise progress and process exit (§12.8) and let a progressing lane continue. Stop only at an explicit user deadline or after confirming a stalled process/provider; preserve evidence and rerun incomplete cells.
 - Compare pixels only between captures from the same headless or headed mode with the device scale pinned.
 
 12.8. Watch every terminal state: result written, process exited, provider error, explicit deadline or confirmed stall. Confirm each signal is
@@ -532,5 +530,5 @@ written to the file being watched; an exit line echoed by the wrapper never reac
 consecutive failure instead of retrying.
 
 12.10. Run lanes in parallel only when their browsers (§10.7), accounts, record namespaces and datastore writes are
-isolated; lanes that share mutable state run sequentially. Do not serialise isolated read-only lanes behind a global
-lock — queued lanes time out while waiting.
+isolated. Run lanes that share mutable state sequentially, and let isolated read-only lanes proceed concurrently
+within available harness slots.

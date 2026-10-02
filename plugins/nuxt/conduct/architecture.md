@@ -18,7 +18,7 @@ Primary architecture principles:
 - `utils/` own pure helpers with no side effects.
 - `stores/` (if used) own cross-page state only.
 
-Do not put heavy business logic directly in page templates or large UI components.
+Keep page templates and large UI components focused on composition; place business logic in composables or services.
 
 ## TypeScript contracts
 
@@ -29,9 +29,9 @@ Do not put heavy business logic directly in page templates or large UI component
 
 ## Nuxt conventions
 
-- prefer Nuxt primitives (`useAsyncData`, `useFetch`, `useRoute`, `useRouter`, `useRuntimeConfig`).
+- Prefer Nuxt primitives (`useAsyncData`, `useFetch`, `useRoute`, `useRouter`, `useRuntimeConfig`).
 - keep route/query synchronization explicit and predictable.
-- SSR/CSR assumptions must be intentional (avoid accidental browser-only API usage on server).
+- Make SSR/CSR assumptions explicit and guard browser-only APIs from server execution.
 
 ## File and folder conventions
 
@@ -69,8 +69,8 @@ Rules:
 - use a Pinia store when state must survive route changes or be shared across unrelated pages.
 - define stores with `defineStore` using the composition API style (`setup` stores).
 - keep stores typed: explicit state shape, typed actions, typed getters.
-- do not call APIs directly from stores — delegate to composables/services and call them from store actions.
-- do not put UI state (loading spinners, modal open/close) in global stores unless multiple unrelated pages need it.
+- Delegate API calls from stores to composables or services, then invoke those boundaries from store actions.
+- Keep UI state such as loading indicators and modal visibility local unless multiple unrelated pages share it.
 
 See [stores.md](./stores.md) for detailed Pinia store rules and examples.
 
@@ -85,22 +85,22 @@ See [stores.md](./stores.md) for detailed Pinia store rules and examples.
 
 ## Performance and SSR
 
-- avoid accidental browser-only API usage on the server (`window`, `document`, `localStorage`) — guard with `import.meta.client` or `onMounted`.
-- use `useFetch` / `useAsyncData` for data that should be server-rendered; avoid client-only fetching for SEO-critical content.
+- Guard browser-only APIs (`window`, `document`, `localStorage`) with `import.meta.client` or `onMounted`.
+- Use `useFetch` or `useAsyncData` for server-rendered data, especially SEO-critical content.
 - lazy-load heavy components with `defineAsyncComponent` or Nuxt's `<LazyXxx>` auto-import convention.
 - use `@nuxt/image` for all user-facing images to get automatic format optimization and lazy loading.
-- avoid fetching the same data multiple times — centralize in composables and cache with `useAsyncData` keys.
+- Centralize shared fetches in composables and cache them with `useAsyncData` keys.
 - keep bundle size in check: justify every new dependency by checking its minified+gzipped size impact.
 
-## DO / DO NOT
+## Apply these practices
 
-DO:
 - keep rendering concerns in components and logic in composables
 - keep types explicit at module boundaries
 - reuse existing patterns before creating new abstractions
 - use Pinia only for genuinely shared cross-page state
 
-DO NOT:
-- call APIs directly from many components with duplicated request logic
-- keep hidden mutable state in module globals
-- use browser-only APIs without SSR guards
+## Replace these patterns
+
+- Route shared API access through composables or services.
+- Keep mutable state in explicit component, composable, or store ownership.
+- Guard browser-only APIs before server rendering.

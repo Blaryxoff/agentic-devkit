@@ -83,9 +83,9 @@ text still names the item and carries the one-line reason for its recommendation
 ## 6. Dedupe and updates
 
 - Use the slug and `where` path to find candidates; settle duplication by the defect each item claims.
-- Do not treat a shared path as proof of duplication. One file can contain several unrelated defects.
-- Do not treat a changed line number as a new item.
-- Do not treat two items without `where` as duplicates merely because both omit it.
+- Compare the defect each item claims to settle duplication; one file can contain several unrelated defects.
+- Track items by their underlying defect rather than changed line numbers.
+- Compare the defect descriptions when both items lack `where`; a missing path alone does not establish duplication.
 - Update the existing file when a new sighting sharpens the evidence or changes `worth`.
 - Before staging, inspect `git diff --cached --name-only`. Treat every pre-existing staged path as foreign work and stop
   rather than sweeping it into a backlog commit.

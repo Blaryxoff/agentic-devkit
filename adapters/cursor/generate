@@ -173,7 +173,7 @@ while IFS= read -r name; do
         echo ""
       fi
       echo "Enabled plugins define eligible conduct, not mandatory context. Open this index only when the task touches"
-      echo "the plugin, then load further documents only for concrete layers or risks. Never read the directory wholesale."
+      echo "the plugin, then load further documents only to resolve concrete layers, risks or decisions raised by the target."
       echo ""
       if [ -d "$conduct_abs" ]; then
         if [ -f "$conduct_abs/overview.md" ]; then

@@ -40,15 +40,15 @@ for rule in (
     "hidden`/`veryhidden",
     "minimize the absolute difference in assigned coding hours",
     "exact equality is required",
-    "do not shrink estimates",
+    "preserve estimates under capacity pressure",
     "leave whole tasks or epics unassigned",
-    "never use `hyperlink()`",
+    "use native drive chips when neighboring rows use them",
     "wait until sheets visibly offers",
     "live popover url",
     "xlsx export flattens",
     "chip metadata",
     "content_fingerprint",
-    "do not re-open or re-summarize a cached specification",
+    "use the cached summary for a specification",
     "refresh only new sheets",
     "after a successful planning run",
     "freeze the estimate ledger before capacity allocation",
@@ -58,7 +58,7 @@ for rule in (
     assert rule in normalized_body, rule
 assert '"schema_version": 2' in snapshot_reference
 assert ".quality.gates" in snapshot_reference
-assert "never make descendants load the complete snapshot" in normalized_body
+assert "give each lane its scoped evidence packet and delta instead of the complete snapshot" in normalized_body
 assert "threaded-comment author ids" in normalized_snapshot_reference
 assert "never infer a change from row number alone" in normalized_snapshot_reference
 PY

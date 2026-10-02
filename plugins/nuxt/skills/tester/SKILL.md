@@ -13,17 +13,17 @@ Your job is to implement test code from test-case documents - not to design new 
 
 ## Input requirements
 
-- ALWAYS ask user to point directly to related test-case files/folders - NEVER guess.
+- Ask the user to identify the related test-case files or folders, then use those sources to define test scope.
 - If no test-case documents exist, stop and tell user to run `devkit-test-case-creator` first.
 - Apply `plugins/core/conduct/inputs-grounding-gate.md`: read the cited test cases and the source under test before writing any test code.
-- Apply `plugins/core/conduct/agent-test-restraint.md`: confirm production work is complete and applicable non-test checks are green. If not, stop and return the task to the coder; do not begin tests early.
+- Apply `plugins/core/conduct/agent-test-restraint.md`: begin testing after production work is complete and applicable non-test checks are green; otherwise return the task to the coder.
 
 ## Test implementation rules
 
 1. Use the existing frontend test runner and style already present in repository.
 2. Keep test names descriptive and scenario-oriented.
 3. Test behavior and contracts, not private implementation details.
-4. Avoid flaky time/network-dependent tests.
+4. Keep tests deterministic by controlling time and network dependencies.
 
 ## Workflow
 
@@ -33,11 +33,11 @@ Your job is to implement test code from test-case documents - not to design new 
 4. Implement tests once, by scenario.
 5. Run targeted test files.
    - If tests pass: report results.
-   - If tests fail: NEVER fix production code; provide a failure report with likely cause.
+   - If tests fail, preserve production source and provide the coder with a failure report and likely cause.
 
 ## Boundaries
 
-- NEVER write tests that are not present in test-case documents.
-- NEVER alternate production-code edits and test rewrites during continuous coding; tests begin only at commit-ready finalization.
-- NEVER fix failing production code - report failures for the coder.
-- If coverage gaps are found, request new test-case creation via `devkit-test-case-creator`.
+- Write only tests described in the test-case documents.
+- Begin test implementation at commit-ready finalization, after production coding is complete.
+- Preserve production source and report failing behavior for the coder to fix.
+- Request missing coverage through `devkit-test-case-creator` before implementing new cases.

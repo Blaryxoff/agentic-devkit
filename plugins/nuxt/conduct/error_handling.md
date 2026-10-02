@@ -5,8 +5,8 @@ All errors must be handled explicitly.
 ## Core principles
 
 - model UI/network/async status with explicit states.
-- never swallow errors silently.
-- never branch on message text; branch on typed error class/code.
+- Handle every error explicitly and report unexpected failures through the approved error path.
+- Branch on typed error classes or codes.
 - show user-safe messages and keep diagnostics in logs/telemetry.
 
 ## State model
@@ -44,16 +44,16 @@ Model state as a union type: `'idle' | 'loading' | 'success' | 'error'`.
 
 - log one meaningful error per failure path.
 - include operation name, route, and non-sensitive identifiers.
-- avoid duplicate logging for the same error chain.
+- Emit one log per error chain and add context only when a later layer contributes useful information.
 
-## DO / DO NOT
+## Apply these practices
 
-DO:
 - define typed error helpers in shared layer
 - keep error handling centralized in composables/services
 - map errors to clear user messaging
 
-DO NOT:
-- ignore Promise rejections
-- use broad catch without follow-up action
-- expose stack traces/internal payloads to users
+## Replace these patterns
+
+- Handle every Promise rejection.
+- Pair each catch block with an explicit recovery, reporting, or propagation action.
+- Show user-safe messages and keep stack traces and internal payloads in diagnostics.

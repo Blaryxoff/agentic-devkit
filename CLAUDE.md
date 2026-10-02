@@ -65,9 +65,9 @@ tests/                   Shell test suite — run tests/run-all.sh before pushin
   vendored wholesale from css.dev, which would be renamed back on the next vendor refresh. Renaming an existing skill's
   frontmatter name is a breaking migration — hooks, `skill-eval.txt`, generated subagents, and conduct references all key
   on it.
-- Shared skills (git, plan-creator, plan-reviewer, etc.) live ONLY in `core/` -- never duplicated.
+- Keep shared skills (git, plan-creator, plan-reviewer, etc.) canonical in `core/`; reference them from other plugins.
 - Stack-specific skills live in their owning plugin.
-- New user-facing skill slugs are one word. Keep the directory slug and generated slash command identical (`nontech` → `/nontech`). Do not rename existing multi-word skills unless the migration is explicitly requested.
+- New user-facing skill slugs are one word. Keep the directory slug and generated slash command identical (`nontech` → `/nontech`). Preserve existing multi-word skill slugs until their migration is explicitly requested.
 
 ### Slash commands
 
@@ -113,8 +113,8 @@ Consequence to keep in mind: a generated short command (`/reviewer-logging`, `/t
 - Cross-plugin references use relative paths (e.g. `../../vue/conduct/overview.md`).
 - **Conduct docs are loaded progressively.** Enabling a plugin makes its rules eligible; it does not make every document
   mandatory context. Skills follow `plugins/core/conduct/conduct-loading.md`: start from the target and plugin
-  `overview.md`, then open only documents required by the touched layers and risks. Never scan a conduct directory
-  wholesale.
+  `overview.md`, then open only documents required by the touched layers and risks. Scope standards audits to the
+  explicitly requested rule families.
 
 ### Plugin Manifests
 
@@ -136,12 +136,19 @@ The audience is an LLM. Optimise for signal density — every line spends contex
 
 ### Structure
 
-- **Lead with the directive.** Sentence one of every section/bullet states what to do (or not do). Reasoning follows only when non-obvious.
+- **Lead with the directive.** Sentence one of every section/bullet names the concrete action to take. Reasoning follows only when non-obvious.
 - **One rule per line.** Use bullets for unordered rules, numbered lists for ordered steps, tables for 3+ structured fields (commands, contracts, mappings).
 - **Imperative voice.** `Cite section numbers.` — not `Section numbers should be cited.`
-- **Cite, don't restate.** Reference `§7.5` or `path/to/file.md:42`; let the reader scroll. Never paraphrase what another section already says.
+- **Give the next action.** Prefer affirmative workflow instructions: `Assign each connected flow to one executor.`
+  Specify the action, scope, completion condition and applicable exception. Preserve obligations and routing when
+  rewording. Keep explicit prohibitions for security, credentials, destructive actions, ownership and authorisation
+  boundaries when needed; pair them with the permitted action or escalation path.
+  This is a clarity default, not a claim that one phrasing wins on every model or task. See
+  [Claude prompting guidance](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices#control-the-format-of-responses) and
+  [OpenAI reasoning guidance](https://developers.openai.com/api/docs/guides/reasoning-best-practices#how-to-prompt-reasoning-models-effectively).
+- **Cite canonical rules.** Reference `§7.5` or `path/to/file.md:42` and let the reader follow the source.
 - **Code blocks for exact shapes.** File paths, command names, config snippets, recipe names — anything that must match verbatim.
-- **No intro paragraphs** that restate the heading. No closing summaries that restate the bullets. Headings are the table of contents.
+- **Start with the rule.** Use headings for navigation and spend body text on actions, conditions and necessary rationale.
 
 ### Frontmatter (skills)
 
@@ -160,7 +167,7 @@ The audience is an LLM. Optimise for signal density — every line spends contex
 ### Skill vs conduct division
 
 - **Conduct = canonical rules.** Long-form, numbered sections, exhaustive. The source of truth.
-- **Skill = workflow.** Short, action-oriented. Tells the agent *what to do, in what order, citing which conduct sections.* Never re-encode the rules — link.
+- **Skill = workflow.** Short, action-oriented. Tells the agent *what to do, in what order, citing which conduct sections.* Link to canonical rules.
 - One skill = one workflow. If two skills overlap, one delegates to the other.
 
 ### Anti-patterns (don't do this)

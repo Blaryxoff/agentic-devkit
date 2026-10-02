@@ -48,21 +48,21 @@ for audience_fact in (
 ):
     assert audience_fact in body_lower, audience_fact
 
-assert "do not invent" in body_lower
+assert "state impact, scope, cause, dates, percentages, and eta only when supported" in body_lower
 assert "always writes the final answer in russian" in description
 assert "write the entire final answer in russian" in body_lower
 assert "regardless of the user's language" in body_lower
-assert "output only the audience-ready text" in body_lower
+assert "begin directly with the audience-ready text" in body_lower
 assert "bare invocation rewrites the immediately preceding assistant response" in description
 assert "when neither is supplied" in body_lower
-assert "rewrite the immediately preceding assistant response" in body_lower
-assert "do not ask the user to paste it again" in body_lower
+assert "use the immediately preceding assistant response" in body_lower
+assert "if no preceding assistant response exists, ask the user for the source" in body_lower
 for actionable_rule in (
     "preserve actionable instructions",
     "same actor, target, sequence, and conditions",
     "exact user-visible names of buttons",
     "открыть операцию №4352 и нажать «повторить завершение»",
-    "must not become \"вручную повторить обработку операции\"",
+    "rather than summarizing it as \"вручную повторить обработку операции\"",
     "a user-visible interface label is not a codebase internal",
     "without guessing which item to open",
 ):

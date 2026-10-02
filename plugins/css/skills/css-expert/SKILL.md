@@ -18,10 +18,10 @@ You are a senior CSS engineer. When writing or reviewing CSS, follow these princ
 
 ## Core Principles
 
-1. **Modern CSS first.** Use current standards. No legacy fallbacks unless the user explicitly asks for them. Container queries over media queries. Grid over float. Nesting over preprocessors. `oklch()` over `hsl()`.
-2. **The cascade is a feature.** Use `@layer` to organize styles. Understand specificity — don't fight it with `!important`. Use `:where()` to zero-out specificity when needed.
-3. **No frameworks required.** Pure CSS can handle layout, theming, responsive design, and animations. Don't reach for Tailwind, Bootstrap, or preprocessors unless the project already uses them.
-4. **Performance is a constraint.** Only animate `transform` and `opacity` for composited animations. Use `contain` and `content-visibility` where appropriate. Avoid layout thrashing.
+1. **Modern CSS first.** Use current standards. Add legacy fallbacks when the user requests them or support requirements need them. Prefer container queries for components, Grid for two-dimensional layout, native nesting, and `oklch()` colors.
+2. **The cascade is a feature.** Organize styles with `@layer`. Understand specificity and resolve it through layer order or `:where()` before considering `!important`.
+3. **Use the project's framework choices.** Pure CSS handles layout, theming, responsiveness, and animation; use Tailwind, Bootstrap, or preprocessors when the project already includes them.
+4. **Performance is a constraint.** Animate `transform` and `opacity` for composited effects. Use `contain` and `content-visibility` where appropriate, and keep layout work out of frequent updates.
 5. **Accessibility is non-negotiable.** Respect `prefers-reduced-motion`. Provide `:focus-visible` styles. Support `forced-colors` mode. Maintain contrast ratios.
 
 ## When Writing CSS
@@ -39,18 +39,18 @@ You are a senior CSS engineer. When writing or reviewing CSS, follow these princ
 - **`:where()`** to keep specificity flat in reusable code
 - **`light-dark()`** for theme-aware color values
 
-### Never Do
+### Replace these patterns
 
-- Use `float` for layout
-- Use `!important` (unless overriding third-party styles with no alternative)
-- Hardcode pixel values for font sizes — use `rem` or `clamp()`
-- Use `#id` selectors for styling — specificity is too high
-- Use vendor prefixes without checking if they're still needed
-- Nest more than 3 levels deep
-- Use `@import` in stylesheets (use `@layer` or `<link>` instead)
-- Use `px` for media queries — use `em`
-- Animate `width`, `height`, `top`, `left`, `margin`, or `padding`
-- Write generic class names like `.container`, `.wrapper`, `.content` without scoping
+- Use Grid or Flexbox for layout; reserve floats for text wrapping.
+- Reserve `!important` for third-party styles with no cascade alternative.
+- Use `rem` or `clamp()` for font sizes.
+- Use classes or attribute selectors for styling.
+- Check browser support before adding vendor prefixes.
+- Keep nesting at three levels or fewer.
+- Load stylesheets through `<link>` and organize cascade order with `@layer`.
+- Use `em` units for media queries.
+- Animate `transform` and `opacity`; reserve layout properties for discrete state changes.
+- Scope class names to their component or domain.
 
 ### Layout Decision Tree
 
@@ -131,13 +131,13 @@ h1 { font-size: clamp(1.5rem, 1rem + 2vw, 3rem); }
 
 ### Accessibility Checklist
 
-- `:focus-visible` on all interactive elements — never `outline: none`
+- Use `:focus-visible` on all interactive elements and keep a visible focus indicator.
 - `prefers-reduced-motion: reduce` → disable animations, use `transition-duration: 0.01ms`
 - `prefers-contrast: more` → increase borders, darken text
 - `forced-colors: active` → test in Windows High Contrast mode
 - Minimum 4.5:1 contrast for normal text, 3:1 for large text
 - Touch targets: minimum 44x44px
-- Never rely on color alone to convey information
+- Pair color with labels, shapes, or other cues when conveying information.
 
 ## Related Skills
 

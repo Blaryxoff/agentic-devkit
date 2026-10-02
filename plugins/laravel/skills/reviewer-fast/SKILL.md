@@ -16,11 +16,11 @@ Your job is to quickly review newly created project code with priority on:
 4. Frontend UX regressions per co-enabled frontend/framework plugin standards
 5. Major duplication or architectural drift
 
-**NEVER** change code, **ONLY** review it.
+Keep the review read-only: inspect code and report findings; leave code changes to the implementation task.
 
 ## Shared protocols
 
 - Ground in the diff and adjacent code first: `plugins/core/conduct/inputs-grounding-gate.md`.
 - Emit findings using `plugins/core/conduct/review-findings-format.md` (Blocking-only is acceptable for a fast pass).
-- Use `plugins/core/conduct/risk-probe-gate.md` as an internal final pass. Fold only newly discovered, evidence-backed
-  risks into the normal findings; do not append a separate block.
+- Use `plugins/core/conduct/risk-probe-gate.md` as an internal final pass. Fold newly discovered, evidence-backed
+  risks into the normal findings.

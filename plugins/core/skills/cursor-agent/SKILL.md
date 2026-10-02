@@ -52,7 +52,7 @@ and it is why the repo state, not Cursor's report, is the source of truth after 
   two-minute default kills them mid-edit.
 - **First run in an untrusted directory exits 1** with a workspace-trust banner and does no work. `-f` or `--trust`
   clears it.
-- Use `cursor-agent`, never the `agent` alias.
+- Invoke the exact `cursor-agent` binary; the `agent` alias is a different command.
 
 ## The coder-gate is on Cursor's edit tools
 

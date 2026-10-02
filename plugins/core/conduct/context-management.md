@@ -22,7 +22,7 @@ Bad breakpoints:
 
 ## Minimize context consumption
 
-- Do not load entire large files when only a section is needed — use line ranges or search.
+- Load only the needed section of a large file, using line ranges or search.
 - Prefer targeted reads (specific functions, specific line ranges) over full-file reads.
 - When multiple files are needed, read only the relevant sections of each.
 - Close or stop referencing files that are no longer relevant to the current task.

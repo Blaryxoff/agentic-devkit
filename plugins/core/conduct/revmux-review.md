@@ -49,8 +49,8 @@ under [runtime model routing](./model-routing.md) and regenerate the profile bel
   adjudication to codex and inverts the design.
 - Keep one claude roster agent on `bugs`+`impl`. Verify cannot raise a finding no roster agent made, so a defect every
   codex agent misses is lost without it.
-- Do not duplicate a lens across both executors. Corroboration already crosses complementary lenses; full duplication is
-  what `expert` and `grill-me` charge for.
+- Assign complementary lenses across the two executors. Corroboration already crosses those lenses; reserve full
+  duplication for the paid `expert` and `grill-me` profiles.
 - Expect roughly half the claude spend of `comprehensive`, not three quarters: synthesis and verify stay on claude and
   verify fans out to `--verify-groups` (6 by default).
 

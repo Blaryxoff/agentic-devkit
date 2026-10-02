@@ -7,7 +7,7 @@
 - Enumerate `visible`, `hidden`, and `veryHidden` sheets. Scan hidden rows inside visible sheets; hidden task estimates can
   materially change capacity.
 - Find the real used range from non-empty cells, not styled `max_row`/`max_column` alone.
-- Locate task, capacity, and actual-estimate blocks separately. Do not count summary rows as tasks.
+- Locate task, capacity, and actual-estimate blocks separately. Count task rows and keep summary rows out of task totals.
 - Read data validation and mapping sheets before writing direction, priority, status, or executor values.
 - Inventory native hyperlinks, hyperlink formulas, and URLs stored as plain text. Deduplicate specifications by
   `(provider, file_id, tab_or_gid, fragment)`, not file ID alone.
@@ -27,7 +27,7 @@
 - Inspect local heads, remotes, tags, and relevant worktrees with `git log --all`; the implementation may not be on the
   current branch.
 - Normalize author identities from Git names/emails, workbook assignee maps, and established aliases.
-- Use non-merge implementation commits for ownership. Release integrators and merge authors do not inherit feature credit.
+- Attribute feature ownership to non-merge implementation commits; release integrators and merge authors receive no feature credit from integration alone.
 - Confirm task association through task ID, branch, changed paths, or distinctive specification details. Timing proximity
   alone is insufficient.
 - Classify direction from meaningful production paths across repositories. Workbook labels can be stale or copied.

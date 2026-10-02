@@ -70,8 +70,8 @@ Ask "why" progressively to drill from surface to root:
 
 ## Principles
 
-1. Avoid solution bias — understand before fixing.
-2. Gather evidence — don't assume, verify with data.
+1. Separate observations from hypotheses, and understand the issue before proposing a fix.
+2. Test each hypothesis against evidence from logs, code, configuration, or reproducible behavior.
 3. Consider multiple contributing factors.
 4. Document evidence at each level.
 5. Think systemically — broader implications.

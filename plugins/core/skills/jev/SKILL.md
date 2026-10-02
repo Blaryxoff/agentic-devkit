@@ -44,7 +44,7 @@ grep -rn "retry" src | "$JEV" filter --task "where are HTTP 429 responses retrie
 
 - It orders output; it does not replace reading it. It misses the answer line about a third of the time.
 - Read the top lines first. If they do not answer the task, narrow the search or read the rest.
-- Never conclude that the output lacks the answer because `filter` kept nothing.
+- When `filter` returns nothing, broaden the search or read the original output before concluding the answer is absent.
 - Keep options: `--top` (default 15), `--threshold` (default 0.5), `--scores`.
 
 ## Ask typed questions

@@ -1,6 +1,6 @@
 # Conduct Loading
 
-Enabled plugins define the eligible rule set; they do not make every conduct document mandatory context.
+Enabled plugins define the eligible rule set. Load conduct documents according to the target and its concrete risks.
 
 ## Loading sequence
 
@@ -21,11 +21,10 @@ Enabled plugins define the eligible rule set; they do not make every conduct doc
    - tests, CLI, deployment, or git → only when the request directly targets them.
 5. Stop loading when the opened rules cover both the implemented concerns and the responsibilities expected but absent.
 
-Never read or enumerate a conduct directory wholesale to gather general context. An explicit whole-stack standards audit
-may cover every document, but load and evaluate it in scoped groups instead of placing the entire corpus in context at
-once.
+For a whole-stack standards audit, cover every document in scoped groups so the entire corpus does not need to sit in
+context at once.
 
 Project-level `CLAUDE.md`, `AGENTS.md`, and `.cursor/rules/` override generic conventions and project-specific choices.
-They must not relax applicable safety, security, approval, destructive-operation, or read/write-boundary requirements;
-apply the stricter rule for those conflicts. Record the applied exception rather than loading unrelated conduct to
-search for conflicts.
+Preserve applicable safety, security, approval, destructive-operation, and read/write-boundary requirements when
+project-level rules differ. Apply the stricter rule and record the exception; load unrelated conduct only when a concrete
+conflict requires it.

@@ -26,7 +26,7 @@ Each rule family has one owner plugin only.
 - `devkit-tailwind`: utility classes, arbitrary values, token mapping in Tailwind config
 - `devkit-nuxt`: SSR/runtime/data conventions
 
-Non-owner plugins may reference owner rules briefly, but must not duplicate full rule text.
+Keep full rule text in the owner plugin; use brief references from non-owner plugins.
 
 ## Conduct Source-of-Truth Model
 

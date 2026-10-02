@@ -32,5 +32,5 @@ To avoid duplicated or conflicting rules, each policy family has one owner plugi
 ## Ownership Rules
 
 1. A policy must have one owner only.
-2. Non-owner plugins may reference owner policies, but must not duplicate full policy text.
+2. Non-owner plugins reference the owner policy and keep its full text in the canonical owner document.
 3. Conduct docs remain canonical source of truth; skills summarize and enforce them.

@@ -34,12 +34,12 @@ ci: lint typecheck test build
 - keep target names predictable across projects.
 - prefer short wrappers over long shell logic.
 
-## DO / DO NOT
+## Apply these practices
 
-DO:
 - keep `.PHONY` for non-file targets
 - keep CI target as one-command quality gate
 
-DO NOT:
-- include backend-specific tooling in frontend templates
-- embed complex scripting logic directly in Makefile
+## Replace these patterns
+
+- Keep frontend templates focused on frontend tooling.
+- Move complex scripts into dedicated, testable script files.

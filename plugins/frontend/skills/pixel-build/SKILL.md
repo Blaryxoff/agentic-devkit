@@ -66,10 +66,10 @@ Use `get_design_context` with the extracted `fileKey` and `nodeId` to get code h
 
 Extract from the design:
 - Layout structure (flex/grid, direction, wrapping)
-- **Spacing — measure every gap, padding, and margin in pixels.** Do not eyeball. Read auto-layout `itemSpacing`, `paddingLeft/Right/Top/Bottom`, and per-child margins from the Figma node data. Record them explicitly (e.g. "card: padding 24/20/24/20, gap 12"). Map to project design tokens only when the token value matches exactly; otherwise use the raw px value rather than the nearest token.
+- **Spacing — measure every gap, padding, and margin in pixels.** Read auto-layout `itemSpacing`, `paddingLeft/Right/Top/Bottom`, and per-child margins from the Figma node data. Record them explicitly (e.g. "card: padding 24/20/24/20, gap 12"). Map to project design tokens only when the token value matches exactly; otherwise use the raw px value rather than the nearest token.
 - Typography (font family, size, weight, line-height, letter-spacing)
 - Colors and fills — use existing project tokens/variables, not raw hex
-- **Icons — for every icon node, record: name/asset, exact pixel size (width × height), stroke width, color/fill, and surrounding padding.** Do not substitute a similar-looking icon from the existing project icon set without confirming the glyph matches. If the icon is not present in the project, flag it and either export the SVG from Figma or ask the user which icon to use. Never replace a custom icon with a generic Lucide/Heroicons equivalent silently.
+- **Icons — for every icon node, record: name/asset, exact pixel size (width × height), stroke width, color/fill, and surrounding padding.** Use an existing project icon only after confirming its glyph matches. If the exact icon is absent, flag it and either export the SVG from Figma or ask the user which icon to use. Keep custom icons distinct from generic Lucide/Heroicons equivalents unless the user chooses otherwise.
 - Component structure and variants (hover, active, disabled states)
 - Responsive behavior (auto-layout constraints, min/max widths)
 
@@ -113,11 +113,12 @@ For every configured viewport, follow `visual-implementation.md` §3:
 2. Navigate to the page route.
 3. Authenticate if required (`visual-implementation.md` §3.6).
 4. Stabilize; run `take_snapshot` and the DOM/layout audit.
-5. Run the focused Playwright Test visual assertion when it uses the exact design reference or an approved browser
-   baseline for this state; otherwise do not present its result as a Figma comparison.
+5. Run the focused Playwright Test assertion when it uses the exact design reference or an approved browser baseline
+   for this state; label other results as non-Figma checks.
 6. Save Chrome pixels with `filePath` only when §3.11 requires a design or finding artifact.
 
-Audit all viewports before comparing. Classify every overflow/occlusion candidate; do not infer pass from a clean screenshot.
+Audit all viewports before comparing. Classify every overflow/occlusion candidate and base the pass on those checks, not
+on a clean screenshot alone.
 
 ## Step 5: Compare and Fix
 
@@ -142,7 +143,7 @@ A visually similar screenshot is not sufficient evidence that paddings are corre
 
 - Inspect the rendered element in code (the CSS class, Tailwind utility, or inline style actually applied).
 - Confirm the applied value equals the measured Figma value. If the design says `padding: 24px 20px` and the code says `p-4` (16px), that is a fail even if the screenshot looks close.
-- If a token was used, verify the token resolves to the exact Figma value. Do not accept "close enough."
+- If a token was used, accept it only when its resolved value matches the exact Figma value.
 
 ### Mandatory icon audit
 
@@ -151,7 +152,7 @@ Verify each icon explicitly:
 - Confirm each icon from the Step 1 inventory is present, in the right place, at the right size.
 - Compare glyph shape with the smallest matching Figma/live icon crops; reuse the crop while the state is unchanged.
 - Verify stroke width and color match.
-- If the project does not have the exact icon, stop and ask the user — do not pick a near-match from the existing icon library.
+- When the project lacks the exact icon, flag it and either export it from Figma or ask the user which icon to use.
 
 ## Step 6: Iterate
 
@@ -175,16 +176,16 @@ When all viewports pass, summarize:
 
 ## Baseline Approval
 
-**Never save baselines without explicit user confirmation.**
+Save baselines only after explicit user confirmation.
 
 When the user confirms the UI is correct and wants to keep regression baselines, follow `visual-implementation.md` §6.3 for each viewport.
 
 ## Rules
 
-- The Figma design is the source of truth. Do not deviate from it unless instructed.
-- Keep all configured viewports passing; do not optimize for only one breakpoint.
-- Do not silently update baseline files.
-- Do not introduce new dependencies without user approval.
+- Follow the Figma design as the source of truth unless the user instructs otherwise.
+- Keep all configured viewports passing across the full breakpoint set.
+- Update baseline files only after the user approves the changes.
+- Add dependencies only with user approval.
 - Use Playwright Test only under `visual-implementation.md` §4; keep chrome-devtools MCP as the interactive browser.
-- If the design references components or tokens that do not exist in the project, flag this to the user rather than inventing replacements.
+- Flag references to missing components or tokens and ask the user for direction before choosing replacements.
 - Spacing and icons must be verified against the Figma spec explicitly, not inferred from a passing screenshot.

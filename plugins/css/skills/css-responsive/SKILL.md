@@ -120,10 +120,10 @@ Use media queries only for page-level layout shifts.
 
 ### Rules
 
-- Use `em` units, never `px` — respects user font size.
+- Use `em` units for breakpoints so they respect user font size.
 - Prefer `min-width` (mobile-first) unless the desktop layout is simpler.
 - Limit to 2–3 breakpoints maximum for page layout.
-- Never use media queries for component-level responsiveness.
+- Use container queries for component-level responsiveness.
 
 ### Recommended Breakpoints (if needed)
 
@@ -261,8 +261,7 @@ img {
 ```
 
 - Use `dvh` for full-height layouts on mobile (accounts for URL bar).
-- Use `svh` when you need the element to never exceed the visible area.
-- Never use `100vh` — it doesn't account for mobile browser UI.
+- Use `svh` to keep an element within the smallest visible mobile viewport; use `dvh` when it should track the changing viewport.
 
 ## Intrinsic Sizing
 

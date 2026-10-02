@@ -8,13 +8,13 @@ Direct, brief, AI-speak-free writing for **technical communication**: commit mes
 
 **Apply this style to:** commit messages, PR/MR descriptions and comments, code-review comments, issue/ticket comments, internal technical discussion.
 
-**Do NOT apply to** (use proper English — complete sentences, full capitalization, professional tone): `README.md`, official documentation, user guides, public blog posts, and any public-facing release notes or content for a general audience.
+**For `README.md`, official documentation, user guides, public blog posts, and public-facing release notes or other general-audience content, use proper English, complete sentences, full capitalization, and a professional tone.**
 
 ## Core principles
 
 - **Brevity and directness** — get to the point; cut filler and unnecessary context. Short is fine when it conveys the full message.
-- **Honest feedback** — state opinions directly; express uncertainty openly ("I'm not sure", "I can't see how"); don't soften criticism artificially; question design decisions when warranted.
-- **Problem → solution structure** — state the problem concisely, then what changed. Skip the dramatic build-up. Numbered lists for multiple issues.
+- **Honest feedback** — state opinions directly; express uncertainty openly ("I'm not sure", "I can't see how"); keep criticism clear and question design decisions when warranted.
+- **Problem → solution structure** — state the problem concisely, then what changed. Use numbered lists for multiple issues.
 - **Technical precision** — exact references: `file:line`, commit SHAs, issue links. Inline code with backticks for identifiers; code blocks for snippets. Assume the reader has technical context.
 
 ## AI-typical language to avoid

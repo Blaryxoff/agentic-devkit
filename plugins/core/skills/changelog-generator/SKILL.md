@@ -14,7 +14,7 @@ You are converting **real repository history** into a useful changelog. Your job
 ## Workflow
 
 1. **Resolve the range.** Prefer an explicit user range (`v1.2.0..HEAD`, dates, branch comparison). If absent, inspect tags and recent history, then state the chosen range.
-2. **Collect evidence.** Use `git log`, `git diff --stat`, and targeted diffs for unclear commits. Do not rely on commit titles alone.
+2. **Collect evidence.** Use `git log`, `git diff --stat`, and targeted diffs for unclear commits; ground every change description in the diff.
 3. **Group changes.** Use only categories that have real content:
    - Features
    - Improvements
@@ -79,7 +79,7 @@ Keep it concise. If the user asked for customer-facing release notes, omit inter
 ## Hard rules
 
 - Never fabricate features from vague commit messages.
-- Never include raw SHA spam unless the user asks for audit detail.
-- Do not claim a bug is fixed unless the diff or tests support it.
+- Include commit SHAs only when the user asks for audit detail.
+- Claim a bug is fixed only when the diff or tests support it.
 - If the repo is dirty, separate committed history from uncommitted work.
 - If tags are missing or weird, say which fallback range you used.

@@ -25,8 +25,8 @@ Modern CSS conventions and anti-patterns. Apply these rules whenever writing or 
 
 - Use CSS Grid for two-dimensional layouts; Flexbox for one-dimensional alignment.
 - Use `place-items: center` on a grid container for centering — not absolute positioning.
-- Never use floats or clearfix for layout.
-- Avoid absolute positioning to achieve layouts that Grid/Flex can handle natively.
+- Use Grid or Flexbox for layout instead of floats or clearfix.
+- Use Grid or Flexbox when they can handle the layout natively; reserve absolute positioning for overlays and other positioned elements.
 
 ## Custom properties and tokens
 
@@ -49,25 +49,25 @@ Modern CSS conventions and anti-patterns. Apply these rules whenever writing or 
 - Use `em`-based breakpoints (not `px`) to respect user font-size preferences.
 - Use `clamp()` for fluid typography and spacing — no fixed sizes per breakpoint.
 - Use logical properties (`margin-block`, `padding-inline`, `inset-inline-start`) over physical properties.
-- Never hide content with `display: none` on mobile unless it is genuinely removed from the design.
+- Keep mobile content visible unless the responsive design removes it; reserve `display: none` for content removed from the design.
 
 ## Cascade layers
 
 - Declare layer order explicitly at the top of each stylesheet: `@layer reset, tokens, base, layout, components, utilities;`
-- Never use `!important` to override specificity — use `@layer` ordering or `:where()` instead.
-- Never use ID selectors for styling.
+- Manage specificity with `@layer` ordering or `:where()` rather than `!important` overrides.
+- Use classes or attribute selectors for styling.
 - Keep nesting to 3 levels maximum.
 
 ## Animation
 
-- Only animate `transform` and `opacity` for GPU-composited transitions (never `width`, `height`, `top`, `left`).
+- Animate only `transform` and `opacity` for GPU-composited transitions.
 - Always provide a `prefers-reduced-motion: reduce` override that disables or minimizes motion.
 - Use `will-change` only on elements immediately before animation; remove it after.
 
 ## Architecture
 
-- Never use `@import` inside stylesheets — load stylesheets in parallel via `<link>` tags.
-- Never set styles via inline JavaScript (`element.style.property`). Toggle classes or set custom properties (`element.style.setProperty`).
+- Load stylesheets in parallel with `<link>` tags.
+- Set styles through classes or custom properties (`element.style.setProperty`) instead of assigning inline style properties in JavaScript.
 
 ## Anti-patterns to flag
 

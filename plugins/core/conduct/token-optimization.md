@@ -20,14 +20,14 @@ Guidelines for reducing AI token consumption without sacrificing output quality.
 
 - Prefer subagents over main-context work for isolated, well-scoped subtasks (single-file review, targeted search, independent module work).
 - Each subagent spawns its own context window — use them for parallelism, not for sequential steps that share state.
-- Pass only the necessary context to subagents; do not dump the entire session.
+- Pass subagents only the context they need for their assigned task.
 
 ## Prompt discipline
 
-- Avoid pasting large files into prompts when a file path reference suffices.
+- Reference large files by path when the path gives enough context.
 - When asking for changes, specify the file and function rather than describing the location.
 - Batch related questions into a single prompt rather than asking one at a time.
-- Provide acceptance criteria upfront to avoid revision loops.
+- Provide acceptance criteria upfront to reduce revision loops.
 
 ## Anti-patterns
 

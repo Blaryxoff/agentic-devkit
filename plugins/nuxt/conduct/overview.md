@@ -12,7 +12,7 @@ This document set defines architecture and development rules for Nuxt frontend a
 
 ## Conduct routing
 
-Open only documents matching the current target; do not read this directory as a sequence.
+Open the documents that match the current target and its risks.
 
 | Target or risk | Documents |
 |---|---|

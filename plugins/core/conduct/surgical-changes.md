@@ -1,6 +1,6 @@
 # Surgical Changes
 
-Every diff must trace line-for-line to the user's request. Adjacent code is off-limits unless touching it is required to make the requested change work.
+Keep every diff line tied to the user's request. Touch adjacent code only when the requested change depends on it.
 
 ## The test
 
@@ -12,15 +12,15 @@ For each changed line, you must be able to answer: *which user request, plan tas
 - Imports, types, or callers that *your* change made stale (orphans you created).
 - Tests covering the new behaviour.
 
-## Forbidden edits in the same diff
+## Keep the diff focused
 
-- Drive-by refactors of unrelated code in the same file or function.
-- Style changes the linter did not flag — quote style, brace style, trailing commas, import ordering, indentation, whitespace.
-- Adding type hints, docstrings, or comments to code you did not have to modify.
-- "Improving" error messages, log lines, or variable names outside the changed region.
-- Renames whose scope exceeds the requested change.
-- Deleting pre-existing dead code, commented-out blocks, or unused helpers. Surface them to the user; do not delete.
-- Reformatting a function because you changed one line inside it.
+- Limit edits to requested behavior and the smallest dependent changes. Leave unrelated code and its style as-is.
+- Preserve existing quote style, brace style, trailing commas, import ordering, indentation, and whitespace unless the linter flags them.
+- Add type hints, docstrings, and comments only to code the requested change requires you to modify.
+- Keep error messages, log lines, and variable names outside the changed region intact.
+- Keep renames within the scope of the requested change.
+- Surface pre-existing dead code, commented-out blocks, and unused helpers to the user for a separate decision.
+- Reformat only the code required by the change.
 
 ## Match the existing style
 
@@ -29,19 +29,19 @@ Match the conventions of the file you are editing, even when they conflict with 
 - Same quote style, same brace placement, same import ordering as surrounding code.
 - Same naming convention (snake_case vs camelCase) as the enclosing module.
 - Same error-handling pattern (exceptions vs result types vs sentinel values) as the surrounding layer.
-- Same level of abstraction as siblings — do not introduce a class into a file of free functions, or vice versa.
+- Match the abstraction level of sibling code: keep free-function files functional and class-based files class-based.
 
-If you believe the existing style is wrong, say so in chat. Do not change it as part of an unrelated diff.
+If you believe the existing style is wrong, explain that in chat and keep it out of an unrelated diff.
 
 ## Orphans you created
 
 When your edit removes the last call to a function, the last import of a symbol, or the last reference to a constant, delete the orphan in the same diff. This is cleanup *of your own change*, not drive-by refactoring.
 
-Do not extend this to orphans that existed before your change. Those are out of scope — flag them to the user instead.
+Limit orphan cleanup to items created by your change. Flag pre-existing orphans to the user as out of scope.
 
 ## How to surface findings without acting on them
 
-When you notice unrelated issues during a task — dead code, bad names, missing tests, subtle bugs — list them in the chat summary. Do not edit them. Let the user decide whether to open a follow-up task.
+When you notice unrelated issues during a task — dead code, bad names, missing tests, subtle bugs — list them in the chat summary and let the user decide whether to open a follow-up task.
 
 ## Why this matters
 

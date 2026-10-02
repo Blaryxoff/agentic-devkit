@@ -1,6 +1,6 @@
 # Current Library Docs
 
-Verify a library or framework API against up-to-date documentation before using or recommending it, instead of trusting training-cutoff memory. Training data lags behind releases — APIs get renamed, deprecated, or removed. Fetch on demand per `mcp-economy.md`; never bulk-preload docs.
+Verify a library or framework API against up-to-date documentation before using or recommending it. Training data lags behind releases — APIs get renamed, deprecated, or removed. Fetch scoped docs on demand per `mcp-economy.md`.
 
 ## Trigger — fetch docs first
 
@@ -27,4 +27,4 @@ State the assumption when you skip ("using the stdlib `X` API as of <version>") 
 
 ## Graceful absence
 
-If Context7 (or an equivalent docs source) is not configured, do not block: proceed with best knowledge, and explicitly flag any API whose current correctness you could not verify so the user can confirm.
+If Context7 (or an equivalent docs source) is not configured, proceed with best knowledge and explicitly flag any API whose current correctness you could not verify so the user can confirm.

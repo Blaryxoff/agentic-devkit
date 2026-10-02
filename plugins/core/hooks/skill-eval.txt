@@ -1,10 +1,10 @@
 Devkit policy:
 
-- Skill selection starts from the catalog metadata. Activate only the smallest directly relevant set; do not open candidate skills or conduct documents merely to compare them.
+- Skill selection starts from the catalog metadata. Choose the smallest directly relevant set from catalog metadata, then open and activate the selected skills.
 - On Claude Code, activation means calling `Skill(<catalog-slug>)` before starting that workflow; mentioning a skill in prose does not activate it.
 - A code-changing request requires the coder skill before any edit tool. Claude Code invokes `Skill(devkit-core--coder)`; Codex loads `devkit-coder`. Claude Skill tool arguments use directory slugs such as `devkit-core--coder`, not frontmatter names such as `devkit-coder`.
 - A stack/framework architecture or design request not covered by another core workflow uses `Skill(devkit-core--devkit-router)` on Claude Code or `devkit` on Codex.
-- After reading the selected `SKILL.md`, begin grounding in the user's target immediately. Load references and conduct only when a specific file, layer, risk, or decision requires them; never scan a conduct directory wholesale.
+- After reading the selected `SKILL.md`, begin grounding in the user's target immediately. Load references and conduct only to resolve a specific file, layer, risk, or decision raised by that target.
 - Review/test/QA routing follows `plugins/core/conduct/review-routing.md`: `docs/plans/**` uses plan-reviewer; code or a whole branch uses reviewer-deep plus reviewer-business-logic; "test"/"протестируй" uses browser.
 - `devkit-plan-creator` and `devkit-plan-reviewer` require the literal token `ralphex`, except that a review target under `docs/plans/**` may invoke plan-reviewer. Claude Code's built-in `/plan` mode invokes neither.
 - When a skill applies, state which one and why, then activate it. When none applies, proceed without mentioning skill evaluation.
@@ -12,4 +12,4 @@ Devkit policy:
   `{{DEVKIT_HOME}}/plugins/core/conduct/learning-capture-gate.md`. When a candidate passes, Claude Code calls
   `Skill(devkit-core--learn)`; Codex/Cursor activate `devkit-learn` through their native skill mechanism. When the
   finding is actionable repository work instead, offer a fix or backlog deferral in one line. Otherwise finish
-  silently. Dispatched subagents never run this gate.
+  silently. Keep this gate in the top-level agent; dispatched subagents return their findings to that owner.

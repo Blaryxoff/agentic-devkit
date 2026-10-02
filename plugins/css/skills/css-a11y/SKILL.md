@@ -80,11 +80,11 @@ Every interactive element must have a visible `:focus-visible` style:
 }
 ```
 
-### Never
+### Focus patterns that preserve keyboard access
 
-- `*:focus { outline: none; }` — this breaks keyboard navigation
-- `:focus` without `:focus-visible` — shows rings on mouse clicks
-- Focus styles that use only `box-shadow` — invisible in forced-colors mode
+- Keep a visible focus indicator for keyboard users; the following anti-pattern breaks keyboard navigation: `*:focus { outline: none; }`
+- Use `:focus-visible` to avoid showing focus rings for pointer clicks.
+- Include an `outline` so focus remains visible in forced-colors mode; `box-shadow` alone disappears there.
 
 ## Step 2: prefers-reduced-motion
 
@@ -128,7 +128,7 @@ This global reset is the minimum. For finer control, address per-component:
 - **Essential** (keep): loading spinners, progress indicators, form validation feedback
 - **Non-essential** (reduce/remove): decorative transitions, parallax, entrance animations, hover effects, auto-playing carousels
 
-For essential motion, reduce but don't remove:
+For essential motion, preserve its meaning while reducing its duration or intensity:
 
 ```css
 @media (prefers-reduced-motion: reduce) {
@@ -439,9 +439,9 @@ ISSUES FOUND: 9 critical, 3 warnings
 
 ## Rules
 
-- Never suggest `outline: none` without a visible replacement
+- Keep a visible focus indicator whenever removing the browser outline; prefer a clear replacement outline.
 - `prefers-reduced-motion` is non-negotiable — every animation needs it
 - Focus styles must work in forced-colors mode (use `outline`, not just `box-shadow`)
-- Don't use `display: none` for visually-hidden content — it removes from a11y tree
+- Keep visually-hidden content in the accessibility tree with a visually-hidden pattern such as `.sr-only`.
 - Touch targets: 44x44px minimum, no exceptions for interactive elements
 - Always verify color contrast when recommending color changes

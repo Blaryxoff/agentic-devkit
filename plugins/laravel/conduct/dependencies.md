@@ -49,7 +49,7 @@ Before adding a new dependency:
 
 - **Queues/events first**: use Laravel queues/events before introducing external broker dependencies
     - Queue backends: database/redis/sqs via Laravel queue drivers
-    - Wrap broker/queue interactions behind contracts, never call low-level clients directly in domain services
+    - Wrap broker/queue interactions behind contracts and call those contracts from domain services
 - If Kafka (or another broker) is required, isolate it in infrastructure adapters and keep core/application unaware of
   vendor client types
 
@@ -59,7 +59,7 @@ Before adding a new dependency:
 - **Query Builder**: `Illuminate\Database\Query\Builder` — use for complex read queries/performance-sensitive paths
 - **Migrations**: Laravel migrations in `database/migrations` — version-controlled schema changes
 - **Factories/seeders**: Laravel factories and seeders for test/dev data setup
-- **Decimal for money**: use `decimal` database columns + explicit casts/value objects, never floating-point for money
+- **Decimal for money**: use `decimal` database columns + explicit casts/value objects for monetary values
 
 ## Cache
 
@@ -77,8 +77,7 @@ Before adding a new dependency:
 
 - Nginx is runtime infrastructure (reverse proxy, static assets, gzip/cache headers, request limits)
 - Application behavior/config belongs in Laravel config and code, not in Nginx business rules
-- Do not add app-level dependencies to solve concerns that should be handled by Nginx (static caching, compression, TLS
-  termination)
+- Use Nginx for static caching, compression, and TLS termination instead of adding application dependencies for those concerns.
 
 ## General / Shared
 

@@ -14,7 +14,7 @@ This section contains Tailwind-specific styling conventions covering tokenizatio
 ## Boundaries
 
 - Generic CSS best practices are owned by frontend conduct.
-- Do not duplicate CSS policy text here; reference it where needed.
+- Reference the owning CSS conduct document for CSS policy.
 - Reference `plugins/core/conduct/ownership-map.md` when in doubt.
 
 ## Design token discipline
@@ -31,19 +31,19 @@ Tailwind config is the single source of truth for design tokens. Treat `theme.ex
 
 ### Rules
 
-- Never repeat arbitrary values (`[#e2e7ef]`, `[14px]`) across components — if it appears twice, it belongs in config.
+- Promote repeated arbitrary values (`[#e2e7ef]`, `[14px]`) into shared config tokens.
 - Derive shades with opacity modifiers (`bg-primary/80`) instead of defining new one-off color entries.
 - Dark mode via `dark:` variant; when the project uses Tailwind’s CSS-first / `@theme` setup, prefer CSS `color-scheme` integration.
-- Keep `tailwind.config` theme flat and scannable — avoid deeply nested custom scales.
+- Keep `tailwind.config` theme flat and scannable with shallow custom scales.
 - Prefer semantic token names (`text-muted`, `bg-surface`) over raw palette names (`text-gray-400`) in component markup.
 
 ## Accessibility
 
 ### Focus styles
 
-- Use `focus-visible:` variant on all interactive elements — never strip outlines without a visible replacement.
+- Use `focus-visible:` on all interactive elements and keep a visible focus indicator.
 - Combine outline + offset for clear, high-contrast focus rings: `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary`.
-- Never use `outline-none` globally without providing a replacement.
+- Pair any global `outline-none` style with a visible replacement indicator.
 - Focus styles must remain visible in forced-colors mode — `outline` works; `ring` alone does not.
 
 ### Reduced motion
@@ -64,13 +64,13 @@ Tailwind config is the single source of truth for design tokens. Treat `theme.ex
 
 ### Color-only indicators
 
-- Never rely on color alone to convey information (validation, status, categories).
+- Pair color with an icon, text label, border, or shape to convey validation, status, and categories.
 - Pair color with a secondary indicator: icon, text label, border treatment, or shape difference.
 
 ### Screen reader support
 
 - Use Tailwind's `sr-only` utility for visually hidden but accessible content (icon button labels, skip link text, table captions).
-- Never use `hidden` or `invisible` when content must remain in the accessibility tree.
+- Use `sr-only` for content that should stay in the accessibility tree while remaining visually hidden.
 
 ### Skip links
 
@@ -90,7 +90,7 @@ Tailwind config is the single source of truth for design tokens. Treat `theme.ex
 ### Animation constraints
 
 - Only animate composited properties: `transition-transform`, `transition-opacity`, `transition-shadow`.
-- Never use `transition-all` — list explicit properties to avoid triggering layout recalculations.
+- List explicit transition properties to keep layout recalculations controlled.
 - `will-change-transform` only on elements about to animate (e.g., on hover), not as a global default.
 - Durations: 150–400ms for UI feedback, 200–600ms for entrance animations.
 
@@ -165,7 +165,7 @@ Flag and rewrite these patterns — they signal generic AI-generated output:
 ### Rules
 
 - Limit page-level breakpoint variants to 2–3 tiers maximum.
-- Never use viewport breakpoints to change a reusable component's internal layout — that is the job of container queries.
+- Use container queries to change a reusable component's internal layout.
 - Test content readability at 320px and 2560px viewports.
 
 ## Usage conventions

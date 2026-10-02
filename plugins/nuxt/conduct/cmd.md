@@ -15,9 +15,9 @@ Use project scripts from `package.json` as single source of truth:
 
 ## Command usage rules
 
-- prefer targeted checks while iterating (lint/type/test for affected scope).
+- Run targeted checks for the affected scope while iterating (lint/type/test).
 - run build before final delivery for production-impacting changes.
-- do not invent ad-hoc scripts when existing ones cover the task.
+- Reuse existing project scripts whenever they cover the task.
 
 ## Local development flow
 
@@ -34,12 +34,12 @@ Use project scripts from `package.json` as single source of truth:
 4. tests
 5. build
 
-## DO / DO NOT
+## Apply these practices
 
-DO:
 - keep scripts deterministic and documented
 - keep command names consistent across repos where possible
 
-DO NOT:
-- run unrelated heavy checks on every tiny edit
-- bypass type checks for TS code changes
+## Replace these patterns
+
+- Run the checks relevant to each change; reserve heavy checks for changes that warrant them.
+- Run type checks for TypeScript changes.

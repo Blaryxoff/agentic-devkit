@@ -55,7 +55,7 @@ If the project file is silent, fall back to the project `Makefile` or `package.j
 ## Hygiene
 
 - never commit secrets or `.env` files
-- avoid unrelated file churn
+- Keep each change focused on its stated purpose.
 - keep branch short-lived
 - rebase on latest `master` before merge
 - do not force-push shared protected branches

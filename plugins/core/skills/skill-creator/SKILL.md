@@ -20,7 +20,7 @@ A skill is justified when it provides at least one of:
 - bundled scripts for deterministic work;
 - a decision tree that prevents expensive mistakes.
 
-Do **not** create a skill for:
+Keep the following outside skills:
 
 - one-off task notes;
 - raw copied documentation;
@@ -97,7 +97,7 @@ Target size: enough to guide the agent, not enough to sedate it. If `SKILL.md` g
 2. **Check for duplicates.** Search existing `plugins/*/skills/*/SKILL.md` and `conduct/` first.
 3. **Choose placement.** Core vs stack plugin. Prefer existing plugins.
 4. **Write the smallest useful workflow.** Include commands, prerequisites, verification, and hard stops.
-5. **Add references/scripts only when needed.** Do not vendor random docs unless they are actually used.
+5. **Add references/scripts only when needed.** Bundle only documentation the workflow actually consumes.
 6. **Validate locally.** Frontmatter parses, files exist, links resolve.
 7. **Regenerate adapters** in target projects if new global/core skills should appear for Claude/Codex.
 8. **Test routing.** Ask the agent a realistic prompt and verify the skill is visible/selected or explicitly invokable.
@@ -113,14 +113,14 @@ When improving an existing skill:
 5. Make hard rules concrete and testable.
 6. Add missing prerequisites and verification steps.
 7. Preserve useful project-specific conventions.
-8. Avoid changing semantics just to make prose prettier. Pretty wrong instructions are still wrong, just with perfume.
+8. Preserve triggers, obligations, exceptions and safety boundaries when improving wording. Lead workflow rules with a concrete action; retain explicit prohibitions where a safety boundary needs them.
 
 ## Quality checklist
 
 A good devkit skill:
 
 - has a specific trigger;
-- names when **not** to use it;
+- gives concrete routing for out-of-scope requests;
 - is on-demand and compatible with the user's current tooling;
 - includes exact commands or tool names where relevant;
 - has verification steps;
@@ -140,8 +140,8 @@ When importing from external skill repositories:
    workflow design survives.
 2. Read the source `SKILL.md` and only its referenced resources. Separate the portable workflow from discovery paths,
    plugin manifests, hooks, permissions, install commands, and other host-shell concerns.
-3. Keep one canonical devkit skill directory and one shared `SKILL.md` by default. Do not add adapter or installer
-   machinery for hypothetical portability differences.
+3. Keep one canonical devkit skill directory and one shared `SKILL.md` by default. Add adapter or installer machinery
+   only for an observed portability requirement.
 4. Express small harness differences inside the shared body. Use a compact Claude/Codex table when ordering, commands,
    or native primitives differ; name the concrete tools when that makes the instruction more reliable.
 5. Describe the common capability when the distinction does not affect execution, such as "use the available structured
@@ -149,8 +149,8 @@ When importing from external skill repositories:
 6. Consider separate harness bodies only after a real skill repeatedly fails in one harness and a short inline branch
    cannot express the difference clearly. Treat that as an explicit architecture change, not routine skill porting.
 7. Keep discovery, plugin manifests, hooks, permissions, and other unavoidable host behavior in the owning adapter.
-8. Resolve bundled resources relative to the loaded skill directory or `DEVKIT_HOME`. Do not introduce
-   `${CLAUDE_PLUGIN_ROOT}` into a cross-host skill; Codex has no equivalent.
+8. Resolve bundled resources relative to the loaded skill directory or `DEVKIT_HOME`, which works across hosts.
+   Keep `${CLAUDE_PLUGIN_ROOT}` limited to Claude-specific adapter behavior; Codex has no equivalent.
 9. Reject anything requiring hidden SaaS, daemon, container, proprietary runtime, or a new dependency unless explicitly
    approved.
 10. Rename and rewrite for devkit conventions (`devkit-*` names where appropriate). Remove unsupported source metadata
@@ -173,9 +173,9 @@ Verification:
 
 ## Hard rules
 
-- Do not create a skill if a two-line note in the current task would do.
+- Use a task note when two lines in the current task resolve the need; create a skill for a reusable workflow.
 - Do not hide project-specific secrets or credentials inside skills.
-- Do not add background services as “skills”. Skills describe workflows; they are not an excuse to build a zoo.
-- Do not build harness-specific adapter machinery for an unobserved skill problem. Prefer one shared body with a compact
-  harness branch when necessary.
-- Do not rewrite all skills mechanically. Improve only what has a clear quality problem.
+- Describe executable workflows in skills. Treat any proposed background service as a separate dependency requiring explicit approval.
+- Use one shared skill body with a compact harness branch. Add harness-specific adapter machinery only for an observed
+  skill problem that the shared body cannot express.
+- Make each wording change resolve a specific clarity problem and preserve the rule’s behavior.

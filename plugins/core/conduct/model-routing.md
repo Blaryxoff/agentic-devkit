@@ -1,10 +1,10 @@
 # Runtime Model Routing
 
-- Specify a model family, never a numbered model release. Use the caller's requested reasoning effort; when omitted,
+- Specify a model family and resolve its currently available model identifier. Use the caller's requested reasoning effort; when omitted,
   inherit the worker runtime's configured default without an effort override.
 - Resolve the newest available version of that family before dispatch; record the actual model ID in the report.
 - For native subagents, use the harness's current selectable-model catalog. Compare numeric version components,
-  not lexicographic order. Do not infer availability from session history or substitute another family silently.
+  not lexicographic order. Confirm availability in the catalog and keep the requested family unchanged.
 - For Codex CLI workers, query its account/provider catalog with the bundled resolver:
 
 ```bash
@@ -19,5 +19,4 @@ executor_model=$(python3 "$DEVKIT_HOME/bin/devkit-model" luna < /dev/null) || ex
 - Record the effective effort from the worker's startup metadata. Keep model and effective effort consistent within
   one pass, including rechecks; resolve again for the next pass.
 - Use Claude's unversioned family aliases (`opus`, `sonnet`, `haiku`) for Claude CLI workers.
-- A missing family, unsupported effort or failed catalog lookup blocks that dispatch. Report the prerequisite;
-  never fall back to a remembered release or invent a `latest` alias.
+- A missing family, unsupported effort or failed catalog lookup blocks that dispatch. Report the prerequisite and resume after it is resolved; use catalog-confirmed releases rather than remembered releases or an invented `latest` alias.

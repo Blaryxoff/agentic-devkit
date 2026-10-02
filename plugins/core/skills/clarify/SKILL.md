@@ -11,7 +11,7 @@ description: >-
 
 > Adapted from `umputun/cc-thingz` (MIT).
 
-Resolve user confusion by investigating the actual behaviour, explaining it with evidence, and determining whether a real issue exists. **Primary goal: clarify and explain, not fix.** About half of confusion cases are genuine issues; the other half are misunderstandings. Do not assume either way — investigate first.
+Resolve user confusion by investigating the actual behaviour, explaining it with evidence, and determining whether a real issue exists. **Primary goal: clarify and explain, not fix.** About half of confusion cases are genuine issues; the other half are misunderstandings. Treat both as open possibilities and investigate first.
 
 ## When to use
 
@@ -32,7 +32,7 @@ Extract the core question, the expectation, the reality, and locate the gap. Cat
 
 ### 2. Investigate
 
-Gather evidence before explaining: read the relevant code, check configuration, review docs, trace the execution flow. Do not guess — verify the actual system state.
+Gather evidence before explaining: read the relevant code, check configuration, review docs, and trace the execution flow. Verify the actual system state before drawing conclusions.
 
 ### 3. Explain (gently)
 

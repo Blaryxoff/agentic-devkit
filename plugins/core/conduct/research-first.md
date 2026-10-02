@@ -4,7 +4,7 @@ Adapted from the search-first development pattern. Applies to all implementation
 
 ## Rule
 
-Before writing or modifying code, read the relevant codebase areas first. Never assume structure, naming, patterns, or conventions — verify them.
+Before writing or modifying code, read the relevant codebase areas first. Verify structure, naming, patterns, and conventions against the repository.
 
 ## Required research steps
 

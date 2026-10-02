@@ -10,8 +10,8 @@ This section contains Vue-specific conventions only.
 
 ## Boundaries
 
-- Do not place Inertia transport rules here.
-- Do not place Tailwind or generic CSS ownership rules here.
+- Keep Inertia transport rules in the Inertia conduct documents.
+- Keep Tailwind and generic CSS ownership rules in their conduct documents.
 - Reference `plugins/core/conduct/ownership-map.md` when in doubt.
 
 ## File naming and project structure
@@ -21,12 +21,12 @@ This section contains Vue-specific conventions only.
   - `Pages/` — top-level Inertia page components (one per route)
   - `Components/` — reusable UI components
   - `Layouts/` — page layout wrappers
-- Do not flatten all components into a single directory — use subdirectories that mirror the domain or feature they belong to.
+- Group components into subdirectories that mirror their domain or feature.
 
 ## Component design
 
 - Keep components focused on rendering and interaction wiring. Business logic belongs in composables or services.
-- Keep component APIs simple and avoid over-generalization.
+- Keep component APIs simple and specialize them for the needs they serve.
 - Favor explicit props/events contracts over implicit coupling.
 - Vue components must have a **single root element**. Multiple root elements cause issues with attribute inheritance and transitions.
 
@@ -37,16 +37,15 @@ This section contains Vue-specific conventions only.
 
 ## Safe rendering
 
-- Do not use `v-html` with user-controlled content — it introduces XSS vulnerabilities.
-- If `v-html` is necessary, sanitize the input before rendering.
+- Render user-controlled content with Vue interpolation; use `v-html` only for sanitized content.
 
 ## Form and async error handling
 
-- Always handle failed form submissions — wire `onError` and display `errors` to the user; never silently discard validation failures.
-- Do not swallow Promise rejections from async operations — either handle the error or let it propagate to a top-level error boundary.
+- Handle failed form submissions through `onError` and display `errors` to the user.
+- Handle Promise rejections from async operations or let them propagate to a top-level error boundary.
 - Disable submit buttons during in-flight requests to prevent duplicate submissions.
 
 ## List spacing
 
 - Use `gap-*` on the parent flex or grid container for spacing between list items.
-- Do not use individual margins (`mb-4`, `mt-2`, etc.) on each child item — this scatters spacing logic and makes it harder to maintain consistently.
+- Apply `gap-*` to the parent flex or grid container instead of spacing each child with individual margins such as `mb-4` or `mt-2`.

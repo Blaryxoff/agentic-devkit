@@ -17,18 +17,18 @@ will rescue a command. Make it unable to block instead.
 
 - Redirect stdin for any command that can read it — `cmd … < /dev/null`. The only exception is a command you
   are deliberately feeding.
-- Prefer a non-interactive flag over an interactive prompt (`--yes`, `--no-input`, `--batch`, an explicit
-  preset). A tool that offers none is the thing to fix, not to work around with a guessed keystroke.
-- Never watch a long-running command through `tail`. It buffers until EOF, so a blocked run looks identical to
+- Use a non-interactive flag (`--yes`, `--no-input`, `--batch`, or an explicit preset) whenever one is available.
+  When a tool offers no such flag, fix the tool or invocation instead of supplying a guessed keystroke.
+- Redirect long-running command output to a file and read it as needed. `tail` buffers until EOF, so a blocked run looks identical to
   a slow one and the line naming the cause never arrives. `head -n N` does exit early, but it then SIGPIPEs the
   producer mid-run. Redirect to a file and read the file.
-- Never launch an editor, pager, or REPL. Pass `--no-pager`, or set `GIT_PAGER=cat`, `PAGER=cat`,
-  `GIT_EDITOR=true` when a command might reach for one.
-- Do not build a workflow on `timeout`; stock macOS does not ship it.
+- Keep commands non-interactive: pass `--no-pager`, or set `GIT_PAGER=cat`, `PAGER=cat`,
+  and `GIT_EDITOR=true` when a command might launch an editor, pager, or REPL.
+- Build portable workflows without relying on `timeout`, which stock macOS does not ship.
 - Launch a peer CLI with stdin closed: `codex exec … "$(cat <prompt-file>)" < /dev/null`, `claude -p … < /dev/null`. Both read stdin even when the prompt is a positional argument. Write the prompt file in a separate call; a heredoc in the same compound command as the launch is the usual cause. `plugins/core/hooks/peer-cli-gate.sh` refuses the launch when the redirect is missing, so a hang here never means the prompt failed to arrive.
-- A script this repository ships obeys the same rule: when it needs a terminal it does not have, it exits with
-  a message naming the non-interactive flag. Guard with `[ -t 0 ]`; never prompt into the void. That refusal
-  stands even for a caller piping answers in — a menu's numbering is not a contract, the flag is.
+- A script this repository ships follows the same rule: when it needs a terminal it does not have, it exits with
+  a message naming the non-interactive flag. Guard with `[ -t 0 ]` and use an explicit flag for non-interactive
+  operation. A caller piping answers in still needs the flag because a menu's numbering is not a contract.
 
 ## Diagnosing one that is already stuck
 
