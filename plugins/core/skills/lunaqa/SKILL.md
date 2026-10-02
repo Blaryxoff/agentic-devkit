@@ -21,19 +21,26 @@ Code, activate `Skill(devkit-core--browser)` first, then apply this preset. Do n
 
 ## Execution preset
 
-Resolve the newest available Luna once at the start of **each pass**, before dispatch:
+Resolve the newest available Luna once at the start of **each pass**, before dispatch. Set `luna_effort` only when the
+caller requests a reasoning effort; otherwise inherit the Codex worker runtime's configured default:
 
 ```bash
-luna_model=$(python3 "$DEVKIT_HOME/bin/devkit-model" luna --effort medium < /dev/null) || exit 1
+luna_catalog_args=()
+luna_cli_args=()
+if [ -n "${luna_effort:-}" ]; then
+  luna_catalog_args=(--effort "$luna_effort")
+  luna_cli_args=(-c "model_reasoning_effort=\"$luna_effort\"")
+fi
+luna_model=$(python3 "$DEVKIT_HOME/bin/devkit-model" luna "${luna_catalog_args[@]}" < /dev/null) || exit 1
 ```
 
 Resolve the clone path and apply [runtime model routing](../../conduct/model-routing.md). The helper queries Codex's account/provider model catalog through
 [`model/list`](https://developers.openai.com/codex/app-server#list-models-modellist), chooses the numerically newest
-visible `gpt-<version>-luna`, verifies medium reasoning, then exits without starting a thread or browser. Do not pin a
+visible `gpt-<version>-luna`, validates an explicitly requested effort, then exits without starting a thread or browser. Do not pin a
 release, invent a `luna-latest` alias, or rely on session-history versions. Keep the resolved ID fixed across the pass's
 waves and rechecks; resolve again on the next pass. Lookup failure blocks dispatch rather than choosing an old model.
 
-1. Dispatch **every delegated stage on the same resolved Luna with medium reasoning**: discovery scouts, browser
+1. Dispatch **every delegated stage on the same resolved Luna** with the caller's effort or the worker runtime default: discovery scouts, browser
    executors and coverage/evidence reviewer pairs. The invoking agent keeps its current model and owns planning,
    fixture preparation, evidence reconciliation, adjudication and the final verdict. Preserve the canonical stage
    responsibilities and evidence gates. Smoke checks, explicit spot passes, missing-evidence waves and post-fix
@@ -42,6 +49,8 @@ waves and rechecks; resolve again on the next pass. Lookup failure blocks dispat
    Disputed findings receive a named Luna execution follow-up; the invoker evaluates the returned evidence and decides.
    Both reviewers and the invoker apply `browser-qa-rules.md` §7.2–§7.4 and visual confirmation under
    `browser-ui-oracles.md` §3.4; more agents never substitute for evidence.
+   Resume under §1.7 with completed results intact; follow-up briefs name only missing or invalidated checks and
+   necessary setup dependencies. A separate visual sweep shares its applicable evidence with functional cells.
    For an explicit spot pass, dispatch one Luna executor under
    `browser-qa-rules.md` §1.6 instead of running it in the caller; retain the spot output and all other spot rules.
 2. Fan out across every independent ledger lane the harness permits, in waves when slots are exhausted. “Gazillion”
@@ -74,7 +83,7 @@ and return its evidence in the final message, which `-o` writes to that result p
 
 ```bash
 codex exec -C "$project_root" --skip-git-repo-check --sandbox danger-full-access \
-  -m "$luna_model" -c 'model_reasoning_effort="medium"' -c 'approval_policy="never"' \
+  -m "$luna_model" "${luna_cli_args[@]}" -c 'approval_policy="never"' \
   -c 'mcp_servers.chrome-devtools.default_tools_approval_mode="approve"' \
   -o "$lane_result" "$(cat "$lane_brief")" < /dev/null > "$lane_log" 2>&1
 ```

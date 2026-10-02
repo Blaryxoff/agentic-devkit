@@ -7,7 +7,7 @@ import re
 import sys
 
 
-def select_model(models, family, effort):
+def select_model(models, family, effort=None):
     candidates = []
     for model in models:
         match = re.fullmatch(r"gpt-(\d+(?:\.\d+)*)-" + re.escape(family), model.get("model", ""))
@@ -16,9 +16,10 @@ def select_model(models, family, effort):
     if not candidates:
         raise ValueError(f"Codex lists no available {family} model")
     selected = max(candidates, key=lambda entry: entry[0])[1]
-    efforts = {entry["reasoningEffort"] for entry in selected["supportedReasoningEfforts"]}
-    if effort not in efforts:
-        raise ValueError(f'{selected["model"]} does not support {effort} reasoning')
+    if effort is not None:
+        efforts = {entry["reasoningEffort"] for entry in selected["supportedReasoningEfforts"]}
+        if effort not in efforts:
+            raise ValueError(f'{selected["model"]} does not support {effort} reasoning')
     return selected["model"]
 
 
@@ -85,7 +86,7 @@ async def resolve(family, effort):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Resolve the newest available Codex model in a family")
     parser.add_argument("family", choices=["luna", "sol", "terra", "astra"])
-    parser.add_argument("--effort", default="medium")
+    parser.add_argument("--effort")
     arguments = parser.parse_args()
     try:
         print(asyncio.run(resolve(arguments.family, arguments.effort)))

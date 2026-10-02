@@ -136,9 +136,15 @@ call.
 - Confirm viewport escape, clipped content, broken assets, and actionable occlusion unless the design explicitly requires
   them.
 - Review scroll regions, off-canvas content, carousels, menus, and code blocks as intentional candidates first.
+- Group candidates by verified owning component, mechanism and tested state. One disposition may cover all descendants
+  of an intentionally scrolling table, screen-reader-only clipping or a modal's inert underlay when a focused DOM check
+  proves membership and the relevant content/actions remain reachable. Record the owner selector, membership rule,
+  supporting measurement/interaction and any exceptions; a shared type or similar count alone does not prove a group.
 - Ignore transient markers only when the tested state is intentionally loading; after readiness they are artifact
   candidates.
 - When `truncated` is true, use `counts` to select each truncated type and run a focused selector/type probe before
-  declaring the viewport clean. The returned samples are not complete evidence in that case.
+  declaring the viewport clean. The returned samples are not complete evidence in that case. Return grouped counts
+  and unresolved exceptions from the focused check; complete per-element dumps and a second full census matching
+  every original count are unnecessary when group membership is proven. Ungrouped candidates remain unresolved.
 - Use a cropped visual diff for pseudo-elements, icons, shadows, imagery, font rasterisation, or non-actionable overlap;
   this probe cannot prove those paint-level properties.

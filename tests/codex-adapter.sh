@@ -137,6 +137,9 @@ assert select_model(catalog, "luna", "medium") == next_minor
 catalog.append(model(future))
 assert select_model(catalog, "luna", "medium") == future
 assert select_model(catalog, "sol", "medium") == other_family
+default_catalog = [model(current), model(future, effort="high")]
+assert select_model(default_catalog, "luna") == future
+assert select_model(default_catalog, "luna", "high") == future
 for unavailable in [[], [model(other_family)], [model(current), model(future, effort="high")]]:
     try:
         select_model(unavailable, "luna", "medium")

@@ -27,6 +27,15 @@ session. Every other rule still binds: §2 preflight, environment pin and surfac
 interaction once for real, and check console errors. Report findings with the §7 fields and end with the skill's
 one-line spot result. A spot pass never claims acceptance and never replaces a targeted or exhaustive pass.
 
+1.7. **Resume and rechecks** — preserve the original ledger, evidence references and proven checks. Track functional
+outcomes and visual/runtime audit dimensions separately: a missing hover or layout check leaves that dimension
+incomplete, without erasing an evidenced functional result. The pass remains incomplete until all required dimensions
+are reconciled. Follow-up briefs name exact missing, conflicting or invalidated cell/dimension IDs and only the setup
+dependencies needed to reach them; do not replay completed functional lanes to collect a missing audit. A changed
+implementation, fixture state, origin or role invalidates only the checks it can affect; record why each check needs
+rerunning. A resume or permission/config recovery alone does not invalidate earlier application evidence. A new full
+pass requires an explicit request or a documented change affecting the whole matrix.
+
 ## 2. Preflight
 
 2.1. Choose and record one interactive browser authority per lane with this precedence:
@@ -270,8 +279,9 @@ viewport. Return concise JSON, not page HTML. At minimum inspect:
   styles.
 
 Treat the audit as a candidate generator, not an automatic verdict: carousels, menus, off-canvas panels, code blocks, and
-intentional scroll regions can overflow by design. Confirm each candidate against interaction behaviour, the design
-reference, or project intent. A clean audit does not prove visual fidelity because paint, icons, imagery, shadows, and
+intentional scroll regions can overflow by design. Classify candidates under `browser-layout-audit.md`: candidates
+sharing a verified owning component, mechanism and tested state may share one disposition, with exceptions checked
+separately. Confirm against interaction behaviour, the design reference, or project intent. A clean audit does not prove visual fidelity because paint, icons, imagery, shadows, and
 pseudo-elements can differ without changing DOM geometry.
 
 Then run the UI oracles in `plugins/core/conduct/browser-ui-oracles.md`: those its §2 selects for the change on a spot
@@ -280,6 +290,13 @@ exhaustive pass. Apply its §4 measurement rules to every colour, shadow and hei
 hand.
 
 6.4. Reuse a `take_snapshot` result until navigation, submission, modal state, role, viewport, or another DOM-changing action invalidates it. Do not snapshot unchanged state before consecutive read-only assertions.
+Cells may reference the same snapshot, layout/oracle audit or console/network batch when its implementation,
+origin/account/role, relevant data state and viewport apply. Record these pins and covered cell/dimension IDs once,
+with action-specific results for each functional cell. Capture layout/control-state evidence once per distinct rendered
+component state and viewport, shared across functional and visual lanes; remeasure when relevant geometry or styling
+changes. Different enum values with equivalent rendering need their own action/result proof, not identical full-page
+audits. Check layout-sensitive variants such as empty/error and shortest/longest content explicitly. An unrelated DOM
+change invalidates a snapshot without automatically invalidating earlier layout proof for an unchanged component.
 
 6.5. Batch independent browser reads in one tool-call batch when the harness supports it. Prefer one structured DOM
 evaluation for multiple read-only assertions; never replace a user interaction or server-side permission check with
