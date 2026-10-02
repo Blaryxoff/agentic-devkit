@@ -37,8 +37,8 @@ technical findings for managers or other non-technical readers without exposing 
 
 Use `/lunaqa <scope>` in Claude Code or `$devkit-lunaqa <scope>` in Codex for exhaustive local browser QA with many
 executor lanes on the newest available Luna, functional and visual coverage, and Luna rechecks. Each pass resolves
-the model from Codex's catalog and uses it for planning, execution, review and escalation, so releases need no skill
-edits. Explicit pass mode and environment
+the model from Codex's catalog for all workers; the invoking agent keeps its current model and owns planning and
+the final verdict. Releases need no skill edits. Explicit pass mode and environment
 override the defaults. The [Luna preset](plugins/core/skills/lunaqa/SKILL.md) reuses
 [devkit-browser](plugins/core/skills/browser/SKILL.md); ordinary browser QA retains its existing routing.
 

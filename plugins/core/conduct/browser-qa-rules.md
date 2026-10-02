@@ -155,7 +155,9 @@ create namespaced test users, related entities, files and required states. Inspe
 before creating records. Fixture preparation is QA setup, not a source-code fix; do not modify application code.
 Explicit user/project data restrictions and §9.5 still bind.
 
-The QA lead owns fixture readiness before dispatch. A worker's read-only shell sandbox, missing seeder or empty DB
+The QA lead owns fixture readiness before dispatching dependent test lanes. It may prepare fixtures directly or
+delegate a dedicated fixture lane, but must verify its result before releasing the dependent tests. A worker's
+read-only shell sandbox, missing seeder or empty DB
 is not a reason to omit a local case. If a worker cannot create a fixture, return the exact missing state to the lead;
 the lead prepares it through its available authorised tools or a dedicated fixture lane, then reruns the dependent
 cells. Do not widen worker permissions or mutate production to recover.
@@ -307,9 +309,30 @@ severity · reproduction steps (browser actions) · expected · actual · eviden
 geometry/computed style, console/network entry, Playwright assertion/diff path, or saved screenshot crop. For design deltas,
 also cite the design reference/frame and expected versus actual measurement or appearance.
 
-7.2. Severity: `blocking` | `major` | `minor` | `cosmetic`.
+7.2. Assign severity from demonstrated user impact, not agent count or confidence:
+
+- `blocking` — the scoped feature cannot be accepted: a required core flow is unusable, or a reproduced defect exposes
+  unauthorised data/actions, corrupts data or causes irreversible loss.
+- `major` — a required operation fails for an assigned role/state, a file cannot be uploaded/accessed/downloaded as
+  required, or unreadable/inaccessible controls or broken navigation prevent a user task.
+- `minor` — a limited non-critical case, content/format inconsistency or usability defect; required flows remain usable.
+- `cosmetic` — a confirmed visual/reference mismatch with no functional, readability or accessibility impact.
+
+Missing prerequisites and unexercised cells are coverage blockers, not automatically product defects (§3.1).
 
 7.3. Findings must be explicit enough for another session to fix with zero extra context.
+
+7.4. **Confirm before filing.** Every retained finding must identify the violated expectation from the user's scope,
+acceptance criteria, project/business rules, supplied design reference, or an applicable canonical UI/layout oracle.
+Require a reproducible expected-versus-actual failure in the pinned environment, account, fixture state and viewport,
+with §6 browser evidence. Apply `browser-ui-oracles.md` §3.4 to every visual probe candidate. Styling preference,
+speculation, source inspection alone and reviewer agreement are not browser proof. Keep uncertain candidates separate
+from confirmed findings and request a named follow-up cell; never report them as clean or silently omit them.
+
+Give coverage and evidence reviewers the canonical §5–§7 rules plus the applicable UI/layout oracles and expectation
+sources. The invoking agent applies the same gates when reconciling their reports, rejects unsupported findings,
+deduplicates one root defect and records unresolved cells. Report an in-scope pre-existing defect with that label;
+being outside the changed diff does not waive its user impact during scoped browser QA.
 
 ## 8. Browser tools
 
