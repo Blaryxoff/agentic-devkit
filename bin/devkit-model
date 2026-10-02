@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+
+import argparse
+import asyncio
+import json
+import re
+import sys
+
+
+def select_model(models, family, effort):
+    candidates = []
+    for model in models:
+        match = re.fullmatch(r"gpt-(\d+(?:\.\d+)*)-" + re.escape(family), model.get("model", ""))
+        if match and not model.get("hidden", False):
+            candidates.append((tuple(map(int, match[1].split("."))), model))
+    if not candidates:
+        raise ValueError(f"Codex lists no available {family} model")
+    selected = max(candidates, key=lambda entry: entry[0])[1]
+    efforts = {entry["reasoningEffort"] for entry in selected["supportedReasoningEfforts"]}
+    if effort not in efforts:
+        raise ValueError(f'{selected["model"]} does not support {effort} reasoning')
+    return selected["model"]
+
+
+async def list_models(process):
+    request_id = 0
+
+    async def send(method, params, response=True):
+        nonlocal request_id
+        request_id += 1
+        message = {"method": method, "params": params}
+        if response:
+            message["id"] = request_id
+        process.stdin.write((json.dumps(message) + "\n").encode())
+        await process.stdin.drain()
+        if not response:
+            return
+        while raw := await process.stdout.readline():
+            received = json.loads(raw)
+            if received.get("id") != request_id:
+                continue
+            if "error" in received:
+                raise ValueError(f'Codex {method}: {received["error"]["message"]}')
+            return received["result"]
+        raise ValueError(f"Codex exited before answering {method}")
+
+    await send("initialize", {"clientInfo": {"name": "devkit_model", "version": "1.0.0"}})
+    await send("initialized", {}, response=False)
+    models = []
+    cursor = None
+    while True:
+        params = {"limit": 100, "includeHidden": False}
+        if cursor:
+            params["cursor"] = cursor
+        page = await send("model/list", params)
+        models.extend(page["data"])
+        cursor = page.get("nextCursor")
+        if not cursor:
+            return models
+
+
+async def resolve(family, effort):
+    process = await asyncio.create_subprocess_exec(
+        "codex", "app-server", "--listen", "stdio://",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.DEVNULL,
+    )
+    try:
+        return select_model(await asyncio.wait_for(list_models(process), timeout=30), family, effort)
+    finally:
+        process.stdin.close()
+        if process.returncode is None:
+            try:
+                process.terminate()
+            except ProcessLookupError:
+                pass
+        try:
+            await asyncio.wait_for(process.wait(), timeout=5)
+        except asyncio.TimeoutError:
+            process.kill()
+            await process.wait()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Resolve the newest available Codex model in a family")
+    parser.add_argument("family", choices=["luna", "sol", "terra", "astra"])
+    parser.add_argument("--effort", default="medium")
+    arguments = parser.parse_args()
+    try:
+        print(asyncio.run(resolve(arguments.family, arguments.effort)))
+    except (OSError, ValueError, KeyError, asyncio.TimeoutError) as error:
+        sys.exit(f"Model lookup failed: {error or 'catalog request timed out'}")

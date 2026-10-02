@@ -63,9 +63,10 @@ does not permit ignoring a detected historical change.
 
 ## Investigation wave
 
-Dispatch three independent read-only investigation lanes in parallel. Use `gpt-5.6-luna` at high or xhigh reasoning on
+Dispatch three independent read-only investigation lanes in parallel. Use the newest available Codex Luna at high or xhigh reasoning on
 Codex; use the fastest available research subagent on another harness and report the substitution. Each lane must cover
 its complete scoped delta, including inaccessible-item reporting; sampling within that delta is not sufficient.
+Resolve the family and effort under `plugins/core/conduct/model-routing.md` before dispatch.
 
 | Lane | Required coverage | Output |
 |---|---|---|

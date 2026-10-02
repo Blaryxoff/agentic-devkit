@@ -232,4 +232,4 @@ git push origin v1.2.3
 - leave stale branches after merging
 - use lightweight tags — always use annotated tags
 - commit secrets, `.env` files, or credentials
-- add `Co-Authored-By` trailers (e.g., `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`) — the commit author is whoever pushes the code
+- add `Co-Authored-By` trailers (e.g., `Co-Authored-By: Claude Opus <noreply@anthropic.com>`) — the commit author is whoever pushes the code

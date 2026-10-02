@@ -110,8 +110,9 @@ assert_contains "$ROOT/plugins/core/skills/reviewer-deep/SKILL.md" 'Generic qual
 assert_contains "$ROOT/plugins/core/skills/reviewer-deep/SKILL.md" 'complete resolved reviewer set'
 assert_contains "$ROOT/plugins/core/skills/reviewer-business-logic/SKILL.md" 'do not dispatch them independently'
 assert_contains "$ROOT/plugins/core/skills/reviewer-business-logic/SKILL.md" 'Generic implementation fallback'
-assert_contains "$ROOT/plugins/core/skills/browser/SKILL.md" 'gpt-5.6-sol'
-assert_contains "$ROOT/plugins/core/skills/browser/SKILL.md" 'gpt-5.6-luna'
+assert_contains "$ROOT/plugins/core/skills/browser/SKILL.md" 'newest available Codex Sol'
+assert_contains "$ROOT/plugins/core/skills/browser/SKILL.md" 'newest available Codex Luna'
+assert_contains "$ROOT/plugins/core/skills/browser/SKILL.md" 'model-routing.md'
 assert_contains "$ROOT/plugins/core/skills/browser/SKILL.md" 'Missing cells trigger another Luna/Haiku execution wave'
 assert_contains "$ROOT/plugins/core/skills/browser/SKILL.md" 'Multi-agent fan-out is allowed'
 assert_contains "$ROOT/plugins/core/skills/browser/SKILL.md" 'top-level agent runs Codex browser-client lanes sequentially'
@@ -146,5 +147,15 @@ for required_check in 'REDIS_PREFIX' 'APP_PROD_HOST' 'DEPLOY_<ENV>_SSH_PRIVATE_K
   [[ "$docker_checklist" == *"$required_check"* ]] \
     || fail "Docker §13 checklist is missing mandatory coverage: $required_check"
 done
+
+model_paths=("$ROOT/plugins" "$ROOT/bin" "$ROOT/adapters" "$ROOT/tests" "$ROOT/docs" "$ROOT/howto"
+  "$ROOT/examples" "$ROOT/schemas" "$ROOT/README.md" "$ROOT/CLAUDE.md" "$ROOT/MIGRATION.md")
+model_pattern='gpt[-_][0-9]|claude[-_](opus|sonnet|haiku)[-_][0-9]|(GPT|Opus|Sonnet|Haiku|Gemini)[- ][0-9]'
+if command -v rg >/dev/null 2>&1; then
+  model_pins=$(rg -n -i "$model_pattern" "${model_paths[@]}" --glob '!**/__pycache__/**' || true)
+else
+  model_pins=$(grep -rInEi "$model_pattern" "${model_paths[@]}" --exclude-dir=__pycache__ || true)
+fi
+[ -z "$model_pins" ] || fail "numbered model releases must be resolved at runtime:\n$model_pins"
 
 echo "doc canary tests passed"

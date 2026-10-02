@@ -56,7 +56,7 @@ except chat.ComposerDirty as err:
     assert str(err).endswith("composer cleanup failed"), err
 assert len(calls) == 1, "an unrecognisable composer must not be retried"
 
-status = "  GPT-6-Sol high · Context 0% used · weekly 88% left …"
+status = "  Codex Sol high · Context 0% used · weekly 88% left …"
 hints = "  ← for agents · ? for shor  ⚠ 1 warning · f2 to view"
 def pane(*rows):
     return "\n".join(["  >_ OpenAI Codex (v0.158.0)", "", *rows])
@@ -69,7 +69,7 @@ typing = pane(
     "  task, nothing to change; please reply through peer-",
     "  chat.py with one line [peer-check:0]",
     " ",
-    "  GPT-6-Sol high · Context 0% used · weekly 88% left · 0…",
+    "  Codex Sol high · Context 0% used · weekly 88% left · 0…",
     "                                ⚠ 1 warning · f2 to view",
 )
 assert chat.codex_live_prompt_text(typing).endswith("chat.py with one line [peer-check:0]")

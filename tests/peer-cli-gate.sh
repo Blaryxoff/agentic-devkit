@@ -26,7 +26,7 @@ probe() {
 }
 
 # --- launches that would hang -------------------------------------------------
-probe 2 'bare codex exec'               'codex exec -m gpt-5.6-sol "review this"'
+probe 2 'bare codex exec'               'codex exec -m "$review_model" "review this"'
 probe 2 'after cd &&'                   'cd /tmp && codex exec "prompt here"'
 probe 2 'prompt is a command subst'     'codex exec "$(cat /tmp/p.md)"'
 probe 2 'semicolon inside the prompt'   'codex exec "do A; then B"'

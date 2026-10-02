@@ -24,7 +24,7 @@ labels frozen before any Jev call, current behaviour as the baseline) before cha
 | Root-cause log triage with a known literal error | 40 cases from 12 real Laravel logs, 16 signatures | `rg -F -m1` + read 15 lines: 40/40, 16 lines, 8 ms; `locate` 38/40, 240 lines, 2.6 s; `rg -F -C5` piped into `filter` 13/40 |
 | jegrep for known-file location | 60 tasks | 25/60 within 100 read lines; median first span 216 lines |
 | Transcript compaction pruning | external evidence | keep/drop agreement 56.3%; plugin author advises against |
-| Reasoning-effort choice (`claude -p --effort`, `codex exec` `model_reasoning_effort`) | 100 real cases (60 locate, 40 log triage) x 2 repeats, 480 runs per CLI, Opus 5.5 and gpt-6-sol | picks reduce to a per-type rule on templated prompts (98/100); `low` never significantly worse than `high` (Claude 85.0% vs 82.0%, Codex 76.0% vs 71.0%, all paired p >= 0.096) and cheapest; only gain from more effort: 3 Codex log cases at `medium` |
+| Reasoning-effort choice (`claude -p --effort`, `codex exec` `model_reasoning_effort`) | 100 real cases (60 locate, 40 log triage) x 2 repeats, 480 runs per CLI, Claude Opus and Codex Sol | picks reduce to a per-type rule on templated prompts (98/100); `low` never significantly worse than `high` (Claude 85.0% vs 82.0%, Codex 76.0% vs 71.0%, all paired p >= 0.096) and cheapest; only gain from more effort: 3 Codex log cases at `medium` |
 
 Raw data from these runs lived in session scratchpads, `/tmp/jev-bench-codex/` (round reports `REPORT.md`,
 `ROUND2.md`, `ROUND3.md`, `ROUND4.md`) and `/tmp/jev-effort/` (`REPORT.md`); they are not preserved in the repository.

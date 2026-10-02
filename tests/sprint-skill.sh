@@ -36,7 +36,7 @@ normalized_body = " ".join(body.lower().split())
 for trigger in ("sprint-planning", "google sheets", "executor assignment", "drive smart chips"):
     assert trigger in description, trigger
 for rule in (
-    "gpt-5.6-luna",
+    "newest available codex luna",
     "hidden`/`veryhidden",
     "minimize the absolute difference in assigned coding hours",
     "exact equality is required",

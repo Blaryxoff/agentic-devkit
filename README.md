@@ -35,6 +35,12 @@ For Claude Code, the core skills + `devkit` router are already global after `dev
 `--claude` run is only needed when a stack ships subagents, hooks, or MCP servers. Use `/nontech` to rewrite
 technical findings for managers or other non-technical readers without exposing codebase internals.
 
+Use `/lunaqa <scope>` in Claude Code or `$devkit-lunaqa <scope>` in Codex for exhaustive local browser QA with many
+executor lanes on the newest available Luna, functional and visual coverage, and Luna rechecks. Each pass resolves
+the model from Codex's catalog, so releases need no skill edits. Explicit pass mode and environment
+override the defaults. The [Luna preset](plugins/core/skills/lunaqa/SKILL.md) reuses
+[devkit-browser](plugins/core/skills/browser/SKILL.md); ordinary browser QA retains its existing routing.
+
 ## CLI Usage
 
 - List resolved plugin names.

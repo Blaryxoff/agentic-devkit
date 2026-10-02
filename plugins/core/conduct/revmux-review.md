@@ -31,15 +31,16 @@ step checks this — pass it the profile that will actually run.
 
 ## Profile selection
 
-Default to `codex-led` when the operator wants codex to carry the review volume and claude to adjudicate it. Set it in
+Default to `codex-led` when the operator wants codex to carry the review volume and claude to adjudicate it. Resolve Sol
+under [runtime model routing](./model-routing.md) and regenerate the profile below before each run. Set it in
 `~/.config/revmux/config` with `profile = codex-led`; per-run, pass `--profile=codex-led`.
 
 | agent | lenses | executor |
 |---|---|---|
 | `claude-bugs+impl` | bugs, impl | `claude/opus:high` |
-| `codex-arch+quality` | architecture, quality | `codex/gpt-5.6-sol:high` |
-| `codex-docs+tests` | docs, tests, comments | `codex/gpt-5.6-sol:high` |
-| `codex-adversarial` | adversarial | `codex/gpt-5.6-sol:high` |
+| `codex-arch+quality` | architecture, quality | `codex/<resolved Sol>:high` |
+| `codex-docs+tests` | docs, tests, comments | `codex/<resolved Sol>:high` |
+| `codex-adversarial` | adversarial | `codex/<resolved Sol>:high` |
 | synthesis, verify | — | `claude/opus:high` |
 
 - Keep both stages on claude. Verify is the only stage that opens the cited code and can return `rejected` or
@@ -56,11 +57,12 @@ Default to `codex-led` when the operator wants codex to carry the review volume 
 Recreate the profile on another machine — generate the body, never paste it, so it matches the installed revmux:
 
 ```bash
+sol_model=$(python3 "$DEVKIT_HOME/bin/devkit-model" sol --effort high < /dev/null) || exit 1
 revmux --dump-defaults=/tmp/revmux-defaults
 mkdir -p ~/.config/revmux/prompts/profiles
 { printf '%s\n' '---' \
     'description: codex carries architecture+quality, docs+tests and adversarial; claude keeps bugs+impl and owns synthesis and verify' \
-    'model: codex/gpt-5.6-sol:high' \
+    "model: codex/$sol_model:high" \
     'agents:' \
     '  - {name: claude-bugs+impl,   lenses: [bugs, impl],            model: claude/opus:high, color: cyan}' \
     '  - {name: codex-arch+quality, lenses: [architecture, quality],                          color: magenta}' \
@@ -78,7 +80,7 @@ revmux config --task <any-task>   # confirm the roster and both stage executors 
 Prompt-tree resolution is per file: `./.revmux/`, then `~/.config/revmux/`, then revmux's embedded defaults. devkit's
 clone is not on that path, so a profile devkit recommends still has to be written into `~/.config/revmux/`.
 
-- Regenerate `codex-led` after every revmux upgrade. Its body is a frozen copy of that release's `comprehensive.md`;
+- Regenerate `codex-led` before every run to refresh the model and revmux prompt body. Its body is a frozen copy of that release's `comprehensive.md`;
   built-in profiles pick up a changed panel prompt on upgrade and a user profile does not.
 - Expect `~/.config/revmux/config` to stop tracking upstream once a line in it is uncommented — `--init` replaces a
   comment-only file and leaves a customized one alone, so knobs added later never appear there.

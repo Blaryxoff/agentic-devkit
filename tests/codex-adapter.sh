@@ -82,6 +82,7 @@ assert_link "$codex_home/skills/devkit-core--timesheet" "$ROOT/plugins/core/skil
 assert_link "$codex_home/skills/devkit-core--learn" "$ROOT/plugins/core/skills/learn"
 assert_link "$codex_home/skills/devkit-core--nontech" "$ROOT/plugins/core/skills/nontech"
 assert_link "$codex_home/skills/devkit-core--task" "$ROOT/plugins/core/skills/task"
+assert_link "$codex_home/skills/devkit-core--lunaqa" "$ROOT/plugins/core/skills/lunaqa"
 assert_link "$codex_home/skills/devkit-core--devkit-router" "$ROOT/plugins/core/skills/devkit-router"
 assert_absent "$codex_home/skills/devkit-css--css-a11y"
 assert_absent "$codex_home/skills/devkit-core--retired"
@@ -116,6 +117,35 @@ assert_link "$claude_home/skills/devkit-core--timesheet" "$ROOT/plugins/core/ski
 assert_link "$claude_home/skills/devkit-core--learn" "$ROOT/plugins/core/skills/learn"
 assert_link "$claude_home/skills/devkit-core--nontech" "$ROOT/plugins/core/skills/nontech"
 assert_link "$claude_home/skills/devkit-core--task" "$ROOT/plugins/core/skills/task"
+assert_link "$claude_home/skills/devkit-core--lunaqa" "$ROOT/plugins/core/skills/lunaqa"
+assert_contains "$claude_home/commands/lunaqa.md" 'Skill(devkit-core--lunaqa)'
+python3 - "$ROOT/bin/devkit-model" <<'PY'
+import runpy
+import sys
+
+select_model = runpy.run_path(sys.argv[1])["select_model"]
+
+def model(name, hidden=False, effort="medium"):
+    return {"model": name, "hidden": hidden, "supportedReasoningEfforts": [{"reasoningEffort": effort}]}
+
+older, current, next_minor, future = [f"gpt-{version}-luna" for version in (1, 2, "2.10", 3)]
+other_family = f"gpt-{99}-sol"
+catalog = [model(older), model(current), model(other_family)]
+assert select_model(catalog, "luna", "medium") == current
+catalog += [model(f"gpt-{2}.9-luna"), model(next_minor), model(future, hidden=True)]
+assert select_model(catalog, "luna", "medium") == next_minor
+catalog.append(model(future))
+assert select_model(catalog, "luna", "medium") == future
+assert select_model(catalog, "sol", "medium") == other_family
+for unavailable in [[], [model(other_family)], [model(current), model(future, effort="high")]]:
+    try:
+        select_model(unavailable, "luna", "medium")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Unavailable Luna must block instead of silently falling back")
+print("Luna model selection tests passed")
+PY
 assert_contains "$claude_home/commands/nontech.md" 'Skill(devkit-core--nontech)'
 assert_contains "$claude_home/commands/xlsx.md" 'Skill(devkit-core--xlsx)'
 for cmd in "$claude_home"/commands/*.md; do
