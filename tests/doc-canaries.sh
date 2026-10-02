@@ -147,6 +147,8 @@ assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'a fresh worker
 assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'do not keep retrying merely to obtain a green report'
 assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'without commissioning another full review'
 assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'Do not carry over the original lane'
+assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'Do not dispatch one agent per element or control state'
+assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'Do not close the browser and defer an available assigned check'
 assert_contains "$ROOT/plugins/core/conduct/browser-layout-audit.md" 'Ungrouped candidates remain unresolved'
 assert_contains "$ROOT/plugins/core/skills/lunaqa/SKILL.md" 'The invoking agent keeps its current model and owns planning'
 assert_not_contains "$ROOT/plugins/core/skills/lunaqa/SKILL.md" 'Keep the canonical planner, reviewer and escalation'

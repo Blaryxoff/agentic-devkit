@@ -490,6 +490,9 @@ holds the state the lane measures, not an empty list.
 
 12.3. Scope a lane to at most five routes, two viewports and two or three oracles. Name every route and state
 explicitly; a lane left to choose tests something out of scope, or code that is still changing.
+Keep a page or connected flow's applicable controls, hover/keyboard-focus states and assigned viewports in the same
+executor. Do not dispatch one agent per element or control state within the original page/flow matrix; use independent
+roles/flows for parallelism. An explicit spot scope or named follow-up under §1.7 can cover a single control.
 For a follow-up, include §1.7, accepted evidence references and only the remaining actions/dimensions plus necessary
 setup. Do not carry over the original lane's full matrix or unrelated audit obligations.
 
@@ -502,6 +505,10 @@ visible at rest", not "check the hierarchy". A presence question cannot find the
 12.6. A dispatched lane writes its result into a pass-owned temporary directory outside the repository, named in its
 brief as an exception to the skill's no-report-file rule. The top-level pass ingests the result, reports in chat, and
 deletes the directory unless the user asked to keep it.
+Before cleanup, reconcile collected evidence against the assigned checks. Complete any still-available missing checks
+in the same owned browser, including hover/focus and lazy-loaded panels reached through real scrolling and readiness
+checks. Do not close the browser and defer an available assigned check to another worker. If a prerequisite prevents
+completion, report the exact blocked check and attempted recovery under §1.7; cleanup still remains mandatory.
 
 12.7. Launch every Codex QA worker with full filesystem/network access and browser tools approved without prompts:
 
