@@ -44,8 +44,12 @@ paths fail and no concrete recovery method remains, retain the blocked cells and
 the other lanes and cleanup conclude; do not keep retrying merely to obtain a green report.
 
 Review the aggregated first-wave results for coverage and finding evidence, then review only new or invalidated
-cell/dimension results and newly disputed findings. Supply reviewers the accepted ledger and evidence references;
-reuse the original reviewer roles where possible. Previously adjudicated unchanged results stay accepted. The invoker
+cell/dimension results, results potentially affected by new fixes, and newly disputed findings. Before selecting
+follow-ups, map each fix's changed behaviour and shared dependencies to affected original cells, roles, states,
+viewports and adjacent regressions. Previously passed results in that impact map need recheck and review; record
+the dependency or risk connecting each selected check to the fix. Supply reviewers the accepted ledger, impact map
+and evidence references; reuse the original reviewer roles where possible. Previously adjudicated unaffected results
+stay accepted. The invoker
 performs the final ledger reconciliation without commissioning another full review. A conclusive product failure
 stays failed until an implementation change or genuinely conflicting evidence warrants a recheck. Once all required
 dimensions have evidenced outcomes, finish QA with the confirmed findings; findings do not require another QA wave.

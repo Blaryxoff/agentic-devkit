@@ -141,6 +141,8 @@ assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'without erasin
 assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'Cells may reference the same snapshot'
 assert_contains "$ROOT/plugins/core/skills/browser/SKILL.md" 'Re-run only named missing,'
 assert_contains "$ROOT/plugins/core/skills/browser/SKILL.md" 'after the initial review, reviewers inspect only new or invalidated results'
+assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'results potentially affected by new fixes'
+assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'Previously passed results in that impact map need recheck and review'
 assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'a fresh worker or another report'
 assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'do not keep retrying merely to obtain a green report'
 assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'without commissioning another full review'
