@@ -36,6 +36,20 @@ implementation, fixture state, origin or role invalidates only the checks it can
 rerunning. A resume or permission/config recovery alone does not invalidate earlier application evidence. A new full
 pass requires an explicit request or a documented change affecting the whole matrix.
 
+Before redispatching a still-blocked or unproven check, record the previous attempt's result, the exact remaining gap,
+and either a verified recovered prerequisite or a specific alternative method supported by the application/tools.
+Verify fixture IDs and required persisted state before dependent execution (§3.1); a fresh worker or another report
+of the same gap is not recovery. Attempt authorised fixture/setup recovery before declaring blocked (§2.5). If those
+paths fail and no concrete recovery method remains, retain the blocked cells and finish with QA Pass Incomplete after
+the other lanes and cleanup conclude; do not keep retrying merely to obtain a green report.
+
+Review the aggregated first-wave results for coverage and finding evidence, then review only new or invalidated
+cell/dimension results and newly disputed findings. Supply reviewers the accepted ledger and evidence references;
+reuse the original reviewer roles where possible. Previously adjudicated unchanged results stay accepted. The invoker
+performs the final ledger reconciliation without commissioning another full review. A conclusive product failure
+stays failed until an implementation change or genuinely conflicting evidence warrants a recheck. Once all required
+dimensions have evidenced outcomes, finish QA with the confirmed findings; findings do not require another QA wave.
+
 ## 2. Preflight
 
 2.1. Choose and record one interactive browser authority per lane with this precedence:
@@ -472,8 +486,10 @@ holds the state the lane measures, not an empty list.
 
 12.3. Scope a lane to at most five routes, two viewports and two or three oracles. Name every route and state
 explicitly; a lane left to choose tests something out of scope, or code that is still changing.
+For a follow-up, include §1.7, accepted evidence references and only the remaining actions/dimensions plus necessary
+setup. Do not carry over the original lane's full matrix or unrelated audit obligations.
 
-12.4. Inline the probe bytes (`browser-ui-oracles.md` §3.1). Cite conduct sections by path when the executor can read
+12.4. Inline the probe bytes (`browser-ui-oracles.md` §3.1) only when an assigned check needs that probe. Cite applicable conduct sections by path when the executor can read
 the toolkit; copy an excerpt verbatim only when it cannot. Never summarise a rule into a brief.
 
 12.5. State the acceptance question plainly and, where possible, as a count: "how many filled primary buttons are
