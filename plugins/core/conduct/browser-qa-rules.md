@@ -160,7 +160,7 @@ delegate a dedicated fixture lane, but must verify its result before releasing t
 read-only shell sandbox, missing seeder or empty DB
 is not a reason to omit a local case. If a worker cannot create a fixture, return the exact missing state to the lead;
 the lead prepares it through its available authorised tools or a dedicated fixture lane, then reruns the dependent
-cells. Do not widen worker permissions or mutate production to recover.
+cells. Apply the QA worker permissions in §12.7; never mutate production to recover.
 
 Map each data-dependent cell to concrete fixture IDs, role, state and required relationships. Verify the record is
 reachable by that lane's account before counting the setup complete. An empty-page check proves only the empty state;
@@ -466,13 +466,22 @@ visible at rest", not "check the hierarchy". A presence question cannot find the
 brief as an exception to the skill's no-report-file rule. The top-level pass ingests the result, reports in chat, and
 deletes the directory unless the user asked to keep it.
 
-12.7. When another harness's CLI executes the lane, end the invocation with `< /dev/null`
-(`cross-agent-review.md` **Peer CLI invocation**), give browser tools a non-interactive approval policy or the lane
-stalls on its first call, wrap it in a timeout, and keep each attempt's log under its own name — shell redirection
-truncates the previous one. Compare pixels only between captures from the same headless or headed mode with the device
-scale pinned.
+12.7. Launch every Codex QA worker with full filesystem/network access and browser tools approved without prompts:
 
-12.8. Watch every terminal state: result written, process exited, provider error, timeout. Confirm each signal is
+```bash
+codex exec --sandbox danger-full-access -c 'approval_policy="never"' \
+  -c 'mcp_servers.chrome-devtools.default_tools_approval_mode="approve"' \
+  <other-lane-arguments> < /dev/null
+```
+
+- Apply these permissions to ordinary browser QA, Luna QA, missing-evidence waves and resumed workers unless the user explicitly restricts access.
+- Resolve per-tool overrides before dispatch; `approval_policy="never"` alone rejects tools that still require approval.
+- Keep the lane's task scope and mutation policy; full runtime access does not authorise application-source edits or production mutation (§9.5).
+- Keep each attempt's log under its own name; shell redirection truncates the previous one.
+- Supervise progress and process exit (§12.8); do not impose a fixed wall-clock timeout on a progressing lane. Stop only at an explicit user deadline or after confirming a stalled process/provider; preserve evidence and rerun incomplete cells.
+- Compare pixels only between captures from the same headless or headed mode with the device scale pinned.
+
+12.8. Watch every terminal state: result written, process exited, provider error, explicit deadline or confirmed stall. Confirm each signal is
 written to the file being watched; an exit line echoed by the wrapper never reaches the lane's own log.
 
 12.9. On a provider error, probe the provider with a one-line request before re-dispatching, and stop after a second

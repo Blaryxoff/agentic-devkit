@@ -73,18 +73,19 @@ instructions and result path under `browser-qa-rules.md` §12. Instruct it to ex
 and return its evidence in the final message, which `-o` writes to that result path.
 
 ```bash
-codex exec -C "$project_root" --skip-git-repo-check --sandbox read-only \
+codex exec -C "$project_root" --skip-git-repo-check --sandbox danger-full-access \
   -m "$luna_model" -c 'model_reasoning_effort="medium"' -c 'approval_policy="never"' \
+  -c 'mcp_servers.chrome-devtools.default_tools_approval_mode="approve"' \
   -o "$lane_result" "$(cat "$lane_brief")" < /dev/null > "$lane_log" 2>&1
 ```
 
 Resolve these paths before launch; use unique result/log paths per attempt. Apply §2.10 MCP selection and §12.7–§12.10
-supervision, timeout, provider recovery and isolation. Follow `shell-invocation.md` for stdin and shell portability.
-Read-only sandboxing restricts worker shell writes, not the QA lead's local fixture-preparation responsibility under
-§3.1. Workers return missing fixture IDs/states or setup denials to the lead, which prepares them through authorised
-tools or a Luna fixture lane and redispatches the affected cells. Report a blocker only after those setup paths fail;
-include attempted commands, exact denial/error and uncovered cell IDs. Browser test-data mutations still obey the
-lane's canonical mutation policy. Do not widen worker permissions. CLI flag reference:
+full-access permissions, progress supervision, provider recovery and isolation to every wave and resume. Follow
+`shell-invocation.md` for stdin and shell portability. Workers return missing fixture IDs/states or setup denials to
+the lead, which prepares them through authorised tools or a Luna fixture lane and redispatches the affected cells.
+An explicitly restricted worker sandbox affects the worker, not the QA lead’s fixture-preparation responsibility under §3.1.
+Report a blocker only after those setup paths fail; include attempted commands, exact denial/error and uncovered cell
+IDs. Browser test-data mutations still obey the lane's canonical mutation policy. CLI flag reference:
 [official Codex documentation](https://developers.openai.com/codex/cli/reference).
 
 ## Completion

@@ -47,7 +47,7 @@ Apply in any review skill (deep, fast, business-logic, logging, plan) after it h
 
 ## Peer CLI invocation
 
-Shared mechanics for driving the other CLI non-interactively and read-only. Applies to the review cross-check above and to `devkit-crosscheck`. Both invocations below are instances of [shell-invocation.md](./shell-invocation.md).
+Shared mechanics for driving the other CLI non-interactively and read-only. Applies to the review cross-check above and to `devkit-crosscheck`. Both invocations below are instances of [shell-invocation.md](./shell-invocation.md). QA worker permissions are defined separately in [browser-qa-rules.md §12.7](./browser-qa-rules.md#12-lane-briefs).
 
 ### Claude Code → Codex
 
@@ -59,7 +59,7 @@ codex exec --sandbox read-only --skip-git-repo-check "<prompt>" < /dev/null
 - Never pipe a peer run through `tail`/`head`: they buffer until EOF, so a run that is blocked on stdin looks
   like a run that is thinking, and the one line naming the cause never appears. Redirect to a file and read it.
   A blocked peer shows near-zero CPU (`ps -o time=`) against minutes of elapsed time.
-- `--sandbox read-only` is the write boundary. Never grant `workspace-write` or `--dangerously-bypass-approvals-and-sandbox` to a peer run.
+- `--sandbox read-only` is the write boundary. Never grant `workspace-write` or `--dangerously-bypass-approvals-and-sandbox` to a peer review/cross-check run.
 - Add `-c tools.web_search=true` only when the task genuinely needs the network (reading a URL, checking upstream docs).
 - Codex prints its reasoning trace before the answer; the final message is the last block. Use `-o <file>` (`--output-last-message`) when only the answer matters.
 - If the output contains `failed to spawn code-mode host`, retry **once** with `--disable code_mode_host` added to the invocation. Codex does not exit non-zero here — it logs the error, runs with no shell access, and reports that it could not inspect the code; treat any such run as having produced nothing. Cause: the Homebrew cask ships only `bin/codex`, but the `code_mode_host` feature is `stable` and on by default in codex 0.144.x, so codex tries to spawn a host binary that was never installed. Permanent fix: install `codex-code-mode-host` alongside `codex` — it ships in the npm package `@openai/codex@<version>-<platform>` under `vendor/<target>/bin/`.
