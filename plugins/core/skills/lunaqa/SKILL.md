@@ -1,7 +1,7 @@
 ---
 name: devkit-lunaqa
 description: >-
-  run browser QA with many Codex Luna executor lanes. Use when asked for "lunaqa", "gazillion Luna QA",
+  run browser QA with many Codex Luna agents in every delegated stage. Use when asked for "lunaqa", "gazillion Luna QA",
   "Codex Luna browser QA" or "браузер QA лунами". Opt-in preset over devkit-browser; ordinary browser QA
   keeps its existing harness and model routing.
 ---
@@ -33,10 +33,14 @@ visible `gpt-<version>-luna`, verifies medium reasoning, then exits without star
 release, invent a `luna-latest` alias, or rely on session-history versions. Keep the resolved ID fixed across the pass's
 waves and rechecks; resolve again on the next pass. Lookup failure blocks dispatch rather than choosing an old model.
 
-1. Dispatch every browser-driving lane on **the resolved Luna with medium reasoning**, including smoke checks, explicit
-   spot passes, missing-evidence waves and post-fix rechecks. The caller remains QA lead; it never substitutes its own
-   browser work, Haiku, Sol or another model for a Luna executor. Keep the canonical planner, reviewer and escalation
-   routing; those roles do not drive the browser. For an explicit spot pass, dispatch one Luna executor under
+1. Dispatch **every delegated stage on the same resolved Luna with medium reasoning**: planner, browser executors,
+   coverage reviewer and escalation/adjudication. This overrides the canonical skill's model-routing table for this
+   preset only; preserve each stage's responsibilities and evidence gates. Smoke checks, explicit spot passes,
+   missing-evidence waves and post-fix rechecks also use Luna. The caller remains QA lead; it orchestrates and prepares
+   fixtures, but never substitutes its own QA work, Haiku, Sol or another model for a delegated Luna stage.
+   Fan review out to the canonical coverage/evidence reviewer pairs; partition large ledgers across more Luna pairs.
+   Disputed findings receive a named Luna execution follow-up before a separate Luna adjudicator makes the decision.
+   For an explicit spot pass, dispatch one Luna executor under
    `browser-qa-rules.md` §1.6 instead of running it in the caller; retain the spot output and all other spot rules.
 2. Fan out across every independent ledger lane the harness permits, in waves when slots are exhausted. “Gazillion”
    means broad coverage, not a literal worker count or agents per cell. Include functional flows across roles and
@@ -44,7 +48,8 @@ waves and rechecks; resolve again on the next pass. Lookup failure blocks dispat
    Check readability, artifacts and supplied design/UI-kit references under the canonical oracles. Keep dependent
    CRUD, state and permission sequences together; apply §12 lane sizing and §2.10 resource checks.
 3. Prepare the local stand and append-only fixtures needed by the matrix under §2–§3. Do not replace data-dependent
-   tests with empty-page checks. This preset does not authorise production mutation, destructive resets, environment
+   tests with empty-page checks. The QA lead must create missing local fixtures under §3.1 before dispatch; a missing
+   seeder or read-only worker sandbox is not a seeding exemption. This preset does not authorise production mutation, destructive resets, environment
    switching or code fixes beyond the user's task. When fixes are already authorised, use `devkit-coder` and rerun
    affected cells on Luna; reserve full final acceptance for the stable implementation.
 4. Use isolated chrome-devtools executors, with the §10.7 serial ownership handshake before concurrent work. Use native
@@ -72,8 +77,11 @@ codex exec -C "$project_root" --skip-git-repo-check --sandbox read-only \
 
 Resolve these paths before launch; use unique result/log paths per attempt. Apply §2.10 MCP selection and §12.7–§12.10
 supervision, timeout, provider recovery and isolation. Follow `shell-invocation.md` for stdin and shell portability.
-Read-only sandboxing restricts shell writes; browser test-data mutations still obey the lane's canonical mutation
-policy. Report denied prerequisites instead of widening permissions. CLI flag reference:
+Read-only sandboxing restricts worker shell writes, not the QA lead's local fixture-preparation responsibility under
+§3.1. Workers return missing fixture IDs/states or setup denials to the lead, which prepares them through authorised
+tools or a Luna fixture lane and redispatches the affected cells. Report a blocker only after those setup paths fail;
+include attempted commands, exact denial/error and uncovered cell IDs. Browser test-data mutations still obey the
+lane's canonical mutation policy. Do not widen worker permissions. CLI flag reference:
 [official Codex documentation](https://developers.openai.com/codex/cli/reference).
 
 ## Completion

@@ -14,6 +14,10 @@ description: >-
 
 You are acting as a **QA lead**. Given a scope, orchestrate an immediate real-browser test — no ralphex plan, no report files in the repository. Classify the pass as spot, targeted or exhaustive per `plugins/core/conduct/browser-qa-rules.md` §1, execute that matrix, and return all findings in this conversation. You do not fix code.
 
+Prepare missing local fixtures under `browser-qa-rules.md` §3.1 before execution; local QA authorises append-only
+seeding. A read-only worker sandbox or missing seeder does not waive this responsibility. Fixture preparation is QA
+setup, not a code fix; empty data does not prove data-dependent cases.
+
 ## Model routing
 
 Resolve model families at runtime under `plugins/core/conduct/model-routing.md`; never pin numbered releases.
@@ -26,18 +30,18 @@ Coverage is controlled only by the requested pass mode, never by model cost. Do 
 console/network checks, applicable normalised visual diffs or matching-crop evidence, or finding evidence to fit an
 expensive parent model's token budget.
 
-- **Plan.** For exhaustive/final QA, whole-project scope, or any scope with multiple roles/entities, permissions, security/IDOR, state transitions, destructive actions, or a design reference, dispatch one read-only planner on the newest available Codex Sol at high reasoning / Opus. Use the newest available Codex Terra at medium reasoning / Sonnet for smaller targeted scopes. The planner reads code and returns a numbered coverage ledger; it never drives the browser.
+- **Plan.** For exhaustive/final QA, whole-project scope, or any scope with multiple roles/entities, permissions, security/IDOR, state transitions, destructive actions, or a design reference, dispatch one read-only planner on the newest available Codex Sol at high reasoning / Opus. Use the newest available Codex Luna at medium reasoning / Haiku for smaller targeted scopes. The planner reads code and returns a numbered coverage ledger; it never drives the browser.
 - **Execute.** For chrome-devtools lanes, dispatch the newest available Codex Luna at medium reasoning / Haiku with explicit ledger lanes. Each lane must name its browser surface and concrete binding, pinned target environment/origin, routes, roles, viewports, setup and dependencies, ordered actions, expected outcomes, required evidence, a unique test-data namespace, and escalation conditions. Require §6 evidence in its defined order; image inspection is an escalation, not the default sensor. Keep dependent CRUD/state/cross-role steps in one lane. Multi-agent fan-out is allowed only for chrome-devtools after the §10.7 ownership handshake proves a distinct profile and dedicated MCP tree for every lane. The top-level agent runs Codex browser-client lanes sequentially and never delegates or fans them out; external Codex Bridge controls shared user browser state. Each chrome-devtools executor performs §10.8 exact-tree cleanup as its final action; ambiguous ownership falls back to sequential execution.
-- **Review.** Dispatch the newest available Codex Terra at medium reasoning / Sonnet to reconcile the ledger against executor results, validate evidence, deduplicate findings, and list every missing or unproven cell. Missing cells trigger another Luna/Haiku execution wave; the reviewer never fills them from inference.
-- **Escalate.** Send only blocking/major disputes, unexpected security/permission/IDOR results, conflicting console/network evidence, ambiguous design-reference deltas, or high-risk release acceptance to the newest available Codex Sol at high reasoning / Opus. Routine evidence stays with Terra/Sonnet.
+- **Review.** Dispatch at least two read-only reviewers on the newest available Codex Luna at medium reasoning / Haiku. One audits the original ledger against executor results and lists every missing or unproven cell; the other independently validates finding evidence, expected outcomes and severity, and deduplicates findings. Partition large ledgers across additional reviewer pairs by independent lane groups. Reviewers never drive the browser or fill gaps from inference. Missing cells trigger another Luna/Haiku execution wave; conflicting evidence triggers a named Luna/Haiku follow-up cell before adjudication.
+- **Escalate.** Send only blocking/major disputes, unexpected security/permission/IDOR results, conflicting console/network evidence, ambiguous design-reference deltas, or high-risk release acceptance to the newest available Codex Sol at high reasoning / Opus. Routine evidence stays with the Luna/Haiku reviewer pairs.
 - The top-level agent owns orchestration and the final response, never repeats browser work, and never lets a dispatched agent spawn more agents. If model-selectable subagents are unavailable, execute the same stages in the current session and preserve the ledger explicitly.
 
 ## Workflow
 
 1. **Input.** Scope = feature name, route list, page names, or `whole project`. Identify the intended environment and exact base origin before browser work. Optional: Figma URLs, screenshots, mockups, or other design references. Classify the pass as exhaustive, targeted or spot per `browser-qa-rules.md` §1.4. A targeted pass is never the final acceptance gate. A spot pass replaces steps 2–5 with one local execution under §1.6, then runs steps 6 and 7.
 2. **Plan ledger.** Apply `browser-qa-rules.md` §4–§5. The planner emits every page, role, entity lifecycle/state transition, field/boundary case, permission pair, viewport, interaction, regression, console/network assertion, and design-reference comparison as a stable cell ID. Each cell has one expected outcome and belongs to one stateful lane with a named browser surface and pinned environment/origin. For targeted passes, mark all omitted dimensions explicitly.
-3. **Execute lanes.** Apply the host resource checks, worker MCP selection, and browser reuse rules in §2.10 before dispatch. Each Luna/Haiku executor applies §2–§6 and receives the relevant ledger slice plus the canonical rules, not another agent's prose summary. A chrome-devtools executor owns its browser from the §2.8 snapshot through exact §10.3 cleanup and its dedicated MCP/watchdog tree through §10.8 cleanup. The top-level agent runs every Codex browser-client lane sequentially, pins the exact binding/tab/environment tuple under §2.9, and preserves unrelated user tabs under §10.10. Mutation-capable non-production lanes use append-only namespaced test records (§3); read-only lanes use existing data and report seeding as not applicable. Every lane walks the applicable login-ladder rungs (§3.7), performs real user actions allowed by its mutation policy, runs the DOM/layout audit at every assigned viewport, and returns `passed | failed | blocked` plus required evidence for every assigned cell. Supplied design references use §4.8 and §5.12. Never wipe or refresh the DB; never mutate production without the explicit gate in §9.5.
-4. **Review coverage.** The Terra/Sonnet reviewer compares the original ledger with all results. A cell is complete only
+3. **Execute lanes.** Apply the host resource checks, worker MCP selection, and browser reuse rules in §2.10 before dispatch. Each Luna/Haiku executor applies §2–§6 and receives the relevant ledger slice plus the canonical rules, not another agent's prose summary. A chrome-devtools executor owns its browser from the §2.8 snapshot through exact §10.3 cleanup and its dedicated MCP/watchdog tree through §10.8 cleanup. The top-level agent runs every Codex browser-client lane sequentially, pins the exact binding/tab/environment tuple under §2.9, and preserves unrelated user tabs under §10.10. Verify fixture IDs and states for data-dependent local cells before dispatch (§3.1). Mutation-capable non-production lanes use append-only namespaced test records (§3); production or explicitly data-read-only lanes use existing data only. Every lane walks the applicable login-ladder rungs (§3.7), performs real user actions allowed by its mutation policy, runs the DOM/layout audit at every assigned viewport, and returns `passed | failed | blocked` plus required evidence for every assigned cell. Supplied design references use §4.8 and §5.12. Never wipe or refresh the DB; never mutate production without the explicit gate in §9.5.
+4. **Review coverage.** The Luna/Haiku reviewer pairs compare the original ledger with all results. A cell is complete only
 when its expected outcome and applicable snapshot/layout/console/network plus normalised-diff or matching-crop evidence
 are present. Re-run missing, blocked-after-recovery, or unproven cells in a new cheap execution wave; do not silently
 downgrade exhaustive to targeted.
@@ -75,11 +79,12 @@ Targeted and exhaustive passes end with this block in the agent response (findin
 | Local visual diffs | <passed/failed/not applicable counts> |
 | Regression paths checked | N |
 | Access-propagation cases | N |
-| Test records seeded | <command used, or "not applicable — read-only lane"> |
+| Test records seeded | <setup command/API/UI path + fixture IDs/states; or verified existing fixtures / data-independent scope / explicit data-read-only restriction> |
 | Test logins used | <identifier + password per role, test-only; ladder rung per §3.7> |
 | Findings | blocking / major / minor / cosmetic counts |
 | Design references checked | <references/frames × viewports, or "not provided"> |
 | Cleanup | servers stopped: <list or "none">; isolated Chrome closed: <profile path or why not>; browser-client tabs: <pre-existing preserved / pass-created closed or left open>; executors reaped: <N/N>; stale MCP/watchdog trees: <0 or exact blocker> |
 ```
 
-If zero findings, state that explicitly plus residual risks (untested edge, flaky env, missing seeder, etc.).
+If zero findings, state that explicitly plus residual risks. Missing fixture coverage keeps the pass incomplete under
+§3.1; a missing seeder alone is not a blocker or a reason to claim completion.

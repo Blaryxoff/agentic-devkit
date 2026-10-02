@@ -60,13 +60,16 @@ local server(s) using existing project/dev-runtime commands, wait for a real HTT
 what this QA pass started. During cleanup, stop only those recorded processes/sessions; if the environment was already
 running (for example on the user's Mac), leave it running.
 
-2.3. For each mutation-capable non-production lane, verify DB or test-DB access and at least one usable seeder/factory
-path. Read-only lanes, including production observation, use existing data and mark DB/seeder setup as not applicable.
+2.3. Verify fixture readiness for every data-dependent local lane under §3.1–§3.2 before execution. An existing
+seeder/factory is preferred, never a prerequisite. Read-only browser assertions and worker shell sandboxes do not waive
+local fixture preparation. Production observation and explicitly data-read-only scopes use existing data only.
 
 2.4. When the user supplies a design reference, verify it is accessible before starting. Figma URLs require Figma MCP;
 attached or repository screenshots/mockups require a readable image at its original resolution.
 
-2.5. Missing prerequisite → stop via `plugins/core/conduct/clarification-protocol.md`. Never test against an unverified environment.
+2.5. Recover missing local fixtures through §3.1–§3.2 before declaring a prerequisite missing. If safe setup remains
+unavailable, stop via `plugins/core/conduct/clarification-protocol.md` with the attempted paths and exact denial/error.
+Never test against an unverified environment or claim uncovered cells passed.
 
 2.6. Keep the surface selected under §2.1 as the lane's sole interactive browser authority. Do not alternate
 chrome-devtools and browser-client against one stateful flow or use one to recover the other's tab. Playwright Test may
@@ -145,7 +148,24 @@ are allowed solely to establish the pin, including on production; perform these 
 
 ## 3. Seed strategy
 
-3.1. Discover existing seeders; prefer dev/test fixture sets.
+3.1. **Prepare required local fixtures.** A local QA request authorises and requires append-only test-data preparation
+when existing records cannot exercise an assigned case; do not ask for separate seeding permission. Prefer existing
+dev/test seeders and factories. If none covers the case, use the project's ORM/console, supported API or real UI to
+create namespaced test users, related entities, files and required states. Inspect the relevant models and invariants
+before creating records. Fixture preparation is QA setup, not a source-code fix; do not modify application code.
+Explicit user/project data restrictions and §9.5 still bind.
+
+The QA lead owns fixture readiness before dispatch. A worker's read-only shell sandbox, missing seeder or empty DB
+is not a reason to omit a local case. If a worker cannot create a fixture, return the exact missing state to the lead;
+the lead prepares it through its available authorised tools or a dedicated fixture lane, then reruns the dependent
+cells. Do not widen worker permissions or mutate production to recover.
+
+Map each data-dependent cell to concrete fixture IDs, role, state and required relationships. Verify the record is
+reachable by that lane's account before counting the setup complete. An empty-page check proves only the empty state;
+it cannot prove populated lists, uploads/downloads, transitions, permissions or other fixture-dependent cases. Seeding
+is not applicable only when adequate existing fixtures are verified, the scope is genuinely data-independent, or an
+explicit data-read-only restriction applies. For a remaining blocker, report attempted setup paths, exact denial/error
+and affected cell IDs; keep those cells blocked/uncovered and the pass incomplete.
 
 3.2. Use **append-only** seeding or a **separate test DB** — record exact command(s). Creating new test users, registering through the UI, logging in as seeded users, and mutating clearly-marked test records is allowed when needed to exercise real flows.
 
