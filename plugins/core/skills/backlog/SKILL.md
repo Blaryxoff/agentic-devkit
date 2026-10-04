@@ -29,7 +29,7 @@ mode.
 
 ## Read or list
 
-1. Glob `docs/backlog/*.md`. If none exist, report that the backlog is empty; do not create an empty directory.
+1. Glob `docs/backlog/*.md`, excluding `README.md`. If none exist, report that the backlog is empty; do not create an empty directory.
 2. Read the requested files and verify every `where` per conduct §4.
 3. For a list, print one line per item in the required order. Include `worth`, title, `where` when present, and `stale`
    when verification failed.

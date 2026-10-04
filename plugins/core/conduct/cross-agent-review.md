@@ -2,7 +2,7 @@
 
 Two distinct protocols live here:
 
-- **Review cross-check** — for any review skill: run the review in the calling agent first, then, only when the caller is Claude Code, cross-check by running the same review in Codex and merging the relevant findings. Mandatory when its gate holds; defined in [When this applies](#when-this-applies) and [Procedure](#procedure).
+- **Review cross-check** — for any review skill: run the review in the calling agent first, then, when the caller is Claude Code or Cursor Agent, cross-check by running the same review in Codex and merging the relevant findings. Mandatory when its gate holds; defined in [When this applies](#when-this-applies) and [Procedure](#procedure).
 - **[Peer CLI invocation](#peer-cli-invocation)** — direction-agnostic mechanics for driving the other CLI non-interactively and read-only. Shared by the review cross-check above and by the manually-triggered `devkit-crosscheck` skill, which defines its own gate and is bidirectional.
 
 **The review cross-check is MANDATORY, not optional.** When the gating conditions below hold, you MUST run it. It is not a "proportional", "nice-to-have", or "use-judgement" step — there is no discretion to skip it because the change looks small, the review looks clean, or running Codex feels slow. Omitting the cross-check while the gate is open is a **protocol violation**, not a permissible shortcut. If you catch yourself reasoning "this is probably fine without Codex", stop — that reasoning is exactly what this rule forbids.
@@ -11,7 +11,7 @@ Two distinct protocols live here:
 
 Apply in any review skill (deep, fast, business-logic, logging, plan) after it has produced its own findings. The cross-check runs whenever **all** of these hold:
 
-1. You are **Claude Code** (not Codex, Cursor, or any other agent).
+1. You are **Claude Code or Cursor Agent** (not Codex or another agent).
 2. You are the **top-level review invocation** — the skill the user (or a non-review caller) invoked directly. Defer the cross-check when you were dispatched as a subagent/variant by a review orchestrator; return your report to the orchestrator and let it run the cross-check once.
 3. The `codex` CLI is available: `command -v codex` succeeds.
 4. The findings did not come from a revmux run that already carried Codex. A revmux report satisfies this condition —
@@ -49,7 +49,7 @@ Apply in any review skill (deep, fast, business-logic, logging, plan) after it h
 
 Shared mechanics for driving the other CLI non-interactively and read-only. Applies to the review cross-check above and to `devkit-crosscheck`. Both invocations below are instances of [shell-invocation.md](./shell-invocation.md). QA worker permissions are defined separately in [browser-qa-rules.md §12.7](./browser-qa-rules.md#12-lane-briefs).
 
-### Claude Code → Codex
+### Claude Code / Cursor Agent → Codex
 
 ```bash
 codex exec --sandbox read-only --skip-git-repo-check "<prompt>" < /dev/null
@@ -86,7 +86,7 @@ subprocess peer across several rounds, open its session once and resume it — t
 and each round costs only the new prompt. The "Prompt requirements" below describe the first round; a resumed round
 carries the earlier context and need not restate it.
 
-**Claude Code → Codex.** Capture the thread id from the first line of `--json`, then resume it:
+**Claude Code / Cursor Agent → Codex.** Capture the thread id from the first line of `--json`, then resume it:
 
 ```bash
 ROUNDS=$(mktemp -d)   # outside the repo — never write scratch JSONL into the checkout

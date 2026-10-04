@@ -74,8 +74,8 @@ If any answer is no, do not propose the candidate. Recurrence prevention alone i
 
 - **Native project instruction file** (committed, team-shared) — use the file loaded by the active harness for
   architecture, conventions, integration, and operational knowledge. Project placement guidance and established files
-  take precedence. When the project has no established file, use `AGENTS.md` for Codex, `CLAUDE.md` for Claude Code, and
-  the documented native project instruction file for another harness.
+  take precedence. When the project has no established file, use `AGENTS.md` for Codex or Cursor Agent and `CLAUDE.md`
+  for Claude Code. Cursor also reads root `CLAUDE.md`; follow an existing project convention before creating `AGENTS.md`.
 - **Established local instruction file** (gitignored, personal) — use only when **both** hold: (1) the active harness
   already loads that file in this project, and (2) the discovery is genuinely per-developer or per-checkout state, not a
   team convention that merely mentions a personal path. `CLAUDE.local.md` is one example, not a universal filename.
@@ -100,7 +100,9 @@ outside this skill's scope. Never write memory for the active harness into anoth
    rule file that the active harness loads; do not assume one root file contains the whole policy. For Claude Code this
    includes project `CLAUDE.md`, applicable `.claude/rules/*.md`, user `~/.claude/CLAUDE.md`, and applicable
    `~/.claude/rules/*.md`. For Codex, inspect every applicable `AGENTS.md` already loaded for the current project and user
-   scopes. If those files define a placement decision tree or specific destination, follow it instead of the defaults.
+   scopes. For Cursor Agent, inspect project `AGENTS.md` or `CLAUDE.md`, applicable `.cursor/rules/*.mdc`, and user
+   `~/.cursor/rules/*.mdc`. If those files define a placement decision tree or specific destination, follow it instead
+   of the defaults.
 2. **Read existing active-harness memory content** in those locations to avoid duplication. Do not scan or edit another
    harness's files unless the project explicitly declares them canonical for all agents.
 3. **Early exit** — if no new strategic knowledge was found, stop without asking the user. For explicit invocation,

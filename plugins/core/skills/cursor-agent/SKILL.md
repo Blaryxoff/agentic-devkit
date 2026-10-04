@@ -56,15 +56,19 @@ and it is why the repo state, not Cursor's report, is the source of truth after 
 
 ## The coder-gate is on Cursor's edit tools
 
-devkit installs `~/.cursor/hooks/hooks.json` with `coder-gate` + `comment-gate` on `preToolUse`, matching
+devkit installs `~/.cursor/hooks.json` with `coder-gate` + `comment-gate` on `preToolUse`, matching
 `Write|StrReplace|Edit|MultiEdit|Delete|EditNotebook|apply_patch`. `coder-gate` refuses all of them until the session
 transcript shows the coder skill was read. `-f` does **not** bypass it — it is a hook, not a permission. A blocked run
 reports "an edit hook blocked it", still exits 0, and changes nothing.
 
+Cursor CLI print mode (`-p`) does not currently emit `beforeSubmitPrompt`, so devkit's Jev feedback hook cannot
+classify the delegated prompt. Interactive Cursor and the IDE do emit it. See the
+[Cursor issue](https://forum.cursor.com/t/cursor-cli-does-not-run-enterprise-or-team-beforesubmitprompt-hooks/173219).
+
 Open every write-mode prompt with:
 
 ```text
-Activate the devkit-core--coder skill first (read ~/.cursor/skills/devkit-core--coder/SKILL.md), then <task>.
+Activate the devkit-coder skill first (read ~/.cursor/skills/devkit-coder/SKILL.md), then <task>.
 ```
 
 Cursor must read that skill before the first edit in the session. `coder-gate` records activation from the Read/ReadFile
@@ -113,7 +117,7 @@ force a run through.
 
 - The user did not name Cursor. Do the work yourself.
 - You are running inside Cursor already.
-- The task is a Claude↔Codex second opinion — that is `devkit-crosscheck`, a different mechanism with a read-only peer.
+- The task is a Claude/Cursor↔Codex second opinion — that is `devkit-crosscheck`, a different mechanism with a read-only peer.
 - A review request that does **not** name Cursor — code, branch, and plan reviews route per
   `plugins/core/conduct/review-routing.md`. Naming Cursor as the reviewer overrides that routing: run the review here in
   read-only mode, then verify its findings against the cited files before reporting any of them.

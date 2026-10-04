@@ -5,10 +5,10 @@
 # Core skills are installed globally; resolved non-core skills are linked per project.
 #
 # Output (in PROJECT_ROOT):
-#   .cursor/skills/devkit-*--*/        — symlinks for resolved non-core plugins
+#   .cursor/skills/<skill-name>/       — symlinks for resolved non-core plugins
 #   .cursor/rules/devkit-<plugin>.mdc  — one compact conduct-index rule per resolved plugin
 #   .cursor/mcp.json                   — MCP servers with per-project chrome-devtools profile
-#   .cursor/hooks/hooks.json           — merged hooks translated to Cursor event names
+#   .cursor/hooks.json                 — merged hooks translated to Cursor event names
 #
 # Input config:
 #   .devkit/toolkit.json               — standard devkit project config
@@ -28,6 +28,7 @@ set -euo pipefail
 ADAPTER_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$ADAPTER_DIR/../_lib/resolve.sh"
 source "$ADAPTER_DIR/../_lib/hooks.sh"
+source "$ADAPTER_DIR/../_lib/claude_agents.sh"
 source "$ADAPTER_DIR/../_lib/mcp.sh"
 
 # Conduct paths embedded in generated .mdc use the stable global-clone reference
@@ -51,6 +52,7 @@ skills_dir="$PROJECT_ROOT/.cursor/skills"
 # Fail before generating any project output when an enabled skill cannot be
 # linked. A successful partial catalog is more dangerous than a clear failure.
 collision=0
+seen_skill_names=""
 while IFS= read -r name; do
   [ -z "$name" ] && continue
   plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
@@ -62,10 +64,31 @@ while IFS= read -r name; do
     # paths.skills as holding "skill subdirectories, each with SKILL.md", and the Claude
     # adapter already enforces that; linking the rest publishes an empty catalog entry.
     [ -f "$skill_dir/SKILL.md" ] || continue
-    skill_dest="$skills_dir/${name}--$(basename "$skill_dir")"
-    if { [ -e "$skill_dest" ] || [ -L "$skill_dest" ]; } && [ ! -L "$skill_dest" ]; then
-      echo "ERROR: enabled skill destination is occupied by a non-symlink: $skill_dest" >&2
+    skill_name=$(devkit_frontmatter "$skill_dir/SKILL.md" | LC_ALL=C sed -n 's/^name:[[:space:]]*//p' | head -1)
+    if [ -z "$skill_name" ]; then
+      echo "ERROR: missing skill name in $skill_dir/SKILL.md" >&2
       collision=1
+      continue
+    fi
+    if printf '%s\n' "$seen_skill_names" | grep -qxF "$skill_name"; then
+      echo "ERROR: duplicate Cursor skill name: $skill_name" >&2
+      collision=1
+      continue
+    fi
+    seen_skill_names="$seen_skill_names$skill_name
+"
+    skill_dest="$skills_dir/$skill_name"
+    if [ -e "$skill_dest" ] || [ -L "$skill_dest" ]; then
+      if [ ! -L "$skill_dest" ]; then
+        echo "ERROR: enabled skill destination is occupied by a non-symlink: $skill_dest" >&2
+        collision=1
+      else
+        target=$(readlink "$skill_dest")
+        case "$target" in
+          "$TOOLKIT_ROOT"/plugins/*) ;;
+          *) echo "ERROR: enabled skill destination is a user symlink: $skill_dest" >&2; collision=1 ;;
+        esac
+      fi
     fi
   done
 done <<< "$resolved_non_core"
@@ -89,12 +112,18 @@ done
 # skills are exposed only in projects whose toolkit resolves them.
 mkdir -p "$skills_dir"
 reaped=0
-for _l in "$skills_dir"/devkit-*--*; do
+for _l in "$skills_dir"/*; do
   [ -L "$_l" ] || continue
+  target=$(readlink "$_l")
+  case "$(basename "$_l"):$target" in
+    devkit-*--*:*) ;;
+    *:"$TOOLKIT_ROOT"/plugins/*) ;;
+    *) continue ;;
+  esac
   rm -f "$_l"
   reaped=$((reaped + 1))
 done
-[ "$reaped" -gt 0 ] && echo "    Removed: $reaped stale .cursor/skills/devkit-*--* symlink(s)"
+[ "$reaped" -gt 0 ] && echo "    Removed: $reaped stale .cursor/skills symlink(s)"
 
 linked=0
 while IFS= read -r name; do
@@ -108,13 +137,22 @@ while IFS= read -r name; do
     # paths.skills as holding "skill subdirectories, each with SKILL.md", and the Claude
     # adapter already enforces that; linking the rest publishes an empty catalog entry.
     [ -f "$skill_dir/SKILL.md" ] || continue
-    skill_dest="$skills_dir/${name}--$(basename "$skill_dir")"
+    skill_name=$(devkit_frontmatter "$skill_dir/SKILL.md" | LC_ALL=C sed -n 's/^name:[[:space:]]*//p' | head -1)
+    skill_dest="$skills_dir/$skill_name"
     ln -s "$(cd "$skill_dir" && pwd)" "$skill_dest"
     linked=$((linked + 1))
   done
 done <<< "$resolved_non_core"
-[ "$linked" -gt 0 ] && echo "    Linked:  .cursor/skills/devkit-*--* ($linked resolved non-core skill(s))"
+[ "$linked" -gt 0 ] && echo "    Linked:  .cursor/skills/<skill-name> ($linked resolved non-core skill(s))"
 rmdir "$skills_dir" 2>/dev/null || true
+
+cursor_agents=()
+while IFS= read -r agent_name; do
+  [ -n "$agent_name" ] && cursor_agents+=("$agent_name")
+done < <(generate_subagents "$PROJECT_ROOT/.cursor/agents" "$plugin_index" "$resolved_non_core" cursor)
+if [ "${#cursor_agents[@]}" -gt 0 ]; then
+  echo "    Agents:  .cursor/agents/ (${#cursor_agents[@]} resolved stack subagent(s))"
+fi
 
 # Glob patterns per plugin (used for rule activation)
 declare_globs() {
@@ -193,15 +231,28 @@ done <<< "$resolved_names"
 merged_hooks=$(merge_plugin_hooks "$plugin_index" "$resolved_names")
 cursor_hooks=$(translate_hooks_to_cursor "$merged_hooks")
 
-hooks_dir="$PROJECT_ROOT/.cursor/hooks"
-mkdir -p "$hooks_dir"
-hooks_file="$hooks_dir/hooks.json"
+hooks_file="$PROJECT_ROOT/.cursor/hooks.json"
+legacy_hooks_file="$PROJECT_ROOT/.cursor/hooks/hooks.json"
 hooks_file_existed=false
+existing_cursor_hooks='{}'
+if [ -f "$legacy_hooks_file" ]; then
+  hooks_file_existed=true
+  if ! legacy_cursor_hooks=$(jq '.' "$legacy_hooks_file" 2>/dev/null); then
+    echo "ERROR: $legacy_hooks_file is not valid JSON — fix or move it, then re-run." >&2
+    exit 1
+  fi
+  existing_cursor_hooks=$(normalize_cursor_hooks "$legacy_cursor_hooks") || exit 1
+fi
 if [ -f "$hooks_file" ]; then
   hooks_file_existed=true
-  existing_cursor_hooks=$(jq 'del(.version) | .hooks // .' "$hooks_file" 2>/dev/null || echo '{}')
-  cursor_hooks=$(merge_hooks_preserving_existing "$existing_cursor_hooks" "$cursor_hooks")
+  if ! native_cursor_hooks=$(jq '.' "$hooks_file" 2>/dev/null); then
+    echo "ERROR: $hooks_file is not valid JSON — fix or move it, then re-run." >&2
+    exit 1
+  fi
+  native_cursor_hooks=$(normalize_cursor_hooks "$native_cursor_hooks") || exit 1
+  existing_cursor_hooks=$(merge_cursor_hooks_preserving_existing "$existing_cursor_hooks" "$native_cursor_hooks") || exit 1
 fi
+cursor_hooks=$(merge_cursor_hooks_preserving_existing "$existing_cursor_hooks" "$cursor_hooks") || exit 1
 
 # Auto-update global clone (+ project submodule) on workspace open and agent session start.
 update_cmd="$(toolkit_abspath)/bin/devkit-update --if-stale"
@@ -209,8 +260,8 @@ cursor_hooks=$(echo "$cursor_hooks" | jq --arg cmd "$update_cmd" '
   def ensure_event($event):
     .[$event] = (
       (.[$event] // [])
-      | map(select((.hooks // []) | any(.command == $cmd) | not))
-    ) + [{ "hooks": [{ "type": "command", "command": $cmd, "timeout": 60000 }] }];
+      | map(select(.command != $cmd))
+    ) + [{command: $cmd, timeout: 60}];
   ensure_event("sessionStart") | ensure_event("workspaceOpen")
 ')
 
@@ -221,12 +272,16 @@ codergate_cmd=$(gate_cmd coder-gate.sh)
 commentgate_cmd=$(gate_cmd comment-gate.sh)
 cursor_hooks=$(inject_cursor_edit_gates "$cursor_hooks" "$codergate_cmd" "$commentgate_cmd")
 
-write_json "$hooks_file" "$cursor_hooks" || exit 1
+cursor_config=$(jq -n --argjson hooks "$cursor_hooks" '{version: 1, hooks: $hooks}')
+write_json "$hooks_file" "$cursor_config" || exit 1
+if [ -f "$legacy_hooks_file" ]; then
+  mv "$legacy_hooks_file" "$legacy_hooks_file.devkit-migrated-$(date +%Y%m%d%H%M%S)-$$"
+fi
 hook_count=$(echo "$cursor_hooks" | jq '[.[] | length] | add // 0')
 if [ "$hooks_file_existed" = true ]; then
-  echo "    Updated: .cursor/hooks/hooks.json ($hook_count hook(s), incl. devkit auto-update + edit gates)"
+  echo "    Updated: .cursor/hooks.json ($hook_count hook(s), incl. devkit auto-update + edit gates)"
 else
-  echo "    Created: .cursor/hooks/hooks.json ($hook_count hook(s), incl. devkit auto-update + edit gates)"
+  echo "    Created: .cursor/hooks.json ($hook_count hook(s), incl. devkit auto-update + edit gates)"
 fi
 
 # --- .cursor/mcp.json (per-project MCP servers; overrides global ~/.cursor/mcp.json) ---

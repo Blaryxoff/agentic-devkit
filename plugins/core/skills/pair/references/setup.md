@@ -67,7 +67,7 @@ launcher leaves no stable name in the pane's command line cannot be targeted at 
 
 Start `cursor-agent` in the same checkout as Codex. Use `--model auto` if your account cannot use the
 configured named model. Core skills, including pair, are linked by `bin/devkit-install` into
-`~/.cursor/skills/devkit-core--*`.
+`~/.cursor/skills/<frontmatter-name>` (for example, `~/.cursor/skills/devkit-coder`).
 
 Cursor sends to Codex with `--to codex --stdin`; Codex replies with `--to cursor --message-file NAME`.
 The script recognises Cursor's boxed `→` input and model/path footer, with a mode row in Ask/Plan.

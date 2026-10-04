@@ -12,16 +12,16 @@ description: >-
 Single entrypoint for **stack-specific** devkit capabilities. Stack skills are not globally registered (they would
 wrongly offer themselves in unrelated projects), so this skill matches the request against them and loads the right one.
 
-**When the router is needed (vs. native registration):** the Claude adapter already registers single-root stack skills
-natively — isolation skills become subagents (`.claude/agents/`) and inline skills become per-project symlinks
-(`.claude/skills/devkit-<plugin>--<skill>`). Prefer those native entries. Fall back to this router only when native
+**When the router is needed (vs. native registration):** the Claude and Cursor adapters register single-root stack skills
+natively — isolation skills become subagents (`.claude/agents/` or `.cursor/agents/`) and skills become per-project symlinks
+(`.claude/skills/devkit-<plugin>--<skill>` or `.cursor/skills/<frontmatter-name>`). Prefer those native entries. Fall back to this router only when native
 registration cannot cover the request: (a) a **multi-repo** project whose plugin set is the union of several
 `.devkit/toolkit.json` roots, or (b) a skill **skipped due to a frontmatter-name collision** (two enabled plugins
 declaring the same `name:` — only the first is linked or emitted, the rest route through here).
 
 `DEVKIT_HOME` = the global clone, default `~/.claude/agentic-devkit`. All `plugins/...` paths below resolve under it. If
-`$DEVKIT_HOME/bin/devkit-resolve` is missing, resolve this skill's own symlink (`~/.claude/skills/devkit-core--devkit-router`)
-to find the clone root.
+`$DEVKIT_HOME/bin/devkit-resolve` is missing, resolve this skill's own symlink under the active harness's global skills
+directory (`~/.claude/skills/`, `~/.cursor/skills/`, or `~/.codex/skills/`) to find the clone root.
 
 ## Workflow
 
@@ -38,7 +38,7 @@ to find the clone root.
    The output is the ordered, de-duplicated, dependency-resolved list of **absolute** plugin directories.
 
 3. **Build the dispatch menu.** For each enabled **non-core** plugin dir that has a `skills/` subdir, read every
-   `skills/*/SKILL.md` frontmatter (`name` + `description`). This is the candidate set — the stack equivalent of Claude's
+   `skills/*/SKILL.md` frontmatter (`name` + `description`). This is the candidate set — the stack equivalent of native
    native skill menu.
 
 4. **Match the request** against those descriptions. Pick the best-fitting child skill. If several fit, prefer the most
@@ -51,6 +51,7 @@ to find the clone root.
 
 ## Notes
 
-- A child skill marked `claudeSubagent: true` is also generated as a real subagent per project (`.claude/agents/`) by the
-  Claude adapter — prefer invoking that subagent when it exists; only inline-load when it does not.
+- A child skill marked `claudeSubagent: true` is generated as a real subagent per project by the Claude and Cursor
+  adapters (`.claude/agents/` or `.cursor/agents/`). Prefer invoking that subagent when it exists; only inline-load
+  when it does not.
 - Resolve the plugin menu once per task and reuse it on later turns.

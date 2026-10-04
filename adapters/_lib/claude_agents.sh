@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# devkit-toolkit: shared Claude subagent generation
-# Sourced by adapters/claude/generate (stack subagents, per-project) and
-# bin/devkit-install (core subagents, global ~/.claude/agents).
+# devkit-toolkit: shared Claude/Cursor subagent generation
+# Sourced by the Claude and Cursor adapters (stack subagents, per-project) and
+# bin/devkit-install (core subagents, global agents directories).
 #
 # Requires: jq, resolve.sh already sourced (for _build_plugin_index inputs).
 #
 # Exports:
 #   DEVKIT_AGENT_SENTINEL  — marker comment placed below frontmatter in generated files
 #   reap_devkit_agents     — remove only devkit-generated agent files in a dir
-#   emit_subagent          — write one .claude agent file from a SKILL.md (if claudeSubagent)
+#   emit_subagent          — write one native agent file from a SKILL.md (if claudeSubagent)
 #   generate_subagents     — emit agents for a given set of plugin names
 
 # Sentinel lives *below* the frontmatter (not line 1): Claude Code's frontmatter
@@ -56,13 +56,14 @@ reap_devkit_agents() {
   done
 }
 
-# emit_subagent <skill_file> <agents_dir>
+# emit_subagent <skill_file> <agents_dir> [claude|cursor]
 # Writes <agents_dir>/<name>.md when the skill has `claudeSubagent: true`.
 # Prints the emitted agent name (empty if skipped).
 emit_subagent() {
   local skill_file="$1"
   local agents_dir="$2"
-  awk -v sentinel="$DEVKIT_AGENT_SENTINEL" -v out_dir="$agents_dir" '
+  local harness="${3:-claude}"
+  awk -v sentinel="$DEVKIT_AGENT_SENTINEL" -v out_dir="$agents_dir" -v harness="$harness" '
     BEGIN { depth=0; in_fm=0; subagent=0; collecting=""; cont="" }
     /^---[[:space:]]*$/ {
       depth++
@@ -108,7 +109,10 @@ emit_subagent() {
       # Everything else is folded, because ": " inside a plain scalar is not valid YAML.
       if (desc ~ /^["'"'"']/) printf "description: %s\n", desc >> out
       else if (desc != "") printf "description: >-\n  %s\n", desc >> out
-      if (tools != "") printf "tools: %s\n", tools >> out
+      if (harness == "cursor") {
+        if (tools != "" && tools !~ /(Write|Edit|MultiEdit|Delete|Notebook)/)
+          printf "readonly: true\n" >> out
+      } else if (tools != "") printf "tools: %s\n", tools >> out
       printf "---\n" >> out
       printf "%s\n", sentinel >> out
       sub(/^\n+/, "", body)
@@ -119,13 +123,14 @@ emit_subagent() {
   ' "$skill_file"
 }
 
-# generate_subagents <agents_dir> <plugin_index_json> <names_newline_list>
+# generate_subagents <agents_dir> <plugin_index_json> <names_newline_list> [claude|cursor]
 # Reaps stale devkit agents, then emits a subagent for every claudeSubagent skill
 # in the named plugins. Echoes one emitted agent name per line.
 generate_subagents() {
   local agents_dir="$1"
   local plugin_index="$2"
   local names="$3"
+  local harness="${4:-claude}"
 
   reap_devkit_agents "$agents_dir"
 
@@ -153,7 +158,7 @@ generate_subagents() {
       _seen_subagent_names="$_seen_subagent_names$fm_name
 "
       mkdir -p "$agents_dir"
-      emit_subagent "$skill_md" "$agents_dir"
+      emit_subagent "$skill_md" "$agents_dir" "$harness"
     done
   done <<< "$names"
 }

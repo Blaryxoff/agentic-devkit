@@ -42,17 +42,17 @@ printf '%s\n' '{"type":"response_item","payload":{"type":"custom_tool_call","inp
 [ "$(run_gate codex "$codex_transcript")" = "0" ] || fail "Codex coder skill should open gate"
 
 cursor_transcript="$TMP_DIR/cursor.jsonl"
-printf '%s\n' '{"role":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"path":"/Users/blaryx/.cursor/skills/devkit-core--coder/SKILL.md"}}]}}' \
+printf '%s\n' '{"role":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"path":"/Users/blaryx/.cursor/skills/devkit-coder/SKILL.md"}}]}}' \
   > "$cursor_transcript"
 [ "$(run_gate cursor "$cursor_transcript")" = "0" ] || fail "Cursor coder skill read should open gate"
 
 cursor_readfile_transcript="$TMP_DIR/cursor-readfile.jsonl"
-printf '%s\n' '{"role":"assistant","message":{"content":[{"type":"tool_use","name":"ReadFile","input":{"path":"/Users/blaryx/.cursor/skills/devkit-core--coder/SKILL.md"}}]}}' \
+printf '%s\n' '{"role":"assistant","message":{"content":[{"type":"tool_use","name":"ReadFile","input":{"path":"/Users/blaryx/.cursor/skills/devkit-coder/SKILL.md"}}]}}' \
   > "$cursor_readfile_transcript"
 [ "$(run_gate cursor-readfile "$cursor_readfile_transcript")" = "0" ] || fail "Cursor ReadFile transcript should open gate"
 
 set +e
-printf '%s\n' "{\"toolName\":\"ReadFile\",\"session_id\":\"cursor-activate\",\"tool_input\":{\"path\":\"/Users/blaryx/.cursor/skills/devkit-core--coder/SKILL.md\"}}" \
+printf '%s\n' "{\"toolName\":\"ReadFile\",\"session_id\":\"cursor-activate\",\"tool_input\":{\"path\":\"/Users/blaryx/.cursor/skills/devkit-coder/SKILL.md\"}}" \
   | TMPDIR="$TMP_DIR" sh "$ROOT/plugins/core/hooks/coder-gate.sh" >/dev/null 2>&1
 [ $? -eq 0 ] || fail "Cursor ReadFile preToolUse should allow read"
 printf '%s\n' "{\"toolName\":\"StrReplace\",\"session_id\":\"cursor-activate\",\"transcript_path\":\"$empty_transcript\"}" \

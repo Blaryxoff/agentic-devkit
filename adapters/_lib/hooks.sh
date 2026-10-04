@@ -91,56 +91,78 @@ merge_hooks_preserving_existing() {
   '
 }
 
-# Event name mapping: Claude Code → Cursor
-# Claude Code events: PreToolUse, PostToolUse, Notification, Stop, SubagentStop
-# Cursor events:      preToolUse, afterFileEdit, beforeShellExecution, etc.
-#
-# PreToolUse maps to preToolUse (edit/tool gates), not beforeShellExecution.
-# Not all events map 1:1. This function translates where possible
-# and drops events that have no Cursor equivalent.
+normalize_cursor_hooks() {
+  printf '%s\n' "$1" | jq '
+    def flatten:
+      if (.hooks? | type) == "array" then
+        . as $group | [.hooks[] |
+          . + (if $group.matcher? then {matcher: $group.matcher} else {} end) |
+          if (.timeout | type) == "number" and .timeout >= 1000
+          then .timeout = ((.timeout / 1000) | ceil) else . end
+        ]
+      else [.] end;
+    (.hooks // .) | with_entries(.value |= [.[] | flatten[]])
+  '
+}
+
+merge_cursor_hooks_preserving_existing() {
+  jq -n --argjson existing "$1" --argjson new "$2" '
+    reduce ($new | to_entries[]) as $entry ($existing;
+      ($entry.value | map(.command // empty)) as $commands |
+      .[$entry.key] = ([ (.[$entry.key] // [])[] |
+        select((.command // "") as $command | ($commands | index($command)) | not)
+      ] + $entry.value)
+    )
+  '
+}
+
 translate_hooks_to_cursor() {
   local merged_hooks="$1"
 
   echo "$merged_hooks" | jq '
     {
       "PreToolUse":    "preToolUse",
-      "PostToolUse":   "afterFileEdit",
-      "Stop":          "afterResponse"
+      "PostToolUse":   "postToolUse",
+      "UserPromptSubmit": "beforeSubmitPrompt",
+      "Stop":          "stop",
+      "SessionStart":  "sessionStart",
+      "SessionEnd":    "sessionEnd",
+      "SubagentStop":   "subagentStop",
+      "PreCompact":    "preCompact"
     } as $event_map |
 
     reduce (to_entries[]) as $entry (
       {};
       if ($event_map[$entry.key] != null) then
         .[$event_map[$entry.key]] = (
-          (.[$event_map[$entry.key]] // []) + $entry.value
+          (.[$event_map[$entry.key]] // []) +
+          [$entry.value[] as $group | $group.hooks[] |
+            . + (if $group.matcher? then {matcher: $group.matcher} else {} end) |
+            if (.timeout | type) == "number"
+            then .timeout = ((.timeout / 1000) | ceil) else . end
+          ]
         )
       else . end
     )
   '
 }
 
-# Inject devkit core edit gates into Cursor preToolUse hooks JSON.
-# $1 — hooks object; $2 — coder-gate command; $3 — comment-gate command.
 inject_cursor_edit_gates() {
   local hooks_json="$1"
   local coder_cmd="$2"
   local comment_cmd="$3"
 
   echo "$hooks_json" | jq --arg coder "$coder_cmd" --arg comment "$comment_cmd" '
-    def ensure_gate($matcher; $cmd):
-      .preToolUse = (
-        (.preToolUse // [])
-        | map(select(
-            ((.hooks // []) | any(.command == $cmd)) and ((.matcher // "") == $matcher)
-            | not
-          ))
-      ) + [{
-        matcher: $matcher,
-        hooks: [{ type: "command", command: $cmd, timeout: 60000 }]
-      }];
-    ensure_gate("Read|ReadFile"; $coder)
-    | ensure_gate("Write|StrReplace|Edit|MultiEdit|Delete|EditNotebook|apply_patch"; $coder)
-    | ensure_gate("Write|StrReplace|Edit|MultiEdit|Delete|EditNotebook|apply_patch"; $comment)
+    .preToolUse = (
+      [(.preToolUse // [])[] |
+        select((.command // "" | contains("plugins/core/hooks/coder-gate.sh")) | not) |
+        select((.command // "" | contains("plugins/core/hooks/comment-gate.sh")) | not)
+      ] + [
+        {command: $coder, matcher: "Read|ReadFile", timeout: 60},
+        {command: $coder, matcher: "Write|StrReplace|Edit|MultiEdit|Delete|EditNotebook|apply_patch", timeout: 60},
+        {command: $comment, matcher: "Write|StrReplace|Edit|MultiEdit|Delete|EditNotebook|apply_patch", timeout: 60}
+      ]
+    )
   '
 }
 

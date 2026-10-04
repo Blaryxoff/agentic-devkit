@@ -1,7 +1,7 @@
 ---
 name: devkit-crosscheck
 description: >-
-  run one task twice — once natively in this harness, once in the peer CLI (Claude Code ↔ Codex) — then verify
+  run one task twice — once natively in this harness, once in the peer CLI (Claude Code/Cursor ↔ Codex) — then verify
   both answers against primary evidence and merge them. Manual trigger ONLY, never self-invoked: "crosscheck",
   "кросс-чек", "проверь через codex/claude", "ask codex too", "ask claude too", "second opinion", "run it in
   both". No other request matches, however uncertain or high-stakes it looks.
@@ -16,7 +16,7 @@ that deliberately by triggering it.
 
 1. The user explicitly triggered this skill in the current turn. Never self-invoke, never chain it from another skill.
 2. You are the top-level invocation, not a dispatched subagent.
-3. The peer CLI is present: `command -v codex` (from Claude Code) or `command -v claude` (from Codex).
+3. The peer CLI is present: `command -v codex` (from Claude Code or Cursor) or `command -v claude` (from Codex).
 
 An explicit trigger outranks every "not worth it" heuristic in this file. If the user asked, run it.
 
@@ -40,6 +40,7 @@ on the direction, because only one of the two CLIs can be backgrounded safely.
 | Caller | Order |
 |---|---|
 | Claude Code | Launch the peer in the background, write your own answer while it runs, read its output only after yours is finished. |
+| Cursor Agent | Launch the Codex peer in the background, write your own answer while it runs, read its output only after yours is finished. |
 | Codex | Write your own answer **first**, then run the peer. `claude -p` prints into your transcript — running it first makes the invariant unenforceable. |
 
 Commands, flags, sandbox requirements, and failure modes: `plugins/core/conduct/cross-agent-review.md` → "Peer CLI
@@ -86,8 +87,8 @@ e.g. `Cross-check (codex): 1 point merged, 2 discarded as unevidenced; no contra
 
 ## When not to use
 
-- Code, branch, or plan review **in Claude Code** routed to `devkit-reviewer-*` / `devkit-plan-reviewer` — they already
+- Code, branch, or plan review **in Claude Code or Cursor Agent** routed to `devkit-reviewer-*` / `devkit-plan-reviewer` — they already
   run the Codex cross-check per `plugins/core/conduct/cross-agent-review.md`, so this would run it twice. In Codex that
-  gate does not fire (it requires Claude Code as the caller), so an explicit cross-check of a review is correct there.
+  gate does not fire, so an explicit cross-check of a review is correct there.
 - Arguing both sides of a single claim inside one harness — that is `devkit-dialectic`, no second CLI involved.
 - Trivial or already-verified work. Say so if asked; run it anyway when the user insists.

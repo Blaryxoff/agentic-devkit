@@ -44,7 +44,7 @@ assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" 'Save only the select
 assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" "current harness's native project"
 assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" 'placement guidance defined at project or user scope'
 assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" '`AGENTS.md` for Codex'
-assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" '`CLAUDE.md` for Claude Code'
+assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" 'for Claude Code. Cursor also reads root `CLAUDE.md`'
 assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" '`~/.claude/rules/*.md`'
 assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" 'every applicable `AGENTS.md` already loaded'
 assert_contains "$ROOT/plugins/core/skills/learn/SKILL.md" "another harness's global file"

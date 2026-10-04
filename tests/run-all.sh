@@ -16,6 +16,7 @@ SCRIPTS=(
   doc-canaries.sh
   estimate-skill.sh
   jev-skill.sh
+  jev-feedback.sh
   no-clobber.sh
   nontech.sh
   output-style.sh

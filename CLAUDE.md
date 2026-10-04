@@ -34,11 +34,11 @@ bin/
 adapters/
   _lib/resolve.sh        Core resolution algorithm (bash + jq); multi-root union of enabled plugins
   _lib/hooks.sh          Shared hook merging + event translation (DRY adapter pattern)
-  _lib/claude_agents.sh  Shared subagent generation (used by claude/generate + devkit-install)
+  _lib/claude_agents.sh  Shared Claude/Cursor subagent generation (used by both adapters + devkit-install)
   _lib/mcp.sh            Shared MCP server merging
   claude/generate        Claude Code adapter (slim: per-project stack subagents, inline stack skill symlinks under
                          .claude/skills/, hooks, MCP — core is global)
-  cursor/generate        Cursor IDE adapter
+  cursor/generate        Cursor IDE and CLI adapter
   codex/generate         OpenAI Codex adapter
 schemas/                 JSON schemas for toolkit.json and plugin.json
 examples/                Example .devkit/toolkit.json files
@@ -86,12 +86,17 @@ tests/                   Shell test suite — run tests/run-all.sh before pushin
 - Files already in `~/.claude/commands/` are never overwritten or deleted unless devkit wrote them; the installer names
   what it kept.
 - Codex has no custom-command directory — there a skill is invoked as `$<frontmatter-name>`.
+- Cursor invokes skills as `/<frontmatter-name>`; its installed skill folder must match that frontmatter name.
 
 ### Dual registration of core subagent skills
 
 A core skill with `claudeSubagent: true` is registered **both** as `~/.claude/skills/devkit-core--<n>` and as
 `~/.claude/agents/<name>.md`. That is deliberate, and it is why `adapters/claude/generate`'s "isolation skills must NOT
 also be registered as skills" rule applies to stack skills only.
+
+The Cursor adapter registers the same core and stack workflows as skills and native `~/.cursor/agents/` or
+`.cursor/agents/` subagents. Read-only source tool lists become Cursor `readonly: true`; Claude-only `tools:` metadata
+is omitted.
 
 The two entry points are not duplicates of one capability:
 

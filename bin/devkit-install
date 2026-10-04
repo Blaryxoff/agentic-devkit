@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# devkit-install: set up global devkit installs for Claude Code and Codex CLI.
+# devkit-install: set up global devkit installs for Cursor, Claude Code, and Codex CLI.
 #
 # Usage:
-#   devkit-install              Install global pieces (Claude/Codex core skills,
-#                               Claude subagents, daily auto-update hook).
+#   devkit-install              Install global pieces (Cursor/Claude/Codex core skills,
+#                               native subagents, daily auto-update hooks).
 #   devkit-install --cursor     Also run the per-project Cursor adapter for CWD.
 #   devkit-install --codex      Also run the per-project Codex adapter for CWD.
 #   devkit-install --claude     Also run the per-project Claude stack adapter for CWD
@@ -17,8 +17,11 @@
 #   $HOME/.claude/commands/<name>.md               slash commands (e.g. /wrapup)
 #   $HOME/.codex/skills/devkit-core--<skill>/      symlinks to core skills for Codex
 #   $HOME/.codex/config.toml                       PreToolUse hooks, DEVKIT_HOME, headless chrome-devtools defaults
-#   $HOME/.cursor/skills/devkit-core--<skill>/     symlinks to core skills for Cursor
-#   $HOME/.cursor/hooks/hooks.json                 preToolUse coder/comment gates
+#   $HOME/.cursor/skills/<frontmatter-name>/       symlinks to core skills for Cursor
+#   $HOME/.cursor/agents/<name>.md                 core subagent wrappers
+#   $HOME/.cursor/rules/devkit-skill-policy.mdc    alwaysApply managed skill-selection policy
+#   $HOME/.cursor/hooks.json                       sessionStart → devkit-update --if-stale;
+#                                                  preToolUse coder/comment gates + beforeSubmitPrompt feedback
 #
 # The global clone is the single source of truth. devkit-install runs from the
 # clone it lives in; if that is not the canonical location it bootstraps a clone
@@ -112,6 +115,9 @@ CODEX_CONFIG="$CODEX_DIR/config.toml"
 CODEX_LEGACY_HOOKS="$CODEX_DIR/hooks.json"
 CURSOR_DIR="${CURSOR_HOME:-$HOME/.cursor}"
 CURSOR_SKILLS_DEST="$CURSOR_DIR/skills"
+CURSOR_AGENTS_DEST="$CURSOR_DIR/agents"
+CURSOR_RULES_DEST="$CURSOR_DIR/rules"
+CURSOR_SKILL_POLICY_RULE="$CURSOR_RULES_DEST/devkit-skill-policy.mdc"
 mkdir -p "$SKILLS_DEST" "$CODEX_SKILLS_DEST" "$CURSOR_SKILLS_DEST"
 
 # --- Symlink every core skill globally (universal + the devkit router) ---
@@ -173,21 +179,33 @@ fi
 # Stack skills are linked per project by adapters/cursor/generate so unrelated
 # projects do not carry their catalog metadata.
 cursor_migrated_skill_count=0
-for entry in "$CURSOR_SKILLS_DEST"/devkit-*--*; do
+for entry in "$CURSOR_SKILLS_DEST"/devkit-*; do
   [ -L "$entry" ] || continue
-  case "$(basename "$entry")" in
-    devkit-core--*) ;;
-    *) cursor_migrated_skill_count=$((cursor_migrated_skill_count + 1)) ;;
+  entry_target="$(readlink "$entry")"
+  case "$(basename "$entry"):$entry_target" in
+    devkit-core--*:*) rm -f "$entry" ;;
+    *:"$core_skills_src"/*) ;;
+    devkit-*--*:*) rm -f "$entry"; cursor_migrated_skill_count=$((cursor_migrated_skill_count + 1)) ;;
   esac
-  rm -f "$entry"
 done
 cursor_skill_count=0
 cursor_skill_kept=""
 for d in "$core_skills_src"/*/; do
   [ -d "$d" ] || continue
-  n=$(basename "$d")
   abs="$(cd "$d" && pwd)"
-  cursor_skill_dest="$CURSOR_SKILLS_DEST/devkit-core--$n"
+  n=$(devkit_frontmatter "$d/SKILL.md" | LC_ALL=C sed -n 's/^name:[[:space:]]*//p' | head -1)
+  [ -n "$n" ] || { echo "ERROR: missing skill name in $d/SKILL.md" >&2; exit 1; }
+  cursor_skill_dest="$CURSOR_SKILLS_DEST/$n"
+  if [ -L "$cursor_skill_dest" ] && [ "$(readlink "$cursor_skill_dest")" != "$abs" ]; then
+    old_target="$(readlink "$cursor_skill_dest")"
+    case "$old_target" in
+      */plugins/core/skills/"$(basename "$d")") rm -f "$cursor_skill_dest" ;;
+    esac
+  fi
+  if [ -L "$cursor_skill_dest" ] && [ "$(readlink "$cursor_skill_dest")" = "$abs" ]; then
+    cursor_skill_count=$((cursor_skill_count + 1))
+    continue
+  fi
   if [ -e "$cursor_skill_dest" ] || [ -L "$cursor_skill_dest" ]; then
     cursor_skill_kept="$cursor_skill_kept $n"
     continue
@@ -195,7 +213,7 @@ for d in "$core_skills_src"/*/; do
   ln -s "$abs" "$cursor_skill_dest"
   cursor_skill_count=$((cursor_skill_count + 1))
 done
-echo "    Linked:  ~/.cursor/skills/devkit-core--* ($cursor_skill_count skill(s))"
+echo "    Linked:  ~/.cursor/skills/<skill-name> ($cursor_skill_count skill(s))"
 if [ -n "$cursor_skill_kept" ]; then
   echo "    NOTICE: kept non-devkit entries in ~/.cursor/skills for:$cursor_skill_kept"
 fi
@@ -212,6 +230,13 @@ while IFS= read -r _a; do
 done < <(generate_subagents "$AGENTS_DEST" "$plugin_index" "devkit-core")
 if [ "${#core_agents[@]}" -gt 0 ]; then
   echo "    Agents:  ~/.claude/agents/ (${#core_agents[@]} core subagent(s))"
+fi
+cursor_core_agents=()
+while IFS= read -r _a; do
+  [ -n "$_a" ] && cursor_core_agents+=("$_a")
+done < <(generate_subagents "$CURSOR_AGENTS_DEST" "$plugin_index" "devkit-core" cursor)
+if [ "${#cursor_core_agents[@]}" -gt 0 ]; then
+  echo "    Agents:  ~/.cursor/agents/ (${#cursor_core_agents[@]} core subagent(s))"
 fi
 
 # --- SessionStart auto-update hook in ~/.claude/settings.json ---
@@ -286,12 +311,31 @@ echo "    Guidance: ~/.claude/CLAUDE.md (managed devkit skill policy)"
 write_policy_section "$CODEX_DIR/AGENTS.md" || exit 1
 echo "    Guidance: ~/.codex/AGENTS.md (managed devkit skill policy)"
 
+mkdir -p "$CURSOR_RULES_DEST"
+if [ -f "$CURSOR_SKILL_POLICY_RULE" ] && ! grep -qF '# devkit skill policy' "$CURSOR_SKILL_POLICY_RULE"; then
+  echo "ERROR: $CURSOR_SKILL_POLICY_RULE is user-authored — move it before installing devkit's managed rule." >&2
+  exit 1
+fi
+{
+  printf '%s\n' '---'
+  printf '%s\n' 'description: "devkit skill selection policy"'
+  printf '%s\n' 'alwaysApply: true'
+  printf '%s\n' '---'
+  printf '\n'
+  printf '%s\n' '# devkit skill policy'
+  printf '\n'
+  printf '%s\n' "$skill_policy"
+} > "$CURSOR_SKILL_POLICY_RULE"
+echo "    Guidance: ~/.cursor/rules/devkit-skill-policy.mdc (managed alwaysApply skill policy)"
+
 # Managed hooks are matched by script name rather than by absolute path, so relocating
 # DEVKIT_HOME replaces the old command instead of leaving a dangling one behind, and
 # only our own hook object is dropped — a user hook sharing the entry survives.
 hook_command() {
   printf "sh '%s'" "$(printf '%s' "$DEVKIT_HOME/plugins/core/hooks/$1" | sed "s/'/'\\\\''/g")"
 }
+
+feedback_cmd="python3 '$DEVKIT_HOME/plugins/core/hooks/jev-feedback.py' prompt"
 
 # Reassert the compact activation gate on each prompt. The full policy remains in
 # CLAUDE.md; this hook is intentionally one line to avoid prompt bloat.
@@ -309,6 +353,31 @@ updated=$(jq --arg cmd "$skilleval_cmd" --arg script "skill-eval.sh" '
 ' "$SETTINGS")
 write_json "$SETTINGS" "$updated" || exit 1
 echo "    Hook:    ~/.claude/settings.json (UserPromptSubmit skill activation gate)"
+
+updated=$(jq --arg cmd "$feedback_cmd" --arg script "jev-feedback.py" '
+  .hooks //= {} |
+  .hooks.UserPromptSubmit = (
+    ((.hooks.UserPromptSubmit // []) | map(
+      .hooks = ((.hooks // []) | map(select(
+        (.command // "") | contains("plugins/core/hooks/" + $script) | not
+      )))
+    ) | map(select((.hooks | length) > 0)))
+    + [ { hooks: [ { type: "command", command: $cmd, timeout: 15 } ] } ]
+  )
+' "$SETTINGS")
+write_json "$SETTINGS" "$updated" || exit 1
+updated=$(jq --arg script "jev-feedback.py" '
+  .hooks //= {} |
+  .hooks.SessionEnd = (
+    ((.hooks.SessionEnd // []) | map(
+      .hooks = ((.hooks // []) | map(select(
+        (.command // "") | contains("plugins/core/hooks/" + $script) | not
+      )))
+    ) | map(select((.hooks | length) > 0)))
+  )
+' "$SETTINGS")
+write_json "$SETTINGS" "$updated" || exit 1
+echo "    Hook:    ~/.claude/settings.json (Jev feedback backlog capture)"
 
 # --- PreToolUse coder-gate hook in ~/.claude/settings.json ---
 # Hard-gates code edits until the coder skill is recorded in the session transcript.
@@ -361,28 +430,52 @@ updated=$(jq --arg cmd "$peercli_cmd" --arg script "peer-cli-gate.sh" '
 write_json "$SETTINGS" "$updated" || exit 1
 echo "    Hook:    ~/.claude/settings.json (PreToolUse peer-cli-gate)"
 
-# --- Global + project Cursor preToolUse edit gates ---
-CURSOR_HOOKS_DIR="$CURSOR_DIR/hooks"
-CURSOR_HOOKS_FILE="$CURSOR_HOOKS_DIR/hooks.json"
-mkdir -p "$CURSOR_HOOKS_DIR"
+# --- Global Cursor hooks ---
+CURSOR_HOOKS_FILE="$CURSOR_DIR/hooks.json"
+CURSOR_LEGACY_HOOKS_FILE="$CURSOR_DIR/hooks/hooks.json"
+mkdir -p "$CURSOR_DIR"
 cursor_hooks='{}'
+if [ -f "$CURSOR_LEGACY_HOOKS_FILE" ]; then
+  if ! legacy_hooks=$(jq '.' "$CURSOR_LEGACY_HOOKS_FILE" 2>/dev/null); then
+    echo "ERROR: $CURSOR_LEGACY_HOOKS_FILE is not valid JSON — fix or move it, then re-run." >&2
+    exit 1
+  fi
+  cursor_hooks=$(normalize_cursor_hooks "$legacy_hooks") || exit 1
+fi
 if [ -f "$CURSOR_HOOKS_FILE" ]; then
-  # Never fall back to '{}' here: this file is written back at the end of the block, so a
-  # swallowed parse error would silently replace the user's global hooks with an empty set.
-  if ! cursor_hooks=$(jq 'del(.version) | .hooks // .' "$CURSOR_HOOKS_FILE" 2>/dev/null); then
+  if ! existing_hooks=$(jq '.' "$CURSOR_HOOKS_FILE" 2>/dev/null); then
     echo "ERROR: $CURSOR_HOOKS_FILE is not valid JSON — fix or move it, then re-run." >&2
     exit 1
   fi
+  existing_hooks=$(normalize_cursor_hooks "$existing_hooks") || exit 1
+  cursor_hooks=$(merge_cursor_hooks_preserving_existing "$cursor_hooks" "$existing_hooks") || exit 1
 fi
 cursor_hooks=$(inject_cursor_edit_gates "$cursor_hooks" "$codergate_cmd" "$commentgate_cmd")
-write_json "$CURSOR_HOOKS_FILE" "$cursor_hooks" || exit 1
-echo "    Hook:    ~/.cursor/hooks/hooks.json (preToolUse coder-gate + comment-gate)"
+cursor_hooks=$(echo "$cursor_hooks" | jq --arg cmd "$feedback_cmd" --arg script "jev-feedback.py" '
+  .beforeSubmitPrompt = (
+    [(.beforeSubmitPrompt // [])[] | select((.command // "" | contains($script)) | not)]
+    + [{command: $cmd, timeout: 15}]
+  )
+')
+cursor_hooks=$(echo "$cursor_hooks" | jq --arg cmd "$hook_cmd" '
+  .sessionStart = (
+    [(.sessionStart // [])[] | select((.command // "" | endswith("/bin/devkit-update --if-stale")) | not)]
+    + [{command: $cmd, timeout: 60}]
+  )
+')
+cursor_config=$(jq -n --argjson hooks "$cursor_hooks" '{version: 1, hooks: $hooks}')
+write_json "$CURSOR_HOOKS_FILE" "$cursor_config" || exit 1
+if [ -f "$CURSOR_LEGACY_HOOKS_FILE" ]; then
+  mv "$CURSOR_LEGACY_HOOKS_FILE" "$CURSOR_LEGACY_HOOKS_FILE.devkit-migrated-$(date +%Y%m%d%H%M%S)-$$"
+fi
+echo "    Hook:    ~/.cursor/hooks.json (sessionStart auto-update + preToolUse edit gates + beforeSubmitPrompt feedback)"
 
 # --- Codex defaults + PreToolUse hooks in ~/.codex/config.toml ---
 CODEX_CONFIG_FILE="$CODEX_CONFIG" \
 CODEX_LEGACY_HOOKS_FILE="$CODEX_LEGACY_HOOKS" \
 CODEX_CODER_GATE_CMD="$codergate_cmd" \
 CODEX_COMMENT_GATE_CMD="$commentgate_cmd" \
+CODEX_FEEDBACK_CMD="$feedback_cmd" \
 CODEX_DEVKIT_HOME="$DEVKIT_HOME" \
 python3 - <<'PY'
 import ast
@@ -397,7 +490,7 @@ config_path = Path(os.environ["CODEX_CONFIG_FILE"])
 legacy_path = Path(os.environ["CODEX_LEGACY_HOOKS_FILE"])
 managed_start = "# devkit-hooks:start"
 managed_end = "# devkit-hooks:end"
-managed_scripts = ("coder-gate.sh", "comment-gate.sh")
+managed_scripts = ("coder-gate.sh", "comment-gate.sh", "jev-feedback.py")
 
 
 def toml_value(value):
@@ -522,7 +615,14 @@ if legacy_exists:
             if kept_hooks:
                 migrated.append(render_group(event, {**group, "hooks": kept_hooks}))
 
-hooks_body = f'''[[hooks.PreToolUse]]
+hooks_body = f'''[[hooks.UserPromptSubmit]]
+
+[[hooks.UserPromptSubmit.hooks]]
+type = "command"
+command = {toml_value(os.environ["CODEX_FEEDBACK_CMD"])}
+timeout = 15
+
+[[hooks.PreToolUse]]
 matcher = "apply_patch|Edit|Write"
 
 [[hooks.PreToolUse.hooks]]
@@ -721,5 +821,5 @@ if [ "$RUN_CLAUDE" -eq 1 ]; then
 fi
 
 echo ""
-echo "Done. Restart Claude Code / Codex / Cursor (or start a new session) to load skills + the daily auto-update hook."
-echo "Per project, keep .devkit/toolkit.json; the Codex adapter writes resolved skills under .codex/skills/."
+echo "Done. Start a new Cursor, Claude Code, or Codex session to load skills and hooks."
+echo "Per project, keep .devkit/toolkit.json; run devkit-install --cursor to install the resolved Cursor stack."

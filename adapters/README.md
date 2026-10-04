@@ -7,7 +7,7 @@ Adapters translate the resolved plugin set into tool-specific configuration. Eac
 | Adapter | Target Tool | Output |
 |---------|-------------|--------|
 | `claude` | Claude Code | `.claude/agents/*.md` (stack subagents), `.claude/skills/devkit-*--*` symlinks (inline stack skills), `.claude/settings.json` (hooks only — plugin `permissions` are not merged), `.mcp.json` |
-| `cursor` | Cursor IDE | `.cursor/skills/devkit-*--*/`, `.cursor/rules/devkit-*.mdc`, `.cursor/mcp.json`, `.cursor/hooks/hooks.json` |
+| `cursor` | Cursor IDE and CLI | `.cursor/skills/<frontmatter-name>/`, `.cursor/agents/*.md` (stack subagents), `.cursor/rules/devkit-*.mdc`, `.cursor/mcp.json`, `.cursor/hooks.json` |
 | `codex` | OpenAI Codex | `.codex/skills/devkit-*--*/`, `AGENTS.md` section (conduct + hook instructions) |
 
 The Claude adapter also removes `.claude-plugin/`, a marketplace manifest earlier versions generated.
@@ -27,8 +27,11 @@ gone (`MIGRATION.md`).
 `--project=DIR` overrides the project root and is repeatable, unioning the enabled plugins of several repos
 (backend + frontend).
 
-Cursor core skills are installed globally. Stack skills are project-scoped; after upgrading from an older global-skill
-installation, rerun the Cursor adapter in each project to create its resolved `.cursor/skills/devkit-*--*` links.
+Cursor core skills and subagents are installed globally. Stack skills and subagents are project-scoped; after upgrading from an older global-skill
+installation, rerun the Cursor adapter in each project to create its resolved frontmatter-named `.cursor/skills/` links.
+Cursor prompt feedback uses the native `beforeSubmitPrompt` hook. As of Cursor CLI 2026.10, `cursor-agent -p`
+does not emit that event, so headless print-mode prompts are not captured; interactive Cursor and the IDE use the hook.
+See [Cursor's acknowledged print-mode issue](https://forum.cursor.com/t/cursor-cli-does-not-run-enterprise-or-team-beforesubmitprompt-hooks/173219).
 
 ## Adding a New Adapter
 
@@ -98,8 +101,9 @@ Event name mapping:
 | Claude Code | Cursor | Codex |
 |-------------|--------|-------|
 | `PreToolUse` | `preToolUse` | `[[hooks.PreToolUse]]` in `~/.codex/config.toml` |
-| `PostToolUse` | `afterFileEdit` | instruction-based |
-| `Stop` | `afterResponse` | instruction-based |
+| `PostToolUse` | `postToolUse` | instruction-based |
+| `Stop` | `stop` | instruction-based |
+| `UserPromptSubmit` | `beforeSubmitPrompt` | `[[hooks.UserPromptSubmit]]` in `~/.codex/config.toml` |
 | `Notification` | _(no equivalent)_ | instruction-based |
 | `SubagentStop` | _(no equivalent)_ | _(no equivalent)_ |
 

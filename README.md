@@ -6,32 +6,34 @@ every project picks it up.
 
 ## Quick Start
 
-Install the toolkit once per machine. `devkit-install` clones it to `~/.claude/agentic-devkit` (the global clone,
-`DEVKIT_HOME`, exported to Claude Code and Codex shells), symlinks the universal core skills + the `devkit` stack-router into `~/.claude/skills/`, installs the
-core subagents, installs short slash commands in `~/.claude/commands` (`/wrapup` authored, `/root-cause` and
-`/reviewer-deep` generated per core skill), installs the unified `Senior` Claude output style and selects it
-by default, and adds a daily auto-update hook. On Codex there is no custom-command
-directory: a skill is invoked by its frontmatter name (`$wrapup`, `$devkit-reviewer-deep`).
+Install the toolkit once per machine. `devkit-install` uses `~/.claude/agentic-devkit` as the shared clone location;
+the path does not require running Claude Code. It installs the universal core skills and native subagents into Cursor,
+Claude Code, and Codex where supported. Cursor receives `~/.cursor/skills/`, `~/.cursor/agents/`, an always-on
+skill-selection rule, and native hooks for session updates, edit gates, and prompt feedback. In Cursor Agent, invoke a
+skill by its frontmatter name (for example, `/devkit-coder`). Claude keeps its short slash commands and `Senior`
+output style; Codex invokes skills by frontmatter name (for example, `$devkit-coder`).
 
 ```bash
 git clone https://github.com/Blaryxoff/agentic-devkit.git ~/.claude/agentic-devkit
 ~/.claude/agentic-devkit/bin/devkit-install
 ```
 
-Per project, declare the stack in `.devkit/toolkit.json` and (for Cursor/Codex, or to emit Claude stack subagents/MCP)
-run the adapter from the global clone:
+Per project, declare the stack in `.devkit/toolkit.json` and run the Cursor adapter. Generate the Claude or Codex
+adapter only for projects where you use those agents:
 
 ```bash
 cd my-project
 ~/.claude/agentic-devkit/bin/devkit-resolve --init          # write .devkit/toolkit.json
 ~/.claude/agentic-devkit/bin/devkit-resolve --preset=laravel-only   # same, no prompts
 
-~/.claude/agentic-devkit/bin/devkit-install --cursor         # .cursor/ rules + skills + hooks
+~/.claude/agentic-devkit/bin/devkit-install --cursor         # .cursor/ rules + skills + agents + hooks + MCP
 ~/.claude/agentic-devkit/bin/devkit-install --codex          # .codex/ resolved skills + AGENTS.md
 ~/.claude/agentic-devkit/bin/devkit-install --claude         # .claude/ stack subagents, hooks, .mcp.json
 ```
 
-For Claude Code, the core skills + `devkit` router are already global after `devkit-install`; the per-project
+Cursor uses the same core skill bodies as the other agents. Its project adapter links only the selected stack skills,
+emits stack subagents, and writes project rules, MCP configuration, and hooks. Re-run it when `.devkit/toolkit.json` or
+plugin infrastructure changes; skill edits flow through the links. For Claude Code, the core skills + `devkit` router are already global after `devkit-install`; the per-project
 `--claude` run is only needed when a stack ships subagents, hooks, or MCP servers. Use `/nontech` to rewrite
 technical findings for managers or other non-technical readers without exposing codebase internals.
 
@@ -143,13 +145,14 @@ Resolves: `core -> laravel`
 | Adapter  | Generated files                                                                                                        |
 |----------|------------------------------------------------------------------------------------------------------------------------|
 | `claude` | `.claude/settings.json` (hooks), `.claude/agents/*.md` (stack subagents), `.claude/skills/devkit-*--*` symlinks (inline stack skills), `.mcp.json` — core skills + router are global |
-| `cursor` | `.cursor/skills/devkit-*--*/`, compact conduct-index rules, MCP config, and hooks                                   |
+| `cursor` | `.cursor/skills/<frontmatter-name>/`, `.cursor/agents/*.md`, compact conduct-index rules, MCP config, and hooks |
 | `codex`  | `.codex/skills/devkit-*--*/` for non-core plugins and compact conduct indexes in `AGENTS.md`                     |
 
 Generated text (conduct paths in `.mdc` / `AGENTS.md`) references the global clone at `~/.claude/agentic-devkit`, so
 output is identical regardless of where the project lives on disk. Disabled plugins do not enter generated AI context.
 
 `devkit-install` keeps only `devkit-core` skills globally for Codex and Cursor and removes stale global non-core links.
+Cursor skill links use each `SKILL.md` frontmatter `name`, because Cursor requires that name to match the folder.
 Their project adapters link only resolved non-core skills, including transitive dependencies; plugins such as
 `devkit-css` stay absent unless explicitly enabled. Generated `AGENTS.md` / `.mdc` rules point to one conduct index per
 plugin and require scope-driven loading instead of listing the full conduct corpus. Re-run the adapter after changing

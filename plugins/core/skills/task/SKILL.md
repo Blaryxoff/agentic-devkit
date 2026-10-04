@@ -20,7 +20,7 @@ independent, so the ordering rules below are not decoration.
 ## Gate
 
 1. The operator triggered this skill in the current turn and supplied a specification (pasted text, a file, an issue).
-2. You are Claude Code and the top-level invocation, not a dispatched subagent.
+2. You are Claude Code or Cursor Agent and the top-level invocation, not a dispatched subagent.
 3. The peer CLI exists: `command -v codex`. If it does not, say `Pipeline: degraded — codex CLI not found`, then run
    the native stages alone and skip stages 2, 4 and 5.
 
