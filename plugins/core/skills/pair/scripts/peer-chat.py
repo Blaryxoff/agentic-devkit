@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Send one peer-chat message between Claude Code and Codex in an agterm split."""
+"""Send one peer-chat message between Claude Code or Cursor and Codex in an agterm split."""
 
 from __future__ import annotations
 
@@ -77,6 +77,18 @@ CLAUDE_EMPTY_PROMPTS = {
 # cover it. `.+` rather than `[^"]*` because git quotes and escapes a path containing a double quote,
 # which then reaches the suggestion with its own quotes intact.
 CLAUDE_STARTUP_HINT_RE = re.compile(r'^Try ".+"$')
+CURSOR_TOP_RULE_RE = re.compile(r"^ ▄{10,}\s*$")
+CURSOR_BOTTOM_RULE_RE = re.compile(r"^ ▀{10,}\s*$")
+CURSOR_PROMPT_RE = re.compile(r"^  → (.*?)\s*$")
+CURSOR_BUSY_HINT_RE = re.compile(r" {2,}ctrl\+c to stop$")
+CURSOR_MODE_RE = re.compile(r"^  (?:Agent|Plan|Ask|Debug) \(shift\+tab to cycle\)\s*$")
+CURSOR_PATH_RE = re.compile(r"^  (?:/|~/|[A-Za-z]:[\\/])\S.*$")
+CURSOR_EMPTY_PROMPTS = {
+    "Plan, search, build anything",
+    "Add a follow-up",
+    "Add a follow-up — /plan to review and build",
+}
+CURSOR_JSON_PREFIX = "JSON peer message: "
 MESSAGE_NAME_RE = re.compile(r"peer-chat-[a-z0-9][a-z0-9-]{2,48}\.txt")
 MESSAGE_SPOOL = Path(tempfile.gettempdir()) / f"agterm-peer-chat-{os.getuid()}"
 
@@ -88,6 +100,7 @@ class Profile:
     command: str
     label: str
     submit: str
+    empty_cursor_column: int = EMPTY_CURSOR_COLUMN
 
 
 @dataclass
@@ -107,6 +120,7 @@ class DeliveryProgress:
 PROFILES = {
     "claude": Profile("left", "claude", "claude", "Chat from Codex: ", "\n"),
     "codex": Profile("right", "codex", "codex", "Chat from Claude: ", "\n"),
+    "cursor": Profile("left", "cursor", "cursor-agent", "Chat from Codex: ", "\n", 0),
 }
 
 
@@ -266,6 +280,64 @@ def has_target(info: dict[str, Any], profile: Profile) -> bool:
         return False
     field = "foreground" if profile.pane == "left" else "splitForeground"
     return runs(info.get(field), profile.command)
+
+
+def with_sender_label(sid: str, profile: Profile, window: str | None = None) -> Profile:
+    if profile.agent != "codex":
+        return profile
+    info = find_node(sid, window)
+    foreground = info.get("foreground")
+    if not isinstance(foreground, list):
+        foreground = []
+    senders = [
+        agent
+        for agent in ("claude", "cursor")
+        if runs(foreground[:1], target_profile(agent, None).command)
+    ]
+    if len(senders) != 1:
+        raise RuntimeError(
+            "Codex's left peer must be Claude Code or Cursor; for a wrapper, set "
+            "PEER_CHAT_CLAUDE_COMMAND or PEER_CHAT_CURSOR_COMMAND; nothing was typed"
+        )
+    name = "Cursor" if senders[0] == "cursor" else "Claude"
+    return replace(profile, label=f"Chat from {name}: ")
+
+
+def target_is_focused(sid: str, profile: Profile, window: str | None = None) -> bool:
+    info = find_node(sid, window)
+    if not info.get("active") or bool(info.get("splitFocused")) != (
+        profile.pane == "right"
+    ):
+        return False
+    windows = (
+        json.loads(ctl("window", "list", "--json"))
+        .get("result", {})
+        .get("windows", [])
+    )
+    if not any(
+        item.get("active") and (window is None or item.get("id") == window)
+        for item in windows
+    ):
+        return False
+    if sys.platform != "darwin":
+        return True
+    front = subprocess.run(
+        ["/usr/bin/lsappinfo", "front"],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=10,
+    ).stdout.strip()
+    if not re.fullmatch(r"ASN:0x[0-9a-f]+-0x[0-9a-f]+:", front, re.IGNORECASE):
+        raise RuntimeError("cannot determine the foreground application")
+    bundle = subprocess.run(
+        ["/usr/bin/lsappinfo", "info", "-only", "bundleid", front],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=10,
+    ).stdout.strip()
+    return bundle == '"CFBundleIdentifier"="com.umputun.agterm"'
 
 
 def find_node(sid: str, window: str | None = None) -> dict[str, Any]:
@@ -434,6 +506,15 @@ def type_text(
     )
 
 
+def backspace(sid: str, profile: Profile, count: int, window: str | None = None) -> None:
+    if profile.agent != "cursor":
+        type_text(sid, profile, "\x7f" * count, window)
+        return
+    for _ in range(count):
+        type_text(sid, profile, "\x7f", window)
+        time.sleep(PROBE_INTERVAL)
+
+
 def text_chunks(text: str, max_bytes: int = TYPE_CHUNK_BYTES) -> list[str]:
     """Split normalised text into independently observable input events."""
     max_bytes = max(4, min(TYPE_CHUNK_BYTES, max_bytes))
@@ -468,11 +549,12 @@ def text_chunks(text: str, max_bytes: int = TYPE_CHUNK_BYTES) -> list[str]:
     return chunks
 
 
-def composer_probe_marker(text: str) -> str:
+def composer_probe_marker(text: str, profile: Profile | None = None) -> str:
     """Choose a short visible marker that cannot occur in this message."""
     index = 0
     while True:
-        marker = f" [peer-check:{index:x}]"
+        prefix = "" if profile is not None and profile.agent == "cursor" else " "
+        marker = f"{prefix}[peer-check:{index:x}]"
         if marker not in text:
             return marker
         index += 1
@@ -566,9 +648,43 @@ def claude_live_prompt_text(text: str) -> str | None:
     return None
 
 
+def cursor_live_prompt_text(text: str) -> str | None:
+    lines = text.splitlines()[-BOX_LINES:]
+    while lines and not lines[-1].strip():
+        lines.pop()
+    if len(lines) < 5:
+        return None
+    footer = lines[-2:]
+    bottom = len(lines) - 3
+    if CURSOR_MODE_RE.fullmatch(lines[bottom]):
+        bottom -= 1
+    if (
+        not re.fullmatch(r"  \S.*", footer[0])
+        or CODEX_CHOICE_RE.match(footer[0].strip())
+        or not CURSOR_PATH_RE.fullmatch(footer[1])
+        or not CURSOR_BOTTOM_RULE_RE.fullmatch(lines[bottom])
+    ):
+        return None
+    top = bottom - 2
+    while top >= 0 and not CURSOR_TOP_RULE_RE.fullmatch(lines[top]):
+        top -= 1
+    if top < 0:
+        return None
+    body = lines[top + 1 : bottom]
+    if not body:
+        return None
+    match = CURSOR_PROMPT_RE.fullmatch(body[0])
+    if not match or any(not line.startswith("    ") for line in body[1:]):
+        return None
+    first = CURSOR_BUSY_HINT_RE.sub("", match.group(1)).rstrip()
+    return "\n".join([first, *(line[4:].rstrip() for line in body[1:])])
+
+
 def live_prompt_text(profile: Profile, text: str) -> str | None:
     if profile.agent == "codex":
         return codex_live_prompt_text(text)
+    if profile.agent == "cursor":
+        return cursor_live_prompt_text(text)
     return claude_live_prompt_text(text)
 
 
@@ -601,9 +717,11 @@ def codex_placeholder_shown(content: str) -> bool:
 
 
 def composer_is_empty(profile: Profile, content: str) -> bool:
-    """Recognise known empty-input content for cleanup, acceptance and Codex preflight."""
+    """Recognise known empty-input content for cleanup, acceptance and preflight."""
     if profile.agent == "codex":
         return codex_placeholder_shown(content)
+    if profile.agent == "cursor":
+        return " ".join(content.splitlines()) in CURSOR_EMPTY_PROMPTS
     joined = " ".join(content.splitlines())
     return joined in CLAUDE_EMPTY_PROMPTS or bool(
         CLAUDE_STARTUP_HINT_RE.fullmatch(joined)
@@ -678,7 +796,7 @@ def type_body(
     """Type bounded marked chunks, removing each marker before continuing."""
     if progress is None:
         progress = BodyProgress()
-    marker = composer_probe_marker(text)
+    marker = composer_probe_marker(text, profile)
     tolerant = profile.agent == "codex"
     chunks = text_chunks(text, TYPE_CHUNK_BYTES - len(marker.encode("utf-8")))
     state = initial
@@ -717,7 +835,7 @@ def type_body(
                         "the target composer; submit withheld",
                         marked,
                     )
-                type_text(sid, profile, "\x7f" * len(marker), window)
+                backspace(sid, profile, len(marker), window)
                 settle_delay = (
                     COMPOSER_SETTLE_DELAY
                     if index == len(chunks) - 1
@@ -982,7 +1100,7 @@ def wait_for_cleanup_state(
         state = composer_state(sid, profile, window)
         now = time.monotonic()
         is_empty = state is not None and (
-            state[1] == EMPTY_CURSOR_COLUMN
+            state[1] == profile.empty_cursor_column
             and composer_is_empty(profile, state[0])
         )
         if is_empty and accept_empty:
@@ -1037,7 +1155,7 @@ def clear_composer(
     state, spans = settled
     while True:
         if state == initial or (
-            state[1] == EMPTY_CURSOR_COLUMN
+            state[1] == profile.empty_cursor_column
             and composer_is_empty(profile, state[0])
         ):
             return True
@@ -1049,7 +1167,7 @@ def clear_composer(
         )
         if not delete_count:
             return False
-        type_text(sid, profile, "\x7f" * delete_count, window)
+        backspace(sid, profile, delete_count, window)
         next_ends = {
             candidate
             for _, end in spans
@@ -1062,7 +1180,7 @@ def clear_composer(
             return False
         state, spans = settled
         if (
-            state[1] == EMPTY_CURSOR_COLUMN
+            state[1] == profile.empty_cursor_column
             and composer_is_empty(profile, state[0])
         ):
             return True
@@ -1079,7 +1197,7 @@ def wait_for_accepted(
     composed: tuple[str, int],
     window: str | None = None,
 ) -> bool:
-    """Wait until submission clears the composed state and restores column 2."""
+    """Wait until submission clears the composed state and restores the idle caret column."""
     deadline = time.monotonic() + PROBE_TIMEOUT
     stable_since: float | None = None
     while True:
@@ -1087,7 +1205,7 @@ def wait_for_accepted(
         now = time.monotonic()
         accepted = (
             state is not None
-            and state[1] == EMPTY_CURSOR_COLUMN
+            and state[1] == profile.empty_cursor_column
             and state[0] != composed[0]
             and composer_is_empty(profile, state[0])
         )
@@ -1112,6 +1230,16 @@ def normalize(profile: Profile, message: str) -> str:
         line = line[len(prefix) :].lstrip(": ").strip()
     if not line:
         raise ValueError("chat message is empty")
+    if profile.agent == "cursor" and (
+        line.startswith(CURSOR_JSON_PREFIX)
+        or any(
+            ord(char) > 0xFFFF
+            or unicodedata.east_asian_width(char) in {"W", "F"}
+            or unicodedata.category(char) in {"Mn", "Me", "Cf"}
+            for char in line
+        )
+    ):
+        line = CURSOR_JSON_PREFIX + json.dumps({"message": line}, ensure_ascii=True)
     units = len((profile.label + line).encode("utf-16-le")) // 2
     if profile.agent == "claude" and units > CLAUDE_MAX_MESSAGE_UNITS:
         raise ValueError(
@@ -1178,14 +1306,30 @@ def send(
                 "nothing was typed"
             )
         # Claude's free-form suggestions look like drafts in plain screen text.
-        if profile.agent == "codex" and not composer_is_empty(profile, empty_text):
+        if profile.agent in {"codex", "cursor"} and not composer_is_empty(
+            profile, empty_text
+        ):
             raise PromptBlocked(
                 "target composer contains text; nothing was typed"
             )
-        if cursor_column(sid, profile, window) != EMPTY_CURSOR_COLUMN:
+        if cursor_column(sid, profile, window) != profile.empty_cursor_column:
             raise PromptBlocked(
                 "target composer is not confirmably empty; nothing was typed"
             )
+        if profile.agent == "cursor":
+            state = wait_for_composer_change(
+                sid,
+                profile,
+                (empty_text, profile.empty_cursor_column),
+                COMPOSER_SETTLE_DELAY,
+                window,
+                matches=partial(composer_is_empty, profile),
+            )
+            if state is None or state[1] != profile.empty_cursor_column:
+                raise PromptBlocked(
+                    "target composer did not remain empty; nothing was typed"
+                )
+            empty_text = state[0]
     except PromptBlocked:
         raise
     except KeyboardInterrupt as err:
@@ -1197,13 +1341,15 @@ def send(
             f"pre-write check failed; nothing was typed: {err}"
         ) from err
 
-    initial = (empty_text, EMPTY_CURSOR_COLUMN)
+    initial = (empty_text, profile.empty_cursor_column)
     if delivery is not None:
         delivery.phase = "started"
     phase = "body"
     progress = BodyProgress()
     try:
         try:
+            if profile.agent == "cursor":
+                type_text(sid, profile, "\x1b[I", window)
             composed = type_body(
                 sid, profile, typed, initial, window, progress
             )
@@ -1217,7 +1363,7 @@ def send(
             final_chunk = text_chunks(
                 typed,
                 TYPE_CHUNK_BYTES
-                - len(composer_probe_marker(typed).encode("utf-8")),
+                - len(composer_probe_marker(typed, profile).encode("utf-8")),
             )[-1]
             if before_submit is None or not (
                 same_composer_state(before_submit, composed, tolerant)
@@ -1279,6 +1425,16 @@ def send(
         raise KeyboardInterrupt(
             f"{detail}; delivery is ambiguous; do not resend"
         ) from err
+    finally:
+        if profile.agent == "cursor":
+            try:
+                focused = target_is_focused(sid, profile, window)
+                type_text(sid, profile, "\x1b[I" if focused else "\x1b[O", window)
+            except (OSError, subprocess.SubprocessError, ValueError, RuntimeError) as err:
+                print(
+                    f"peer-chat: Cursor focus report could not be restored: {err}",
+                    file=sys.stderr,
+                )
 
 
 def send_with_retry(
@@ -1497,6 +1653,7 @@ def run_main(progress: DeliveryProgress) -> int:
         return 0
     profile = target_profile(args.to, args.target_command, args.queue)
     window, sid = resolve_target(args.session, args.window, profile)
+    profile = with_sender_label(sid, profile, window)
     message = read_message(args.stdin, args.message_file)
     sent = send_with_retry(sid, profile, message, window, progress)
     progress.phase = "confirmed"

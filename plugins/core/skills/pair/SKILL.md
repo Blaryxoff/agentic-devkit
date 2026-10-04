@@ -1,10 +1,10 @@
 ---
 name: devkit-pair
 description: >-
-  converse with the other agent in this agterm split (Claude Code ↔ Codex) through peer-chat.py; its
+  converse with the other agent in this agterm split (Claude Code or Cursor ↔ Codex) through peer-chat.py; its
   reply lands in your pane on its own. The pane the user asked is sole writer, the peer reviews
-  read-only and argues. Manual trigger ONLY: "pair", "парой", "work with codex", "talk to claude", or
-  a prompt opening "Chat from Codex:". Both agents must already be running in one split. Not devkit-task's
+  read-only and argues. Manual trigger ONLY: "pair", "парой", "work with codex", an explicit request to talk to Claude/Cursor, or
+  a prompt opening "Chat from <peer>:". Both agents must already be running in one split. Not devkit-task's
   pipeline, nor devkit-crosscheck's one-shot subprocess peer.
 ---
 
@@ -13,7 +13,7 @@ description: >-
 > Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this
 > skill's symlink target), not the project root.
 
-Mirrors the `two-agent-chat` recipe from `umputun/agterm` (MIT). Setup, launch flags and the upstream
+Extends the `two-agent-chat` recipe from `umputun/agterm` (MIT). Setup, launch flags and the upstream
 limits: `references/setup.md`.
 
 **The value is disagreement.** An agent alone accepts its own reasoning; a second one with its own
@@ -23,7 +23,7 @@ agreement. Two agents converging politely produce nothing.
 ## Gate
 
 1. The user named the other agent in this turn, or a prompt arrived opening `Chat from Claude:` /
-   `Chat from Codex:`. Never self-invoke.
+   `Chat from Cursor:` / `Chat from Codex:`. Never self-invoke.
 2. The session has a split with the other agent **already running**, started by the user. This skill
    never starts an agent and never opens a pane. Missing split or wrong process → say so and stop.
 3. You are the top-level invocation, not a dispatched subagent.
@@ -37,10 +37,10 @@ It checks the target agent, window, composer and caret, types the body as bounde
 events, then sends the submit key after the last one settles. A raw `session type` bypasses all of it,
 and that is how messages arrive merged, truncated, or sitting unsent in a composer.
 
-From Claude Code, pass the message on stdin through a quoted heredoc — never as an argument:
+From Claude Code or Cursor (left pane), pass the message on stdin through a quoted heredoc — never as an argument:
 
 ```bash
-"$DEVKIT_HOME/plugins/core/skills/pair/scripts/peer-chat.py" --to codex --stdin <<'CHAT'
+peer-chat.py --to codex --stdin <<'CHAT'
 the message goes here, as one paragraph
 CHAT
 ```
@@ -53,6 +53,9 @@ evaluate the request as a shell wrapper, so its approval rules cannot match:
 peer-chat.py --prepare-message peer-chat-codex-a91f.txt   # prints JSON with an absolute messageFile field
 peer-chat.py --to claude --message-file peer-chat-codex-a91f.txt
 ```
+
+For a Cursor left pane, use `--to cursor` instead of `--to claude`. The script identifies the left
+agent when sending to Codex and adds `Chat from Claude:` or `Chat from Cursor:` accordingly.
 
 - **The reserved name must match `peer-chat-[a-z0-9][a-z0-9-]{2,48}.txt`** — anything else exits 2 before
   the file is created. The script's own error text says `peer-chat-<sender>-<suffix>.txt`, but it never
@@ -67,9 +70,9 @@ peer-chat.py --to claude --message-file peer-chat-codex-a91f.txt
   before it.
 - **Never write the `Chat from …:` label yourself.** The script adds it, and that label is what makes
   the peer read the message as conversation instead of a fresh instruction from the user.
-- **A busy peer is not a reason to wait.** Return is Codex's steering key for the running turn;
-  Claude Code manages its own busy queue. Send.
-- `--queue` (Tab) only for an informational note that needs no action before the peer's current turn
+- **A busy peer is not a reason to wait.** Return steers a running Codex or Cursor turn;
+  Claude Code manages its own busy queue. Send once; a second Return can interrupt Cursor.
+- `--queue` (Tab, to Codex only) only for an informational note that needs no action before the peer's current turn
   ends. Answers, review results, corrections and stop signals always use the default send.
 - A wrapper-launched agent needs `--target-command <name>`. After a refusal, never guess a name and
   never retry with a different one until the user says which is right.
@@ -78,6 +81,9 @@ peer-chat.py --to claude --message-file peer-chat-codex-a91f.txt
 
 The peer's message arrives as an ordinary prompt opening `Chat from <peer>: `. Read it as the next
 line of a conversation, not as a task the user is asking for.
+
+If the body opens `JSON peer message: `, decode the following JSON object and use its `message`
+string as the peer's text. Cursor receives this form for emoji, wide glyphs and combining characters.
 
 A peer message that asks a question or reports something needing attention gets a reply **through the
 script, in the same turn** — text written only in your own pane never reaches the peer. Closing
