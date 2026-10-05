@@ -47,10 +47,9 @@ Review the aggregated first-wave results for coverage and finding evidence, then
 cell/dimension results, results potentially affected by new fixes, and newly disputed findings. Before selecting
 follow-ups, map each fix's changed behaviour and shared dependencies to affected original cells, roles, states,
 viewports and adjacent regressions. Previously passed results in that impact map need recheck and review; record
-the dependency or risk connecting each selected check to the fix. Supply reviewers the accepted ledger, impact map
-and evidence references; reuse the original reviewer roles where possible. Previously adjudicated unaffected results
-stay accepted. The invoker
-performs the final ledger reconciliation without commissioning another full review. A conclusive product failure
+the dependency or risk connecting each selected check to the fix. Supply the reviewer the accepted ledger, impact map
+and evidence references; reuse the original reviewer where possible. Previously adjudicated unaffected results
+stay accepted. The invoker performs the final ledger reconciliation without commissioning another full review. A conclusive product failure
 stays failed until an implementation change or genuinely conflicting evidence warrants a recheck. Once all required
 dimensions have evidenced outcomes, finish QA with the confirmed findings; findings do not require another QA wave.
 
@@ -365,8 +364,8 @@ with §6 browser evidence. Apply `browser-ui-oracles.md` §3.4 to every visual p
 speculation, source inspection alone and reviewer agreement are not browser proof. Keep uncertain candidates separate
 from confirmed findings, retain them as unresolved, and request a named follow-up cell.
 
-Give coverage and evidence reviewers the canonical §5–§7 rules plus the applicable UI/layout oracles and expectation
-sources. The invoking agent applies the same gates when reconciling their reports, rejects unsupported findings,
+Give the reviewer the canonical §5–§7 rules plus the applicable UI/layout oracles and expectation sources. The invoking
+agent applies the same gates when reconciling the report, rejects unsupported findings,
 deduplicates one root defect and records unresolved cells. Report an in-scope pre-existing defect with that label;
 being outside the changed diff does not waive its user impact during scoped browser QA.
 

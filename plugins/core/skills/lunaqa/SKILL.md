@@ -10,7 +10,6 @@ description: >-
 
 Load the canonical [browser skill](../browser/SKILL.md) and execute its workflow with the overrides below. In Claude
 Code, activate `Skill(devkit-core--browser)` first, then apply this preset. Apply the canonical browser workflow directly and keep preset differences in the overrides below.
-This preset replaces the canonical reviewer dispatch: Luna agents collect observations; the invoking agent assesses them.
 
 ## Invocation
 
@@ -44,13 +43,11 @@ visible `gpt-<version>-luna`, validates an explicitly requested effort, then exi
 returned catalog ID for dispatch. Keep the resolved ID fixed across the pass's
 waves and rechecks; resolve again on the next pass. Lookup failure blocks dispatch rather than choosing an old model.
 
-1. Dispatch discovery scouts when useful and browser evidence collectors on the same resolved Luna with the caller's
-   effort or the worker runtime default. Do not dispatch Luna reviewer agents. Each Luna lane returns browser actions,
-   observations, evidence references and setup blockers, without pass/fail verdicts, severity or adjudication. The
-   invoking agent keeps its current model and owns planning, fixture preparation, evidence reconciliation and the final
-   verdict under `browser-qa-rules.md` §7.2–§7.4 and `browser-ui-oracles.md` §3.4. Smoke checks, spot passes,
-   missing-evidence waves and post-fix rechecks also collect evidence on the same resolved Luna. Disputed or missing
-   evidence receives a named Luna browser follow-up; the invoker assesses the returned evidence.
+1. Dispatch every delegated stage of the canonical workflow on the same resolved Luna with the caller's effort or the
+   worker runtime default. The invoking agent keeps its current model and owns planning, fixture preparation, evidence
+   reconciliation and the final verdict under `browser-qa-rules.md` §7.2–§7.4 and `browser-ui-oracles.md` §3.4.
+   Smoke checks, spot passes, missing-evidence waves and post-fix rechecks also use the same resolved Luna. Disputed or
+   missing evidence receives a named Luna browser follow-up; the invoker assesses the returned evidence.
    Resume under §1.7 with completed results intact; follow-up briefs name only missing or invalidated checks and
    necessary setup dependencies. A separate visual sweep shares its applicable evidence with functional cells.
    For a spot pass, whether explicit or inferred from the active task, dispatch one Luna executor under
@@ -69,18 +66,18 @@ waves and rechecks; resolve again on the next pass. Lookup failure blocks dispat
    switching or code fixes beyond the user's task. When fixes are already authorised, use `devkit-coder` and rerun
    affected cells on Luna; reserve full final acceptance for the stable implementation.
 4. Use isolated chrome-devtools executors, with the §10.7 serial ownership handshake before concurrent work. Use native
-   Codex subagents only when they can select the exact model/effort and own distinct profiles and dedicated MCP trees.
-   In Claude, Cursor or another harness, or when native workers cannot meet those requirements, launch one Codex CLI
-   process per lane on the resolved Luna. Dispatch executors as leaves: have each execute its assigned lane and return
-   evidence to the invoking agent, which owns further dispatch.
+   Codex subagents only when they can select the exact model/effort; browser executors must also own distinct profiles
+   and dedicated MCP trees. In Claude, Cursor or another harness, or when native workers cannot meet those requirements,
+   launch one Codex CLI process per delegated stage on the resolved Luna. Dispatch browser executors as leaves: have each
+   execute its assigned lane and return evidence to the invoking agent, which owns further dispatch.
 5. Preserve explicit browser-surface choices. Browser-client/Bridge lanes remain top-level and sequential under the
    canonical skill; this Luna-delegation preset cannot execute them. Report those lanes blocked, leaving them visible
    in the ledger. If Codex, the exact Luna model or chrome-devtools is unavailable, report the missing prerequisite;
    retain the requested routing and mark the pass incomplete until the prerequisite is available.
 
-## Codex CLI lanes
+## Codex CLI browser lanes
 
-Write each self-contained lane brief to a pass-owned temporary directory outside the repository. Give the executor
+Write each self-contained browser lane brief to a pass-owned temporary directory outside the repository. Give the executor
 its ledger slice, exact environment, fixtures, canonical conduct paths, evidence requirements, ownership/cleanup
 instructions and result path under `browser-qa-rules.md` §12. Instruct it to execute its assigned lane, preserve application
 source and return its evidence in the final message, which `-o` writes to that result path. State explicitly that the
@@ -106,7 +103,7 @@ IDs. Browser test-data mutations still obey the lane's canonical mutation policy
 ## Completion
 
 Reconcile every ledger cell and perform the canonical cleanup audit. In each lane result and the final model-routing
-row, record the actual executor model, effort and native/CLI launch path; include lane IDs and wave count, and report
-reviewers as `none` for this preset. The invoker alone assigns cell outcomes from the collected evidence. Count a cell
-as passed only when execution is complete and its required evidence proves the expected outcome. Return the canonical
+row, record the actual model, effort and native/CLI launch path for each delegated stage; include lane IDs and wave count.
+The invoker assigns cell outcomes from the collected evidence. Count a cell as passed only when execution is complete
+and its required evidence proves the expected outcome. Return the canonical
 findings and completion block in chat, ingesting and deleting pass-owned temporary reports under §12.6.
