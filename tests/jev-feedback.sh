@@ -4,9 +4,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$ROOT" PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'
 import importlib.util
+import hashlib
+import io
 import json
 import os
 import tempfile
+from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
@@ -14,6 +17,7 @@ root = Path(os.environ["ROOT"])
 spec = importlib.util.spec_from_file_location("feedback", root / "plugins/core/hooks/jev-feedback.py")
 feedback = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(feedback)
+assert feedback.QUEUE == feedback.ROOT / "docs/feedback-queue"
 
 with tempfile.TemporaryDirectory() as temporary:
     feedback.ROOT = Path(temporary) / "devkit"
@@ -114,6 +118,26 @@ with tempfile.TemporaryDirectory() as temporary:
     assert normalized["session_id"] == "cid"
     assert normalized["cwd"] == "/tmp/root"
     assert normalized["transcript_path"] == "/tmp/t.jsonl"
+
+    ticket["status"] = "dropped"
+    feedback.save_ticket(path, ticket)
+    items[0].unlink()
+    feedback.handle_prompt(payload)
+    assert not items[0].exists()
+
+    original_queue = feedback.QUEUE
+    blocked_parent = Path(temporary) / "blocked-parent"
+    blocked_parent.write_text("not a directory")
+    feedback.QUEUE = blocked_parent / "feedback-queue"
+    blocked_payload = {"session_id": session, "prompt": "Fix this repeated workflow failure"}
+    errors = io.StringIO()
+    with patch.object(feedback, "classify", return_value=(0.8, 0.7, "hook", 0.9)):
+        with redirect_stderr(errors):
+            feedback.handle_prompt(blocked_payload)
+    assert "cannot write queue entry" in errors.getvalue()
+    blocked_ticket_id = hashlib.sha256(f"{session}\0{blocked_payload['prompt']}".encode()).hexdigest()[:20]
+    assert (feedback.session_tickets(session) / f"{blocked_ticket_id}.json").exists()
+    feedback.QUEUE = original_queue
 
     class FakeJev:
         def __init__(self):

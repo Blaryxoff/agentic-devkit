@@ -57,7 +57,8 @@ def save_ticket(path: Path, ticket: dict) -> None:
 
 
 def save_queue_entry(ticket: dict, ticket_path: Path) -> None:
-    QUEUE.mkdir(parents=True, exist_ok=True)
+    if ticket.get("status") != "untriaged":
+        return
     item = QUEUE / f"agent-feedback-{ticket['repair_area']}-{ticket['id']}.md"
     body = (
         f"---\nstatus: untriaged\nadded: {date.today().isoformat()}\n---\n"
@@ -65,13 +66,16 @@ def save_queue_entry(ticket: dict, ticket_path: Path) -> None:
         f"Jev flagged possible agent-workflow feedback "
         f"(feedback {ticket['feedback_probability']:.2f}, reusable {ticket['reusable_probability']:.2f}). "
         f"Candidate location: `{ticket['candidate_location']}`.\n\n"
-        f"Private evidence: `{ticket_path}`. Verify the session context, then fix or drop this item.\n"
+        f"Private evidence: `{ticket_path}`. Verify the session context, then triage this item.\n"
     )
     try:
+        QUEUE.mkdir(parents=True, exist_ok=True)
         with open(item, "x", encoding="utf-8", opener=lambda p, f: os.open(p, f, 0o600)) as file:
             file.write(body)
     except FileExistsError:
         pass
+    except OSError as error:
+        print(f"jev-feedback: cannot write queue entry {item}: {error}", file=sys.stderr)
 
 
 def jev_module():
