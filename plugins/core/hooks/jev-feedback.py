@@ -19,6 +19,7 @@ STATE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "
 TICKETS = STATE / "tickets"
 QUEUE = ROOT / "docs/feedback-queue"
 SECRET = re.compile(r"(?i)\b(api[_-]?key|password|secret|token)\s*([:=])\s*([^\s,;]+)")
+WTF = re.compile(r"(?i)\bwtf\b")
 AREAS = {
     "skill": "A reusable skill's instructions, workflow, or supporting script caused the complaint",
     "guidance": "Global CLAUDE.md, AGENTS.md, or devkit-managed agent instructions caused it",
@@ -60,10 +61,11 @@ def save_queue_entry(ticket: dict, ticket_path: Path) -> None:
     if ticket.get("status") != "untriaged":
         return
     item = QUEUE / f"agent-feedback-{ticket['repair_area']}-{ticket['id']}.md"
+    source = "WTF cue" if ticket.get("wtf_signal") else "Jev"
     body = (
         f"---\nstatus: untriaged\nadded: {date.today().isoformat()}\n---\n"
         f"# {TITLES[ticket['repair_area']]} {ticket['id']}\n\n"
-        f"Jev flagged possible agent-workflow feedback "
+        f"{source} flagged possible agent-workflow feedback "
         f"(feedback {ticket['feedback_probability']:.2f}, reusable {ticket['reusable_probability']:.2f}). "
         f"Candidate location: `{ticket['candidate_location']}`.\n\n"
         f"Private evidence: `{ticket_path}`. Verify the session context, then triage this item.\n"
@@ -104,20 +106,16 @@ def classify(prompt: str) -> tuple[float, float, str, float]:
         "questions": {
             "feedback": {
                 "type": "noul",
-                "instructions": "Would an attentive assistant treat this prompt as feedback on how the AI assistant handled or is handling the current work? Include explicit complaints and indirect corrections or challenges such as 'Did you check X?', 'Are you sure?', 'Stuck?', 'Why only X?', 'I mean X', 'Do not waste time', or 'let's do Y instead'. Exclude new tasks, corrections to application code or data, and questions about an external service or product rather than the assistant.",
+                "instructions": "Should this user message create a candidate to improve an AI coding agent workflow? Say yes only when the user corrects, challenges, or complains about the assistant’s work and a reusable change to its skills, conduct, hooks, project guidance, or agent memory could plausibly prevent recurrence. An indirect question can count when it identifies an omitted check or workflow flaw. Say no for ordinary progress/status questions, current-task product code or data fixes, one-off scope decisions, and external-service problems. A copied peer message counts only if it reports a concrete failure of the agent workflow. Do not assume the issue was already fixed after this message.",
             },
         },
     })
     feedback = float(answers["feedback"]["noul"])
-    if feedback < 0.5:
+    if feedback < 0.5 and not WTF.search(prompt):
         return feedback, 0.0, "other", 0.0
     answers, _, _ = jev.run({
         "state": {"prompt": prompt},
         "questions": {
-            "dissatisfied": {
-                "type": "noul",
-                "instructions": "Is the user directly correcting, criticizing, or expressing disappointment with this AI assistant's previous answer, task execution, or working method? Include 'No, I mean...', 'why didn't you...', and explicit unhappiness. Exclude bug reports about the product being developed, third-party reviews, and ordinary new requests.",
-            },
             "reusable": {
                 "type": "noul",
                 "instructions": "If this prompt is feedback about this AI assistant, could a reusable change to its personal instructions, skills, hooks, or memory plausibly reduce recurrence across future sessions? Task-specific code/data/content corrections are no. A recurring planning, completeness, coordination, or scope-understanding failure is yes.",
@@ -175,6 +173,7 @@ def handle_prompt(payload: dict) -> None:
     if "-----BEGIN PRIVATE KEY-----" in prompt:
         return
     cleaned = clean_prompt(prompt)
+    wtf_signal = bool(WTF.search(cleaned))
     ticket_id = hashlib.sha256(f"{session}\0{prompt}".encode()).hexdigest()[:20]
     path = session_tickets(session) / f"{ticket_id}.json"
     private_dir(path.parent)
@@ -196,7 +195,7 @@ def handle_prompt(payload: dict) -> None:
         checked.write("done")
         checked.truncate()
         checked.flush()
-        if feedback < 0.5 or reusable < 0.45 or area not in HINTS:
+        if (feedback < 0.5 and not wtf_signal) or reusable < 0.45 or area not in HINTS:
             return
         ticket = {
             "id": ticket_id,
@@ -206,6 +205,7 @@ def handle_prompt(payload: dict) -> None:
             "transcript_path": payload.get("transcript_path", ""),
             "prompt": cleaned,
             "feedback_probability": feedback,
+            "wtf_signal": wtf_signal,
             "reusable_probability": reusable,
             "repair_area": area,
             "area_confidence": confidence,

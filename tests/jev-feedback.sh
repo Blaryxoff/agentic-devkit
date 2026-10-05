@@ -139,6 +139,27 @@ with tempfile.TemporaryDirectory() as temporary:
     assert (feedback.session_tickets(session) / f"{blocked_ticket_id}.json").exists()
     feedback.QUEUE = original_queue
 
+    wtf_prompt = "Wtf, this skill keeps skipping required source evidence"
+    with patch.object(feedback, "classify", return_value=(0.2, 0.7, "skill", 0.9)):
+        feedback.handle_prompt({"session_id": session, "prompt": wtf_prompt})
+    wtf_id = hashlib.sha256(f"{session}\0{wtf_prompt}".encode()).hexdigest()[:20]
+    wtf_ticket = json.loads((feedback.session_tickets(session) / f"{wtf_id}.json").read_text())
+    assert wtf_ticket["wtf_signal"] is True
+    assert wtf_ticket["feedback_probability"] == 0.2
+    assert "WTF cue flagged" in (feedback.QUEUE / f"agent-feedback-skill-{wtf_id}.md").read_text()
+
+    wtf_hook_prompt = "WTF, the retry hook hides its errors"
+    with patch.object(feedback, "classify", return_value=(0.1, 0.7, "hook", 0.9)):
+        feedback.handle_prompt({"session_id": session, "prompt": wtf_hook_prompt})
+    wtf_hook_id = hashlib.sha256(f"{session}\0{wtf_hook_prompt}".encode()).hexdigest()[:20]
+    assert (feedback.QUEUE / f"agent-feedback-hook-{wtf_hook_id}.md").exists()
+
+    one_off_wtf = "WTF, this external registry is confusing"
+    with patch.object(feedback, "classify", return_value=(0.2, 0.2, "other", 0.8)):
+        feedback.handle_prompt({"session_id": session, "prompt": one_off_wtf})
+    one_off_id = hashlib.sha256(f"{session}\0{one_off_wtf}".encode()).hexdigest()[:20]
+    assert not (feedback.session_tickets(session) / f"{one_off_id}.json").exists()
+
     class FakeJev:
         def __init__(self):
             self.calls = []
@@ -157,6 +178,21 @@ with tempfile.TemporaryDirectory() as temporary:
         assert len(fake.calls) == 1
         assert feedback.classify("agent correction") == (0.8, 0.6, "other", 0.4)
         assert len(fake.calls) == 3
+
+    class WtfJev:
+        def __init__(self):
+            self.calls = []
+
+        def run(self, payload):
+            self.calls.append(payload)
+            if len(self.calls) == 1:
+                return {"feedback": {"noul": 0.2}}, 0, 0
+            return {"reusable": {"noul": 0.7}, "repair_area": {"choice": "skill", "confidence": 0.9}}, 0, 0
+
+    wtf_jev = WtfJev()
+    with patch.object(feedback, "jev_module", return_value=wtf_jev):
+        assert feedback.classify(wtf_prompt) == (0.2, 0.7, "skill", 0.9)
+    assert len(wtf_jev.calls) == 2
 
 print("jev-feedback tests passed")
 PY
