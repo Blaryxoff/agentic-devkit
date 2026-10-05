@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 STATE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "devkit/feedback"
 TICKETS = STATE / "tickets"
-BACKLOG = ROOT / "docs/backlog"
+QUEUE = STATE / "queue"
 SECRET = re.compile(r"(?i)\b(api[_-]?key|password|secret|token)\s*([:=])\s*([^\s,;]+)")
 AREAS = {
     "skill": "A reusable skill's instructions, workflow, or supporting script caused the complaint",
@@ -56,11 +56,11 @@ def save_ticket(path: Path, ticket: dict) -> None:
     temporary.replace(path)
 
 
-def save_backlog(ticket: dict, ticket_path: Path) -> None:
-    BACKLOG.mkdir(parents=True, exist_ok=True)
-    item = BACKLOG / f"agent-feedback-{ticket['repair_area']}-{ticket['id']}.md"
+def save_queue_entry(ticket: dict, ticket_path: Path) -> None:
+    private_dir(QUEUE)
+    item = QUEUE / f"agent-feedback-{ticket['repair_area']}-{ticket['id']}.md"
     body = (
-        f"---\nworth: later\nadded: {date.today().isoformat()}\n---\n"
+        f"---\nstatus: untriaged\nadded: {date.today().isoformat()}\n---\n"
         f"# {TITLES[ticket['repair_area']]} {ticket['id']}\n\n"
         f"Jev flagged possible agent-workflow feedback "
         f"(feedback {ticket['feedback_probability']:.2f}, reusable {ticket['reusable_probability']:.2f}). "
@@ -68,7 +68,7 @@ def save_backlog(ticket: dict, ticket_path: Path) -> None:
         f"Private evidence: `{ticket_path}`. Verify the session context, then fix or drop this item.\n"
     )
     try:
-        with item.open("x", encoding="utf-8") as file:
+        with open(item, "x", encoding="utf-8", opener=lambda p, f: os.open(p, f, 0o600)) as file:
             file.write(body)
     except FileExistsError:
         pass
@@ -178,7 +178,7 @@ def handle_prompt(payload: dict) -> None:
     with open(checked_path, "a+", encoding="utf-8", opener=lambda p, f: os.open(p, f, 0o600)) as checked:
         fcntl.flock(checked, fcntl.LOCK_EX)
         if path.exists():
-            save_backlog(json.loads(path.read_text()), path)
+            save_queue_entry(json.loads(path.read_text()), path)
             return
         checked.seek(0)
         if checked.read() == "done" and time.time() - checked_path.stat().st_mtime < 60:
@@ -208,7 +208,7 @@ def handle_prompt(payload: dict) -> None:
             "candidate_location": HINTS[area],
         }
         save_ticket(path, ticket)
-        save_backlog(ticket, path)
+        save_queue_entry(ticket, path)
 
 
 def main() -> None:

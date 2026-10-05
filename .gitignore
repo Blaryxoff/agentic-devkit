@@ -4,3 +4,5 @@ node_modules/
 .cache/
 pnpm-lock.yaml
 .revmux/tasks/
+__pycache__/
+*.pyc

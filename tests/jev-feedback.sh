@@ -16,9 +16,11 @@ feedback = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(feedback)
 
 with tempfile.TemporaryDirectory() as temporary:
+    feedback.ROOT = Path(temporary) / "devkit"
+    feedback.ROOT.mkdir()
     feedback.STATE = Path(temporary) / "feedback"
     feedback.TICKETS = feedback.STATE / "tickets"
-    feedback.BACKLOG = Path(temporary) / "devkit/docs/backlog"
+    feedback.QUEUE = feedback.STATE / "queue"
     session = "session-test"
     prompt = "You keep ignoring my preference. Fix the skill. api_key=very-secret"
     payload = {"session_id": session, "prompt": prompt, "cwd": "/tmp/project", "transcript_path": "/tmp/session.jsonl"}
@@ -43,33 +45,36 @@ with tempfile.TemporaryDirectory() as temporary:
     assert ticket["candidate_location"].startswith("plugins/core/skills/")
     assert ticket["transcript_path"] == "/tmp/session.jsonl"
     assert path.stat().st_mode & 0o777 == 0o600
-    items = list(feedback.BACKLOG.glob("*.md"))
+    items = list(feedback.QUEUE.glob("*.md"))
     assert len(items) == 1
     assert items[0].name == f"agent-feedback-skill-{ticket['id']}.md"
     item = items[0].read_text()
-    assert "worth: later" in item
+    assert "status: untriaged" in item
     assert "feedback 0.87, reusable 0.66" in item
     assert "Candidate location: `plugins/core/skills/" in item
     assert str(path) in item
     assert prompt not in item
+    assert feedback.QUEUE.stat().st_mode & 0o777 == 0o700
+    assert items[0].stat().st_mode & 0o777 == 0o600
+    assert not (feedback.ROOT / "docs/backlog").exists()
 
     items[0].unlink()
     feedback.handle_prompt(payload)
-    assert len(list(feedback.BACKLOG.glob("*.md"))) == 1
+    assert len(list(feedback.QUEUE.glob("*.md"))) == 1
 
     with patch.object(feedback, "classify", return_value=(0.45, 0.8, "other", 0.9)) as classify_mock:
         feedback.handle_prompt({"session_id": session, "prompt": "Fix the app's login button"})
         feedback.handle_prompt({"session_id": session, "prompt": "Fix the app's login button"})
     assert classify_mock.call_count == 1
-    assert len(list(feedback.BACKLOG.glob("*.md"))) == 1
+    assert len(list(feedback.QUEUE.glob("*.md"))) == 1
 
     with patch.dict(os.environ, {"DEVKIT_FEEDBACK_WORKER": "1"}):
         feedback.handle_prompt({"session_id": session, "prompt": "Why did you ignore my instruction?"})
-    assert len(list(feedback.BACKLOG.glob("*.md"))) == 1
+    assert len(list(feedback.QUEUE.glob("*.md"))) == 1
 
     with patch.object(feedback, "classify", return_value=(0.75, 0.55, "other", 0.3)):
         feedback.handle_prompt({"session_id": session, "prompt": "Why didn't you check the source?"})
-    assert len(list(feedback.BACKLOG.glob("*.md"))) == 2
+    assert len(list(feedback.QUEUE.glob("*.md"))) == 2
     assert not hasattr(feedback, "handle_work")
 
     cursor_prompt = "Why did you ignore the Cursor rule again?"
@@ -97,7 +102,7 @@ with tempfile.TemporaryDirectory() as temporary:
     assert cursor_ticket["source_cwd"] == "/tmp/cursor-project"
     assert cursor_ticket["transcript_path"] == "/tmp/cursor-transcript.jsonl"
     assert cursor_ticket["repair_area"] == "guidance"
-    assert len(list(feedback.BACKLOG.glob("agent-feedback-guidance-*.md"))) == 1
+    assert len(list(feedback.QUEUE.glob("agent-feedback-guidance-*.md"))) == 1
 
     normalized = feedback.normalize_prompt_payload({
         "conversation_id": "cid",
