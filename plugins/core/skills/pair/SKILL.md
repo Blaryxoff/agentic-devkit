@@ -76,6 +76,11 @@ agent when sending to Codex and adds `Chat from Claude:` or `Chat from Cursor:` 
   ends. Answers, review results, corrections and stop signals always use the default send.
 - A wrapper-launched agent needs `--target-command <name>`. After a refusal, never guess a name and
   never retry with a different one until the user says which is right.
+- If `AGTERM_SESSION_ID` is stale, list open windows with `agtermctl window list --json` and read
+  `agtermctl tree --json --window ID` for each. Identify the live split by its title, checkout and
+  **both** agent commands, then retry with `--session ID`. Use the same prepared
+  message file: target resolution failed before it was consumed. Never substitute `active` or pick
+  the first split in a shared checkout.
 
 ## Receiving
 
@@ -144,7 +149,8 @@ exit 130 is an interrupt.
 
 | stderr says | State | Do |
 |---|---|---|
-| A pre-write refusal | Nothing was typed | From `--stdin`, retry once the named cause is fixed. From `--message-file`, the file was already consumed — reserve a **new** name and refill it |
+| Initial target resolution or sender identification failed | Nothing was read or typed | Check the live tree and correct the target with `--session ID`; resend `--stdin` or reuse the same prepared file |
+| A pre-write composer refusal | Nothing was typed, but the message was consumed | From `--stdin`, retry once the named cause is fixed. From `--message-file`, reserve a **new** name and refill it |
 | `composer cleared` after a body failure | Its backspaces restored the empty prompt | Report; do not re-send blind |
 | `composer cleanup failed` | Text may remain in that pane; cleanup was already retried three times, 15 s apart, while agterm was unreachable | Read the pane, report, stop |
 | Anything saying `do not resend` | The message may have landed, or did | Stop. Report it. Never re-send |

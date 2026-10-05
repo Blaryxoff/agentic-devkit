@@ -279,7 +279,11 @@ def has_target(info: dict[str, Any], profile: Profile) -> bool:
     if not info.get("hasSplit"):
         return False
     field = "foreground" if profile.pane == "left" else "splitForeground"
-    return runs(info.get(field), profile.command)
+    if not runs(info.get(field), profile.command):
+        return False
+    return profile.pane == "right" or runs(
+        info.get("splitForeground"), target_profile("codex", None).command
+    )
 
 
 def with_sender_label(sid: str, profile: Profile, window: str | None = None) -> Profile:
@@ -362,7 +366,8 @@ def require_target(
         raise RuntimeError(f"session {sid} has no split")
     if not has_target(info, profile):
         raise RuntimeError(
-            f"{profile.agent} target pane is not running {profile.command!r}; "
+            f"session {sid} is not a valid pair split for {profile.agent} "
+            f"running {profile.command!r}; "
             "for a wrapper, pass --target-command NAME"
         )
     return str(info["id"])
@@ -405,13 +410,8 @@ def resolve_target(
     session = configured_selector(
         explicit_session, "AGTERM_SESSION_ID", "session"
     )
-    window_selector = (
-        configured_selector(explicit_window, "AGTERM_WINDOW_ID", "window")
-        if explicit_window is not None or explicit_session is None
-        else None
-    )
-    if window_selector is not None:
-        window = resolve_window(window_selector)
+    if explicit_window is not None:
+        window = resolve_window(explicit_window)
         return window, resolve_session(explicit_session, profile, window)
     if not session:
         window = resolve_window(None)
@@ -428,6 +428,12 @@ def resolve_target(
     if len(matches) > 1:
         raise RuntimeError(f"ambiguous session prefix {session!r}")
     if not matches:
+        if explicit_session is None:
+            raise RuntimeError(
+                f"no such session: {session}; AGTERM_SESSION_ID is stale; "
+                "no message was read or typed. Inspect agtermctl window list "
+                "--json and tree --json --window ID, then retry with --session ID"
+            )
         raise RuntimeError(f"no such session: {session}")
     window, info = matches[0]
     sid = str(info["id"])
@@ -435,7 +441,8 @@ def resolve_target(
         raise RuntimeError(f"session {sid} has no split")
     if not has_target(info, profile):
         raise RuntimeError(
-            f"{profile.agent} target pane is not running {profile.command!r}; "
+            f"session {sid} is not a valid pair split for {profile.agent} "
+            f"running {profile.command!r}; "
             "for a wrapper, pass --target-command NAME"
         )
     return window, sid

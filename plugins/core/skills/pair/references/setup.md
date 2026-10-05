@@ -54,6 +54,13 @@ Put the flag in your launcher wrapper and it applies to every pane. Without it t
 matching the git checkout, and **refuses when several sessions share one checkout** — every worktree of
 a repository maps to the same checkout. That refusal is correct behaviour, not a bug.
 
+A resumed agent or long-lived launcher may keep an `AGTERM_SESSION_ID` after agterm replaces that
+session. The script searches all open windows for the ID, so moving a session between windows works.
+If the ID no longer exists, it refuses before consuming a prepared message. List open windows with
+`agtermctl window list --json` and inspect each with `agtermctl tree --json --window ID`.
+Verify the live split's title, checkout and both agent commands, then pass its ID with
+`--session ID` on the send command. Do not use the frontmost session as a substitute for identity.
+
 ## Wrapper-launched agents
 
 The script reads the pane's command from agterm and looks for `claude` / `cursor-agent` / `codex`. A wrapper's name is

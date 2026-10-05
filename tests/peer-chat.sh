@@ -11,6 +11,8 @@ import io
 import json
 import os
 import sys
+import tempfile
+from pathlib import Path
 
 spec = importlib.util.spec_from_file_location("peer_chat", sys.argv[1])
 chat = importlib.util.module_from_spec(spec)
@@ -293,6 +295,76 @@ try:
         assert not chat.target_is_focused(fake.sid, cursor, fake.window)
     finally:
         sys.platform, chat.subprocess.run = original_platform, original_run
+
+    class FakeResolver:
+        def ctl(self, *args, input_text=None):
+            if args[:2] == ("window", "list"):
+                return json.dumps({"result": {"windows": [
+                    {"id": "old-window", "open": True, "active": False},
+                    {"id": "new-window", "open": True, "active": True},
+                ]}})
+            if args[:2] == ("tree", "--json"):
+                window = args[args.index("--window") + 1]
+                sessions = [{
+                    "id": "live-session", "hasSplit": True,
+                    "foreground": ["claude"], "splitForeground": ["codex"],
+                }] if window == "new-window" else []
+                return json.dumps({"sessions": sessions})
+            raise AssertionError(args)
+
+    saved_selectors = {name: os.environ.get(name) for name in (
+        "AGTERM_SESSION_ID", "AGTERM_WINDOW_ID",
+    )}
+    original_spool = chat.MESSAGE_SPOOL
+    original_send_with_retry = chat.send_with_retry
+    original_argv = sys.argv
+    try:
+        chat.ctl = FakeResolver().ctl
+        os.environ["AGTERM_SESSION_ID"] = "old-session"
+        os.environ["AGTERM_WINDOW_ID"] = "old-window"
+        with tempfile.TemporaryDirectory() as directory:
+            chat.MESSAGE_SPOOL = Path(directory) / "spool"
+            name = "peer-chat-codex-recovery.txt"
+            path = chat.prepare_message(name)
+            path.write_text("review findings", encoding="utf-8")
+            sys.argv = [sys.argv[0], "--to", "claude", "--message-file", name]
+            try:
+                chat.run_main(chat.DeliveryProgress())
+            except RuntimeError as err:
+                assert "AGTERM_SESSION_ID is stale" in str(err), err
+                assert "--session ID" in str(err), err
+            else:
+                raise AssertionError("a stale session was accepted")
+            assert path.read_text(encoding="utf-8") == "review findings"
+
+            os.environ["AGTERM_SESSION_ID"] = "live-session"
+            assert chat.resolve_target(None, None, claude) == ("new-window", "live-session")
+
+            os.environ["AGTERM_SESSION_ID"] = "old-session"
+            delivered = []
+            def capture_recovery(sid, profile, message, window, progress):
+                delivered.append((sid, profile.agent, message, window))
+                return len(message)
+            chat.send_with_retry = capture_recovery
+            sys.argv += ["--session", "live-session"]
+            with contextlib.redirect_stdout(io.StringIO()):
+                assert chat.run_main(chat.DeliveryProgress()) == 0
+            assert delivered == [("live-session", "claude", "review findings", "new-window")]
+            assert not path.exists()
+
+        wrong_peer = {
+            "hasSplit": True, "foreground": ["claude"],
+            "splitForeground": ["cursor-agent"],
+        }
+        assert not chat.has_target(wrong_peer, claude)
+    finally:
+        chat.MESSAGE_SPOOL = original_spool
+        chat.send_with_retry = original_send_with_retry
+        sys.argv = original_argv
+        for name, value in saved_selectors.items():
+            os.environ.pop(name, None)
+            if value is not None:
+                os.environ[name] = value
 finally:
     chat.ctl = original_ctl
     for name, value in saved_commands.items():
