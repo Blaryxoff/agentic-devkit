@@ -40,9 +40,11 @@ normalised value before collecting.
    root/worktree before reading content. Start with user requests and final assistant summaries; inspect tool events
    only when needed to verify completion or release.
 5. **Build an evidence ledger.** De-duplicate the same work across agents and repos. Git confirms code reached the
-   release branch; sessions explain why it matters. Include session-only work only when a dated record after the cutoff
-   proves the target production action succeeded, or the user confirms it shipped. Planned, attempted, failed,
-   reverted, and merely local work is dropped.
+   release branch; sessions explain why it matters. Reconcile every in-scope direct commit and merge's first-parent diff
+   with the ledger, including product modules, infrastructure, deploy and configuration paths. Mark each change as
+   included, intentionally dropped with a reason, or needing confirmation; resolve gaps before drafting. Include
+   session-only work only when a dated record after the cutoff proves the target production action succeeded, or the
+   user confirms it shipped. Planned, attempted, failed, reverted, and merely local work is dropped.
 6. **Resolve opaque commits.** Map a commit to a session using an explicit SHA, changed paths, or task details supported
    by the diff — never timing alone. If still unclear, read `git show --stat` and then the real diff. A commit you cannot
    explain is dropped, never guessed.
@@ -58,9 +60,9 @@ normalised value before collecting.
 11. **Flag ops follow-ups.** Anything needing a manual step after deploy — API keys, env vars, migrations, seeders, cron,
    catalog import, third-party account — gets a `⚠️ Важно:` line inside its section.
 12. **Verify before delivering.** Every line traceable to git, dated session evidence of a successful production action,
-    or a user-confirmed item; no SHAs, paths, ticket/session ids, prompt text, or secrets leaked; fix-flavoured sections
-    last; Russian throughout. Outside the post, state the roots/range and which of Claude, Codex, and Cursor were
-    available.
+    or a user-confirmed item, and every included ledger entry represented in the post. No SHAs, paths, ticket/session
+    ids, prompt text, or secrets leaked; fix-flavoured sections last; Russian throughout. Outside the post, state the
+    roots/range and which of Claude, Codex, and Cursor were available.
 
 ## Agent session sources
 
@@ -107,6 +109,9 @@ git -C <root> diff --stat <first-sha>^..origin/<branch>
 
 # opaque commit
 git -C <root> show --stat <sha>
+
+# merge contents against the release branch's previous state
+git -C <root> diff --stat <merge-sha>^1 <merge-sha>
 ```
 
 If a release tag was cut after the cutoff date, prefer `<tag>..origin/<branch>` and say which range you used.
