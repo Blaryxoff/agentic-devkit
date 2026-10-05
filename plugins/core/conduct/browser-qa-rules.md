@@ -82,10 +82,12 @@ Chrome — then verify reachability (`list_pages`) and immediately take the §2.
 complete §2.9 before acting.
 
 2.2. Discover the intended environment and exact base origin from the user's scope, env, README, or project config;
-record both before browser work. For local QA, verify the dev server is up. If it is not, start only the minimal required
-local server(s) using existing project/dev-runtime commands, wait for a real HTTP readiness signal, and record exactly
-what this QA pass started. During cleanup, stop only those recorded processes/sessions; if the environment was already
-running (for example on the user's Mac), leave it running.
+record both before browser work. For local QA, probe that configured origin first and use its existing env and database.
+Do not start an alternate server, switch databases, or override session configuration just for browser QA. If the
+configured origin is not up, start only the minimal required local server(s) using existing project/dev-runtime
+commands, wait for a real HTTP readiness signal, and record exactly what this QA pass started. During cleanup, stop
+only those recorded processes/sessions; if the environment was already running (for example on the user's Mac), leave
+it running.
 
 2.3. Verify fixture readiness for every data-dependent local lane under §3.1–§3.2 before execution. An existing
 seeder/factory is preferred; use the supported ORM/console, API or UI when one is unavailable. Prepare required local
@@ -419,7 +421,7 @@ main=$(pgrep -f -- "--user-data-dir=$profile" | while read -r p; do
   cmd=$(ps -p "$p" -o command= 2>/dev/null)
   printf '%s' "$cmd" | grep -q -- ' --type=' && continue
   comm=$(ps -p "$p" -o comm= 2>/dev/null); comm="${comm##*/}"
-  printf '%s' "$comm" | grep -qE '^(Google Chrome|Chromium|chrome|chromium|google-chrome)$' || continue
+  printf '%s' "$comm" | grep -qE '^(Google Chrome|Chromium|chrome|chromium|google-chrome|chrome-headless-shell)$' || continue
   owned=$(printf '%s\n' "$cmd" | tr ' ' '\n' | grep '^--user-data-dir=' | head -1 | cut -d= -f2-)
   [ "$owned" = "$profile" ] || continue
   printf '%s\n' "$p"

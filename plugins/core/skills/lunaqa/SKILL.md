@@ -16,8 +16,9 @@ Code, activate `Skill(devkit-core--browser)` first, then apply this preset. Appl
 - Claude Code: `/lunaqa <scope>` or `Skill(devkit-core--lunaqa)`.
 - Codex: `$devkit-lunaqa <scope>`.
 - Resolve omitted scope from the active task; ask when no concrete feature or route set is established.
-- Default to **exhaustive local QA of that scope**. Explicit environment, spot, smoke, targeted or regression-only
-  requests override these defaults; retain the canonical acceptance and omitted-dimension rules.
+- Default to the canonical §1.4 scope classification: one page, section or component is a spot pass; a named flow or
+  regression is targeted; `full`, `e2e`, `exhaustive`, `final` or whole-project scope is exhaustive. `locally` selects the
+  environment, not a broader pass mode. Retain the canonical acceptance and omitted-dimension rules.
 
 ## Execution preset
 
@@ -58,7 +59,9 @@ waves and rechecks; resolve again on the next pass. Lookup failure blocks dispat
    realistic data states **and** a distinct visual sweep across scoped pages, components, control states and viewports.
    Check readability, artifacts and supplied design/UI-kit references under the canonical oracles. Keep dependent
    CRUD, state and permission sequences together; apply §12 lane sizing and §2.10 resource checks.
-3. Prepare the local stand and append-only fixtures needed by the matrix under §2–§3. Exercise data-dependent
+3. Pin the existing project environment and origin under §2.2 before starting a server or preparing fixtures. Use its
+   configured database; do not substitute a test database or override session settings to make browser login work.
+   Prepare only the append-only fixtures needed by the selected pass under §2–§3. Exercise data-dependent
    tests with verified fixtures in their required states; use empty-page checks only for empty-state cases. The QA lead must ensure missing local fixtures are prepared under §3.1 before
    dispatching dependent test lanes; a missing
    seeder or read-only worker sandbox is not a seeding exemption. This preset does not authorise production mutation, destructive resets, environment
@@ -79,7 +82,9 @@ waves and rechecks; resolve again on the next pass. Lookup failure blocks dispat
 Write each self-contained lane brief to a pass-owned temporary directory outside the repository. Give the executor
 its ledger slice, exact environment, fixtures, canonical conduct paths, evidence requirements, ownership/cleanup
 instructions and result path under `browser-qa-rules.md` §12. Instruct it to execute its assigned lane, preserve application
-source and return its evidence in the final message, which `-o` writes to that result path.
+source and return its evidence in the final message, which `-o` writes to that result path. State explicitly that the
+executor is a leaf: it must not invoke `lunaqa` or `browser` as an orchestrator, start another agent, or dispatch a CLI
+lane. The lead alone owns further dispatch.
 
 ```bash
 codex exec -C "$project_root" --skip-git-repo-check --sandbox danger-full-access \
