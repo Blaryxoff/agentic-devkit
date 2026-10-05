@@ -16,9 +16,11 @@ Code, activate `Skill(devkit-core--browser)` first, then apply this preset. Appl
 - Claude Code: `/lunaqa <scope>` or `Skill(devkit-core--lunaqa)`.
 - Codex: `$devkit-lunaqa <scope>`.
 - Resolve omitted scope from the active task; ask when no concrete feature or route set is established.
-- Default to the canonical §1.4 scope classification: one page, section or component is a spot pass; a named flow or
-  regression is targeted; `full`, `e2e`, `exhaustive`, `final` or whole-project scope is exhaustive. `locally` selects the
-  environment, not a broader pass mode. Retain the canonical acceptance and omitted-dimension rules.
+- Classify the requested work under canonical §1.4 before dispatch. A small fix or one changed control with a narrow
+  verification request is a **spot** pass. A named flow, role set or regression is **targeted**. Full QA of a new feature,
+  or feature QA without a narrower boundary, is **exhaustive**, even when the feature fits on one page. Explicit
+  `full`/`e2e`/`final` wins over a narrow page name. `locally` selects the environment, not the pass mode. Retain the
+  canonical acceptance and omitted-dimension rules.
 
 ## Execution preset
 
@@ -52,9 +54,9 @@ waves and rechecks; resolve again on the next pass. Lookup failure blocks dispat
    `browser-ui-oracles.md` §3.4; require the same browser proof regardless of agent count.
    Resume under §1.7 with completed results intact; follow-up briefs name only missing or invalidated checks and
    necessary setup dependencies. A separate visual sweep shares its applicable evidence with functional cells.
-   For an explicit spot pass, dispatch one Luna executor under
+   For a spot pass, whether explicit or inferred from the active task, dispatch one Luna executor under
    `browser-qa-rules.md` §1.6 instead of running it in the caller; retain the spot output and all other spot rules.
-2. Fan out across every independent ledger lane the harness permits, in waves when slots are exhausted. “Gazillion”
+2. For targeted and exhaustive passes, fan out across every independent ledger lane the harness permits, in waves when slots are exhausted. “Gazillion”
    means broad coverage, not a literal worker count or agents per cell. Include functional flows across roles and
    realistic data states **and** a distinct visual sweep across scoped pages, components, control states and viewports.
    Check readability, artifacts and supplied design/UI-kit references under the canonical oracles. Keep dependent

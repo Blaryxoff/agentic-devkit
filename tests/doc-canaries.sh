@@ -151,6 +151,8 @@ assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'Assign each pa
 assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'Keep ownership through completion of the available assigned checks, then clean up.'
 assert_contains "$ROOT/plugins/core/conduct/browser-layout-audit.md" 'Ungrouped candidates remain unresolved'
 assert_contains "$ROOT/plugins/core/skills/lunaqa/SKILL.md" 'The invoking agent keeps its current model and owns planning'
+assert_contains "$ROOT/plugins/core/skills/lunaqa/SKILL.md" 'Full QA of a new feature'
+assert_contains "$ROOT/plugins/core/skills/lunaqa/SKILL.md" 'whether explicit or inferred from the active task'
 assert_contains "$ROOT/plugins/core/skills/lunaqa/SKILL.md" '`locally` selects the'
 assert_contains "$ROOT/plugins/core/skills/lunaqa/SKILL.md" 'executor is a leaf'
 assert_contains "$ROOT/plugins/core/conduct/browser-qa-rules.md" 'probe that configured origin first'
