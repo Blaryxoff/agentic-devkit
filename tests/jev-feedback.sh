@@ -20,7 +20,7 @@ with tempfile.TemporaryDirectory() as temporary:
     feedback.ROOT.mkdir()
     feedback.STATE = Path(temporary) / "feedback"
     feedback.TICKETS = feedback.STATE / "tickets"
-    feedback.QUEUE = feedback.STATE / "queue"
+    feedback.QUEUE = feedback.ROOT / "docs/feedback-queue"
     session = "session-test"
     prompt = "You keep ignoring my preference. Fix the skill. api_key=very-secret"
     payload = {"session_id": session, "prompt": prompt, "cwd": "/tmp/project", "transcript_path": "/tmp/session.jsonl"}
@@ -54,7 +54,7 @@ with tempfile.TemporaryDirectory() as temporary:
     assert "Candidate location: `plugins/core/skills/" in item
     assert str(path) in item
     assert prompt not in item
-    assert feedback.QUEUE.stat().st_mode & 0o777 == 0o700
+    assert feedback.QUEUE.parent == feedback.ROOT / "docs"
     assert items[0].stat().st_mode & 0o777 == 0o600
     assert not (feedback.ROOT / "docs/backlog").exists()
 

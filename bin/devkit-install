@@ -377,7 +377,7 @@ updated=$(jq --arg script "jev-feedback.py" '
   )
 ' "$SETTINGS")
 write_json "$SETTINGS" "$updated" || exit 1
-echo "    Hook:    ~/.claude/settings.json (Jev private feedback queue)"
+echo "    Hook:    ~/.claude/settings.json (Jev repo feedback queue)"
 
 # --- PreToolUse coder-gate hook in ~/.claude/settings.json ---
 # Hard-gates code edits until the coder skill is recorded in the session transcript.

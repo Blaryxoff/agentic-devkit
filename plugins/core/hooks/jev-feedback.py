@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 STATE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "devkit/feedback"
 TICKETS = STATE / "tickets"
-QUEUE = STATE / "queue"
+QUEUE = ROOT / "docs/feedback-queue"
 SECRET = re.compile(r"(?i)\b(api[_-]?key|password|secret|token)\s*([:=])\s*([^\s,;]+)")
 AREAS = {
     "skill": "A reusable skill's instructions, workflow, or supporting script caused the complaint",
@@ -57,7 +57,7 @@ def save_ticket(path: Path, ticket: dict) -> None:
 
 
 def save_queue_entry(ticket: dict, ticket_path: Path) -> None:
-    private_dir(QUEUE)
+    QUEUE.mkdir(parents=True, exist_ok=True)
     item = QUEUE / f"agent-feedback-{ticket['repair_area']}-{ticket['id']}.md"
     body = (
         f"---\nstatus: untriaged\nadded: {date.today().isoformat()}\n---\n"
