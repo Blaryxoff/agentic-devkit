@@ -197,6 +197,14 @@ is not applicable only when adequate existing fixtures are verified, the scope i
 explicit data-read-only restriction applies. For a remaining blocker, report attempted setup paths, exact denial/error
 and affected cell IDs; keep those cells blocked/uncovered and the pass incomplete.
 
+For a form-submission lane, inspect the client and server validation that the planned submit will exercise, including
+conditional fields outside the feature under test. Verify its test account and related records satisfy those prerequisites
+before dispatch; record the values or states checked. When the mutation policy permits an upload, stage a harmless test
+file under the browser tool's configured input roots. If that root is available only after the executor starts, have it
+check the path and exercise the real upload as its first substantive action after login, before lengthy unrelated checks.
+Do not assume that `/tmp` and the runtime's temporary directory resolve to the same root. Keep the upload's resulting
+application state in the ledger. Recover a failed setup check before repeating dependent cells; do not drop them.
+
 3.2. Use **append-only** seeding or a **separate test DB** — record exact command(s). Creating new test users, registering through the UI, logging in as seeded users, and mutating clearly-marked test records is allowed when needed to exercise real flows.
 
 3.3. **Forbidden** against the real DB: `migrate:fresh`, `migrate:refresh`, `migrate:reset`, `db:wipe`, `RefreshDatabase`, truncate, drop.
@@ -232,7 +240,11 @@ Discover everything below from the codebase before testing or planning.
 
 4.5. **Permission matrix**: each role × each entity/resource type.
 
-4.6. **Viewport breakpoints** — from project CSS/Tailwind config or `visual/config.json`; fall back to `plugins/frontend/conduct/visual-implementation.md` defaults (mobile 390×844, tablet 768×1024, desktop 1440×1200).
+4.6. **Viewport breakpoints** — from project CSS/Tailwind config or `visual/config.json`; fall back to
+`plugins/frontend/conduct/visual-implementation.md` defaults (mobile 390×844, tablet 768×1024, desktop 1440×1200).
+An exhaustive pass assigns a representative mobile, tablet and desktop viewport to every scoped page and relevant
+rendered state. A targeted pass includes tablet when requested or when the changed layout crosses its breakpoint; a
+spot pass keeps the two-viewport rule in §1.6. Record any unavailable viewport as a missing dimension, not as a pass.
 
 4.7. **Regression surface** — adjacent behaviour reachable from in-scope navigation; discover from routing, not from memory.
 
@@ -256,7 +268,10 @@ layout. Run existing Playwright Test visual assertions when the project provides
 
 5.6. **Field/validation** — invalid and boundary values; assert inline errors and blocked submits.
 
-5.7. **Interaction depth** — varied value sets (empty, min, max, special chars, each enum/option, dependent-field combinations); every toggle, filter, sort, pagination, search, modal, tab, drag/reorder.
+5.7. **Interaction depth** — varied value sets (empty, min, max, special chars, each enum/option, dependent-field
+combinations); every toggle, filter, sort, pagination, search, modal, tab, drag/reorder and in-scope link. Click links
+and verify the destination; for an external service outside scope, verify the target and navigation without claiming
+its workflow passed.
 
 5.8. **Cross-role access propagation** — grant then revoke access per controllable section/feature/instance; re-login as affected user; verify UI visibility and route-level block in both directions.
 
@@ -286,7 +301,8 @@ tab to local/stage.
 6.2. Take the selected surface's accessibility/DOM snapshot before acting on each page.
 
 6.3. Run the standard probe in `plugins/core/conduct/browser-layout-audit.md` after the page is stable at every tested
-viewport. Return concise JSON, not page HTML. At minimum inspect:
+viewport, once per distinct page/state/viewport across the pass under §6.4. Return concise JSON, not page HTML. At
+minimum inspect:
 
 - document-level horizontal overflow (`scrollWidth > clientWidth`);
 - visible elements escaping the viewport;
@@ -303,9 +319,10 @@ separately. Confirm against interaction behaviour, the design reference, or proj
 pseudo-elements can differ without changing DOM geometry.
 
 Then run the UI oracles in `plugins/core/conduct/browser-ui-oracles.md`: those its §2 selects for the change on a spot
-or targeted pass, and every applicable §5 oracle — scripted keys and the manual §5.1 states and §5.9 language — on an
-exhaustive pass. Apply its §4 measurement rules to every colour, shadow and height you report, including ones measured by
-hand.
+or targeted pass, and every applicable §5 oracle — scripted keys and the manual §5.1 states and §5.9 language — across
+an exhaustive pass. Assign each oracle and page/state/viewport combination to a named lane; a distinct visual lane may
+own the deeper oracle checks while a functional lane supplies the real interaction and baseline snapshot/layout evidence.
+Apply its §4 measurement rules to every colour, shadow and height you report, including ones measured by hand.
 
 6.4. Reuse a `take_snapshot` result until navigation, submission, modal state, role, viewport, or another DOM-changing action invalidates it. Use the cached snapshot for consecutive read-only assertions on unchanged state.
 Cells may reference the same snapshot, layout/oracle audit or console/network batch when its implementation,
@@ -315,6 +332,10 @@ component state and viewport, shared across functional and visual lanes; remeasu
 changes. Different enum values with equivalent rendering need their own action/result proof, not identical full-page
 audits. Check layout-sensitive variants such as empty/error and shortest/longest content explicitly. An unrelated DOM
 change invalidates a snapshot without automatically invalidating earlier layout proof for an unchanged component.
+Before dispatching a visual lane, map its cells to the functional evidence already assigned or collected. Give it the
+uncovered visual oracles, states and viewports plus disputed candidates; it may cite a matching pinned baseline audit
+instead of repeating that audit. It still gathers its own evidence for every visual-specific assertion and rechecks any
+baseline whose pins or rendered state differ. The QA lead keeps each required dimension open until evidence covers it.
 
 6.5. Batch independent browser reads in one tool-call batch when the harness supports it. Prefer one structured DOM
 evaluation for multiple read-only assertions; never replace a user interaction or server-side permission check with
@@ -488,10 +509,19 @@ Reuse canonical references while grounding every target-specific field afresh.
 the one whose fixture owns the route (demo and QA-fixture accounts often use different credentials); and the fixture
 holds the state the lane measures, not an empty list.
 
-12.3. Scope a lane to at most five routes, two viewports and two or three oracles. Name every route and state
-explicitly; a lane left to choose tests something out of scope, or code that is still changing.
+12.3. Scope a lane to at most five routes and three viewports, with the applicable oracles assigned to that lane. Name
+every route and state explicitly; a lane left to choose tests something out of scope, or code that is still changing.
+Derive the smallest useful set of cohesive lanes from the ledger, roles, data states and dependencies. Keep connected
+form entry, uploads, state transitions and cross-role checks in one owned browser when they depend on the same record;
+use realistic fixtures for independent states. Visual coverage is mandatory for every scoped page, relevant rendered
+state and assigned viewport under §5.4 and §6.3. Assign every functional and visual cell to a lane. The executor of a
+flow performs its visual checks in the same owned browser unless an independent visual lane can run on stable fixtures
+or is needed for focused visual comparison. A separate visual lane adds or owns named visual cells; it never excuses
+missing visual evidence. Apply the shared-evidence rule in §6.4 when lanes overlap.
 Assign each page or connected flow to one executor, covering its applicable controls, hover/keyboard-focus states and
-assigned viewports in the same lane. Parallelise across independent roles and flows. An explicit spot scope or named follow-up under §1.7 can cover a single control.
+assigned viewports in the same lane; resize the owned browser between mobile, tablet and desktop rather than creating a
+new lane for each size. Do not split a connected flow solely by viewport or oracle key. Parallelise across independent
+roles and flows. An explicit spot scope or named follow-up under §1.7 can cover a single control.
 For a follow-up, include §1.7, accepted evidence references and only the remaining actions/dimensions plus necessary
 setup. Scope the follow-up to those remaining checks and retain accepted results from the original matrix.
 

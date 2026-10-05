@@ -49,14 +49,12 @@ waves and rechecks; resolve again on the next pass. Lookup failure blocks dispat
    Smoke checks, spot passes, missing-evidence waves and post-fix rechecks also use the same resolved Luna. Disputed or
    missing evidence receives a named Luna browser follow-up; the invoker assesses the returned evidence.
    Resume under §1.7 with completed results intact; follow-up briefs name only missing or invalidated checks and
-   necessary setup dependencies. A separate visual sweep shares its applicable evidence with functional cells.
+   necessary setup dependencies.
    For a spot pass, whether explicit or inferred from the active task, dispatch one Luna executor under
    `browser-qa-rules.md` §1.6 instead of running it in the caller; retain the spot output and all other spot rules.
-2. For targeted and exhaustive passes, fan out across every independent ledger lane the harness permits, in waves when slots are exhausted. “Gazillion”
-   means broad coverage, not a literal worker count or agents per cell. Include functional flows across roles and
-   realistic data states **and** a distinct visual sweep across scoped pages, components, control states and viewports.
-   Check readability, artifacts and supplied design/UI-kit references under the canonical oracles. Keep dependent
-   CRUD, state and permission sequences together; apply §12 lane sizing and §2.10 resource checks.
+2. For targeted and exhaustive passes, fan out across the independent lanes derived under canonical §12.3, in waves
+   when harness slots are exhausted. “Gazillion” means broad coverage, not a literal worker count or agents per cell.
+   Apply §2.10 resource checks to each wave.
 3. Pin the existing project environment and origin under §2.2 before starting a server or preparing fixtures. Use its
    configured database; do not substitute a test database or override session settings to make browser login work.
    Prepare only the append-only fixtures needed by the selected pass under §2–§3. Exercise data-dependent
