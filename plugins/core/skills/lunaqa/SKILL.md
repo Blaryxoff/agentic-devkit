@@ -1,7 +1,7 @@
 ---
 name: devkit-lunaqa
 description: >-
-  run browser QA with many Codex Luna agents in every delegated stage. Use when asked for "lunaqa", "gazillion Luna QA",
+  collect browser QA evidence with Codex Luna agents. Use when asked for "lunaqa", "gazillion Luna QA",
   "Codex Luna browser QA" or "браузер QA лунами". Opt-in preset over devkit-browser; ordinary browser QA
   keeps its existing harness and model routing.
 ---
@@ -10,6 +10,7 @@ description: >-
 
 Load the canonical [browser skill](../browser/SKILL.md) and execute its workflow with the overrides below. In Claude
 Code, activate `Skill(devkit-core--browser)` first, then apply this preset. Apply the canonical browser workflow directly and keep preset differences in the overrides below.
+This preset replaces the canonical reviewer dispatch: Luna agents collect observations; the invoking agent assesses them.
 
 ## Invocation
 
@@ -43,15 +44,13 @@ visible `gpt-<version>-luna`, validates an explicitly requested effort, then exi
 returned catalog ID for dispatch. Keep the resolved ID fixed across the pass's
 waves and rechecks; resolve again on the next pass. Lookup failure blocks dispatch rather than choosing an old model.
 
-1. Dispatch **every delegated stage on the same resolved Luna** with the caller's effort or the worker runtime default: discovery scouts, browser
-   executors and coverage/evidence reviewer pairs. The invoking agent keeps its current model and owns planning,
-   fixture preparation, evidence reconciliation, adjudication and the final verdict. Preserve the canonical stage
-   responsibilities and evidence gates. Smoke checks, explicit spot passes, missing-evidence waves and post-fix
-   rechecks also use Luna; assign their browser execution to the same resolved Luna.
-   Fan review out to the canonical coverage/evidence reviewer pairs; partition large ledgers across more Luna pairs.
-   Disputed findings receive a named Luna execution follow-up; the invoker evaluates the returned evidence and decides.
-   Both reviewers and the invoker apply `browser-qa-rules.md` §7.2–§7.4 and visual confirmation under
-   `browser-ui-oracles.md` §3.4; require the same browser proof regardless of agent count.
+1. Dispatch discovery scouts when useful and browser evidence collectors on the same resolved Luna with the caller's
+   effort or the worker runtime default. Do not dispatch Luna reviewer agents. Each Luna lane returns browser actions,
+   observations, evidence references and setup blockers, without pass/fail verdicts, severity or adjudication. The
+   invoking agent keeps its current model and owns planning, fixture preparation, evidence reconciliation and the final
+   verdict under `browser-qa-rules.md` §7.2–§7.4 and `browser-ui-oracles.md` §3.4. Smoke checks, spot passes,
+   missing-evidence waves and post-fix rechecks also collect evidence on the same resolved Luna. Disputed or missing
+   evidence receives a named Luna browser follow-up; the invoker assesses the returned evidence.
    Resume under §1.7 with completed results intact; follow-up briefs name only missing or invalidated checks and
    necessary setup dependencies. A separate visual sweep shares its applicable evidence with functional cells.
    For a spot pass, whether explicit or inferred from the active task, dispatch one Luna executor under
@@ -107,6 +106,7 @@ IDs. Browser test-data mutations still obey the lane's canonical mutation policy
 ## Completion
 
 Reconcile every ledger cell and perform the canonical cleanup audit. In each lane result and the final model-routing
-row, record the actual executor model, effort and native/CLI launch path; include lane IDs and wave count. Count a cell
-as passed only when execution is complete and its required evidence proves the expected outcome. Return the canonical findings and completion block
-in chat, ingesting and deleting pass-owned temporary reports under §12.6.
+row, record the actual executor model, effort and native/CLI launch path; include lane IDs and wave count, and report
+reviewers as `none` for this preset. The invoker alone assigns cell outcomes from the collected evidence. Count a cell
+as passed only when execution is complete and its required evidence proves the expected outcome. Return the canonical
+findings and completion block in chat, ingesting and deleting pass-owned temporary reports under §12.6.
