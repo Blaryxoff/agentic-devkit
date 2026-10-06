@@ -28,7 +28,7 @@ Apply in any review skill (deep, fast, business-logic, logging, plan) after it h
 2. **Invoke Codex on the same scope, read-only.** Run the same review skill in Codex against the same change set, with no write access:
 
    ```bash
-   codex exec --sandbox read-only --skip-git-repo-check \
+   DEVKIT_FEEDBACK_WORKER=1 codex exec --sandbox read-only --skip-git-repo-check \
      "Use the <codex-skill-slug> skill to review the same scope: <scope description>. \
       Review only — do not modify code. Output findings only, in the devkit review-findings-format \
       (defect type, finding, evidence as file:line, suggested fix), grouped by Blocking/Significant/Minor." \
@@ -52,9 +52,10 @@ Shared mechanics for driving the other CLI non-interactively and read-only. Appl
 ### Claude Code / Cursor Agent → Codex
 
 ```bash
-codex exec --sandbox read-only --skip-git-repo-check "<prompt>" < /dev/null
+DEVKIT_FEEDBACK_WORKER=1 codex exec --sandbox read-only --skip-git-repo-check "<prompt>" < /dev/null
 ```
 
+- Prefix every peer launch, including `resume`, with `DEVKIT_FEEDBACK_WORKER=1`. The Jev feedback hook skips a run that carries it; without it the worker's brief is classified as a user prompt and sent to TypeSafe.
 - Always end the invocation with `< /dev/null`. `codex exec` reads stdin to append a `<stdin>` block even when the prompt is a positional arg, so an inherited open pipe (common when launching in the background) never closes and codex blocks forever on "Reading additional input from stdin…"; `/dev/null` gives immediate EOF.
 - Redirect peer output to a file and read it directly. `tail`/`head` wait for EOF before showing buffered output, so a
   slow or blocked run may not reveal the line naming the cause. A blocked peer shows near-zero CPU (`ps -o time=`)
@@ -67,7 +68,7 @@ codex exec --sandbox read-only --skip-git-repo-check "<prompt>" < /dev/null
 ### Codex → Claude Code
 
 ```bash
-claude -p "<prompt>" --permission-mode plan < /dev/null
+DEVKIT_FEEDBACK_WORKER=1 claude -p "<prompt>" --permission-mode plan < /dev/null
 ```
 
 - `--permission-mode plan` is the write boundary: the peer reads, greps, and runs read-only shell, but every edit tool is refused. Verified — a `-p` run under plan mode refuses to create a file and says so. Do not substitute `--allowedTools` for it; plan mode is the checked path.
@@ -90,12 +91,12 @@ carries the earlier context and need not restate it.
 
 ```bash
 ROUNDS=$(mktemp -d)   # outside the repo — never write scratch JSONL into the checkout
-codex exec --json --sandbox read-only --skip-git-repo-check "<bootstrap prompt>" < /dev/null \
+DEVKIT_FEEDBACK_WORKER=1 codex exec --json --sandbox read-only --skip-git-repo-check "<bootstrap prompt>" < /dev/null \
   > "$ROUNDS/round-0.jsonl"
 # {"type":"thread.started","thread_id":"01a0a189-b1b8-7611-9082-c59ad93e2a38"}
 PEER=$(head -1 "$ROUNDS/round-0.jsonl" | jq -r .thread_id)
 
-codex exec resume "$PEER" --json --skip-git-repo-check -c sandbox_mode='"read-only"' "<next prompt>" < /dev/null
+DEVKIT_FEEDBACK_WORKER=1 codex exec resume "$PEER" --json --skip-git-repo-check -c sandbox_mode='"read-only"' "<next prompt>" < /dev/null
 ```
 
 - **`codex exec resume` has no `--sandbox` flag.** It falls back to `sandbox_mode` in `~/.codex/config.toml`, which on
@@ -111,8 +112,8 @@ codex exec resume "$PEER" --json --skip-git-repo-check -c sandbox_mode='"read-on
 
 ```bash
 SID=$(uuidgen | tr 'A-Z' 'a-z')
-claude -p --session-id "$SID" --permission-mode plan "<bootstrap prompt>" < /dev/null
-claude -p --resume  "$SID" --permission-mode plan "<next prompt>" < /dev/null
+DEVKIT_FEEDBACK_WORKER=1 claude -p --session-id "$SID" --permission-mode plan "<bootstrap prompt>" < /dev/null
+DEVKIT_FEEDBACK_WORKER=1 claude -p --resume  "$SID" --permission-mode plan "<next prompt>" < /dev/null
 ```
 
 **Exit status is not a success signal in either direction.** A resumed Codex round that answered correctly was observed

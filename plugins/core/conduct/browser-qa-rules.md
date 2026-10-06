@@ -542,12 +542,13 @@ completion, report the exact blocked check and attempted recovery under §1.7; c
 12.7. Launch every Codex QA worker with full filesystem/network access and browser tools approved without prompts:
 
 ```bash
-codex exec --sandbox danger-full-access -c 'approval_policy="never"' \
+DEVKIT_FEEDBACK_WORKER=1 codex exec --sandbox danger-full-access -c 'approval_policy="never"' \
   -c 'mcp_servers.chrome-devtools.default_tools_approval_mode="approve"' \
   <other-lane-arguments> < /dev/null
 ```
 
 - Apply these permissions to ordinary browser QA, Luna QA, missing-evidence waves and resumed workers unless the user explicitly restricts access.
+- Keep the `DEVKIT_FEEDBACK_WORKER=1` prefix on every worker launch and resume so the Jev feedback hook skips lane briefs.
 - Resolve per-tool overrides before dispatch; `approval_policy="never"` alone rejects tools that still require approval.
 - Keep the lane's task scope and mutation policy; full runtime access does not authorise application-source edits or production mutation (§9.5).
 - Keep each attempt's log under its own name; shell redirection truncates the previous one.

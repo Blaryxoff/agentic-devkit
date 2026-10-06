@@ -20,6 +20,7 @@ TICKETS = STATE / "tickets"
 QUEUE = ROOT / "docs/feedback-queue"
 SECRET = re.compile(r"(?i)\b(api[_-]?key|password|secret|token)\s*([:=])\s*([^\s,;]+)")
 WTF = re.compile(r"(?i)\bwtf\b")
+PRIVATE_KEY = re.compile(r"-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----")
 AREAS = {
     "skill": "A reusable skill's instructions, workflow, or supporting script caused the complaint",
     "guidance": "Global CLAUDE.md, AGENTS.md, or devkit-managed agent instructions caused it",
@@ -170,7 +171,7 @@ def handle_prompt(payload: dict) -> None:
     session = payload.get("session_id")
     if not isinstance(prompt, str) or not prompt.strip() or not isinstance(session, str) or not session:
         return
-    if "-----BEGIN PRIVATE KEY-----" in prompt:
+    if PRIVATE_KEY.search(prompt):
         return
     cleaned = clean_prompt(prompt)
     wtf_signal = bool(WTF.search(cleaned))

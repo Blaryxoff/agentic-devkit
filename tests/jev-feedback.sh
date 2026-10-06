@@ -72,6 +72,12 @@ with tempfile.TemporaryDirectory() as temporary:
     assert classify_mock.call_count == 1
     assert len(list(feedback.QUEUE.glob("*.md"))) == 1
 
+    for header in ("", "RSA ", "EC ", "DSA ", "OPENSSH ", "ENCRYPTED "):
+        with patch.object(feedback, "classify") as classify_mock:
+            feedback.handle_prompt({"session_id": session, "prompt": f"why is this rejected?\n-----BEGIN {header}PRIVATE KEY-----\nMIIE"})
+        assert classify_mock.call_count == 0, header
+    assert len(list(feedback.QUEUE.glob("*.md"))) == 1
+
     with patch.dict(os.environ, {"DEVKIT_FEEDBACK_WORKER": "1"}):
         feedback.handle_prompt({"session_id": session, "prompt": "Why did you ignore my instruction?"})
     assert len(list(feedback.QUEUE.glob("*.md"))) == 1

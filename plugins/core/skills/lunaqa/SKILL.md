@@ -83,7 +83,7 @@ executor is a leaf: it must not invoke `lunaqa` or `browser` as an orchestrator,
 lane. The lead alone owns further dispatch.
 
 ```bash
-codex exec -C "$project_root" --skip-git-repo-check --sandbox danger-full-access \
+DEVKIT_FEEDBACK_WORKER=1 codex exec -C "$project_root" --skip-git-repo-check --sandbox danger-full-access \
   -m "$luna_model" "${luna_cli_args[@]}" -c 'approval_policy="never"' \
   -c 'mcp_servers.chrome-devtools.default_tools_approval_mode="approve"' \
   -o "$lane_result" "$(cat "$lane_brief")" < /dev/null > "$lane_log" 2>&1
