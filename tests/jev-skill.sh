@@ -52,7 +52,7 @@ class Handler(BaseHTTPRequestHandler):
         assert self.headers["Authorization"] == "Bearer test-key"
         items = payload["state"].get("items") or payload["state"]["blocks"]
         answers = {name: {"type": "noul", "noul": 0.9 if "needle" in items[name] else 0.1}
-                   for name in payload["questions"]}
+                   for name in payload["questions"] if "dropped" not in items[name]}
         body = json.dumps({"model": payload["model"], "answers": answers,
                            "usage": {"input_tokens": 100}}).encode()
         self.send_response(200)
@@ -79,6 +79,11 @@ grep -q 'kept 1/3 lines' "$TMP/stderr" || fail "filter summary missing: $(cat "$
 out=$(printf 'alpha\nbeta\n' | "$JEV" filter --task "find the needle" 2>"$TMP/stderr")
 [ -z "$out" ] || fail "filter kept lines below the threshold: $out"
 grep -q 'best score 0.10' "$TMP/stderr" || fail "empty result does not report the best score"
+
+if printf 'alpha\ndropped answer\n' | "$JEV" filter --task "t" >/dev/null 2>"$TMP/stderr"; then
+  fail "filter accepted a response missing an answer"
+fi
+grep -q 'jev: response has no noul answer for i1' "$TMP/stderr" || fail "missing answer not reported: $(cat "$TMP/stderr")"
 
 seq 1 400 | sed 's/^/line /' | "$JEV" filter --task "t" --chunk-chars 2000 >/dev/null 2>"$TMP/stderr"
 grep -q 'kept 0/400 lines' "$TMP/stderr" || fail "chunked filter lost lines: $(cat "$TMP/stderr")"

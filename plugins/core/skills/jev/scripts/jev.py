@@ -143,6 +143,17 @@ def run(payload: dict[str, Any]) -> tuple[dict[str, Any], int, float]:
     return result.get("answers", {}), tokens, seconds
 
 
+def noul_scores(answers: dict[str, Any], questions: dict[str, Any]) -> dict[int, float]:
+    scores: dict[int, float] = {}
+    for name in questions:
+        answer = answers.get(name)
+        value = answer.get("noul") if isinstance(answer, dict) else None
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise JevError(f"response has no noul answer for {name}")
+        scores[int(name[1:])] = float(value)
+    return scores
+
+
 def cmd_ask(args: argparse.Namespace) -> int:
     raw = sys.stdin.read() if args.request == "-" else Path(args.request).read_text()
     answers, tokens, seconds = run(json.loads(raw))
@@ -181,7 +192,7 @@ def cmd_filter(args: argparse.Namespace) -> int:
         answers, used, took = run({"state": state, "questions": questions})
         tokens += used
         seconds += took
-        scores.update({int(name[1:]): answer["noul"] for name, answer in answers.items()})
+        scores.update(noul_scores(answers, questions))
     ranked = sorted(scores, key=lambda n: -scores[n])
     kept = [n for n in ranked if scores[n] >= args.threshold][: args.top]
     for n in kept:
@@ -227,7 +238,7 @@ def cmd_locate(args: argparse.Namespace) -> int:
         answers, used, took = run({"state": state, "questions": questions})
         tokens += used
         seconds += took
-        scores.update({int(name[1:]): answer["noul"] for name, answer in answers.items()})
+        scores.update(noul_scores(answers, questions))
 
     for k, (first, last) in enumerate(spans):
         cost = min(args.block_chars, sum(len(line) + 1 for line in lines[first:last])) + 80
