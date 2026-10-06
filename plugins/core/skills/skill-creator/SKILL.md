@@ -59,6 +59,9 @@ claudeSubagent: true
 claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 ```
 
+A tool list without write tools makes the Cursor subagent `readonly: true`, which also blocks state-changing shell
+commands. Add `cursorReadonly: false` when the workflow runs lint, tests or builds through Bash.
+
 Descriptions are routing metadata. They must say **when to use** the skill, not just what it is called.
 Cursor also requires `name:` to match the installed skill folder; its adapter links each skill under that name.
 

@@ -6,6 +6,7 @@ description: >-
   thread. Does not write the fix for what it finds.
 claudeSubagent: true
 claudeSubagentTools: Read, Glob, Grep, Bash
+cursorReadonly: false
 ---
 
 # Verification Loop Runner

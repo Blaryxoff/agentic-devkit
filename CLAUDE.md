@@ -96,7 +96,8 @@ also be registered as skills" rule applies to stack skills only.
 
 The Cursor adapter registers the same core and stack workflows as skills and native `~/.cursor/agents/` or
 `.cursor/agents/` subagents. Read-only source tool lists become Cursor `readonly: true`; Claude-only `tools:` metadata
-is omitted.
+is omitted. A skill whose shell commands write state (`devkit-verify`) sets `cursorReadonly: false`, because Cursor's
+read-only mode also blocks state-changing shell commands.
 
 The two entry points are not duplicates of one capability:
 

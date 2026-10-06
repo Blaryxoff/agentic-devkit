@@ -72,6 +72,8 @@ ln -s "$ROOT/plugins/css/skills/css-a11y" "$codex_home/skills/devkit-css--css-a1
 ln -s "$ROOT/plugins/core/skills/coder" "$codex_home/skills/devkit-core--retired"
 ln -s "$ROOT/plugins/laravel/skills/architect" "$cursor_home/skills/devkit-laravel--architect"
 ln -s "$ROOT/plugins/core/skills/coder" "$codex_home/skills/user-skill"
+ln -s "$ROOT/plugins/core/skills/coder" "$cursor_home/skills/devkit-renamed"
+ln -s "$ROOT/plugins/core/skills/removed-skill" "$cursor_home/skills/removed"
 printf '%s\n' 'personal global guidance' > "$claude_home/CLAUDE.md"
 printf '%s\n' 'personal codex guidance' > "$codex_home/AGENTS.md"
 legacy_skill_eval="sh $ROOT/plugins/core/hooks/skill-eval.sh"
@@ -108,6 +110,8 @@ done
 assert_contains "$cursor_home/agents/devkit-plan-reviewer.md" 'readonly: true'
 assert_not_contains "$cursor_home/agents/devkit-plan-reviewer.md" 'tools: Read, Glob, Grep, Bash, WebFetch'
 assert_absent "$cursor_home/skills/devkit-laravel--architect"
+assert_absent "$cursor_home/skills/devkit-renamed"
+assert_absent "$cursor_home/skills/removed"
 assert_absent "$codex_home/hooks.json"
 assert_contains "$codex_home/config.toml" 'command = "agterm-status pre-tool-use"'
 assert_contains "$codex_home/config.toml" 'command = "plannotator"'

@@ -33,6 +33,9 @@ printf -- '---\nname: devkit-fixture-real\ndescription: fixture\n---\n\nbody\n' 
   > "$CLONE/plugins/fixture/custom-skills/real/SKILL.md"
 printf -- '---\nname: devkit-fixture-audit\ndescription: audit fixture\nclaudeSubagent: true\nclaudeSubagentTools: Read, Grep, Bash\n---\n\naudit body\n' \
   > "$CLONE/plugins/fixture/custom-skills/audit/SKILL.md"
+mkdir -p "$CLONE/plugins/fixture/custom-skills/runner"
+printf -- '---\nname: devkit-fixture-runner\ndescription: runner fixture\nclaudeSubagent: true\nclaudeSubagentTools: Read, Grep, Bash\ncursorReadonly: false\n---\n\nrunner body\n' \
+  > "$CLONE/plugins/fixture/custom-skills/runner/SKILL.md"
 jq -n '{name:"devkit-fixture", version:"1.0.0", description:"fixture plugin",
         layer:"stack", defaultEnabled:false, dependencies:[],
         paths:{skills:"./custom-skills"}}' > "$CLONE/plugins/fixture/plugin.json"
@@ -92,6 +95,11 @@ agent_file="$PROJECT/.cursor/agents/devkit-fixture-audit.md"
 [ -f "$agent_file" ] || fail "Cursor stack subagent was not generated"
 grep -Fq 'readonly: true' "$agent_file" || fail "read-only Cursor subagent lost its write restriction"
 grep -Fq 'audit body' "$agent_file" || fail "Cursor subagent lost its skill workflow"
+runner_file="$PROJECT/.cursor/agents/devkit-fixture-runner.md"
+[ -f "$runner_file" ] || fail "Cursor subagent with cursorReadonly: false was not generated"
+if grep -Eq '^(readonly|cursorReadonly):' "$runner_file"; then
+  fail "cursorReadonly: false did not lift the Cursor write restriction"
+fi
 if grep -Fq 'tools: Read, Grep, Bash' "$agent_file"; then
   fail "Claude-only tools frontmatter leaked into Cursor subagent"
 fi

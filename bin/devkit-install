@@ -179,12 +179,19 @@ fi
 # Stack skills are linked per project by adapters/cursor/generate so unrelated
 # projects do not carry their catalog metadata.
 cursor_migrated_skill_count=0
-for entry in "$CURSOR_SKILLS_DEST"/devkit-*; do
+for entry in "$CURSOR_SKILLS_DEST"/*; do
   [ -L "$entry" ] || continue
   entry_target="$(readlink "$entry")"
   case "$(basename "$entry"):$entry_target" in
     devkit-core--*:*) rm -f "$entry" ;;
-    *:"$core_skills_src"/*) ;;
+    *:"$core_skills_src"/*)
+      entry_skill_name=""
+      [ -f "$entry_target/SKILL.md" ] && entry_skill_name=$(devkit_frontmatter "$entry_target/SKILL.md" | LC_ALL=C sed -n 's/^name:[[:space:]]*//p' | head -1)
+      case "$(basename "$entry"):$entry_skill_name" in
+        *:"") rm -f "$entry" ;;
+        devkit-*:*) [ "$entry_skill_name" = "$(basename "$entry")" ] || rm -f "$entry" ;;
+      esac
+      ;;
     devkit-*--*:*) rm -f "$entry"; cursor_migrated_skill_count=$((cursor_migrated_skill_count + 1)) ;;
   esac
 done

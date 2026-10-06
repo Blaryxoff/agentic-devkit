@@ -84,6 +84,7 @@ emit_subagent() {
     }
     in_fm && /^claudeSubagent:[[:space:]]*true[[:space:]]*$/ { subagent=1; next }
     in_fm && /^name:/ { v=$0; sub(/^name:[[:space:]]*/,"",v); meta["name"]=v; next }
+    in_fm && /^cursorReadonly:[[:space:]]*false[[:space:]]*$/ { cursor_writable=1; next }
     in_fm && /^claudeSubagentTools:/ { v=$0; sub(/^claudeSubagentTools:[[:space:]]*/,"",v); meta["tools"]=v; next }
     in_fm && /^description:/ {
       v=$0; sub(/^description:[[:space:]]*/,"",v)
@@ -110,7 +111,7 @@ emit_subagent() {
       if (desc ~ /^["'"'"']/) printf "description: %s\n", desc >> out
       else if (desc != "") printf "description: >-\n  %s\n", desc >> out
       if (harness == "cursor") {
-        if (tools != "" && tools !~ /(Write|Edit|MultiEdit|Delete|Notebook)/)
+        if (tools != "" && !cursor_writable && tools !~ /(Write|Edit|MultiEdit|Delete|Notebook)/)
           printf "readonly: true\n" >> out
       } else if (tools != "") printf "tools: %s\n", tools >> out
       printf "---\n" >> out
