@@ -54,6 +54,12 @@ generate > "$out" 2>&1 || fail "claude adapter exited non-zero: $(tail -3 "$out"
 
 [ -e "$PROJECT/.claude-plugin" ] && fail "legacy .claude-plugin/ was not removed"
 
+# --- hook timeout units -------------------------------------------------------
+
+jq -e '.hooks.PostToolUse | any(.[].hooks[]; .command == "pnpm run --if-present lint --quiet" and .timeout == 30)' \
+  "$PROJECT/.claude/settings.json" >/dev/null \
+  || fail "a plugin hook timeout in milliseconds was not converted to Claude Code seconds"
+
 # --- .mcp.json upsert ---------------------------------------------------------
 
 [ "$(jq -r '.mcpServers["my-server"].command' "$PROJECT/.mcp.json")" = "mine" ] \

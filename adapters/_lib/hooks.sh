@@ -7,8 +7,9 @@
 # Exports:
 #   merge_plugin_hooks  — merge all resolved plugins' hooks into a single JSON object
 #   merge_hooks_preserving_existing — merge new hooks into an existing hooks-by-event object
+#   translate_hooks_to_claude — convert manifest timeouts to the seconds Claude Code reads
 #
-# Plugin hooks format (Claude Code canonical):
+# Plugin hooks format (Claude Code shape; `timeout` is in milliseconds and each adapter converts it):
 #   {
 #     "hooks": {
 #       "EventName": [
@@ -88,6 +89,14 @@ merge_hooks_preserving_existing() {
         ) + $entry.value
       )
     )
+  '
+}
+
+translate_hooks_to_claude() {
+  printf '%s\n' "$1" | jq '
+    map_values(map(.hooks = [(.hooks // [])[] |
+      if (.timeout | type) == "number" then .timeout = ((.timeout / 1000) | ceil) else . end
+    ]))
   '
 }
 

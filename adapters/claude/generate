@@ -113,7 +113,7 @@ rmdir "$project_skills_dir" 2>/dev/null || true
 settings_dir="$PROJECT_ROOT/.claude"
 settings_file="$settings_dir/settings.json"
 
-merged_hooks=$(merge_plugin_hooks "$plugin_index" "$resolved_names")
+merged_hooks=$(translate_hooks_to_claude "$(merge_plugin_hooks "$plugin_index" "$resolved_names")")
 has_hooks=$(echo "$merged_hooks" | jq 'length > 0')
 
 if [ -f "$settings_file" ]; then
