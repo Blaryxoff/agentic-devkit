@@ -982,8 +982,8 @@ done
 ```
 
 On failure inside the loop, **the drained node stays drained**. Alert
-fires. Recovery is explicit (rollback or fix-forward + redeploy). There
-provide an env-var override (`PROD_AUTO_RESTORE_ON_FAILURE=true`) for true
+fires. Recovery is explicit (rollback or fix-forward + redeploy).
+Provide an env-var override (`PROD_AUTO_RESTORE_ON_FAILURE=true`) for true
 emergencies and keep automatic restore disabled by default.
 
 ### 14.2 `/healthz/ready` is the NLB target
