@@ -161,10 +161,12 @@ declare_globs() {
     devkit-core)      echo '**/*' ;;
     devkit-frontend)  echo '**/*.vue,**/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.css,**/*.scss' ;;
     devkit-laravel)   echo '**/*.php,app/**,routes/**,database/**,config/**' ;;
+    devkit-nestjs)    echo 'apps/api/**,apps/backend/**,src/**,test/**,**/*.controller.ts,**/*.module.ts,**/*.service.ts,**/*.guard.ts,**/*.pipe.ts' ;;
+    devkit-nextjs)    echo 'apps/web/**,app/**,pages/**,src/app/**,src/pages/**,**/*.tsx,**/*.jsx,**/next.config.*' ;;
     devkit-nuxt)      echo '**/*.vue,**/*.ts,pages/**,composables/**,components/**' ;;
     devkit-vue)       echo '**/*.vue,**/*.ts,components/**,composables/**' ;;
     devkit-inertia)   echo '**/*.vue,**/*.ts,**/*.php,resources/**' ;;
-    devkit-tailwind)  echo '**/*.vue,**/*.css,**/*.scss,**/*.html' ;;
+    devkit-tailwind)  echo '**/*.vue,**/*.tsx,**/*.jsx,**/*.css,**/*.scss,**/*.html' ;;
     devkit-css)       echo '**/*.css,**/*.scss,**/*.vue,**/*.html' ;;
     *)              echo '**/*' ;;
   esac

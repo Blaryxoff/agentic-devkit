@@ -43,7 +43,7 @@ jq -n '{name:"devkit-fixture", version:"1.0.0", description:"fixture plugin",
 # A directory with no SKILL.md inside a conventional plugin must not be linked either.
 mkdir -p "$CLONE/plugins/css/skills/not-a-skill"
 
-printf '%s\n' '{"version":1,"enabled":["devkit-css","devkit-fixture"]}' > "$PROJECT/.devkit/toolkit.json"
+printf '%s\n' '{"version":1,"enabled":["devkit-css","devkit-fixture","devkit-nestjs","devkit-nextjs","devkit-tailwind"]}' > "$PROJECT/.devkit/toolkit.json"
 
 run_adapter() {
   DEVKIT_PROJECT_ROOT="$PROJECT" HOME="$HOME_DIR" bash "$CLONE/adapters/$1/generate"
@@ -117,6 +117,20 @@ case "$globs" in
   '**/*' | '["**/*"]') fail "devkit-css still falls through to the catch-all glob" ;;
 esac
 printf '%s\n' "$globs" | grep -q '\*\*/\*\.css' || fail "devkit-css globs do not include css: $globs"
+for plugin in nestjs nextjs tailwind; do
+  rule="$PROJECT/.cursor/rules/devkit-$plugin.mdc"
+  [ -f "$rule" ] || fail "no rule file for devkit-$plugin"
+  globs=$(sed -n 's/^globs:[[:space:]]*//p' "$rule" | head -1)
+  case "$globs" in
+    '**/*' | '["**/*"]') fail "devkit-$plugin still falls through to the catch-all glob" ;;
+  esac
+done
+grep -Fq '"apps/api/**"' "$PROJECT/.cursor/rules/devkit-nestjs.mdc" \
+  || fail "NestJS rule does not cover the API workspace"
+grep -Fq '"apps/web/**"' "$PROJECT/.cursor/rules/devkit-nextjs.mdc" \
+  || fail "Next.js rule does not cover the web workspace"
+grep -Fq '"**/*.tsx"' "$PROJECT/.cursor/rules/devkit-tailwind.mdc" \
+  || fail "Tailwind rule does not cover TSX components"
 
 # --- the Codex adapter shares both skill-linking defects ------------------------
 

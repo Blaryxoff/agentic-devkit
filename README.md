@@ -85,6 +85,8 @@ Supported adapters: `claude`, `cursor`, `codex`.
 | `devkit-core`     | core      | Cross-stack shared standards: workflow, git, spec/test-case process, review conventions | *(always enabled)*  |
 | `devkit-frontend` | stack     | Tool-agnostic frontend architecture and generic CSS standards                           | core                |
 | `devkit-laravel`  | framework | Laravel conventions: architecture, PHP, security, Inertia integration                   | core                |
+| `devkit-nestjs`  | framework | NestJS architecture, security, data, jobs, testing, and review workflows               | core                |
+| `devkit-nextjs`  | framework | Next.js App Router and React server/client boundaries                                  | core, frontend      |
 | `devkit-nuxt`     | framework | Nuxt conventions: SSR, data-fetching, TypeScript, BEM/SCSS workflows                    | core, frontend, vue |
 | `devkit-vue`      | framework | Vue component, composable, and state organization conventions                           | core, frontend      |
 | `devkit-inertia`  | framework | Inertia.js transport, page props contracts, and form/navigation behavior                | core                |
@@ -92,6 +94,17 @@ Supported adapters: `claude`, `cursor`, `codex`.
 | `devkit-css`      | styling   | Modern CSS intelligence layer from css.dev                                              | core                |
 
 ## Example Stacks
+
+### NestJS + Next.js + Tailwind
+
+```json
+{
+  "version": 1,
+  "enabled": ["devkit-nestjs", "devkit-nextjs", "devkit-tailwind"]
+}
+```
+
+Resolves: `core, frontend, nestjs, nextjs, tailwind`.
 
 ### Laravel + Vue + Tailwind
 
@@ -189,6 +202,8 @@ plugins/              Convention-based plugin discovery (plugins/*/plugin.json)
   core/               skills/, conduct/, commands/ (authored Claude slash commands), hooks/, output-styles/
   frontend/
   laravel/
+  nestjs/
+  nextjs/
   nuxt/
   vue/
   inertia/

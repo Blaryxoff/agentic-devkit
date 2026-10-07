@@ -1,0 +1,12 @@
+{
+  "name": "devkit-nestjs",
+  "version": "0.1.0",
+  "description": "NestJS modules, providers, HTTP boundaries, and application service conventions",
+  "layer": "framework",
+  "defaultEnabled": false,
+  "dependencies": ["devkit-core"],
+  "paths": {
+    "skills": "./skills",
+    "conduct": "./conduct"
+  }
+}

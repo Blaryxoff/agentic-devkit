@@ -227,6 +227,8 @@ init_a="$TMP_DIR/init-preset"
 mkdir -p "$init_a"
 resolve --preset=laravel-only --project="$init_a" >/dev/null || fail "--preset failed"
 [ -f "$init_a/.devkit/toolkit.json" ] || fail "--preset wrote no config"
+[ -f "$init_a/.devkit/$(jq -r '."$schema"' "$init_a/.devkit/toolkit.json")" ] \
+  || fail "--preset wrote a schema reference that does not resolve from .devkit"
 [ "$(jq -r '.enabled | index("devkit-laravel")' "$init_a/.devkit/toolkit.json")" != "null" ] \
   || fail "--preset did not carry the preset's plugins"
 resolve --validate --project="$init_a" >/dev/null || fail "--preset produced a config that fails --validate"

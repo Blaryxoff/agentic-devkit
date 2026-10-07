@@ -1,8 +1,8 @@
 ---
 name: devkit
 description: >-
-  dispatch to the project's stack-specific devkit skills and conduct (Laravel, Vue, Nuxt, Inertia, Tailwind,
-  CSS, frontend architecture). Use when a request needs framework/stack conventions or stack-specific
+  dispatch to the project's stack-specific devkit skills and conduct (Laravel, NestJS, Next.js, Vue, Nuxt,
+  Inertia, Tailwind, CSS, frontend architecture). Use when a request needs framework/stack conventions or stack-specific
   architecture, design, or implementation and the stack skills are not globally registered. Skip pure
   git/plan/review/ verify work — those core skills auto-match on their own.
 ---

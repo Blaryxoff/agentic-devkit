@@ -5,7 +5,7 @@ This section contains Tailwind-specific styling conventions covering tokenizatio
 ## Scope
 
 - Utility class usage conventions
-- Design token discipline via Tailwind config
+- Design token discipline via the project's Tailwind theme source
 - Accessibility patterns using Tailwind variants
 - Animation and rendering performance
 - Responsive strategy
@@ -19,22 +19,22 @@ This section contains Tailwind-specific styling conventions covering tokenizatio
 
 ## Design token discipline
 
-Tailwind config is the single source of truth for design tokens. Treat `theme.extend` as the project's token registry.
+Use the project's existing theme source as the token registry: CSS `@theme` variables in Tailwind v4, or `theme.extend` in a JavaScript config for older setups.
 
 ### Three-tier token mapping
 
 | Tier | Purpose | Tailwind location |
 |------|---------|-------------------|
-| Primitive | Raw palette values (`blue-500`, `gray-100`) | `theme.colors` |
-| Semantic | Purpose-driven aliases (`primary`, `surface`, `error`) | `theme.extend.colors` referencing primitives |
-| Component | Defaults consumed by UI components | Component props / `@apply` blocks mapping to semantic tokens |
+| Primitive | Raw palette values (`blue-500`, `gray-100`) | Theme source |
+| Semantic | Purpose-driven aliases (`primary`, `surface`, `error`) | `@theme` variables or `theme.extend` |
+| Component | Defaults consumed by UI components | Component props or classes mapping to semantic tokens |
 
 ### Rules
 
-- Promote repeated arbitrary values (`[#e2e7ef]`, `[14px]`) into shared config tokens.
+- Promote repeated arbitrary values (`[#e2e7ef]`, `[14px]`) into shared theme tokens.
 - Derive shades with opacity modifiers (`bg-primary/80`) instead of defining new one-off color entries.
 - Dark mode via `dark:` variant; when the project uses Tailwind’s CSS-first / `@theme` setup, prefer CSS `color-scheme` integration.
-- Keep `tailwind.config` theme flat and scannable with shallow custom scales.
+- Keep the project's theme source flat and scannable with shallow custom scales.
 - Prefer semantic token names (`text-muted`, `bg-surface`) over raw palette names (`text-gray-400`) in component markup.
 
 ## Accessibility
@@ -114,23 +114,23 @@ Tailwind config is the single source of truth for design tokens. Treat `theme.ex
 |-----|------|
 | `float-left` / `float-right` for layout | `grid`, `flex` + `gap-*` |
 | Negative margins (`-mt-4`) for spacing | `gap-*` on parent |
-| `w-[960px]` fixed width | `max-w-screen-xl w-full` or extend config |
+| `w-[960px]` fixed width | A responsive max-width and `w-full`, using the project's theme source if needed |
 
 ### Values
 
 | Bad | Good |
 |-----|------|
 | `text-[14px]` arbitrary font size | `text-sm` from type scale |
-| `[#e2e7ef]` repeated arbitrary color | Add to config as semantic token |
-| `max-w-[960px]` arbitrary width | `max-w-6xl` or extend config breakpoints |
-| `p-[13px]` arbitrary spacing | Nearest scale value or extend config |
+| `[#e2e7ef]` repeated arbitrary color | Add a semantic theme token |
+| `max-w-[960px]` arbitrary width | `max-w-6xl` or extend the theme source |
+| `p-[13px]` arbitrary spacing | Nearest scale value or extend the theme source |
 
 ### Specificity
 
 | Bad | Good |
 |-----|------|
 | `!important` modifier | Fix specificity at source — restructure layers |
-| Inline `style` attributes for overrides | Tailwind class or config token |
+| Inline `style` attributes for overrides | Tailwind class or theme token |
 | `#id` selectors in custom CSS | Class-based selectors |
 
 ### AI slop tells
@@ -155,12 +155,12 @@ Flag and rewrite these patterns — they signal generic AI-generated output:
 ### Intrinsic sizing
 
 - Prefer Tailwind's built-in intrinsic classes (`max-w-prose`, `min-w-fit`, `w-full`, `w-auto`) over fixed arbitrary widths.
-- Use `min()`-based patterns via config for card grids: `grid-cols-[repeat(auto-fill,minmax(min(280px,100%),1fr))]` or extract to a config utility.
+- Use `min()`-based patterns for card grids: `grid-cols-[repeat(auto-fill,minmax(min(280px,100%),1fr))]` or extract a reusable utility.
 
 ### Fluid type and spacing
 
-- Define a fluid type scale in config using `clamp()` values rather than scattering per-element arbitrary clamp utilities.
-- Same for spacing: define fluid tokens centrally, reference by name.
+- Define a fluid type scale in the theme source using `clamp()` values rather than scattering per-element arbitrary clamp utilities.
+- Do the same for spacing: define fluid tokens centrally, reference by name.
 
 ### Rules
 

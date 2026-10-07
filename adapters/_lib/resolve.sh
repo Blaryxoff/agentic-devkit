@@ -249,7 +249,7 @@ resolve_plugin_dirs() {
 }
 
 toolkit_relpath() {
-  python3 -c 'import os.path,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$TOOLKIT_ROOT" "$PROJECT_ROOT"
+  python3 -c 'import os.path,sys; print(os.path.relpath(os.path.realpath(sys.argv[1]), os.path.realpath(sys.argv[2])))' "$TOOLKIT_ROOT" "$PROJECT_ROOT"
 }
 
 # Ensure a path entry is present in PROJECT_ROOT/.gitignore.

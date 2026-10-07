@@ -25,14 +25,15 @@ Return review findings and the pass outcome; leave fixes to a separate implement
 1. Read `.devkit/toolkit.json` to determine enabled plugins. If absent, detect stack from `composer.json` and `package.json`.
 2. Decide which variants apply:
    - **Laravel variant** (`devkit-reviewer-business-logic-laravel`, at `plugins/laravel/skills/reviewer-business-logic/SKILL.md`) — when `devkit-laravel` is enabled.
-   - **Frontend variant** (`devkit-reviewer-business-logic-frontend`, at `plugins/frontend/skills/reviewer-business-logic/SKILL.md`) — when any frontend stack plugin is enabled (`devkit-frontend`, `devkit-nuxt`, `devkit-vue`, `devkit-inertia`).
-   - **Generic implementation fallback** — for changed behavior not covered by either active stack variant; use the role
+   - **NestJS variant** (`devkit-reviewer-business-logic-nestjs`, at `plugins/nestjs/skills/reviewer-business-logic/SKILL.md`) — when `devkit-nestjs` is enabled.
+   - **Frontend variant** (`devkit-reviewer-business-logic-frontend`, at `plugins/frontend/skills/reviewer-business-logic/SKILL.md`) — when any frontend stack plugin is enabled (`devkit-frontend`, `devkit-nextjs`, `devkit-nuxt`, `devkit-vue`, `devkit-inertia`).
+   - **Generic implementation fallback** — for changed behavior not covered by any active stack variant; use the role
      defined in `plugins/core/conduct/review-specialist-fanout.md`.
 3. When this is a standalone business-logic review, resolve the visual-reference specialist gate, then dispatch the
    applicable variants, fallback, and opened specialist per
    `review-specialist-fanout.md`. When paired with deep review for a full review, register them with the shared top-level
    fan-out and do not dispatch them independently.
-4. Present each report unchanged under `## Laravel — Business-logic review`, `## Frontend — Business-logic review`, or
+4. Present each report unchanged under `## Laravel — Business-logic review`, `## NestJS — Business-logic review`, `## Frontend — Business-logic review`, or
    `## Design-reference fidelity`. Omit unopened gates. Keep reports **sequential and clearly separated**, with findings
    in their matching sections and no cross-wire pairing section.
 5. **Cross-check in Codex.** Once the variant reports are assembled, run the cross-agent cross-check per `plugins/core/conduct/cross-agent-review.md`, using Codex skill slug `devkit-core--reviewer-business-logic`. Merge kept findings into the matching stack section, tagged `(via Codex)`. **This step is mandatory when the gate holds** — the gate requires Claude Code or Cursor Agent, so when this skill runs inside Codex it is closed and you review natively without a cross-check. Otherwise run `command -v codex`, do not treat it as optional or proportional, and state the gate outcome explicitly. Skip only when a gating condition genuinely fails, naming which.

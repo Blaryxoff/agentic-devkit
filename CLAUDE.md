@@ -20,6 +20,8 @@ plugins/                 All plugins (convention: plugins/*/plugin.json)
   core/                  Always-on shared standards (git, plan, test-case, review) + commands/ (Claude slash) + output-styles/
   frontend/              Generic frontend architecture + CSS
   laravel/               Laravel framework skills + conduct
+  nestjs/                NestJS backend skills + conduct
+  nextjs/                Next.js App Router and React conduct
   nuxt/                  Nuxt framework skills + conduct
   vue/                   Vue component/state conventions
   inertia/               Inertia.js transport rules

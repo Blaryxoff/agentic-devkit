@@ -26,10 +26,11 @@ Return review findings and the pass outcome; leave code unchanged.
 1. Read `.devkit/toolkit.json` to determine enabled plugins. If absent, detect stack from `composer.json` and `package.json`.
 2. Decide which variants apply:
    - **Laravel variant** (`devkit-reviewer-fast-laravel`, at `plugins/laravel/skills/reviewer-fast/SKILL.md`) — when `devkit-laravel` is enabled.
-   - **Frontend variant** (`devkit-reviewer-fast-frontend`, at `plugins/frontend/skills/reviewer-fast/SKILL.md`) — when any frontend stack plugin is enabled (`devkit-frontend`, `devkit-nuxt`, `devkit-vue`, `devkit-inertia`).
+   - **NestJS variant** (`devkit-reviewer-fast-nestjs`, at `plugins/nestjs/skills/reviewer-fast/SKILL.md`) — when `devkit-nestjs` is enabled.
+   - **Frontend variant** (`devkit-reviewer-fast-frontend`, at `plugins/frontend/skills/reviewer-fast/SKILL.md`) — when any frontend stack plugin is enabled (`devkit-frontend`, `devkit-nextjs`, `devkit-nuxt`, `devkit-vue`, `devkit-inertia`).
    - **Visual-reference specialist** — when the gate in `plugins/core/conduct/review-specialist-fanout.md` opens.
 3. Dispatch the applicable variants and specialist. If your harness exposes subagents (e.g. Claude Code's Agent tool with `subagent_type`), invoke each as a subagent so its context stays out of this orchestrator's context. Dispatch them **in parallel** in a single tool-call batch and only synthesize after all reports return. If subagents are not available, invoke each sequentially.
-4. Present each report unchanged under `## Laravel — Fast review`, `## Frontend — Fast review`, or
+4. Present each report unchanged under `## Laravel — Fast review`, `## NestJS — Fast review`, `## Frontend — Fast review`, or
    `## Design-reference fidelity`. Reports are **sequential and clearly separated** — do not merge findings or produce a
    cross-wire pairing section.
 5. **Cross-check in Codex.** Once the variant reports are assembled, run the cross-agent cross-check per `plugins/core/conduct/cross-agent-review.md`, using Codex skill slug `devkit-core--reviewer-fast`. Merge kept findings into the matching stack section, tagged `(via Codex)`. **This step is mandatory when the gate holds** — the gate requires Claude Code or Cursor Agent, so when this skill runs inside Codex it is closed and you review natively without a cross-check. Otherwise run `command -v codex`, do not treat it as optional or proportional, and state the gate outcome explicitly. Skip only when a gating condition genuinely fails, naming which.

@@ -116,7 +116,7 @@ _init_toolkit() {
 
   local relpath
   relpath=$(toolkit_relpath)
-  local schema_ref="$relpath/schemas/toolkit.schema.json"
+  local schema_ref="../$relpath/schemas/toolkit.schema.json"
 
   local examples_dir="$TOOLKIT_ROOT/examples"
   local -a preset_files=()
