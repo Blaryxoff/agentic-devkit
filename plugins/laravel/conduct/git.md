@@ -119,6 +119,8 @@ my-branch                            # no type prefix
 
 ## Pull requests
 
+Merge directly by default. Use a PR only when the user asks for one or the repository requires one. The rules in this section apply when using a PR.
+
 ### PR title
 
 Follows the same Conventional Commits format as commit messages:
@@ -172,7 +174,7 @@ Additional checks before committing:
 
 ### Merge strategy
 
-Squash merge is the default strategy. This keeps `master` history clean — one commit per PR.
+Squash merge is the default strategy. This keeps `master` history clean — one commit per feature branch.
 
 ### Rebase before merging
 

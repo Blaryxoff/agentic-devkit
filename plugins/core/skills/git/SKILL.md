@@ -34,4 +34,6 @@ When the user asks to commit, follow `plugins/core/conduct/git-commit-workflow.m
 
 When the user asks to commit or prepare a PR/MR, proactively validate these rules (and any active plugin conduct rules) and warn about violations before proceeding.
 
+Merge branches directly by default across projects. Open a PR/MR only when the user asks for one or the repository requires one; apply PR/MR requirements only in those cases.
+
 If commit scope, message wording, or branch target is ambiguous, resolve it via `plugins/core/conduct/clarification-protocol.md` instead of guessing.
