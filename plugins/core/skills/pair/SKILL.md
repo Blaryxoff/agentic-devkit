@@ -20,6 +20,8 @@ limits: `references/setup.md`.
 context attacks it first. What should come out is a located disagreement or a checked fact, not
 agreement. Two agents converging politely produce nothing.
 
+When the peer authored the changes under review, complete your own review before sending findings to the peer for rebuttal. Do not ask the author to review its own changes in parallel.
+
 ## Gate
 
 1. The user named the other agent in this turn, or a prompt arrived opening `Chat from Claude:` /
