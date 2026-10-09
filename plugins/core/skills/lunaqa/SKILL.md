@@ -64,14 +64,19 @@ waves and rechecks; resolve again on the next pass. Lookup failure blocks dispat
    switching or code fixes beyond the user's task. When fixes are already authorised, use `devkit-coder` and rerun
    affected cells on Luna; reserve full final acceptance for the stable implementation.
 4. Use isolated chrome-devtools executors, with the §10.7 serial ownership handshake before concurrent work. Use native
-   Codex subagents only when they can select the exact model/effort; browser executors must also own distinct profiles
-   and dedicated MCP trees. In Claude, Cursor or another harness, or when native workers cannot meet those requirements,
-   launch one Codex CLI process per delegated stage on the resolved Luna. Dispatch browser executors as leaves: have each
-   execute its assigned lane and return evidence to the invoking agent, which owns further dispatch.
-5. Preserve explicit browser-surface choices. Browser-client/Bridge lanes remain top-level and sequential under the
-   canonical skill; this Luna-delegation preset cannot execute them. Report those lanes blocked, leaving them visible
-   in the ledger. If Codex, the exact Luna model or chrome-devtools is unavailable, report the missing prerequisite;
-   retain the requested routing and mark the pass incomplete until the prerequisite is available.
+   Codex subagents only when they can select the exact model/effort; concurrent chrome-devtools executors must also own
+   distinct profiles and dedicated MCP trees. In Claude, Cursor or another harness, or when native workers cannot meet
+   those requirements, launch one Codex CLI process per delegated chrome-devtools stage on the resolved Luna. Dispatch
+   browser executors as leaves: have each execute its assigned lane and return evidence to the invoking agent, which
+   owns further dispatch.
+5. Preserve explicit browser-surface choices. Use chrome-devtools for Luna QA by default. Only after canonical §2.1
+   establishes a concrete need for browser-client/Bridge, probe whether a native Luna worker has that selected binding.
+   If it does, assign one lane at a time with one owner,
+   a pass-created tab and the canonical §2.9 identity pin; never share the browser with another running worker.
+   A Codex CLI worker's chrome-devtools access does not prove Bridge access. If the selected binding is unavailable
+   to the resolved Luna, report its cells blocked rather than silently substituting chrome-devtools. If Codex, the
+   exact Luna model or chrome-devtools is unavailable for its assigned lane, report the missing prerequisite; retain
+   the requested routing and mark the pass incomplete until the prerequisite is available.
 
 ## Codex CLI browser lanes
 

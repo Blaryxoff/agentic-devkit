@@ -60,13 +60,15 @@ dimensions have evidenced outcomes, finish QA with the confirmed findings; findi
 1. **Explicit choice.** Explicit user choice is a hard constraint and wins first: chrome-devtools, external
    Chrome/extension (Codex Bridge), or the in-app Browser. If that exact surface is unavailable, report it unavailable;
    never substitute another surface without user approval.
-2. **Codex browser-client.** Without an explicit choice, use the browser-client when an existing authenticated session,
-   extension-dependent/browser-native UI, or visible user-browser state is required and the selected concrete binding
-   supports every action and evidence type in the dependent lane. Follow its installed Browser/Chrome skill to select and
-   record the concrete binding; Codex Bridge means only the external Chrome/extension binding.
-3. **chrome-devtools.** Otherwise default to chrome-devtools MCP, especially for isolated or mutation-heavy flows,
-   append-only test data, multi-role work, viewport emulation, DOM/layout evaluation, console/network evidence, and
-   parallel lanes.
+2. **chrome-devtools.** Default to chrome-devtools MCP for QA, including authenticated stage flows that can log in with
+   test accounts. Use it for isolated or mutation-heavy flows, append-only test data, multi-role work, viewport
+   emulation, DOM/layout evaluation, console/network evidence, and parallel lanes. An already signed-in user tab alone
+   does not justify switching surfaces.
+3. **Codex browser-client.** Use the browser-client only when the lane requires an existing user-browser session that
+   cannot safely be recreated in isolated Chrome, extension/browser-native behaviour, or visible user-browser state;
+   or when chrome-devtools is unavailable and the selected binding supports every required action and evidence type.
+   Record the specific unmet need before switching. Follow its installed Browser/Chrome skill to select and record the
+   concrete binding; Codex Bridge means only the external Chrome/extension binding.
 4. **Mixed pass.** Assign one surface to each tab and dependent stateful lane; use different surfaces only across
    independent lanes. Probe required capabilities before execution. A missing capability does not waive evidence.
    Move the entire dependent lane to a capable surface when the user's explicit choice permits it, or report it blocked.
@@ -100,9 +102,10 @@ unavailable, stop via `plugins/core/conduct/clarification-protocol.md` with the 
 Verify the environment before testing and count only evidenced cells as passed.
 
 2.6. Keep the surface selected under §2.1 as the lane's sole interactive browser authority throughout each stateful
-flow, including tab recovery. Use Playwright Test only for committed deterministic regression checks and local
-expected/actual/diff artifacts. Perform exploratory QA and user actions on the selected surface; if its connection is
-unavailable, recover that connection or report the lane blocked under §11.5.
+flow, including tab recovery. Run an existing project or user-supplied Playwright suite as a separate pinned regression
+lane when its target origin, credentials, fixture mutations and assertions are understood and permitted. Perform
+exploratory QA and user actions on the selected surface; a passing suite does not replace its uncovered browser cells.
+If the selected surface's connection is unavailable, recover that connection or report the lane blocked under §11.5.
 
 2.7. chrome-devtools MCP: per-project `.mcp.json` / `.cursor/mcp.json` (from `devkit-install --claude|--cursor`) overrides the global entry. Current adapters pass `--headless --isolated`, keeping Chrome in the background and giving every server a throwaway profile. `devkit-install` normalises an existing Codex `~/.codex/config.toml` chrome-devtools entry to the same defaults. Configs generated before that change may omit `--headless` or pin a fixed `--userDataDir=~/.cache/chrome-devtools-mcp/profiles/<project>`; regenerate them rather than working around a visible window or profile collision (§11).
 
@@ -251,6 +254,14 @@ spot pass keeps the two-viewport rule in §1.6. Record any unavailable viewport 
 4.8. **Design-reference map** — when a reference is supplied, map every frame/screen to its route, UI state, intended
 viewport, and responsive variants. Mark any reference with no resolvable live target before execution.
 
+4.9. **State and implementation map** — identify the source of truth for each user-visible fact, the states before and
+after important actions, reload/re-entry behaviour, and distinct rendered implementations of the same flow (for
+example tenant themes or legacy/new variants). Exercise one representative per distinct implementation; record
+unavailable variants instead of inferring coverage from a shared feature name.
+
+4.10. **Existing regression suites** — inspect supplied or repository browser suites for their real environment,
+fixtures, assertions and side effects. Map their cases to ledger cells before running them; add browser cells for gaps.
+
 ## 5. Scenario matrix
 
 Exhaustive coverage requires all dimensions below; neither skill may skip a dimension to save time. A targeted pass executes the cells selected under §1.4–§1.5 and reports the remaining dimensions as untested.
@@ -265,6 +276,8 @@ Exhaustive coverage requires all dimensions below; neither skill may skip a dime
 layout. Run existing Playwright Test visual assertions when the project provides them. Capture pixels only under §6.6.
 
 5.5. **Entity lifecycle** — create/read/update/delete + state transitions (`fill_form`, `click`, `handle_dialog`).
+For each stateful core flow, verify the intermediate state, then reload or leave and return; resume from the same
+persisted state without silently replaying, losing or changing an accepted action.
 
 5.6. **Field/validation** — invalid and boundary values; assert inline errors and blocked submits.
 
@@ -273,7 +286,8 @@ combinations); every toggle, filter, sort, pagination, search, modal, tab, drag/
 and verify the destination; for an external service outside scope, verify the target and navigation without claiming
 its workflow passed.
 
-5.8. **Cross-role access propagation** — grant then revoke access per controllable section/feature/instance; re-login as affected user; verify UI visibility and route-level block in both directions.
+5.8. **Cross-role access propagation** — grant then revoke access per controllable section/feature/instance; re-login as affected user; verify UI visibility and route-level block in both directions. Reuse a previously issued direct link
+after revocation and test a fresh browser context when links or sessions carry access state.
 
 5.9. **Permission matrix** — each role × each resource: access granted/denied correctly.
 
@@ -290,6 +304,28 @@ run the project's existing offline pixel diff, or a Playwright expected snapshot
 can be normalised to the same viewport, DPR, crop, and dimensions. Otherwise use measured geometry/inventory plus the
 smallest matching reference/live crops. Report every unexplained delta and every untested reference state/viewport;
 leave CSS fixes to an authorised coding workflow.
+
+5.13. **Stateful checkpoints** — For each core transition, record the fixture and expected state before acting; derive
+the expected HTTP status and payload from the active route/API contract rather than assuming `200`; perform the real
+user action; check the immediate UI, relevant request status/body, and authoritative persisted state through a
+read-only endpoint or supported project data path. Check the same fact after reload or a fresh session and in each
+affected role's view (for example a student count against an admin count). A UI toast or control label alone cannot
+prove server success. Verify that a changed selection actually persists; a server rejection with a success-looking UI
+is a failure. Probe protected response data when the feature promises to hide information, not only the visible page.
+If a signal is unavailable, mark that checkpoint unproven rather than passing it from another signal.
+
+5.14. **Timing and multiple sessions** — For operations involving polling, heartbeats, media, jobs, recording,
+autosave, or delayed feedback, assert both pending and terminal states using an observed condition and a recorded
+deadline; do not infer completion from a fixed sleep. Repeat the smallest vulnerable transition when a race or flaky
+external service is plausible, and preserve every attempt's outcome. Where the flow permits it, open a second tab or
+account, close a tab without the app's exit action, and reconcile UI, network and server presence after reconnection or
+cleanup. Do not count a retry as proof that an earlier unexpected 4xx/5xx or disconnect did not happen.
+
+5.15. **Narrow and dense variants** — Test a critical mobile action at 360 CSS px and, when supported or a 360 px
+failure suggests a narrower boundary, at 320–375 px; 390 px alone does not prove narrow-mobile usability. Assert the
+emulated `clientWidth`, the actionable control's full bounds and hit target, and the scroll path needed to reach it.
+Measure scrollable children and clipped content even when the document has no horizontal overflow. Use populated and
+long-label fixtures for lists/tables, then compare duplicate facts and user-facing terms across related pages and roles.
 
 ## 6. Browser session
 
