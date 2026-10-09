@@ -68,6 +68,8 @@ agent when sending to Codex and adds `Chat from Claude:` or `Chat from Cursor:` 
 - **A message to Claude is capped at 9000 characters, label included.** Claude Code truncates a longer
   composer into `[...Truncated text #N]`, where the script can neither verify nor clean up what it typed.
   Put detail — a review, a diff summary, a status — in a file and send its path with a one-line ask.
+- **Keep each message body under 600 characters.** A long message can scroll the narrow Codex composer
+  during verification. Put the detail in a file and send its path with a short, specific ask.
 - **Write one paragraph.** The script collapses whitespace, because a newline submits the fragment
   before it.
 - **Never write the `Chat from …:` label yourself.** The script adds it, and that label is what makes

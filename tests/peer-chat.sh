@@ -80,6 +80,22 @@ typing = pane(
     "                                ⚠ 1 warning · f2 to view",
 )
 assert chat.codex_live_prompt_text(typing).endswith("chat.py with one line [peer-check:0]")
+scrolled = pane(
+    "› hidden material   ↑",
+    "  prior confirmed context before this final segment",
+    "  unique-end [peer-check:0]",
+    " ",
+    status,
+    hints,
+)
+visible = chat.codex_live_prompt_text(scrolled)
+assert visible == "prior confirmed context before this final segment\nunique-end [peer-check:0]"
+assert chat.composer_has_expected_tail(
+    visible,
+    "old hidden material prior confirmed context before this final segment unique-end [peer-check:0]",
+    "unique-end [peer-check:0]",
+    True,
+)
 assert chat.codex_live_prompt_text(pane("› 1. Yes, proceed", "  2. No", " ", "  Press enter to confirm", "  or esc to cancel")) is None
 assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", "  / for commands", "  ! for shell", hints)) is None
 

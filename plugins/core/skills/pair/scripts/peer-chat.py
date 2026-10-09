@@ -624,8 +624,9 @@ def codex_live_prompt_text(text: str) -> str | None:
     # for row_matches to judge, and trailing particles stay for the same reason. A row
     # whose only character is covered looks like an animation row and is dropped, so
     # such a send fails closed until the particle moves; nothing tells the two apart.
+    first_row = [] if re.search(r" {2,}↑$", block[0]) else [match.group(1)]
     content = [
-        match.group(1),
+        *first_row,
         *(CODEX_INDENT_RE.sub("", line).strip() for line in block[1:]),
     ]
     return "\n".join(part for part in content if part)
