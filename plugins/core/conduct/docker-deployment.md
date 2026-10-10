@@ -881,7 +881,7 @@ it. With it, anyone with SSH can.
 
 ---
 
-## 13. Quick checklist — single-node baseline
+## 13. Quick checklist — Laravel + Nuxt single-node baseline
 
 Use this when bootstrapping or auditing the **standard** Laravel + Nuxt
 single-node project. This is the exhaustive mandatory baseline: when a new
@@ -961,6 +961,21 @@ Each item maps to a source section above.
 - [ ] Backups to off-host S3, gated to `APP_ENV=production`, retention +
       cap, restore drill scheduled, and backup failure alerts wired. (§10)
 - [ ] `docker/INFRASTRUCTURE.md` exists and covers all §11 sections.
+
+---
+
+## 13A. Quick checklist — Node.js API + web single-node baseline
+
+Use this for a Node.js API with a web process and optional worker, such as NestJS + Next.js. Start from the project's actual runtime and deployment contract. Sections 1–12 contain Laravel examples; apply only their stack-neutral controls, never PHP/FPM, Composer, Artisan, Laravel queue, Nuxt, or Makefile requirements to a Node.js service.
+
+- [ ] The image uses a pinned supported Node version, installs from the committed lockfile, builds all required workspace packages, and runs the built API/web/worker entrypoints as an unprivileged user. Keep secrets and source-only files out of the runtime where the project's build permits it. (§1, §9)
+- [ ] Images have immutable release identifiers. The deploy procedure records the current and previous release and can restore the previous image without relying on a mutable tag. (§1.5–§1.6, §7)
+- [ ] The database is not publicly exposed. Published API/web ports bind only to the intended interface; the TLS proxy and trusted-origin settings match the application. Secrets come from protected environment or secret files, not images or git. (§4, §5, §8)
+- [ ] If migrations exist, they run once with the intended migration role before new API/worker processes serve traffic. Test schema compatibility with both old and new images before claiming rollback works. (§6, §7; active database conduct)
+- [ ] API, web, database, and worker each have a meaningful health or readiness check with a startup grace period. A worker check proves its processing loop can make progress, not merely that PostgreSQL accepts a connection. Startup dependencies wait for the required health or one-shot completion condition. (§6)
+- [ ] Stateful services use restart policies, bounded logs, and measured memory limits. There are no source-code bind mounts or Docker socket mounts in production; persistent mounts are limited to the data each service needs. (§2, §3, §9)
+- [ ] Deployment is serialized and fails on an unhealthy release. Rollback, backup, restore, and operator commands are documented and exercised in the project's actual environment. (§7, §10, §11)
+- [ ] Project-specific database isolation, queue delivery, session/cookie, and external integration requirements are checked against the active stack conduct and project instructions, rather than inferred from the Laravel checklist.
 
 ---
 

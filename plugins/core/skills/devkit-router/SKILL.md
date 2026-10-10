@@ -12,12 +12,13 @@ description: >-
 Single entrypoint for **stack-specific** devkit capabilities. Stack skills are not globally registered (they would
 wrongly offer themselves in unrelated projects), so this skill matches the request against them and loads the right one.
 
-**When the router is needed (vs. native registration):** the Claude and Cursor adapters register single-root stack skills
+**When the router is needed (vs. native registration):** the Claude, Cursor, and Codex adapters register single-root stack skills
 natively — isolation skills become subagents (`.claude/agents/` or `.cursor/agents/`) and skills become per-project symlinks
-(`.claude/skills/devkit-<plugin>--<skill>` or `.cursor/skills/<frontmatter-name>`). Prefer those native entries. Fall back to this router only when native
+(`.claude/skills/devkit-<plugin>--<skill>`, `.cursor/skills/<frontmatter-name>`, or `.codex/skills/devkit-<plugin>--<skill>`). Prefer those native entries. Fall back to this router only when native
 registration cannot cover the request: (a) a **multi-repo** project whose plugin set is the union of several
-`.devkit/toolkit.json` roots, or (b) a skill **skipped due to a frontmatter-name collision** (two enabled plugins
-declaring the same `name:` — only the first is linked or emitted, the rest route through here).
+`.devkit/toolkit.json` roots, (b) a skill **skipped due to a frontmatter-name collision** (two enabled plugins
+declaring the same `name:` — only the first is linked or emitted, the rest route through here), or (c) a project
+without generated project-scoped skill links for the active stack.
 
 `DEVKIT_HOME` = the global clone, default `~/.claude/agentic-devkit`. All `plugins/...` paths below resolve under it. If
 `$DEVKIT_HOME/bin/devkit-resolve` is missing, resolve this skill's own symlink under the active harness's global skills

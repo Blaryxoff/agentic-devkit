@@ -8,10 +8,11 @@ After completing an implementation task (or a coherent subset), run these checks
 
 1. **Lint** — no new linter warnings or errors introduced by the change.
 2. **Type check** — static type analysis passes (when applicable to the stack).
-3. **Test** — existing tests pass; new tests pass if written.
-4. **Security** — no obvious security regressions (exposed secrets, raw SQL, missing auth).
+3. **Build** — production compilation and workspace exports pass when the project defines a build command or active stack conduct requires one.
+4. **Test** — run the focused tests required by project policy and the changed behavior; new tests pass if written.
+5. **Security** — no obvious security regressions (exposed secrets, raw SQL, missing auth).
 
-Use the already-running dev server to surface compile and bundle errors automatically; fix any errors it reports.
+A running dev server can surface compile and bundle errors during implementation, but it does not replace a required production build.
 
 ## Reproduce before fixing
 

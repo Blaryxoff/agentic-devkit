@@ -20,7 +20,9 @@ Run `git diff --name-only <base>` (or scope to the named files/branch) and class
 | "review the branch/code", "поревьюй ветку/изменения целиком" | code | `devkit-reviewer-deep` **and** `devkit-reviewer-business-logic` (both) |
 | "quick/fast review", "быстро глянь" | code | `devkit-reviewer-fast` |
 | "review the logging", "проверь логи", "log audit" | code | `devkit-reviewer-logging` |
-| "test", "протестируй", "QA", "smoke-test", "прокликай" | running app / UI | `devkit-browser` |
+| "test", "протестируй", "QA", "smoke-test", "прокликай" | running UI or browser flow | `devkit-browser` |
+| "test", "QA", "smoke-test" | API, worker, or backend integration behavior | `devkit-verify` with the project's focused integration/E2E command or runtime probe |
+| "write/add tests" | NestJS backend test code | `devkit-coder` before editing, then `devkit-tester-nestjs` when `devkit-nestjs` is enabled |
 | `revmux` named as the review **engine** — "revmux this branch", "run revmux", "review it with revmux" | any target | upstream `revmux` skill — [revmux-review.md](./revmux-review.md) |
 
 ## Rules
@@ -42,7 +44,7 @@ Run `git diff --name-only <base>` (or scope to the named files/branch) and class
   review engine and naming a review target are different asks; when the sentence reads both ways, ask.
 - **Mixed diff (`docs/plans/**` AND code):** run the code reviewers **and** `devkit-plan-reviewer`.
 - **Fast vs deep:** only use `devkit-reviewer-fast` when the user signals speed ("quick", "fast", "just regressions"). Default code review is deep + business-logic.
-- **Test ≠ review:** route "test/QA/протестируй" to `devkit-browser` (drives the running app), not to a static reviewer.
+- **Test ≠ review:** classify the target before routing. Use `devkit-browser` for browser behavior and `devkit-verify` for API/worker execution; neither is a static reviewer. Test implementation starts with `devkit-coder` and uses the active stack tester when available.
 - **Reviewers report; repair workflows edit:** return findings after one complete pass for a plain review. Start a separate
   repair workflow with the coder skill only after an explicit fix/repair request.
 - **Repair/recheck loops are finite:** apply `review-findings-format.md`'s completion gate. Blocking/Critical findings fail; Significant findings require impact-based adjudication; Minor findings pass. Explicit repair loops stop after at most 5 complete review passes.

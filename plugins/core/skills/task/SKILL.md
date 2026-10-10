@@ -2,7 +2,7 @@
 name: devkit-task
 description: >-
   carry a whole task specification from text to a pushed branch with a peer CLI — freeze the spec, analyse,
-  implement, run an adversarial review/fix loop, delegate browser QA, then wrapup. Manual trigger ONLY: the
+  implement, run an adversarial review/fix loop, delegate runtime QA for the changed surface, then wrapup. Manual trigger ONLY: the
   operator hands over a specification AND names the pipeline ("прогони по процессу", "ship this spec", "work it
   with codex end to end", "/task", "full pipeline"). A bare feature request is NOT a trigger — that is
   devkit-core--coder. Does NOT deploy or open PRs.
@@ -42,9 +42,9 @@ table decides:
 |---|---|---|---|
 | 1 | Freeze the spec | you | `TASK.md` written, both agents will read the same bytes |
 | 2 | Analysis | **both, in parallel** | your design is written before the peer's lands in your context |
-| 3 | Implementation + tests | you | project lint/typecheck/test green |
+| 3 | Implementation + tests | you | project lint/typecheck/build/test green where configured or required |
 | 4 | Code review | **revmux** when authorized, else Codex review/fix loop | no critical/major finding remains; every real defect fixed or explicitly deferred |
-| 5 | Browser QA | **peer**, from your written brief | PASS/FAIL on every brief item |
+| 5 | Runtime QA | **peer**, from your written brief | PASS/FAIL on every brief item |
 | 6 | wrapup | you | branch pushed, SHAs reported |
 
 When a stage's owner is the peer, you do not also do it yourself. Doing the peer's stage natively is a protocol
@@ -60,7 +60,7 @@ Everything shared with the peer lives in the session scratchpad, because the pee
 | `process-log.md` | design decisions with rationale, peer deltas adopted, deliberate non-fixes |
 | `backend.diff`, `frontend.diff` | `git diff <base>` per repo, exported before each peer stage |
 | `new-*/` | files the diff does not contain (untracked new files) |
-| `QA-BRIEF.md` | the browser QA hand-off — template in `references/qa-brief-template.md` |
+| `QA-BRIEF.md` | the peer's runtime QA hand-off; use `references/qa-brief-template.md` for browser flows |
 
 `process-log.md` is not a courtesy. It is where a deferred defect gets its reason, and where the operator later reads
 what you chose not to build.
@@ -117,7 +117,7 @@ Read `references/codex-review.md` and follow it exactly. Codex reviews read-only
 run the plan's validation, refresh the diff, and send it back for another independent pass. Stop after a clean pass or
 after a minor-only pass whose confirmed findings you fixed. Continue while Codex reports any `CRITICAL` or `MAJOR`
 finding, up to 10 iterations. If iteration 10 still has a blocking finding, stop the pipeline and report it; do not
-advance to browser QA or wrapup.
+advance to runtime QA or wrapup.
 
 Triage every finding against the code before acting:
 
@@ -132,14 +132,11 @@ Triage every finding against the code before acting:
 A narrow invariant that reproduces the reported scenario beats a broad one that also constrains untouched paths. Before
 widening a guard, ask which unrelated flow it now fails.
 
-## Stage 5 — Browser QA, delegated
+## Stage 5 — Runtime QA, delegated
 
-Write `QA-BRIEF.md` from `references/qa-brief-template.md`, then hand it to the peer. The brief carries what your
-context has and the peer's does not: stand URL and why not `localhost`, the auth recipe, what you already verified so
-it is not re-run, exact expected strings, and the PASS/FAIL response format.
+Classify the finished change before writing `QA-BRIEF.md`. For a browser flow, use `references/qa-brief-template.md` and include the stand URL, auth recipe, already-verified behavior, exact expected strings, and PASS/FAIL format. For an API-only or worker-only change, brief the peer on the test environment, safe fixture setup, exact integration/E2E command or endpoint/worker probe, expected response and persisted effect, failure and authorization cases, cleanup, and PASS/FAIL evidence. For a mixed change, include both surfaces without repeating checks already completed in stage 3.
 
-The peer's browser MCP runs isolated — it has its own profile and no session of yours, so it logs in itself. Say so in
-the brief.
+The peer uses its own browser profile or API session and cannot inherit yours. Give it the authorized login/test-data path. Do not require browser QA for a backend-only change.
 
 ## Stage 6 — Wrapup
 

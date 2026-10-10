@@ -13,8 +13,7 @@ description: >-
 Use [`plugins/core/conduct/docker-deployment.md`](../../conduct/docker-deployment.md) as the source of truth. Load it
 progressively by section; do not read the 1,000-line document wholesale.
 
-Default to a single node with prod + test. Use the multi-node appendix only when the project actually has multiple app
-nodes behind a load balancer.
+Default to one app node per environment; prod and test may use the same host or separate hosts. Use the multi-node appendix only when one environment actually has multiple app nodes behind a load balancer.
 
 ## Mode
 
@@ -33,13 +32,13 @@ If the mode is unclear, ask once.
    - deploy scripts, `Makefile`, deployment workflows;
    - `docker/INFRASTRUCTURE.md` or `INFRASTRUCTURE.md`;
    - backup scheduling/configuration and environment examples.
-2. Determine the topology: single app node, prod + test on one node, or real multi-node fleet.
-3. Determine the stack and container set: Laravel only, Laravel + Nuxt SSR, or another shape.
-4. Read conduct §13 for the compact baseline, then open only source sections needed by observed files or risks:
+2. Determine the topology of each environment: prod + test on one host, separate single-node hosts, or a real multi-node fleet.
+3. Determine the stack and container set: Laravel, Node.js API + web, or another shape.
+4. Read conduct §13 for Laravel or §13A for a Node.js API + web stack. For another shape, derive a checklist from its project contract and the applicable stack-neutral sections below. Open only source sections needed by observed files or risks:
 
 | Concern | Conduct section |
 |---|---|
-| Image stages, extensions, users, assets, tags, build memory | §1 |
+| Image build, runtime users, tags, build memory | §1 (apply only matching stack guidance) |
 | Volumes and asset shadowing | §2 |
 | Shared logs and rotation | §3 |
 | Ports, external networks, IMDS | §4 |
@@ -62,7 +61,7 @@ When the serving host also runs `docker build` or `buildx build`, verify memory 
 
 ## Setup
 
-Work one conduct section at a time so only the current rules stay in context. Generate in dependency order:
+Work one conduct section at a time so only the current rules stay in context. Generate in dependency order. For Laravel, use the sequence below. For a Node.js API + web stack, use §13A: define the runtime image and build, database migration job when needed, API/worker/web services, healthchecks and secrets, deploy/rollback flow, and operator documentation. Do not scaffold PHP/FPM, Artisan, or Laravel queue commands for Node.js.
 
 1. PHP/FPM configuration and nginx configuration.
 2. Entrypoint role dispatcher.
@@ -80,18 +79,19 @@ next.
 
 ## Audit
 
-1. Walk conduct §13 and mark each applicable item `✅ ok`, `⚠️ partial`, or `❌ missing`.
+1. Walk conduct §13 for Laravel or §13A for Node.js API + web and mark each applicable item `✅ ok`, `⚠️ partial`, or `❌ missing`. For another stack, use its project contract and applicable stack-neutral conduct. Never score a stack-specific item against a different runtime.
 2. Before reporting a partial/missing item, read its source section from the table above.
 3. Every finding includes file:line evidence, failure mode, conduct section, and severity (`critical`, `important`,
    `nit`).
-4. Pay special attention to:
+4. For Laravel, pay special attention to:
    - deploy logic duplicated outside the deploy script (§7.1);
    - missing canonical operator commands or forbidden `docker compose restart` (§7.5, §7.8);
    - `public/build` or parent-directory volume shadowing (§§1.4, 2);
    - compose substitution running without sourced credentials (§5.2);
    - fragmented logs (§3);
    - build-on-serving hosts without swap (§1.8).
-5. Group findings by severity, then conduct section. Use
+5. For Node.js, also check build/release artifact compatibility, migration ordering and role, worker readiness, and rollback across schema versions (§13A).
+6. Group findings by severity, then conduct section. Use
    `plugins/core/conduct/review-findings-format.md` and end with at most three highest-leverage actions.
 
 ## Harden
