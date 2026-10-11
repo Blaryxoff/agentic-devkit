@@ -72,6 +72,13 @@ with tempfile.TemporaryDirectory() as temporary:
     assert classify_mock.call_count == 1
     assert len(list(feedback.QUEUE.glob("*.md"))) == 1
 
+    other_prompt = "Review this one-off product bug"
+    with patch.object(feedback, "classify", return_value=(0.82, 0.8, "other", 0.9)):
+        feedback.handle_prompt({"session_id": session, "prompt": other_prompt})
+    other_id = hashlib.sha256(f"{session}\0{other_prompt}".encode()).hexdigest()[:20]
+    assert not (feedback.session_tickets(session) / f"{other_id}.json").exists()
+    assert len(list(feedback.QUEUE.glob("*.md"))) == 1
+
     for header in ("", "RSA ", "EC ", "DSA ", "OPENSSH ", "ENCRYPTED "):
         with patch.object(feedback, "classify") as classify_mock:
             feedback.handle_prompt({"session_id": session, "prompt": f"why is this rejected?\n-----BEGIN {header}PRIVATE KEY-----\nMIIE"})
@@ -82,7 +89,7 @@ with tempfile.TemporaryDirectory() as temporary:
         feedback.handle_prompt({"session_id": session, "prompt": "Why did you ignore my instruction?"})
     assert len(list(feedback.QUEUE.glob("*.md"))) == 1
 
-    with patch.object(feedback, "classify", return_value=(0.75, 0.55, "other", 0.3)):
+    with patch.object(feedback, "classify", return_value=(0.75, 0.55, "hook", 0.7)):
         feedback.handle_prompt({"session_id": session, "prompt": "Why didn't you check the source?"})
     assert len(list(feedback.QUEUE.glob("*.md"))) == 2
     assert not hasattr(feedback, "handle_work")
@@ -165,6 +172,29 @@ with tempfile.TemporaryDirectory() as temporary:
         feedback.handle_prompt({"session_id": session, "prompt": one_off_wtf})
     one_off_id = hashlib.sha256(f"{session}\0{one_off_wtf}".encode()).hexdigest()[:20]
     assert not (feedback.session_tickets(session) / f"{one_off_id}.json").exists()
+
+    with patch.object(feedback, "classify") as classify_mock:
+        for ignored in (
+            "Chat from Claude: The reviewer found a missing product test.",
+            "Chat from Codex: The pair script lost a long message.",
+            "<task-notification><summary>Worker finished</summary></task-notification>",
+            "<send_user_message_question_reply>invalid JSON</send_user_message_question_reply>",
+        ):
+            feedback.handle_prompt({"session_id": session, "prompt": ignored})
+    assert classify_mock.call_count == 0
+
+    reply_prompt = (
+        '<send_user_message_question_reply>\n'
+        '[{"answer":"Why did you skip login? api_key=secret-value",'
+        '"question":"Is the test complete?"}]\n'
+        '</send_user_message_question_reply>'
+    )
+    with patch.object(feedback, "classify", return_value=(0.8, 0.7, "guidance", 0.8)) as classify_mock:
+        feedback.handle_prompt({"session_id": session, "prompt": reply_prompt})
+    classify_mock.assert_called_once_with("Why did you skip login? api_key=[REDACTED]")
+    reply_id = hashlib.sha256(f"{session}\0{reply_prompt}".encode()).hexdigest()[:20]
+    reply_ticket = json.loads((feedback.session_tickets(session) / f"{reply_id}.json").read_text())
+    assert reply_ticket["prompt"] == "Why did you skip login? api_key=[REDACTED]"
 
     class FakeJev:
         def __init__(self):

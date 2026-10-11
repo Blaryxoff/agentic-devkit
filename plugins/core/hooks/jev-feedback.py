@@ -96,6 +96,25 @@ def clean_prompt(prompt: str) -> str:
     return SECRET.sub(lambda match: f"{match[1]}{match[2]}[REDACTED]", prompt[:5000])
 
 
+def feedback_prompt(prompt: str) -> str:
+    if re.match(r"Chat from (?:Claude|Codex|Cursor): ", prompt):
+        return ""
+    if prompt.startswith("<task-notification>"):
+        return ""
+    if prompt.startswith("<send_user_message_question_reply>"):
+        try:
+            body = prompt.removeprefix("<send_user_message_question_reply>").removesuffix(
+                "</send_user_message_question_reply>"
+            )
+            replies = json.loads(body)
+            return "\n".join(
+                reply["answer"] for reply in replies if isinstance(reply.get("answer"), str)
+            )
+        except (AttributeError, KeyError, TypeError, ValueError):
+            return ""
+    return prompt
+
+
 def session_tickets(session: str) -> Path:
     return TICKETS / hashlib.sha256(session.encode()).hexdigest()[:20]
 
@@ -173,7 +192,10 @@ def handle_prompt(payload: dict) -> None:
         return
     if PRIVATE_KEY.search(prompt):
         return
-    cleaned = clean_prompt(prompt)
+    extracted = feedback_prompt(prompt)
+    if not extracted.strip():
+        return
+    cleaned = clean_prompt(extracted)
     wtf_signal = bool(WTF.search(cleaned))
     ticket_id = hashlib.sha256(f"{session}\0{prompt}".encode()).hexdigest()[:20]
     path = session_tickets(session) / f"{ticket_id}.json"
@@ -196,7 +218,7 @@ def handle_prompt(payload: dict) -> None:
         checked.write("done")
         checked.truncate()
         checked.flush()
-        if (feedback < 0.5 and not wtf_signal) or reusable < 0.45 or area not in HINTS:
+        if (feedback < 0.5 and not wtf_signal) or reusable < 0.45 or area not in HINTS or area == "other":
             return
         ticket = {
             "id": ticket_id,
