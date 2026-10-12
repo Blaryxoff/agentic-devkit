@@ -109,7 +109,7 @@ The Hetzner switch changes the inference backend for **all** existing clients of
 
 ## Latest Luna alias
 
-The secondary proxy exposes `luna-latest` for Platforma. CLIProxyAPI aliases point to a specific model, so `/usr/local/sbin/quotio-luna-latest-refresh` checks the secondary catalog daily and advances the alias to the highest versioned `gpt-*-luna` model. The script is stored at `bin/quotio-luna-latest-refresh` in this repository. `quotio-luna-latest-refresh.timer` runs it as root on Hetzner; it leaves the alias alone if the catalog is empty, the alias is missing, or the candidate is older. On 2026-10-12 the alias points to `gpt-6-luna`.
+The secondary proxy exposes `luna-latest` for Platforma. CLIProxyAPI aliases point to a specific model, so `/usr/local/sbin/quotio-luna-latest-refresh` checks the secondary catalog hourly and advances the alias to the highest versioned `gpt-*-luna` model. The script is stored at `bin/quotio-luna-latest-refresh` in this repository. `quotio-luna-latest-refresh.timer` runs it as root on Hetzner; it leaves the alias alone if the catalog is empty, the alias is missing, or the candidate is older. On 2026-10-12 the alias points to `gpt-6-luna`.
 
 To check immediately, run `systemctl start quotio-luna-latest-refresh.service`, then `journalctl -u quotio-luna-latest-refresh.service -n 10 --no-pager` and inspect the `luna-latest` entry in the secondary panel. This timer only changes the second proxy and does not change the Firebat/Ugoos route switch.
 
@@ -129,10 +129,10 @@ ExecStart=/usr/local/sbin/quotio-luna-latest-refresh
 ```ini
 # /etc/systemd/system/quotio-luna-latest-refresh.timer
 [Unit]
-Description=Check secondary Quotio for the latest Luna daily
+Description=Check secondary Quotio for the latest Luna hourly
 
 [Timer]
-OnCalendar=daily
+OnCalendar=hourly
 Persistent=true
 Unit=quotio-luna-latest-refresh.service
 
