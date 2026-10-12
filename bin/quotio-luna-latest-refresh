@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+"""Advance the secondary Quotio Luna alias when a newer upstream Luna appears."""
+import json
+import re
+import urllib.request
+from pathlib import Path
+
+import yaml
+
+BASE = 'http://127.0.0.1:8318'
+CONFIG = Path('/etc/cliproxyapi/secondary.yaml')
+MANAGEMENT_KEY = Path('/etc/cliproxyapi/secondary-management-key')
+LUNA = re.compile(r'^gpt-(\d+(?:\.\d+)*)-luna$')
+
+
+def request(path, key, method='GET', payload=None):
+    body = None if payload is None else json.dumps(payload).encode()
+    req = urllib.request.Request(
+        BASE + path,
+        data=body,
+        method=method,
+        headers={
+            'Authorization': 'Bearer ' + key,
+            'Content-Type': 'application/json',
+        },
+    )
+    with urllib.request.urlopen(req, timeout=15) as response:
+        return json.load(response)
+
+
+config = yaml.safe_load(CONFIG.read_text())
+client_key = config['api-keys'][0]
+management_key = MANAGEMENT_KEY.read_text().strip()
+models = request('/v1/models', client_key)['data']
+candidates = []
+for model in models:
+    name = model.get('id', '')
+    match = LUNA.fullmatch(name)
+    if match:
+        candidates.append((tuple(map(int, match.group(1).split('.'))), name))
+if not candidates:
+    raise SystemExit('No versioned Luna model in secondary Quotio catalog; alias unchanged')
+version, latest = max(candidates)
+
+existing = request('/v0/management/oauth-model-alias', management_key)
+aliases = existing.get('oauth-model-alias', {}).get('codex', [])
+current = next((item for item in aliases if item.get('alias') == 'luna-latest'), None)
+if current is None:
+    raise SystemExit('luna-latest alias missing; refusing to create it')
+old = current.get('name', '')
+old_match = LUNA.fullmatch(old)
+if not old_match:
+    raise SystemExit('Unexpected current Luna target; alias unchanged')
+old_version = tuple(map(int, old_match.group(1).split('.')))
+if version <= old_version:
+    print(f'luna-latest remains {old}; newest available is {latest}')
+    raise SystemExit(0)
+
+new_aliases = [{**item, 'name': latest} if item.get('alias') == 'luna-latest' else item for item in aliases]
+request('/v0/management/oauth-model-alias', management_key, 'PATCH', {
+    'channel': 'codex',
+    'aliases': new_aliases,
+})
+verified = request('/v0/management/oauth-model-alias', management_key)
+updated = verified.get('oauth-model-alias', {}).get('codex', [])
+if not any(item.get('alias') == 'luna-latest' and item.get('name') == latest for item in updated):
+    raise SystemExit('Management API did not retain the updated Luna alias')
+print(f'luna-latest advanced from {old} to {latest}')
