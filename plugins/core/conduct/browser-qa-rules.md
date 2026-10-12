@@ -30,7 +30,7 @@ one-line spot result. A spot pass never claims acceptance and never replaces a t
 1.7. **Resume and rechecks** — preserve the original ledger, evidence references and proven checks. Track functional
 outcomes and visual/runtime audit dimensions separately: a missing hover or layout check leaves that dimension
 incomplete, without erasing an evidenced functional result. The pass remains incomplete until all required dimensions
-are reconciled. Follow-up briefs name exact missing, conflicting or invalidated cell/dimension IDs and only the setup
+are reconciled. A deliberately skipped planned cell remains a coverage gap with its reason, not a PASS. Follow-up briefs name exact missing, conflicting or invalidated cell/dimension IDs and only the setup
 dependencies needed to reach them; collect the missing audit while preserving completed functional results. A changed
 implementation, fixture state, origin or role invalidates only the checks it can affect; record why each check needs
 rerunning. A resume or permission/config recovery alone does not invalidate earlier application evidence. A new full
@@ -83,7 +83,9 @@ Chrome — then verify reachability (`list_pages`) and immediately take the §2.
 complete §2.9 before acting.
 
 2.2. Discover the intended environment and exact base origin from the user's scope, env, README, or project config;
-record both before browser work. For local QA, probe that configured origin first and use its existing env and database.
+record both before browser work. Pin the repository commit and deployed application build/revision when discoverable;
+report either as unknown when it cannot be verified, and do not equate a local commit with a deployed build. For local QA,
+probe that configured origin first and use its existing env and database.
 Do not start an alternate server, switch databases, or override session configuration just for browser QA. If the
 configured origin is not up, start only the minimal required local server(s) using existing project/dev-runtime
 commands, wait for a real HTTP readiness signal, and record exactly what this QA pass started. During cleanup, stop
@@ -262,6 +264,12 @@ unavailable variants instead of inferring coverage from a shared feature name.
 4.10. **Existing regression suites** — inspect supplied or repository browser suites for their real environment,
 fixtures, assertions and side effects. Map their cases to ledger cells before running them; add browser cells for gaps.
 
+4.11. **Expectation provenance** — for each planned cell, record the source of its expected result (the user's request,
+dated requirement or acceptance criterion when available, project/business rule, design reference, or canonical
+UI/layout oracle), plus the role and fixture state it applies to. Source inspection can identify routes and implementation
+variants, but observed implementation alone does not establish a business expectation. If no source establishes the
+expected outcome, mark the cell blocked with the missing contract named; do not invent an assertion or count it as passed.
+
 ## 5. Scenario matrix
 
 Exhaustive coverage requires all dimensions below; neither skill may skip a dimension to save time. A targeted pass executes the cells selected under §1.4–§1.5 and reports the remaining dimensions as untested.
@@ -425,6 +433,13 @@ Give the reviewer the canonical §5–§7 rules plus the applicable UI/layout or
 agent applies the same gates when reconciling the report, rejects unsupported findings,
 deduplicates one root defect and records unresolved cells. Report an in-scope pre-existing defect with that label;
 being outside the changed diff does not waive its user impact during scoped browser QA.
+
+7.5. **Classify failed checks.** Preserve the first failure and its UI, network, or trace evidence. When safe and
+informative, repeat the smallest independent check with the same pinned build, role, fixture, and viewport; keep both
+outcomes. Check session, data, network, and server signals before classifying the cause as product, test/setup, data,
+environment, or unclear contract. Only a confirmed product failure becomes a defect under §7.4. Keep other causes
+visible as failed or blocked coverage with the next prerequisite or evidence gap; a later PASS does not erase the first
+failure. Do not force clicks, add fixed sleeps, or raise timeouts merely to turn a red check green.
 
 ## 8. Browser tools
 
