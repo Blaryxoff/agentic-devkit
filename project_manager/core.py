@@ -1,0 +1,379 @@
+import contextlib
+import fcntl
+import json
+import os
+import re
+import signal
+import socket
+import subprocess
+import tempfile
+import time
+from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlsplit
+from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
+
+
+CONFIG_PATH = Path(os.environ.get("DEVKIT_PROJECTS_CONFIG", Path(__file__).resolve().parent.parent / "projects.json")).expanduser()
+STATE_PATH = Path(os.environ.get("XDG_STATE_HOME", "~/.local/state")).expanduser() / "agentic-devkit/projects"
+IDENTIFIER = re.compile(r"^[a-z][a-z0-9_-]*$")
+PROFILE_IDENTIFIER = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*$")
+ENV_KEY = re.compile(r"^[A-Z][A-Z0-9_]*$")
+SECRET = re.compile(r'''(?i)(["']?\b[a-z0-9_-]*(?:password|token|secret|(?:api|app|private|access)[_-]?key|authorization|cookie|database[_-]?url|redis[_-]?url|dsn)\b["']?\s*[:=]\s*)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s,}]+)''')
+AUTHORIZATION = re.compile(r"(?i)(\bAuthorization\s*[:=]\s*)[^\r\n]+")
+BEARER = re.compile(r"(?i)\bBearer\s+[^\s,}\]]+")
+URL_CREDENTIALS = re.compile(r"(?i)(\b[a-z][a-z0-9+.-]*://)[^\s/@]+:[^\s/@]+@")
+
+
+class ProjectError(Exception):
+    pass
+
+
+class _NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, *_):
+        return None
+
+
+HTTP = build_opener(ProxyHandler({}), _NoRedirect)
+SPAWNED = {}
+
+
+def redact(value):
+    value = AUTHORIZATION.sub(r"\1[redacted]", value)
+    value = BEARER.sub("Bearer [redacted]", value)
+    value = URL_CREDENTIALS.sub(r"\1[redacted]@", value)
+    return SECRET.sub(r"\1[redacted]", value)
+
+
+def load_config(path=CONFIG_PATH):
+    path = Path(path).expanduser()
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError) as error:
+        raise ProjectError(f"Cannot read config {path}: {error}") from error
+    if not isinstance(data, dict) or data.get("version") != 1 or not isinstance(data.get("projects"), list):
+        raise ProjectError("Config requires version 1 and a projects list")
+    ids = set()
+    ports = set()
+    for project in data["projects"]:
+        if not isinstance(project, dict) or not isinstance(project.get("root"), str) or not project["root"]:
+            raise ProjectError("Every project needs a root directory")
+        identifier = project.get("id")
+        if not isinstance(identifier, str) or not IDENTIFIER.fullmatch(identifier) or identifier in ids:
+            raise ProjectError(f"Invalid or repeated project ID: {identifier}")
+        ids.add(identifier)
+        root = Path(project.get("root", "")).expanduser()
+        if not root.is_dir():
+            raise ProjectError(f"Missing project directory for {identifier}: {root}")
+        project["root"] = str(root.resolve())
+        if not isinstance(project.get("services"), list) or not project["services"]:
+            raise ProjectError(f"Project {identifier} needs services")
+        service_ids = set()
+        for service in project["services"]:
+            if not isinstance(service, dict):
+                raise ProjectError(f"Invalid service in {identifier}")
+            sid = service.get("id")
+            if not isinstance(sid, str) or not IDENTIFIER.fullmatch(sid) or sid in service_ids:
+                raise ProjectError(f"Invalid or repeated service ID in {identifier}: {sid}")
+            service_ids.add(sid)
+            if not isinstance(service.get("argv"), list) or not service["argv"] or not all(isinstance(arg, str) for arg in service["argv"]):
+                raise ProjectError(f"Service {identifier}/{sid} needs an argv list")
+            if not isinstance(service.get("cwd", "."), str):
+                raise ProjectError(f"Invalid working directory for {identifier}/{sid}")
+            service["cwd"] = str((root / service.get("cwd", ".")).resolve())
+            if not Path(service["cwd"]).is_dir():
+                raise ProjectError(f"Missing working directory for {identifier}/{sid}")
+            if not isinstance(service.get("ports", []), list):
+                raise ProjectError(f"Invalid ports for {identifier}/{sid}")
+            for port in service.get("ports", []):
+                if not isinstance(port, int) or not 0 < port < 65536 or port in ports:
+                    raise ProjectError(f"Invalid or repeated managed port: {port}")
+                ports.add(port)
+            if not isinstance(service.get("env", {}), dict) or not all(isinstance(key, str) and isinstance(value, str) for key, value in service.get("env", {}).items()):
+                raise ProjectError(f"Invalid environment overrides for {identifier}/{sid}")
+            if not isinstance(service.get("checks", []), list):
+                raise ProjectError(f"Invalid checks for {identifier}/{sid}")
+            for check in service.get("checks", []):
+                _validate_check(check)
+        if not isinstance(project.get("external", []), list):
+            raise ProjectError(f"Invalid external checks for {identifier}")
+        for check in project.get("external", []):
+            _validate_check(check)
+        if not isinstance(project.get("links", {}), dict) or any(not isinstance(label, str) or not isinstance(url, str) or urlsplit(url).scheme not in ("http", "https") for label, url in project.get("links", {}).items()):
+            raise ProjectError(f"Invalid links for {identifier}")
+        if not isinstance(project.get("profiles", {}), dict):
+            raise ProjectError(f"Invalid profiles for {identifier}")
+        for name, profile in project.get("profiles", {}).items():
+            if not isinstance(name, str) or not PROFILE_IDENTIFIER.fullmatch(name):
+                raise ProjectError(f"Invalid profile name: {name}")
+            if not isinstance(profile, dict):
+                raise ProjectError(f"Invalid profile: {identifier}/{name}")
+            if not isinstance(profile.get("set"), dict) or not profile["set"]:
+                raise ProjectError(f"Profile {identifier}/{name} needs settings")
+            for key, value in profile["set"].items():
+                if not ENV_KEY.fullmatch(key) or not isinstance(value, str) or "\n" in value or "\r" in value:
+                    raise ProjectError(f"Invalid setting in {identifier}/{name}: {key}")
+        if project.get("profiles") and not project.get("profile_env_file"):
+            raise ProjectError(f"Project {identifier} needs profile_env_file")
+        if project.get("profile_env_file") is not None and not isinstance(project["profile_env_file"], str):
+            raise ProjectError(f"Invalid profile env file for {identifier}")
+        if not isinstance(project.get("profile_hooks", []), list):
+            raise ProjectError(f"Invalid profile hooks for {identifier}")
+        for argv in project.get("profile_hooks", []):
+            if not isinstance(argv, list) or not argv or not all(isinstance(arg, str) for arg in argv):
+                raise ProjectError(f"Invalid profile hook for {identifier}")
+    return data["projects"]
+
+
+def _validate_check(check):
+    if not isinstance(check, dict):
+        raise ProjectError(f"Invalid health check: {check}")
+    if check.get("type") == "http" and isinstance(check.get("url"), str) and check["url"].startswith(("http://", "https://")):
+        allowed = check.get("allow_statuses", [])
+        if isinstance(allowed, list) and all(isinstance(code, int) and not isinstance(code, bool) and 400 <= code < 600 for code in allowed):
+            return
+    if check.get("type") == "tcp" and isinstance(check.get("host"), str) and isinstance(check.get("port"), int) and 0 < check["port"] < 65536:
+        return
+    raise ProjectError(f"Invalid health check: {check}")
+
+
+def find_project(projects, identifier):
+    for project in projects:
+        if project["id"] == identifier:
+            return project
+    raise ProjectError(f"Unknown project: {identifier}")
+
+
+def _state_file(project, service):
+    return STATE_PATH / f"{project['id']}-{service['id']}.json"
+
+
+@contextlib.contextmanager
+def _locked(project):
+    STATE_PATH.mkdir(parents=True, exist_ok=True)
+    STATE_PATH.chmod(0o700)
+    with (STATE_PATH / f"{project['id']}.lock").open("a+") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        yield
+
+
+def _birth(pid):
+    result = subprocess.run(["ps", "-p", str(pid), "-o", "lstart="], capture_output=True, text=True, check=False)
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def _owned(project, service):
+    try:
+        state = json.loads(_state_file(project, service).read_text())
+        pid = state["pid"]
+        if _birth(pid) == state["birth"] and os.getpgid(pid) == pid:
+            return state
+    except (OSError, ValueError, KeyError, ProcessLookupError):
+        pass
+    return None
+
+
+def _port_busy(port):
+    for host in ("127.0.0.1", "::1"):
+        try:
+            with socket.create_connection((host, port), timeout=0.15):
+                return True
+        except OSError:
+            continue
+    return False
+
+
+def _check(check):
+    if check["type"] == "tcp":
+        try:
+            with socket.create_connection((check["host"], check["port"]), timeout=0.4):
+                return True
+        except OSError:
+            return False
+    try:
+        with HTTP.open(Request(check["url"], headers={"User-Agent": "devkit-projects/1"}), timeout=1.5):
+            return True
+    except HTTPError as error:
+        error.close()
+        return 300 <= error.code < 400 or error.code in check.get("allow_statuses", [])
+    except (OSError, URLError):
+        return False
+
+
+def _profile_file(project):
+    path = (Path(project["root"]) / project["profile_env_file"]).resolve()
+    if not path.is_relative_to(Path(project["root"])):
+        raise ProjectError("Profile env file must be inside the project")
+    return path
+
+
+def _env_values(path):
+    values = {}
+    if path.exists():
+        for line in path.read_text().splitlines():
+            match = re.match(r"^([A-Z][A-Z0-9_]*)=(.*)$", line)
+            if match:
+                values[match.group(1)] = match.group(2).strip().strip('"\'')
+    return values
+
+
+def selected_profile(project):
+    if not project.get("profiles"):
+        return None
+    values = _env_values(_profile_file(project))
+    for name, profile in project["profiles"].items():
+        if all(values.get(key) == value for key, value in profile["set"].items()):
+            return name
+    return None
+
+
+def status(project):
+    services = []
+    for service in project["services"]:
+        owned = _owned(project, service)
+        checks = [{"id": c.get("id", c.get("url", str(c.get("port")))), "ok": _check(c)} for c in service.get("checks", [])]
+        busy = [port for port in service.get("ports", []) if _port_busy(port)]
+        state = "running" if owned and all(c["ok"] for c in checks) else "starting" if owned else "conflict" if busy else "stopped"
+        services.append({"id": service["id"], "state": state, "checks": checks, "busy_ports": busy, "pid": owned["pid"] if owned else None})
+    external = [{"id": c.get("id", c.get("url", str(c.get("port")))), "ok": _check(c)} for c in project.get("external", [])]
+    states = {s["state"] for s in services}
+    overall = "conflict" if "conflict" in states else "stopped" if states == {"stopped"} else "running" if states == {"running"} and all(c["ok"] for c in external) else "degraded"
+    return {"id": project["id"], "name": project.get("name", project["id"]), "root": project["root"], "state": overall, "services": services, "external": external, "links": project.get("links", {}), "profiles": list(project.get("profiles", {})), "profile": selected_profile(project)}
+
+
+def _spawn(project, service):
+    conflicts = [port for port in service.get("ports", []) if _port_busy(port)]
+    if conflicts:
+        raise ProjectError(f"{project['id']}/{service['id']}: ports in use by another process: {conflicts}")
+    log_path = STATE_PATH / f"{project['id']}-{service['id']}.log"
+    env = os.environ.copy()
+    env.update(service.get("env", {}))
+    with log_path.open("ab", buffering=0) as log:
+        log_path.chmod(0o600)
+        process = subprocess.Popen(service["argv"], cwd=service["cwd"], env=env, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+    SPAWNED[process.pid] = process
+    birth = _birth(process.pid)
+    if not birth:
+        raise ProjectError(f"{project['id']}/{service['id']} exited immediately; see logs")
+    _state_file(project, service).write_text(json.dumps({"pid": process.pid, "birth": birth}))
+
+
+def start(project, timeout=60):
+    with _locked(project):
+        for service in project["services"]:
+            if not _owned(project, service):
+                conflicts = [port for port in service.get("ports", []) if _port_busy(port)]
+                if conflicts:
+                    raise ProjectError(f"{project['id']}/{service['id']}: ports in use by another process: {conflicts}")
+        for service in project["services"]:
+            if not _owned(project, service):
+                _spawn(project, service)
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        current = status(project)
+        if current["state"] == "running":
+            return current
+        if current["state"] == "conflict" or any(not _owned(project, s) for s in project["services"]):
+            break
+        time.sleep(0.5)
+    current = status(project)
+    if current["state"] == "running":
+        return current
+    if all(service["state"] == "running" for service in current["services"]):
+        failed = ", ".join(check["id"] for check in current["external"] if not check["ok"])
+        raise ProjectError(f"{project['id']} started, but external checks did not become healthy: {failed}")
+    raise ProjectError(f"{project['id']} did not become healthy ({current['state']}); inspect logs and external checks")
+
+
+def _stop_locked(project):
+    owned = [(service, _owned(project, service)) for service in project["services"]]
+    for _, state in owned:
+        if state:
+            os.killpg(state["pid"], signal.SIGTERM)
+    deadline = time.monotonic() + 8
+    while time.monotonic() < deadline and any(state and _owned(project, service) for service, state in owned):
+        time.sleep(0.2)
+    for service, state in owned:
+        if state and _owned(project, service):
+            os.killpg(state["pid"], signal.SIGKILL)
+        if state and state["pid"] in SPAWNED:
+            SPAWNED.pop(state["pid"]).wait(timeout=1)
+        _state_file(project, service).unlink(missing_ok=True)
+
+
+def stop(project):
+    with _locked(project):
+        _stop_locked(project)
+    return status(project)
+
+
+def _write_env(path, original, settings):
+    text = original.decode()
+    lines = text.splitlines(keepends=True)
+    found = set()
+    for index, line in enumerate(lines):
+        match = re.match(r"^([A-Z][A-Z0-9_]*)=", line)
+        if match and match.group(1) in settings:
+            key = match.group(1)
+            lines[index] = f"{key}={settings[key]}\n"
+            found.add(key)
+    if lines and not lines[-1].endswith("\n"):
+        lines[-1] += "\n"
+    lines.extend(f"{key}={value}\n" for key, value in settings.items() if key not in found)
+    _atomic_write(path, "".join(lines).encode())
+
+
+def _atomic_write(path, data):
+    descriptor, temp = tempfile.mkstemp(prefix=".devkit-projects-", dir=path.parent)
+    try:
+        os.fchmod(descriptor, path.stat().st_mode & 0o777)
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(data)
+        os.replace(temp, path)
+    finally:
+        if os.path.exists(temp):
+            os.unlink(temp)
+
+
+def select_profile(project, name):
+    if name not in project.get("profiles", {}):
+        raise ProjectError(f"Unknown profile for {project['id']}: {name}")
+    if selected_profile(project) == name:
+        return status(project)
+    with _locked(project):
+        running = any(_owned(project, service) for service in project["services"])
+        if any(not _owned(project, service) and any(_port_busy(port) for port in service.get("ports", [])) for service in project["services"]):
+            raise ProjectError("Cannot switch profile while an external server uses this project's ports")
+        if running:
+            _stop_locked(project)
+        path = _profile_file(project)
+        original = path.read_bytes()
+        _write_env(path, original, project["profiles"][name]["set"])
+        try:
+            for argv in project.get("profile_hooks", []):
+                result = subprocess.run(argv, cwd=project["root"], capture_output=True, text=True, timeout=30, check=False)
+                if result.returncode:
+                    raise ProjectError(f"Profile hook failed: {redact(result.stderr[-500:])}")
+        except (OSError, subprocess.TimeoutExpired, ProjectError) as error:
+            _atomic_write(path, original)
+            for argv in project.get("profile_hooks", []):
+                subprocess.run(argv, cwd=project["root"], capture_output=True, timeout=30, check=False)
+            if running:
+                for service in project["services"]:
+                    _spawn(project, service)
+            raise ProjectError(str(error)) from error
+    if running:
+        return start(project)
+    return status(project)
+
+
+def logs(project, service_id, lines=80):
+    service = next((item for item in project["services"] if item["id"] == service_id), None)
+    if service is None:
+        raise ProjectError(f"Unknown service: {service_id}")
+    path = STATE_PATH / f"{project['id']}-{service_id}.log"
+    if not path.exists():
+        return ""
+    with path.open("rb") as handle:
+        handle.seek(max(0, path.stat().st_size - 65536))
+        return redact("\n".join(handle.read().decode(errors="replace").splitlines()[-min(lines, 200):]))

@@ -46,6 +46,8 @@ override the defaults. The [Luna preset](plugins/core/skills/lunaqa/SKILL.md) re
 
 ## CLI Usage
 
+For local development servers, `bin/devkit-projects` provides a configurable CLI, on-demand dashboard, and optional MCP server. See [Local projects](docs/runbooks/local-projects.md) for setup and project profiles.
+
 - List resolved plugin names.
 
 ```bash

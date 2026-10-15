@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from project_manager import core
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Manage local development projects")
+    parser.add_argument("--config", type=Path, default=core.CONFIG_PATH)
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("status").add_argument("project", nargs="?")
+    commands.add_parser("start").add_argument("project")
+    commands.add_parser("stop").add_argument("project")
+    log_parser = commands.add_parser("logs")
+    log_parser.add_argument("project")
+    log_parser.add_argument("service")
+    profile_parser = commands.add_parser("profile")
+    profile_parser.add_argument("project")
+    profile_parser.add_argument("name")
+    ui_parser = commands.add_parser("ui")
+    ui_parser.add_argument("--port", type=int, default=41790)
+    commands.add_parser("mcp")
+    args = parser.parse_args()
+    try:
+        projects = core.load_config(args.config)
+        if args.command == "ui":
+            from project_manager.web import serve
+            serve(projects, args.port)
+            return 0
+        if args.command == "mcp":
+            from project_manager.mcp import serve
+            serve(projects)
+            return 0
+        if args.command == "status":
+            result = core.status(core.find_project(projects, args.project)) if args.project else [core.status(project) for project in projects]
+        else:
+            project = core.find_project(projects, args.project)
+            if args.command == "start":
+                result = core.start(project)
+            elif args.command == "stop":
+                result = core.stop(project)
+            elif args.command == "profile":
+                result = core.select_profile(project, args.name)
+            else:
+                print(core.logs(project, args.service))
+                return 0
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    except (core.ProjectError, OSError) as error:
+        print(f"devkit-projects: {error}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "id": "my-app",
+      "name": "My app",
+      "root": "~/work/my-app",
+      "services": [
+        {
+          "id": "web",
+          "argv": ["pnpm", "dev"],
+          "ports": [3000],
+          "checks": [{"id": "Web", "type": "tcp", "host": "127.0.0.1", "port": 3000}]
+        }
+      ],
+      "links": {"Open": "http://127.0.0.1:3000"}
+    }
+  ]
+}

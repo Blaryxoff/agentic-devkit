@@ -6,4 +6,5 @@ pnpm-lock.yaml
 .revmux/tasks/
 __pycache__/
 *.pyc
+projects.json
 docs/feedback-queue/agent-feedback-*.md

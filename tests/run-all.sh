@@ -22,6 +22,7 @@ SCRIPTS=(
   output-style.sh
   peer-chat.sh
   peer-cli-gate.sh
+  project-manager.sh
   resolve.sh
   skill-eval.sh
   sprint-skill.sh
