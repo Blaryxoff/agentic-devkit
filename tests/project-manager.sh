@@ -205,12 +205,14 @@ class ProjectManagerTest(unittest.TestCase):
         children = [project for project in projects if project.get("parent_id") == "sample"]
         self.assertEqual(len(children), 2)
         self.assertEqual(parent["_worktree_count"], 2)
+        self.assertTrue(all(isinstance(core.status(child)["created_at"], int) for child in children))
         self.assertTrue(all(core.status(child)["state"] == "stopped" for child in children))
         first, second = children
         try:
             started = mcp._call(projects, "project_start", {"project": first["id"]})
             self.assertEqual(started["state"], "running")
             self.assertEqual(started["slot"], 0)
+            self.assertEqual(started["created_at"], first["created_at"])
             self.assertEqual(started["links"]["Front"], f"http://127.0.0.1:{worktree_port}")
             self.assertEqual(core.project_status(core.load_config(path), first["id"])["state"], "running")
             with self.assertRaisesRegex(core.ProjectError, "No free worktree port slots"):
@@ -234,6 +236,7 @@ class ProjectManagerTest(unittest.TestCase):
         subprocess.run(["git", "-C", str(repo), *identity, "commit", "-qm", "initial"], check=True)
         nested = repo / ".claude" / "worktrees" / "feature"
         sibling = self.root / "sibling"
+        created_after = int(time.time())
         subprocess.run(["git", "-C", str(repo), "worktree", "add", "--quiet", "-b", "feature", str(nested)], check=True)
         subprocess.run(["git", "-C", str(repo), "worktree", "add", "--quiet", "--detach", str(sibling)], check=True)
         path = self.root / "worktrees.json"
@@ -248,11 +251,12 @@ class ProjectManagerTest(unittest.TestCase):
         self.assertEqual({project["root"] for project in children}, {str(nested.resolve()), str(sibling.resolve())})
         feature = next(project for project in children if project["root"] == str(nested.resolve()))
         detached = next(project for project in children if project["root"] == str(sibling.resolve()))
+        self.assertTrue(all(created_after <= child["created_at"] <= int(time.time()) for child in children))
         note = nested / "note.txt"
         note.write_text("saved\n")
         self.assertTrue(core.worktree_flags(feature)["untracked"])
         self.assertTrue(mcp._call(projects, "worktree_flags", {"project": feature["id"]})["untracked"])
-        with self.assertRaisesRegex(core.ProjectError, "untracked"):
+        with self.assertRaisesRegex(core.ProjectError, "confirmation"):
             core.remove_worktree(feature, projects[0])
         subprocess.run(["git", "-C", str(nested), "add", "note.txt"], check=True)
         subprocess.run(["git", "-C", str(nested), *identity, "commit", "-qm", "saved"], check=True)
@@ -263,11 +267,26 @@ class ProjectManagerTest(unittest.TestCase):
         self.assertTrue(core.worktree_flags(detached)["detached"])
         with self.assertRaisesRegex(core.ProjectError, "Detached worktree"):
             core.remove_worktree(detached, projects[0])
+        remote = self.root / "remote.git"
+        subprocess.run(["git", "init", "--bare", "-q", str(remote)], check=True)
+        subprocess.run(["git", "-C", str(repo), "remote", "add", "origin", str(remote)], check=True)
+        subprocess.run(["git", "-C", str(repo), "push", "-q", "origin", "HEAD:refs/heads/feature"], check=True)
+        subprocess.run(["git", "-C", str(nested), "branch", "--set-upstream-to=origin/feature", "feature"], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(repo), *identity, "merge", "--no-ff", "-qm", "merge feature", "feature"], check=True)
+        subprocess.run(["git", "-C", str(repo), "push", "-q", "origin", "HEAD:refs/heads/integration"], check=True)
+        self.assertFalse(core.worktree_flags(feature)["unpushed"])
+        note.write_text("changed again\n")
+        (nested / "scratch.txt").write_text("local\n")
         (nested / ".env").write_text("LOCAL=secret\n")
-        self.assertTrue(core.worktree_flags(feature)["ignored"])
+        flags = core.worktree_flags(feature)
+        self.assertTrue(flags["dirty"] and flags["untracked"] and flags["ignored"])
         self.assertIn("worktree_remove", {tool["name"] for tool in mcp._tools()})
-        with self.assertRaisesRegex(core.ProjectError, "ignored local files"):
+        with self.assertRaisesRegex(core.ProjectError, "confirmation"):
             mcp._call(projects, "worktree_remove", {"project": feature["id"]})
+        subprocess.run(["git", "-C", str(repo), "worktree", "lock", str(nested)], check=True)
+        with self.assertRaisesRegex(core.ProjectError, "locked"):
+            core.remove_worktree(feature, projects[0], "feature")
+        subprocess.run(["git", "-C", str(repo), "worktree", "unlock", str(nested)], check=True)
         self.assertTrue(mcp._call(projects, "worktree_remove", {"project": feature["id"], "confirmation": "feature"})["deleted"])
         self.assertFalse(nested.exists())
         self.assertIn("feature", subprocess.run(["git", "-C", str(repo), "branch", "--list", "feature"], capture_output=True, text=True, check=True).stdout)

@@ -15,7 +15,7 @@ def _tools():
         {"name": "project_stop", "description": "Stop only processes launched by this project manager.", "inputSchema": _schema({}), "annotations": {"destructiveHint": True, "idempotentHint": True}},
         {"name": "project_logs", "description": "Read recent, redacted output for a managed service.", "inputSchema": _schema({"service": {"type": "string"}}), "annotations": {"readOnlyHint": True}},
         {"name": "worktree_flags", "description": "Inspect a discovered worktree for modified, untracked, ignored, or unpublished files and commits.", "inputSchema": _schema({}), "annotations": {"readOnlyHint": True}},
-        {"name": "worktree_remove", "description": "Remove a stopped worktree checkout while keeping its branch. Requires the worktree branch name as confirmation when ignored files exist.", "inputSchema": {"type": "object", "properties": {"project": {"type": "string"}, "confirmation": {"type": "string"}}, "required": ["project"], "additionalProperties": False}, "annotations": {"destructiveHint": True}},
+        {"name": "worktree_remove", "description": "Remove a stopped worktree checkout and its local files while keeping its branch. Requires the worktree branch name as confirmation when modified, untracked, or ignored files exist.", "inputSchema": {"type": "object", "properties": {"project": {"type": "string"}, "confirmation": {"type": "string"}}, "required": ["project"], "additionalProperties": False}, "annotations": {"destructiveHint": True}},
         {"name": "project_select_profile", "description": "Persist a project profile's local environment settings and restart managed services if running.", "inputSchema": _schema({"profile": {"type": "string"}}), "annotations": {"destructiveHint": True}},
     ]
 

@@ -146,6 +146,28 @@ def _worktree_id(parent_id, path):
     return f"{parent_id}-wt-{digest}"
 
 
+def _worktree_created_at(path):
+    git_file = path / ".git"
+    times = []
+    try:
+        birth = getattr(git_file.stat(), "st_birthtime", None)
+        if birth and birth > 0:
+            times.append(int(birth))
+        pointer = git_file.read_text().splitlines()[0]
+        if pointer.startswith("gitdir: "):
+            admin = Path(pointer[8:])
+            if not admin.is_absolute():
+                admin = path / admin
+            with (admin / "logs/HEAD").open() as log:
+                first = log.readline().partition("\t")[0]
+            match = re.search(r" (\d+) [+-]\d{4}$", first)
+            if match:
+                times.append(int(match.group(1)))
+    except (OSError, UnicodeError, IndexError):
+        pass
+    return min(times) if times else None
+
+
 def _worktree_records(root):
     try:
         result = subprocess.run(["git", "-C", str(root), "worktree", "list", "--porcelain"], capture_output=True, text=True, timeout=5, check=False)
@@ -163,7 +185,8 @@ def _worktree_records(root):
             continue
         branch = next((line[18:] for line in lines if line.startswith("branch refs/heads/")), None)
         head = next((line[5:] for line in lines if line.startswith("HEAD ")), "")
-        records.append({"path": path, "branch": branch or f"detached {head[:7]}", "detached": branch is None})
+        records.append({"path": path, "branch": branch or f"detached {head[:7]}", "detached": branch is None,
+                        "created_at": _worktree_created_at(path)})
     return sorted(records, key=lambda record: (record["branch"], str(record["path"])))
 
 
@@ -263,7 +286,7 @@ def _discover_worktrees(parents):
             slot = assignments.get(str(path), {}).get("slot")
             child = {"id": _worktree_id(parent["id"], path), "name": record["branch"], "root": str(path),
                      "parent_id": parent["id"], "branch": record["branch"], "detached": record["detached"], "slot": None,
-                     "_worktree_template": settings, "services": [], "links": {}}
+                     "created_at": record["created_at"], "_worktree_template": settings, "services": [], "links": {}}
             if isinstance(slot, int) and not isinstance(slot, bool) and 0 <= slot < settings["slots"]:
                 _materialize_worktree(child, slot)
             children.append(child)
@@ -352,13 +375,8 @@ def worktree_flags(project):
     root = project["root"]
     try:
         changes = subprocess.run(["git", "-C", root, "status", "--porcelain=v1", "--ignored=matching", "--untracked-files=normal"], capture_output=True, text=True, errors="replace", timeout=15, check=False)
-        upstream = subprocess.run(["git", "-C", root, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"], capture_output=True, text=True, timeout=5, check=False)
-        if upstream.returncode == 0:
-            published = subprocess.run(["git", "-C", root, "rev-list", "--count", f"{upstream.stdout.strip()}..HEAD"], capture_output=True, text=True, timeout=5, check=False)
-            unpushed = published.stdout.strip() != "0"
-        else:
-            published = subprocess.run(["git", "-C", root, "branch", "-r", "--contains", "HEAD", "--format=%(refname)"], capture_output=True, text=True, timeout=5, check=False)
-            unpushed = not bool(published.stdout.strip())
+        published = subprocess.run(["git", "-C", root, "branch", "-r", "--contains", "HEAD", "--format=%(refname)"], capture_output=True, text=True, timeout=5, check=False)
+        unpushed = not bool(published.stdout.strip())
     except (OSError, subprocess.TimeoutExpired) as error:
         raise ProjectError(f"Cannot inspect worktree {project['id']}: {error}") from error
     for result in (changes, published):
@@ -380,14 +398,15 @@ def remove_worktree(project, parent, confirmation=None):
             if entry.get("pending_until", 0) > time.time() or any(_owned(project, service) for service in project["services"]):
                 raise ProjectError("Stop this worktree before deleting it")
             flags = worktree_flags(project)
-            if flags["dirty"] or flags["untracked"]:
-                raise ProjectError("Worktree has local changes or untracked files")
             if flags["detached"] and flags["unpushed"]:
-                raise ProjectError("Detached worktree has commits not found on a remote branch")
-            if flags["ignored"] and confirmation != project["branch"]:
-                raise ProjectError("Deleting ignored local files requires typing the worktree name")
+                raise ProjectError("Detached worktree HEAD is not found in locally known remote branches")
+            if (flags["dirty"] or flags["untracked"] or flags["ignored"]) and confirmation != project["branch"]:
+                raise ProjectError("Deleting local files requires the worktree branch name as confirmation")
             try:
-                result = subprocess.run(["git", "-C", parent["root"], "worktree", "remove", "--", project["root"]], capture_output=True, text=True, timeout=30, check=False)
+                command = ["git", "-C", parent["root"], "worktree", "remove"]
+                if flags["dirty"] or flags["untracked"]:
+                    command.append("--force")
+                result = subprocess.run([*command, "--", project["root"]], capture_output=True, text=True, timeout=30, check=False)
             except (OSError, subprocess.TimeoutExpired) as error:
                 raise ProjectError(f"Cannot remove worktree: {error}") from error
             if result.returncode:
@@ -531,7 +550,7 @@ def selected_profile(project):
 def status(project):
     if project.get("parent_id") and project.get("slot") is None:
         return {"id": project["id"], "name": project["name"], "root": project["root"], "state": "stopped", "services": [], "external": [], "links": {}, "profiles": [], "profile": None,
-                "parent_id": project["parent_id"], "branch": project["branch"], "slot": None}
+                "parent_id": project["parent_id"], "branch": project["branch"], "slot": None, "created_at": project.get("created_at")}
     services = []
     for service in project["services"]:
         owned = _owned(project, service)
@@ -544,7 +563,7 @@ def status(project):
     overall = "conflict" if "conflict" in states else "stopped" if states == {"stopped"} else "running" if states == {"running"} and all(c["ok"] for c in external) else "degraded"
     result = {"id": project["id"], "name": project.get("name", project["id"]), "root": project["root"], "state": overall, "services": services, "external": external, "links": project.get("links", {}), "profiles": list(project.get("profiles", {})), "profile": selected_profile(project)}
     if project.get("parent_id"):
-        result.update(parent_id=project["parent_id"], branch=project["branch"], slot=project["slot"])
+        result.update(parent_id=project["parent_id"], branch=project["branch"], slot=project["slot"], created_at=project.get("created_at"))
     elif "_worktree_count" in project:
         result["worktree_count"] = project["_worktree_count"]
     return result
