@@ -1,8 +1,8 @@
 # agentic-devkit
 
-A model-agnostic toolkit of AI-agent plugins for product teams. One **global clone** generates scoped AI context
-(skills, conduct, hooks, permissions) for Claude Code, Cursor, and Codex across all your projects. Edit a skill once;
-every project picks it up.
+A model-agnostic toolkit for AI-assisted product development. One **global clone** supplies skills, coding rules,
+hooks, and stack-specific agents to Claude Code, Cursor, and Codex. Each project selects the plugins it needs.
+The same clone also provides a local development project manager with a CLI, dashboard, and optional MCP server.
 
 ## Quick Start
 
@@ -18,8 +18,7 @@ git clone https://github.com/Blaryxoff/agentic-devkit.git ~/.claude/agentic-devk
 ~/.claude/agentic-devkit/bin/devkit-install
 ```
 
-Per project, declare the stack in `.devkit/toolkit.json` and run the Cursor adapter. Generate the Claude or Codex
-adapter only for projects where you use those agents:
+Per project, declare the stack in `.devkit/toolkit.json` and generate the adapters for the agents you use:
 
 ```bash
 cd my-project
@@ -37,6 +36,10 @@ plugin infrastructure changes; skill edits flow through the links. For Claude Co
 `--claude` run is only needed when a stack ships subagents, hooks, or MCP servers. Use `/nontech` to rewrite
 technical findings for managers or other non-technical readers without exposing codebase internals.
 
+Core workflows cover implementation, code and business-logic review, browser QA, verification, estimation, and
+commit/push wrapup. Stack plugins add framework-specific conventions without putting every stack's rules into an
+agent's context. See [Available Plugins](#available-plugins) and [How It Works](#how-it-works).
+
 Use `/lunaqa <scope>` in Claude Code or `$devkit-lunaqa <scope>` in Codex for exhaustive local browser QA with many
 executor lanes on the newest available Luna, functional and visual coverage, and Luna rechecks. Each pass resolves
 the model from Codex's catalog for all workers; the invoking agent keeps its current model and owns planning and
@@ -44,9 +47,31 @@ the final verdict. Releases need no skill edits. Explicit pass mode and environm
 override the defaults. The [Luna preset](plugins/core/skills/lunaqa/SKILL.md) reuses
 [devkit-browser](plugins/core/skills/browser/SKILL.md); ordinary browser QA retains its existing routing.
 
-## CLI Usage
+## Local Projects
 
-For local development servers, `bin/devkit-projects` provides a configurable CLI, on-demand dashboard, and optional MCP server. See [Local projects](docs/runbooks/local-projects.md) for setup and project profiles.
+`bin/devkit-projects` starts configured services, waits for readiness, and gives agents a known URL to open. Put
+machine-specific definitions in this repository's **Git-ignored** `projects.json`; copy
+[`examples/projects.example.json`](examples/projects.example.json) to begin. Application secrets stay in each
+project's `.env`.
+
+```bash
+~/.claude/agentic-devkit/bin/devkit-projects status
+~/.claude/agentic-devkit/bin/devkit-projects start my-app
+~/.claude/agentic-devkit/bin/devkit-projects ui
+```
+
+The dashboard runs on `http://127.0.0.1:41790`. It shows service checks and logs, starts and stops projects,
+switches configured `.env` profiles, and identifies port conflicts. After confirmation it can stop an eligible
+same-user process occupying a configured port. A project's Git worktrees appear under its card automatically; the
+manager assigns reusable port slots and lets you start, stop, open, inspect, or remove eligible worktrees. Project
+variants and worktree service templates are configured once per parent project, not once per checkout.
+
+Register the optional stdio MCP server to give Claude Code, Codex, or Cursor project status, start/stop, logs,
+profile selection, and worktree actions. The CLI offers the same serving flow when MCP is unavailable. See
+[Local projects](docs/runbooks/local-projects.md) for configuration, MCP registration, local-domain setup, and
+process/worktree safeguards.
+
+## Resolver CLI
 
 - List resolved plugin names.
 
@@ -215,6 +240,8 @@ bin/
   devkit-install      Global installer: core skills + router + subagents + slash commands + auto-update hook
   devkit-update       Timestamp-guarded `git pull --ff-only` for the global clone
   devkit-resolve      CLI: init/resolve/validate/adapter generation
+  devkit-projects     Local project manager: status/start/stop/logs/profile/UI/MCP
+project_manager/      Process, dashboard, and MCP implementation
 adapters/
   _lib/resolve.sh     Shared resolution logic
   _lib/hooks.sh       Shared hook merge/translation helpers
@@ -223,6 +250,9 @@ adapters/
   codex/generate
 schemas/              JSON schemas for toolkit and plugin manifests
 examples/             Starter .devkit/toolkit.json presets
+  projects.example.json  Generic local-project configuration
+docs/runbooks/        Operational setup guides, including local projects
+tests/                Shell test suite (`tests/run-all.sh`)
 howto/                Developer guides (Russian)
 ```
 
@@ -246,5 +276,6 @@ See [adapters/README.md](adapters/README.md).
 ## Requirements
 
 - `jq`
-- `python3`
+- `python3` (3.9+ for the local project manager)
 - `bash` 3.2+
+- Optional: `lsof` to identify and stop external processes occupying project ports from the dashboard

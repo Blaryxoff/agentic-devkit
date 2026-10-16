@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import signal
 import socket
 import subprocess
@@ -435,6 +436,54 @@ def _port_busy(port):
     return False
 
 
+def _managed_process(pid):
+    try:
+        group = os.getpgid(pid)
+    except ProcessLookupError:
+        return False
+    for path in STATE_PATH.glob("*.json"):
+        try:
+            state = json.loads(path.read_text())
+            if isinstance(state, dict) and state.get("pid") == group:
+                return True
+        except (OSError, ValueError):
+            continue
+    return False
+
+
+def _port_listeners(port):
+    lsof = shutil.which("lsof") or next((path for path in ("/usr/sbin/lsof", "/usr/bin/lsof") if Path(path).is_file()), None)
+    if not lsof:
+        return []
+    try:
+        result = subprocess.run([lsof, "-nP", "-a", f"-iTCP:{port}", "-sTCP:LISTEN", "-Fpcun"], capture_output=True, text=True, timeout=3, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    listeners = []
+    current = None
+    for line in result.stdout.splitlines():
+        kind, value = line[:1], line[1:]
+        if kind == "p":
+            current = {"pid": int(value), "command": "process", "uid": None, "addresses": []} if value.isdigit() and int(value) > 0 else None
+            if current:
+                listeners.append(current)
+        elif current and kind == "c":
+            current["command"] = value
+        elif current and kind == "u" and value.isdigit():
+            current["uid"] = int(value)
+        elif current and kind == "n":
+            current["addresses"].append(value)
+    found = []
+    for item in listeners:
+        if not any(address.rpartition(":")[0] in ("*", "0.0.0.0", "127.0.0.1", "[::]", "[::1]") and address.rpartition(":")[2] == str(port) for address in item["addresses"]):
+            continue
+        pid = item["pid"]
+        birth = _birth(pid)
+        reason = "other_user" if item["uid"] != os.geteuid() else "dashboard" if pid == os.getpid() else "managed" if _managed_process(pid) else "unknown" if not birth else None
+        found.append({"port": port, "pid": pid, "command": item["command"], "birth": birth, "stoppable": reason is None, "reason": reason})
+    return found
+
+
 def _check(check):
     if check["type"] == "tcp":
         try:
@@ -489,7 +538,7 @@ def status(project):
         checks = [{"id": c.get("id", c.get("url", str(c.get("port")))), "ok": _check(c)} for c in service.get("checks", [])]
         busy = [port for port in service.get("ports", []) if _port_busy(port)]
         state = "running" if owned and all(c["ok"] for c in checks) else "starting" if owned else "conflict" if busy else "stopped"
-        services.append({"id": service["id"], "state": state, "checks": checks, "busy_ports": busy, "pid": owned["pid"] if owned else None})
+        services.append({"id": service["id"], "state": state, "checks": checks, "busy_ports": busy, "listeners": [listener for port in busy for listener in _port_listeners(port)] if not owned else [], "pid": owned["pid"] if owned else None})
     external = [{"id": c.get("id", c.get("url", str(c.get("port")))), "ok": _check(c)} for c in project.get("external", [])]
     states = {s["state"] for s in services}
     overall = "conflict" if "conflict" in states else "stopped" if states == {"stopped"} else "running" if states == {"running"} and all(c["ok"] for c in external) else "degraded"
@@ -572,6 +621,24 @@ def stop(project):
         return status(project)
     with _locked(project):
         _stop_locked(project)
+    return status(project)
+
+
+def release_port(project, port, pid, birth):
+    if type(port) is not int or type(pid) is not int or not isinstance(birth, str) or not birth:
+        raise ProjectError("Port, PID, and process identity required")
+    if not any(port in service.get("ports", []) for service in project["services"]):
+        raise ProjectError("Port is not managed by this project")
+    with _locked(project):
+        listener = next((item for item in _port_listeners(port) if item["pid"] == pid and item["birth"] == birth), None)
+        if not listener or not listener["stoppable"] or not _port_busy(port):
+            raise ProjectError("Port owner changed or cannot be stopped here; refresh status")
+        os.kill(pid, signal.SIGTERM)
+        deadline = time.monotonic() + 4
+        while _port_busy(port) and time.monotonic() < deadline:
+            time.sleep(0.1)
+    if _port_busy(port):
+        raise ProjectError(f"Port {port} is still occupied; inspect the process in a terminal")
     return status(project)
 
 

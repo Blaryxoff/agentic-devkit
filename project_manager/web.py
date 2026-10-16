@@ -249,6 +249,11 @@ button:disabled { opacity: .46; cursor: default; box-shadow: none; }
 .expander-inner { min-height: 0; overflow: hidden; }
 .log { overflow: auto; max-height: 240px; margin: 13px 0 0; padding: 14px; border-radius: 11px; background: #192922; color: #dcebe0; font: 11px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
 .hint { margin: 13px 0 0; padding: 10px 12px; border: 1px solid #f3e3c7; border-radius: 9px; background: #fffaf0; color: #8d693b; font-size: 11px; line-height: 1.45; }
+.conflict-details { display: grid; gap: 9px; }
+.conflict-owner { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.conflict-owner strong { color: #75552f; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.conflict-owner button { min-height: 29px; padding: 5px 9px; font-size: 11px; }
+.worktree-list .conflict-details { margin: 0 12px 11px; }
 .error { margin-top: 12px; color: #a74336; font-size: 12px; line-height: 1.45; }
 .operation { margin-top: 13px; color: #367756; font-size: 11px; font-weight: 650; }
 .progress { overflow: hidden; height: 5px; margin-top: 8px; border-radius: 5px; background: #e3f0e7; }
@@ -317,12 +322,25 @@ function hideFlagTooltip(){flagTooltip.hidden=true}
 function skeletonCard(){const card=el('article','card skeleton-card');card.setAttribute('aria-hidden','true');const head=el('div','skeleton-head');const title=el('div','skeleton-title');title.append(el('span','skeleton-block'),el('span','skeleton-block'));head.append(el('span','skeleton-block skeleton-avatar'),title,el('span','skeleton-block skeleton-status'));const body=el('div','skeleton-body');const checks=el('div','skeleton-row');checks.append(el('span','skeleton-block skeleton-chip'),el('span','skeleton-block skeleton-chip'));const actions=el('div','skeleton-row skeleton-actions');actions.append(el('span','skeleton-block skeleton-button'),el('span','skeleton-block skeleton-button'));body.append(el('span','skeleton-block skeleton-label'),checks,actions,el('span','skeleton-block skeleton-expander'));card.append(head,body);return card}
 async function api(path,options={}){const request=()=>fetch(path,{...options,headers:{'Content-Type':'application/json','X-Devkit-Token':token}});let response=await request();const currentToken=response.headers.get('X-Devkit-Token');if(currentToken&&currentToken!==token){token=currentToken;if(response.status===403&&options.method==='POST')response=await request()}const body=await response.json();if(!response.ok)throw Error(body.error||response.statusText);return body}
 async function loadWorktreeFlags(id,force=false){if(flagLoading.has(id)||(!force&&Date.now()-(flagTimes.get(id)||0)<30000))return;flagLoading.add(id);try{const flags=await api('/api/worktree-flags?project='+encodeURIComponent(id));for(const item of flags)worktreeFlags.set(item.id,item);errors.delete(id);flagTimes.set(id,Date.now());render()}catch(error){errors.set(id,error.message);flagTimes.set(id,Date.now());render()}finally{flagLoading.delete(id)}}
-async function act(id,action,profile,confirmation){if(pending.has(id))return;pending.set(id,action);errors.delete(id);render();try{await api('/api/action',{method:'POST',body:JSON.stringify({project:id,action,profile,confirmation})})}catch(error){errors.set(id,error.message)}finally{pending.delete(id);await refresh(true)}}
+async function act(id,action,profile,confirmation,details={}){if(pending.has(id))return;pending.set(id,action);errors.delete(id);render();try{await api('/api/action',{method:'POST',body:JSON.stringify({project:id,action,profile,confirmation,...details})})}catch(error){errors.set(id,error.message)}finally{pending.delete(id);await refresh(true)}}
+function conflictDetails(project){
+  const box=el('div','hint conflict-details');const ports=project.services.flatMap(service=>service.busy_ports);
+  box.append(el('span','','Порты '+ports.join(', ')+' заняты процессами вне панели.'));
+  let shown=0;
+  for(const service of project.services)for(const owner of service.listeners||[]){
+    shown++;const row=el('div','conflict-owner');row.append(el('strong','',owner.port+' · '+owner.command+' (PID '+owner.pid+')'));
+    if(owner.stoppable){const button=el('button','danger','Остановить процесс');button.disabled=pending.has(project.id);button.onclick=()=>{if(window.confirm('Остановить '+owner.command+' (PID '+owner.pid+') на порту '+owner.port+'? Это завершит весь процесс, включая другие обслуживаемые им порты.'))act(project.id,'release_port',undefined,undefined,{port:owner.port,pid:owner.pid,birth:owner.birth})};row.append(button)}
+    else row.append(el('span','','Остановка здесь недоступна: '+({managed:'процесс запущен devkit',other_user:'другой пользователь',dashboard:'процесс dashboard',unknown:'не удалось проверить процесс'}[owner.reason]||'неизвестная причина')));
+    box.append(row);
+  }
+  if(!shown||ports.some(port=>!project.services.some(service=>(service.listeners||[]).some(owner=>owner.port===port))))box.append(el('span','','Для остальных портов проверьте владельца в терминале.'));
+  return box;
+}
 function worktreeRow(project){
   const wrap=el('div');const row=el('div','worktree-row');
   const info=el('div','worktree-info');info.append(el('strong','',project.branch),el('small','',displayPath(project.root)));row.append(info);
   const flags=worktreeFlags.get(project.id);if(flags){const indicators=el('span','worktree-flags');for(const [key,symbol,label] of [['dirty','✎','Изменены файлы под контролем Git'],['untracked','＋','Новые файлы, не добавленные в Git'],['ignored','◇','Игнорируемые Git файлы (.env, node_modules и др.) удалятся вместе с worktree'],['unpushed','↑','Коммиты отсутствуют в удалённой ветке']])if(flags[key]){const badge=el('span','',symbol);badge.dataset.tooltip=label;badge.tabIndex=0;badge.setAttribute('role','img');badge.setAttribute('aria-label',label);badge.onmouseenter=showFlagTooltip;badge.onfocus=showFlagTooltip;badge.onmouseleave=hideFlagTooltip;badge.onblur=hideFlagTooltip;indicators.append(badge)}row.append(indicators)}
-  const canStop=project.services.some(s=>s.pid);const operation=pending.get(project.id);const controlText=operation?{start:'Запускается…',stop:'Останавливается…',delete:'Удаляется…'}[operation]:project.state==='conflict'?'Конфликт порта':canStop?project.state==='degraded'?'⚠ Остановить':'■ Остановить':'▶ Запустить';
+  const canStop=project.services.some(s=>s.pid);const operation=pending.get(project.id);const controlText=operation?{start:'Запускается…',stop:'Останавливается…',delete:'Удаляется…',release_port:'Освобождается…'}[operation]:project.state==='conflict'?'Конфликт порта':canStop?project.state==='degraded'?'⚠ Остановить':'■ Остановить':'▶ Запустить';
   const control=el('button',canStop?'danger':project.state==='conflict'?'':'primary',controlText);control.title=(labels[project.state]||project.state)+' · '+(canStop?'остановить':'запустить')+' worktree '+project.branch;
   control.disabled=pending.has(project.id)||(!canStop&&project.state==='conflict');control.onclick=()=>act(project.id,canStop?'stop':'start');row.append(control);
   const front=Object.values(project.links)[0];if(front&&canStop){const link=el('a','button','Открыть ↗');link.href=front;link.target='_blank';link.rel='noopener';row.append(link)}
@@ -335,6 +353,7 @@ function worktreeRow(project){
     async function loadLog(){try{const parts=await Promise.all(project.services.map(async service=>{const result=await api('/api/logs?project='+encodeURIComponent(project.id)+'&service='+encodeURIComponent(service.id));return service.id+'\\n'+(result.log||'Нет записей')}));log.textContent=parts.join('\\n\\n')}catch(error){log.textContent=error.message}scrollLogToEnd(log)}
     const toggle=el('button','','☷');toggle.title='Журнал '+project.branch;toggle.setAttribute('aria-label',toggle.title);toggle.onclick=()=>{const open=!openLogs.has(project.id);if(open)openLogs.add(project.id);else openLogs.delete(project.id);logPanel.classList.toggle('expanded',open);logPanel.inert=!open;if(open)loadLog()};row.append(toggle);wrap.append(row,logPanel);logPanel.classList.toggle('expanded',openLogs.has(project.id));logPanel.inert=!openLogs.has(project.id);if(openLogs.has(project.id))loadLog();
   }else wrap.append(row);
+  if(project.state==='conflict')wrap.append(conflictDetails(project));
   if(pending.has(project.id)){const progress=el('div','progress worktree-progress');progress.setAttribute('role','progressbar');progress.setAttribute('aria-label','Операция с worktree');wrap.append(progress)}
   if(errors.has(project.id))wrap.append(el('p','worktree-message',errors.get(project.id)));
   return wrap;
@@ -367,9 +386,9 @@ function card(project,children){
     const wrapper=el('label','profile-select');wrapper.append(select,el('span','chevron'));actions.append(wrapper);
   }
   body.append(actions);
-  if(project.state==='conflict')body.append(el('p','hint','Порты '+project.services.flatMap(s=>s.busy_ports).join(', ')+' заняты процессами вне панели. Остановите их в терминале, чтобы управлять проектом здесь.'));
+  if(project.state==='conflict')body.append(conflictDetails(project));
   if(pending.has(project.id)){
-    const operation=el('div','operation',{'start':'Запуск проекта…','stop':'Остановка проекта…','profile':'Смена бренда…'}[pending.get(project.id)]);
+    const operation=el('div','operation',{'start':'Запуск проекта…','stop':'Остановка проекта…','profile':'Смена бренда…',release_port:'Освобождение порта…'}[pending.get(project.id)]);
     const progress=el('div','progress');progress.setAttribute('role','progressbar');progress.setAttribute('aria-label',operation.textContent);
     operation.append(progress);body.append(operation);
   }
@@ -483,6 +502,8 @@ def serve(config_path, port, origin=None):
                     result = core.start(project)
                 elif data["action"] == "stop":
                     result = core.stop(project)
+                elif data["action"] == "release_port":
+                    result = core.release_port(project, data["port"], data["pid"], data["birth"])
                 elif data["action"] == "profile":
                     result = core.select_profile(project, data["profile"])
                 elif data["action"] == "delete":

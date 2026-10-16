@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHONPATH="$ROOT" python3 - <<'PY'
 import json
+import shutil
 import socket
 import subprocess
 import sys
@@ -65,6 +66,33 @@ class ProjectManagerTest(unittest.TestCase):
             self.assertEqual(core.status(self.project)["state"], "conflict")
             self.assertEqual(core.stop(self.project)["state"], "conflict")
             self.assertEqual(listener.getsockname()[1], self.port)
+
+    def test_release_port_checks_external_process_identity(self):
+        if not shutil.which("lsof"):
+            self.skipTest("lsof is unavailable")
+        process = subprocess.Popen([sys.executable, "-m", "http.server", str(self.port), "--bind", "127.0.0.1"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        try:
+            deadline = time.monotonic() + 5
+            while not core._port_busy(self.port) and time.monotonic() < deadline:
+                time.sleep(0.05)
+            self.assertEqual(core.status(self.project)["state"], "conflict")
+            owner = next(item for item in core._port_listeners(self.port) if item["pid"] == process.pid)
+            self.assertTrue(owner["stoppable"])
+            with self.assertRaisesRegex(core.ProjectError, "Port owner changed"):
+                core.release_port(self.project, self.port, process.pid, "wrong birth")
+            self.assertIsNone(process.poll())
+            self.assertEqual(core.release_port(self.project, self.port, process.pid, owner["birth"])["state"], "stopped")
+            process.wait(timeout=5)
+            self.assertEqual(core.start(self.project, timeout=5)["state"], "running")
+            managed = next(item for item in core._port_listeners(self.port) if item["pid"] == core.status(self.project)["services"][0]["pid"])
+            self.assertEqual(managed["reason"], "managed")
+            with self.assertRaisesRegex(core.ProjectError, "cannot be stopped"):
+                core.release_port(self.project, self.port, managed["pid"], managed["birth"])
+            self.assertEqual(core.status(self.project)["state"], "running")
+        finally:
+            if process.poll() is None:
+                process.terminate()
+                process.wait(timeout=5)
 
     def test_profile_preserves_unrelated_env_and_log_redaction(self):
         self.assertEqual(core.select_profile(self.project, "Kochfit")["profile"], "Kochfit")
