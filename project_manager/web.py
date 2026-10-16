@@ -7,9 +7,18 @@ from urllib.parse import parse_qs, urlsplit
 from . import core
 
 
+FAVICON = b"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<rect width="64" height="64" rx="16" fill="#183a2e"/>
+<rect x="13" y="14" width="16" height="16" rx="5" fill="#e8f5eb"/>
+<rect x="35" y="14" width="16" height="16" rx="5" fill="#e8f5eb"/>
+<rect x="13" y="36" width="16" height="16" rx="5" fill="#e8f5eb"/>
+<rect x="35" y="36" width="16" height="16" rx="5" fill="#7ee1a1"/>
+</svg>"""
+
+
 PAGE = """<!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Локальные проекты</title><style>
+<title>Локальные проекты</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"><style>
 :root {
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #1b3029;
@@ -438,6 +447,8 @@ def serve(config_path, port, origin=None):
                 if path.path == "/":
                     page = PAGE.replace("__TOKEN__", json.dumps(token)).replace("__HOME__", json.dumps(str(Path.home())))
                     self._send(200, page.encode(), "text/html; charset=utf-8")
+                elif path.path == "/favicon.svg":
+                    self._send(200, FAVICON, "image/svg+xml")
                 elif path.path == "/api/projects":
                     projects = core.load_config(config_path)
                     self._send(200, [core.status(project) for project in projects])
