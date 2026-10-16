@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHONPATH="$ROOT" python3 - <<'PY'
 import json
 import socket
+import subprocess
 import sys
 import tempfile
 import threading
@@ -12,6 +13,8 @@ import time
 import unittest
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from urllib.error import HTTPError
+from urllib.request import ProxyHandler, Request, build_opener
 from unittest.mock import patch
 
 from project_manager import core
@@ -148,6 +151,66 @@ class ProjectManagerTest(unittest.TestCase):
         with patch.object(core, "_check", side_effect=unavailable):
             with self.assertRaisesRegex(core.ProjectError, "Mock Herd"):
                 core.start(self.project, timeout=0.6)
+
+    def test_dashboard_offers_current_token_after_stale_action(self):
+        path = self.root / "dashboard.json"
+        path.write_text(json.dumps({"version": 1, "projects": [self.project]}))
+        port = self.free_port()
+        origin = f"http://127.0.0.1:{port}"
+        proxy_origin = "http://agentic-devkit.test"
+        process = subprocess.Popen(
+            [sys.executable, str(Path(core.__file__).resolve().parent.parent / "bin/devkit-projects"),
+             "--config", str(path), "ui", "--port", str(port), "--origin", proxy_origin],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        opener = build_opener(ProxyHandler({}))
+        try:
+            deadline = time.monotonic() + 5
+            while True:
+                try:
+                    with opener.open(origin + "/api/projects", timeout=0.2) as response:
+                        current_token = response.headers["X-Devkit-Token"]
+                    break
+                except OSError:
+                    if time.monotonic() >= deadline:
+                        self.fail("Dashboard did not start")
+                    time.sleep(0.05)
+
+            data = json.dumps({"project": "sample", "action": "stop"}).encode()
+            def action(token):
+                return Request(origin + "/api/action", data=data, headers={
+                    "Content-Type": "application/json", "X-Devkit-Token": token, "Origin": origin,
+                })
+
+            with self.assertRaises(HTTPError) as denied:
+                opener.open(action("stale"), timeout=2)
+            self.assertEqual(denied.exception.code, 403)
+            self.assertEqual(denied.exception.headers["X-Devkit-Token"], current_token)
+            denied.exception.close()
+            with opener.open(action(current_token), timeout=2) as response:
+                self.assertEqual(json.load(response)["state"], "stopped")
+            with opener.open(Request(origin + "/api/projects", headers={"Host": "agentic-devkit.test"}), timeout=2) as response:
+                self.assertEqual(response.headers["X-Devkit-Token"], current_token)
+            with opener.open(Request(origin + "/api/action", data=data, headers={
+                "Content-Type": "application/json", "X-Devkit-Token": current_token,
+                "Host": "agentic-devkit.test", "Origin": proxy_origin,
+            }), timeout=2) as response:
+                self.assertEqual(json.load(response)["state"], "stopped")
+            with self.assertRaises(HTTPError) as wrong_origin:
+                opener.open(Request(origin + "/api/action", data=data, headers={
+                    "Content-Type": "application/json", "X-Devkit-Token": current_token,
+                    "Host": "agentic-devkit.test", "Origin": "http://untrusted.test",
+                }), timeout=2)
+            self.assertEqual(wrong_origin.exception.code, 403)
+            wrong_origin.exception.close()
+            with self.assertRaises(HTTPError) as untrusted:
+                opener.open(Request(origin + "/api/projects", headers={"Host": "other"}), timeout=2)
+            self.assertEqual(untrusted.exception.code, 403)
+            self.assertIsNone(untrusted.exception.headers.get("X-Devkit-Token"))
+            untrusted.exception.close()
+        finally:
+            process.terminate()
+            process.wait(timeout=5)
 
 
 unittest.main(verbosity=2)

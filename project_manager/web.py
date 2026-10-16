@@ -244,11 +244,11 @@ button:disabled { opacity: .46; cursor: default; box-shadow: none; }
 }
 </style></head><body><header><div><span class="overline">Локальная разработка</span><h1>Локальные проекты</h1><p>Запускай, останавливай и открывай свои проекты.</p></div><span id="banner">На связи</span></header><div class="summary"><div class="overview"><span>Обзор</span><strong>Мои проекты</strong></div><div id="summary" class="metrics" aria-label="Статусы проектов">Загрузка…</div><button id="refresh" type="button">↻ Обновить</button></div><main id="grid" class="grid"></main>
 <script>
-const token=__TOKEN__;const home=__HOME__;const grid=document.querySelector('#grid');let latestProjects=[];const pending=new Map();const openLogs=new Set();const selectedLogs=new Map();const errors=new Map();
+let token=__TOKEN__;const home=__HOME__;const grid=document.querySelector('#grid');let latestProjects=[];const pending=new Map();const openLogs=new Set();const selectedLogs=new Map();const errors=new Map();
 const labels={running:'Работает',stopped:'Остановлен',starting:'Запускается',degraded:'Требует внимания',conflict:'Конфликт порта'};
 function el(tag,cls,text){const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node}
 function displayPath(path){return path===home?'~':path.startsWith(home+'/')?'~'+path.slice(home.length):path}
-async function api(path,options={}){const response=await fetch(path,{...options,headers:{'Content-Type':'application/json','X-Devkit-Token':token}});const body=await response.json();if(!response.ok)throw Error(body.error||response.statusText);return body}
+async function api(path,options={}){const request=()=>fetch(path,{...options,headers:{'Content-Type':'application/json','X-Devkit-Token':token}});let response=await request();const currentToken=response.headers.get('X-Devkit-Token');if(currentToken&&currentToken!==token){token=currentToken;if(response.status===403&&options.method==='POST')response=await request()}const body=await response.json();if(!response.ok)throw Error(body.error||response.statusText);return body}
 async function act(id,action,profile){if(pending.has(id))return;pending.set(id,action);errors.delete(id);render();try{await api('/api/action',{method:'POST',body:JSON.stringify({project:id,action,profile})})}catch(error){errors.set(id,error.message)}finally{pending.delete(id);await refresh()}}
 function card(project){
   const article=el('article','card');article.dataset.id=project.id;
@@ -311,12 +311,20 @@ document.querySelector('#refresh').onclick=refresh;refresh();setInterval(refresh
 </script></body></html>"""
 
 
-def serve(projects, port):
+def serve(projects, port, origin=None):
+    local_origin = f"http://127.0.0.1:{port}"
+    origins = {local_origin}
+    if origin:
+        parsed = urlsplit(origin)
+        if parsed.scheme != "http" or not parsed.hostname or parsed.username or parsed.password or parsed.path or parsed.query or parsed.fragment:
+            raise core.ProjectError("Dashboard origin must be an http URL without a path")
+        origins.add(origin)
+    hosts = {urlsplit(value).netloc for value in origins}
     token = secrets.token_urlsafe(24)
 
     class Handler(BaseHTTPRequestHandler):
         def _trusted_host(self):
-            return self.headers.get("Host") == f"127.0.0.1:{port}"
+            return self.headers.get("Host") in hosts
 
         def _send(self, code, data, content_type="application/json"):
             body = data if isinstance(data, bytes) else json.dumps(data, ensure_ascii=False).encode()
@@ -325,6 +333,8 @@ def serve(projects, port):
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Frame-Options", "DENY")
+            if self._trusted_host():
+                self.send_header("X-Devkit-Token", token)
             self.end_headers()
             self.wfile.write(body)
 
@@ -349,7 +359,7 @@ def serve(projects, port):
                 self._send(400, {"error": str(error)})
 
         def do_POST(self):
-            if not self._trusted_host() or self.path != "/api/action" or self.headers.get("X-Devkit-Token") != token or self.headers.get("Origin") not in (None, f"http://127.0.0.1:{port}"):
+            if not self._trusted_host() or self.path != "/api/action" or self.headers.get("X-Devkit-Token") != token or self.headers.get("Origin") not in (None, *origins):
                 self._send(403, {"error": "Forbidden"})
                 return
             try:
@@ -374,7 +384,7 @@ def serve(projects, port):
             pass
 
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    print(f"Dashboard: http://127.0.0.1:{port}", flush=True)
+    print(f"Dashboard: {origin or local_origin}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

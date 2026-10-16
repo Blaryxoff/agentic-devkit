@@ -24,13 +24,14 @@ def main():
     profile_parser.add_argument("name")
     ui_parser = commands.add_parser("ui")
     ui_parser.add_argument("--port", type=int, default=41790)
+    ui_parser.add_argument("--origin", help="additional local dashboard origin, for example http://agentic-devkit.test")
     commands.add_parser("mcp")
     args = parser.parse_args()
     try:
         projects = core.load_config(args.config)
         if args.command == "ui":
             from project_manager.web import serve
-            serve(projects, args.port)
+            serve(projects, args.port, args.origin)
             return 0
         if args.command == "mcp":
             from project_manager.mcp import serve
