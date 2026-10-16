@@ -82,6 +82,7 @@ header p { margin: 0; color: #c6d9cd; font-size: 13px; }
   background: #7ee1a1;
   box-shadow: 0 0 0 4px #7ee1a122;
 }
+#banner.loading::before { background: #e6c879; box-shadow: 0 0 0 4px #e6c87922; }
 #banner.offline::before { background: #ffb37f; box-shadow: 0 0 0 4px #ffb37f22; }
 .summary {
   display: flex;
@@ -123,6 +124,25 @@ header p { margin: 0; color: #c6d9cd; font-size: 13px; }
   transition: box-shadow .18s ease, transform .18s ease;
 }
 .card:hover { transform: translateY(-2px); box-shadow: 0 18px 34px -24px #18372c70, 0 3px 10px #18372c0d; }
+.skeleton-card { pointer-events: none; }
+.skeleton-card:hover { transform: none; }
+.skeleton-head { display: flex; align-items: center; gap: 15px; padding: 23px 25px 21px; border-bottom: 1px solid #eef2ed; }
+.skeleton-title { display: grid; flex: 1; gap: 9px; }
+.skeleton-body { display: grid; gap: 14px; padding: 19px 25px 22px; }
+.skeleton-row { display: flex; gap: 8px; }
+.skeleton-actions { margin-top: 5px; padding-top: 17px; border-top: 1px solid #eef2ed; }
+.skeleton-block { display: block; flex: none; border-radius: 7px; background: linear-gradient(100deg, #edf2ee 25%, #f7faf7 45%, #edf2ee 65%); background-size: 220% 100%; animation: skeleton-shimmer 1.5s ease-in-out infinite; }
+.skeleton-avatar { width: 50px; height: 50px; border-radius: 15px; }
+.skeleton-title .skeleton-block:first-child { width: 42%; height: 17px; }
+.skeleton-title .skeleton-block:last-child { width: 58%; height: 11px; }
+.skeleton-status { width: 83px; height: 27px; border-radius: 999px; }
+.skeleton-label { width: 70px; height: 9px; }
+.skeleton-chip { width: 96px; height: 28px; }
+.skeleton-button { width: 128px; height: 38px; border-radius: 10px; }
+.skeleton-button + .skeleton-button { width: 100px; }
+.skeleton-expander { width: 118px; height: 11px; margin-top: 2px; }
+.load-error { grid-column: 1 / -1; margin: 0; padding: 18px 20px; border: 1px solid #f3e2c9; border-radius: 12px; background: #fffaf0; color: #8d693b; }
+@keyframes skeleton-shimmer { to { background-position-x: -220%; } }
 .card-head { display: flex; align-items: center; gap: 15px; padding: 23px 25px 21px; border-bottom: 1px solid #eef2ed; }
 .avatar {
   display: grid;
@@ -208,22 +228,49 @@ button:disabled { opacity: .46; cursor: default; box-shadow: none; }
 .profile-select { position: relative; display: inline-flex; align-items: center; }
 .profile-select select { appearance: none; min-width: 140px; max-width: 170px; padding-right: 36px; background: #fff; }
 .chevron { position: absolute; right: 15px; top: 50%; width: 8px; height: 8px; border-right: 1.5px solid #788a7e; border-bottom: 1.5px solid #788a7e; transform: translateY(-70%) rotate(45deg); pointer-events: none; }
-.log-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.expanders { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-top: 16px; }
+.log-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .log-toggle { align-self: flex-start; min-height: 0; padding: 0; border: 0; background: transparent; color: #829187; font-size: 11px; font-weight: 600; }
 .log-toggle:hover:not(:disabled), .log-toggle:focus-visible { border: 0; background: transparent; color: #28764f; text-decoration: underline; }
+.worktree-toggle { gap: 6px; min-height: 0; padding: 0; border: 0; background: transparent; color: #526c5d; font-size: 11px; font-weight: 700; }
+.worktree-toggle:hover:not(:disabled), .worktree-toggle:focus-visible { border: 0; background: transparent; color: #28764f; text-decoration: underline; }
 .log-service { min-height: 30px; padding: 5px 9px; font-size: 11px; }
+.expander-panel { display: grid; grid-template-rows: 0fr; overflow: hidden; opacity: 0; transition: grid-template-rows .24s ease, opacity .2s ease; }
+.expander-panel.expanded { grid-template-rows: 1fr; opacity: 1; }
+.expander-inner { min-height: 0; overflow: hidden; }
 .log { overflow: auto; max-height: 240px; margin: 13px 0 0; padding: 14px; border-radius: 11px; background: #192922; color: #dcebe0; font: 11px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
-.log[hidden] { display: none; }
 .hint { margin: 13px 0 0; padding: 10px 12px; border: 1px solid #f3e3c7; border-radius: 9px; background: #fffaf0; color: #8d693b; font-size: 11px; line-height: 1.45; }
 .error { margin-top: 12px; color: #a74336; font-size: 12px; line-height: 1.45; }
 .operation { margin-top: 13px; color: #367756; font-size: 11px; font-weight: 650; }
 .progress { overflow: hidden; height: 5px; margin-top: 8px; border-radius: 5px; background: #e3f0e7; }
 .progress::after { content: ""; display: block; width: 35%; height: 100%; border-radius: 5px; background: #58a976; animation: load 1.3s ease-in-out infinite; }
+.worktree-count { padding: 3px 7px; border-radius: 99px; background: #eff4ef; color: #708478; font-size: 10px; }
+.worktree-list { margin-top: 11px; border: 1px solid #e8eee8; border-radius: 11px; overflow: hidden; }
+.worktree-row { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 11px 12px; }
+.worktree-list > div + div { border-top: 1px solid #edf1ed; }
+.worktree-info { flex: 1; min-width: 0; }
+.worktree-info strong, .worktree-info small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.worktree-info strong { font-size: 12px; }
+.worktree-info small { margin-top: 3px; color: #8b9990; font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.worktree-row .state { padding: 5px 8px; font-size: 10px; }
+.worktree-row button, .worktree-row a.button { min-height: 31px; padding: 5px 9px; font-size: 11px; white-space: nowrap; }
+.worktree-message { margin: 0; padding: 0 12px 11px; color: #a74336; font-size: 11px; }
+.worktree-progress { margin: 0 12px 10px; }
+.worktree-log { margin: 0 12px 11px; }
+.worktree-flags { display: inline-flex; gap: 4px; color: #ae7431; font-size: 14px; font-weight: 700; }
+.worktree-flags span { display: inline-flex; min-width: 18px; justify-content: center; cursor: help; }
+.worktree-flags span:focus-visible { outline: 2px solid #79c799; border-radius: 4px; }
+.flag-tooltip { position: fixed; z-index: 50; width: max-content; max-width: min(240px, calc(100vw - 16px)); padding: 7px 9px; border-radius: 7px; background: #24382b; color: #fff; box-shadow: 0 6px 18px #13281930; font-size: 11px; line-height: 1.35; pointer-events: none; }
+.flag-tooltip[hidden] { display: none; }
+.worktree-row .worktree-remove { display: inline-flex; align-items: center; justify-content: center; width: 32px; min-width: 32px; padding: 5px; color: #a04d44; }
+.worktree-remove svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 @keyframes load { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
 @media (prefers-reduced-motion: reduce) {
   .card { transition: none; }
   .card:hover { transform: none; }
   .progress::after { width: 100%; animation: none; }
+  .expander-panel { transition: none; }
+  .skeleton-block { animation: none; }
 }
 @media (max-width: 920px) { .grid { grid-template-columns: 1fr; } }
 @media (max-width: 670px) {
@@ -238,19 +285,52 @@ button:disabled { opacity: .46; cursor: default; box-shadow: none; }
   .metric { flex: 1; justify-content: center; padding: 8px; }
   .grid { gap: 12px; }
   .card-head { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 4px 13px; padding: 20px; }
+  .skeleton-head { flex-wrap: wrap; padding: 20px; }
+  .skeleton-status { margin-left: 63px; }
+  .skeleton-body { padding: 17px 20px 20px; }
   .avatar { grid-row: span 2; width: 48px; height: 48px; }
   .state { grid-column: 2; justify-self: start; }
   .body { padding: 17px 20px 20px; }
+  .worktree-row { flex-wrap: wrap; }
+  .worktree-info { flex-basis: calc(100% - 110px); }
 }
-</style></head><body><header><div><span class="overline">Локальная разработка</span><h1>Локальные проекты</h1><p>Запускай, останавливай и открывай свои проекты.</p></div><span id="banner">На связи</span></header><div class="summary"><div class="overview"><span>Обзор</span><strong>Мои проекты</strong></div><div id="summary" class="metrics" aria-label="Статусы проектов">Загрузка…</div><button id="refresh" type="button">↻ Обновить</button></div><main id="grid" class="grid"></main>
+</style></head><body><header><div><span class="overline">Локальная разработка</span><h1>Локальные проекты</h1><p>Запускай, останавливай и открывай свои проекты.</p></div><span id="banner" class="loading">Подключаемся</span></header><div class="summary"><div class="overview"><span>Обзор</span><strong>Мои проекты</strong></div><div id="summary" class="metrics" aria-label="Статусы проектов">Загрузка…</div><button id="refresh" type="button">↻ Обновить</button></div><main id="grid" class="grid" aria-busy="true"></main>
 <script>
-let token=__TOKEN__;const home=__HOME__;const grid=document.querySelector('#grid');let latestProjects=[];const pending=new Map();const openLogs=new Set();const selectedLogs=new Map();const errors=new Map();
+let token=__TOKEN__;const home=__HOME__;const grid=document.querySelector('#grid');let latestProjects=[];let lastSnapshot='';const pending=new Map();const openLogs=new Set();const openWorktrees=new Set();const selectedLogs=new Map();const errors=new Map();const worktreeFlags=new Map();const flagTimes=new Map();const flagLoading=new Set();
+const flagTooltip=el('div','flag-tooltip');flagTooltip.hidden=true;flagTooltip.setAttribute('role','tooltip');document.body.append(flagTooltip);
 const labels={running:'Работает',stopped:'Остановлен',starting:'Запускается',degraded:'Требует внимания',conflict:'Конфликт порта'};
 function el(tag,cls,text){const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node}
 function displayPath(path){return path===home?'~':path.startsWith(home+'/')?'~'+path.slice(home.length):path}
+function setExpanded(button,panel,open,label){button.firstChild.textContent=(open?'▾':'▸')+' '+label;button.setAttribute('aria-expanded',String(open));panel.classList.toggle('expanded',open);panel.inert=!open}
+function scrollLogToEnd(log){requestAnimationFrame(()=>{if(log.isConnected)log.scrollTop=log.scrollHeight})}
+function showFlagTooltip(event){const badge=event.currentTarget;flagTooltip.textContent=badge.dataset.tooltip;flagTooltip.hidden=false;const rect=badge.getBoundingClientRect();const box=flagTooltip.getBoundingClientRect();flagTooltip.style.left=Math.max(8,Math.min(innerWidth-box.width-8,rect.left+(rect.width-box.width)/2))+'px';flagTooltip.style.top=(rect.top>box.height+12?rect.top-box.height-8:rect.bottom+8)+'px'}
+function hideFlagTooltip(){flagTooltip.hidden=true}
+function skeletonCard(){const card=el('article','card skeleton-card');card.setAttribute('aria-hidden','true');const head=el('div','skeleton-head');const title=el('div','skeleton-title');title.append(el('span','skeleton-block'),el('span','skeleton-block'));head.append(el('span','skeleton-block skeleton-avatar'),title,el('span','skeleton-block skeleton-status'));const body=el('div','skeleton-body');const checks=el('div','skeleton-row');checks.append(el('span','skeleton-block skeleton-chip'),el('span','skeleton-block skeleton-chip'));const actions=el('div','skeleton-row skeleton-actions');actions.append(el('span','skeleton-block skeleton-button'),el('span','skeleton-block skeleton-button'));body.append(el('span','skeleton-block skeleton-label'),checks,actions,el('span','skeleton-block skeleton-expander'));card.append(head,body);return card}
 async function api(path,options={}){const request=()=>fetch(path,{...options,headers:{'Content-Type':'application/json','X-Devkit-Token':token}});let response=await request();const currentToken=response.headers.get('X-Devkit-Token');if(currentToken&&currentToken!==token){token=currentToken;if(response.status===403&&options.method==='POST')response=await request()}const body=await response.json();if(!response.ok)throw Error(body.error||response.statusText);return body}
-async function act(id,action,profile){if(pending.has(id))return;pending.set(id,action);errors.delete(id);render();try{await api('/api/action',{method:'POST',body:JSON.stringify({project:id,action,profile})})}catch(error){errors.set(id,error.message)}finally{pending.delete(id);await refresh()}}
-function card(project){
+async function loadWorktreeFlags(id,force=false){if(flagLoading.has(id)||(!force&&Date.now()-(flagTimes.get(id)||0)<30000))return;flagLoading.add(id);try{const flags=await api('/api/worktree-flags?project='+encodeURIComponent(id));for(const item of flags)worktreeFlags.set(item.id,item);errors.delete(id);flagTimes.set(id,Date.now());render()}catch(error){errors.set(id,error.message);flagTimes.set(id,Date.now());render()}finally{flagLoading.delete(id)}}
+async function act(id,action,profile,confirmation){if(pending.has(id))return;pending.set(id,action);errors.delete(id);render();try{await api('/api/action',{method:'POST',body:JSON.stringify({project:id,action,profile,confirmation})})}catch(error){errors.set(id,error.message)}finally{pending.delete(id);await refresh(true)}}
+function worktreeRow(project){
+  const wrap=el('div');const row=el('div','worktree-row');
+  const info=el('div','worktree-info');info.append(el('strong','',project.branch),el('small','',displayPath(project.root)));row.append(info);
+  const flags=worktreeFlags.get(project.id);if(flags){const indicators=el('span','worktree-flags');for(const [key,symbol,label] of [['dirty','✎','Изменены файлы под контролем Git'],['untracked','＋','Новые файлы, не добавленные в Git'],['ignored','◇','Игнорируемые Git файлы (.env, node_modules и др.) удалятся вместе с worktree'],['unpushed','↑','Коммиты отсутствуют в удалённой ветке']])if(flags[key]){const badge=el('span','',symbol);badge.dataset.tooltip=label;badge.tabIndex=0;badge.setAttribute('role','img');badge.setAttribute('aria-label',label);badge.onmouseenter=showFlagTooltip;badge.onfocus=showFlagTooltip;badge.onmouseleave=hideFlagTooltip;badge.onblur=hideFlagTooltip;indicators.append(badge)}row.append(indicators)}
+  const canStop=project.services.some(s=>s.pid);const operation=pending.get(project.id);const controlText=operation?{start:'Запускается…',stop:'Останавливается…',delete:'Удаляется…'}[operation]:project.state==='conflict'?'Конфликт порта':canStop?project.state==='degraded'?'⚠ Остановить':'■ Остановить':'▶ Запустить';
+  const control=el('button',canStop?'danger':project.state==='conflict'?'':'primary',controlText);control.title=(labels[project.state]||project.state)+' · '+(canStop?'остановить':'запустить')+' worktree '+project.branch;
+  control.disabled=pending.has(project.id)||(!canStop&&project.state==='conflict');control.onclick=()=>act(project.id,canStop?'stop':'start');row.append(control);
+  const front=Object.values(project.links)[0];if(front&&canStop){const link=el('a','button','Открыть ↗');link.href=front;link.target='_blank';link.rel='noopener';row.append(link)}
+  const remove=el('button','worktree-remove');remove.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v6m4-6v6"/></svg>';remove.setAttribute('aria-label','Удалить worktree '+project.branch);
+  remove.disabled=pending.has(project.id)||project.state!=='stopped'||!flags||flags.dirty||flags.untracked||(flags.detached&&flags.unpushed);
+  remove.title=!flags?'Проверка файлов…':flags.dirty||flags.untracked?'Сначала сохраните или удалите локальные файлы':flags.detached&&flags.unpushed?'Сначала сохраните неопубликованные коммиты в ветке':project.state!=='stopped'?'Сначала остановите worktree':'Удалить checkout; ветка останется';
+  remove.onclick=()=>{if(flags.ignored){const value=window.prompt('В worktree есть игнорируемые локальные файлы, включая возможные .env и зависимости. Они будут удалены вместе с checkout. Введите имя worktree для подтверждения: '+project.branch);if(value===project.branch)act(project.id,'delete',undefined,value)}else if(window.confirm('Удалить worktree '+project.branch+'? Локальный checkout исчезнет, ветка останется.'+(flags.unpushed?' Коммиты ещё не опубликованы.':'')))act(project.id,'delete')};row.append(remove);
+  if(project.services.length){
+    const log=el('pre','log worktree-log');const logPanel=el('div','expander-panel');const logInner=el('div','expander-inner');logInner.append(log);logPanel.append(logInner);
+    async function loadLog(){try{const parts=await Promise.all(project.services.map(async service=>{const result=await api('/api/logs?project='+encodeURIComponent(project.id)+'&service='+encodeURIComponent(service.id));return service.id+'\\n'+(result.log||'Нет записей')}));log.textContent=parts.join('\\n\\n')}catch(error){log.textContent=error.message}scrollLogToEnd(log)}
+    const toggle=el('button','','☷');toggle.title='Журнал '+project.branch;toggle.setAttribute('aria-label',toggle.title);toggle.onclick=()=>{const open=!openLogs.has(project.id);if(open)openLogs.add(project.id);else openLogs.delete(project.id);logPanel.classList.toggle('expanded',open);logPanel.inert=!open;if(open)loadLog()};row.append(toggle);wrap.append(row,logPanel);logPanel.classList.toggle('expanded',openLogs.has(project.id));logPanel.inert=!openLogs.has(project.id);if(openLogs.has(project.id))loadLog();
+  }else wrap.append(row);
+  if(pending.has(project.id)){const progress=el('div','progress worktree-progress');progress.setAttribute('role','progressbar');progress.setAttribute('aria-label','Операция с worktree');wrap.append(progress)}
+  if(errors.has(project.id))wrap.append(el('p','worktree-message',errors.get(project.id)));
+  return wrap;
+}
+function card(project,children){
   const article=el('article','card');article.dataset.id=project.id;
   const head=el('div','card-head');head.append(el('div','avatar',project.name.slice(0,1).toUpperCase()));
   const title=el('div','title');title.append(el('strong','',project.name),el('p','',displayPath(project.root)));
@@ -284,7 +364,7 @@ function card(project){
     const progress=el('div','progress');progress.setAttribute('role','progressbar');progress.setAttribute('aria-label',operation.textContent);
     operation.append(progress);body.append(operation);
   }
-  const logRow=el('div','log-row');const toggle=el('button','log-toggle','▸ Журнал запуска');logRow.append(toggle);
+  const expanders=el('div','expanders');const logRow=el('div','log-row');const toggle=el('button','log-toggle',(openLogs.has(project.id)?'▾':'▸')+' Журнал запуска');toggle.setAttribute('aria-expanded',String(openLogs.has(project.id)));logRow.append(toggle);expanders.append(logRow);
   let logService=null;
   if(project.services.length>1){
     logService=el('select','log-service');
@@ -294,24 +374,35 @@ function card(project){
     logService.onchange=()=>{selectedLogs.set(project.id,logService.value);if(openLogs.has(project.id))loadLog()};
     logRow.append(logService);
   }
-  const log=el('pre','log');log.hidden=!openLogs.has(project.id);
+  const log=el('pre','log');const logPanel=el('div','expander-panel');const logInner=el('div','expander-inner');logInner.append(log);logPanel.append(logInner);
   async function loadLog(){
     const service=logService?logService.value:project.services[0].id;
     try{const response=await api('/api/logs?project='+encodeURIComponent(project.id)+'&service='+encodeURIComponent(service));log.textContent=response.log||'Нет записей'}
     catch(error){log.textContent=error.message}
+    scrollLogToEnd(log);
   }
-  toggle.onclick=()=>{if(openLogs.has(project.id))openLogs.delete(project.id);else openLogs.add(project.id);log.hidden=!openLogs.has(project.id);if(!log.hidden)loadLog()};
-  if(!log.hidden)loadLog();
-  const error=el('div','error',errors.get(project.id)||'');body.append(logRow,log,error);article.append(body);
+  logPanel.classList.toggle('expanded',openLogs.has(project.id));logPanel.inert=!openLogs.has(project.id);
+  if(openLogs.has(project.id))loadLog();
+  let worktreePanel=null;let worktreeToggle=null;
+  if(children.length){
+    const active=children.filter(child=>child.services.some(service=>service.pid)).length;
+    worktreeToggle=el('button','worktree-toggle',(openWorktrees.has(project.id)?'▾':'▸')+' Worktrees');worktreeToggle.setAttribute('aria-expanded',String(openWorktrees.has(project.id)));
+    worktreeToggle.append(el('span','worktree-count',String(children.length)));if(active)worktreeToggle.append(el('span','worktree-count',active+' активн.'));
+    worktreeToggle.onclick=()=>{const open=!openWorktrees.has(project.id);if(open)openWorktrees.add(project.id);else openWorktrees.delete(project.id);if(open)openLogs.delete(project.id);setExpanded(worktreeToggle,worktreePanel,open,'Worktrees');if(open)setExpanded(toggle,logPanel,false,'Журнал запуска');if(open)loadWorktreeFlags(project.id)};
+    expanders.append(worktreeToggle);
+    worktreePanel=el('div','expander-panel');const worktreeInner=el('div','expander-inner');const worktreeList=el('div','worktree-list');worktreeList.append(...children.map(worktreeRow));worktreeInner.append(worktreeList);worktreePanel.append(worktreeInner);worktreePanel.classList.toggle('expanded',openWorktrees.has(project.id));worktreePanel.inert=!openWorktrees.has(project.id);
+  }
+  toggle.onclick=()=>{const open=!openLogs.has(project.id);if(open)openLogs.add(project.id);else openLogs.delete(project.id);if(open)openWorktrees.delete(project.id);setExpanded(toggle,logPanel,open,'Журнал запуска');if(open&&worktreePanel)setExpanded(worktreeToggle,worktreePanel,false,'Worktrees');if(open)loadLog()};
+  const error=el('div','error',errors.get(project.id)||'');body.append(expanders,logPanel,error);if(worktreePanel)body.append(worktreePanel);article.append(body);
   return article;
 }
-function render(){grid.replaceChildren(...latestProjects.map(card));const counts=[['Работают',latestProjects.filter(p=>p.state==='running').length,'running'],['Остановлены',latestProjects.filter(p=>p.state==='stopped').length,'stopped'],['Внимание',latestProjects.filter(p=>!['running','stopped'].includes(p.state)).length,'attention']];document.querySelector('#summary').replaceChildren(...counts.map(([label,count,state])=>{const metric=el('span','metric '+state);metric.append(el('strong','',String(count)),el('span','',label));return metric}))}
-async function refresh(){try{latestProjects=await api('/api/projects');render();document.querySelector('#banner').textContent='На связи';document.querySelector('#banner').classList.remove('offline')}catch(error){document.querySelector('#banner').textContent='Нет связи: '+error.message;document.querySelector('#banner').classList.add('offline')}}
-document.querySelector('#refresh').onclick=refresh;refresh();setInterval(refresh,5000);
+function render(){hideFlagTooltip();const parents=latestProjects.filter(p=>!p.parent_id);grid.replaceChildren(...parents.map(project=>card(project,latestProjects.filter(child=>child.parent_id===project.id))));grid.setAttribute('aria-busy','false');const counts=[['Работают',parents.filter(p=>p.state==='running').length,'running'],['Остановлены',parents.filter(p=>p.state==='stopped').length,'stopped'],['Внимание',parents.filter(p=>!['running','stopped'].includes(p.state)).length,'attention']];document.querySelector('#summary').replaceChildren(...counts.map(([label,count,state])=>{const metric=el('span','metric '+state);metric.append(el('strong','',String(count)),el('span','',label));return metric}))}
+async function refresh(force=false){try{const projects=await api('/api/projects');const snapshot=JSON.stringify(projects);if(force||snapshot!==lastSnapshot){latestProjects=projects;lastSnapshot=snapshot;render()}for(const id of openWorktrees)loadWorktreeFlags(id,force===true);document.querySelector('#banner').textContent='На связи';document.querySelector('#banner').classList.remove('offline','loading')}catch(error){document.querySelector('#banner').textContent='Нет связи: '+error.message;document.querySelector('#banner').classList.remove('loading');document.querySelector('#banner').classList.add('offline');if(!lastSnapshot){grid.replaceChildren(el('p','load-error','Не удалось загрузить проекты. Проверьте соединение и обновите страницу.'));grid.setAttribute('aria-busy','false');document.querySelector('#summary').textContent='Нет данных'}}}
+grid.replaceChildren(...Array.from({length:4},skeletonCard));document.querySelector('#refresh').onclick=refresh;refresh();setInterval(refresh,5000);
 </script></body></html>"""
 
 
-def serve(projects, port, origin=None):
+def serve(config_path, port, origin=None):
     local_origin = f"http://127.0.0.1:{port}"
     origins = {local_origin}
     if origin:
@@ -348,8 +439,16 @@ def serve(projects, port, origin=None):
                     page = PAGE.replace("__TOKEN__", json.dumps(token)).replace("__HOME__", json.dumps(str(Path.home())))
                     self._send(200, page.encode(), "text/html; charset=utf-8")
                 elif path.path == "/api/projects":
+                    projects = core.load_config(config_path)
                     self._send(200, [core.status(project) for project in projects])
+                elif path.path == "/api/worktree-flags":
+                    projects = core.load_config(config_path)
+                    parent = core.find_project(projects, parse_qs(path.query)["project"][0])
+                    if parent.get("parent_id") or "worktrees" not in parent:
+                        raise core.ProjectError("Project has no managed worktrees")
+                    self._send(200, [core.worktree_flags(project) for project in projects if project.get("parent_id") == parent["id"]])
                 elif path.path == "/api/logs":
+                    projects = core.load_config(config_path)
                     query = parse_qs(path.query)
                     project = core.find_project(projects, query["project"][0])
                     self._send(200, {"log": core.logs(project, query["service"][0])})
@@ -367,6 +466,7 @@ def serve(projects, port, origin=None):
                 if size > 4096:
                     raise ValueError("Request too large")
                 data = json.loads(self.rfile.read(size))
+                projects = core.load_config(config_path)
                 project = core.find_project(projects, data["project"])
                 if data["action"] == "start":
                     result = core.start(project)
@@ -374,6 +474,10 @@ def serve(projects, port, origin=None):
                     result = core.stop(project)
                 elif data["action"] == "profile":
                     result = core.select_profile(project, data["profile"])
+                elif data["action"] == "delete":
+                    if not project.get("parent_id"):
+                        raise core.ProjectError("Only worktrees can be deleted")
+                    result = core.remove_worktree(project, core.find_project(projects, project["parent_id"]), data.get("confirmation"))
                 else:
                     raise core.ProjectError("Unknown action")
                 self._send(200, result)

@@ -31,14 +31,14 @@ def main():
         projects = core.load_config(args.config)
         if args.command == "ui":
             from project_manager.web import serve
-            serve(projects, args.port, args.origin)
+            serve(args.config, args.port, args.origin)
             return 0
         if args.command == "mcp":
             from project_manager.mcp import serve
-            serve(projects)
+            serve(args.config)
             return 0
         if args.command == "status":
-            result = core.status(core.find_project(projects, args.project)) if args.project else [core.status(project) for project in projects]
+            result = core.project_status(projects, args.project) if args.project else [core.status(project) for project in projects if not project.get("parent_id")]
         else:
             project = core.find_project(projects, args.project)
             if args.command == "start":

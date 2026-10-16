@@ -17,7 +17,7 @@ from urllib.error import HTTPError
 from urllib.request import ProxyHandler, Request, build_opener
 from unittest.mock import patch
 
-from project_manager import core
+from project_manager import core, mcp
 
 
 class ProjectManagerTest(unittest.TestCase):
@@ -151,6 +151,99 @@ class ProjectManagerTest(unittest.TestCase):
         with patch.object(core, "_check", side_effect=unavailable):
             with self.assertRaisesRegex(core.ProjectError, "Mock Herd"):
                 core.start(self.project, timeout=0.6)
+
+    def test_worktrees_get_isolated_reusable_port_slots(self):
+        repo = self.root / "repo"
+        repo.mkdir()
+        subprocess.run(["git", "init", "-q", str(repo)], check=True)
+        subprocess.run(["git", "-C", str(repo), "-c", "user.name=Test", "-c", "user.email=test@example.test",
+                        "commit", "-qm", "initial", "--allow-empty"], check=True)
+        for name in ("one", "two"):
+            subprocess.run(["git", "-C", str(repo), "worktree", "add", "--quiet", "--detach", str(self.root / name)], check=True)
+        worktree_port = self.free_port()
+        while worktree_port == self.port:
+            worktree_port = self.free_port()
+        config = {"version": 1, "projects": [{
+            "id": "sample", "root": str(repo), "services": [{"id": "base", "argv": [sys.executable, "-m", "http.server", str(self.port)], "ports": [self.port]}],
+            "worktrees": {"port_base": worktree_port, "slot_size": 1, "slots": 1, "services": [{
+                "id": "web", "argv": [sys.executable, "-m", "http.server", "{port0}", "--bind", "127.0.0.1"],
+                "ports": ["{port0}"], "checks": [{"type": "tcp", "host": "127.0.0.1", "port": "{port0}"}]
+            }], "links": {"Front": "http://127.0.0.1:{port0}"}}
+        }]}
+        path = self.root / "worktrees.json"
+        path.write_text(json.dumps(config))
+        projects = core.load_config(path)
+        parent = projects[0]
+        children = [project for project in projects if project.get("parent_id") == "sample"]
+        self.assertEqual(len(children), 2)
+        self.assertEqual(parent["_worktree_count"], 2)
+        self.assertTrue(all(core.status(child)["state"] == "stopped" for child in children))
+        first, second = children
+        try:
+            started = mcp._call(projects, "project_start", {"project": first["id"]})
+            self.assertEqual(started["state"], "running")
+            self.assertEqual(started["slot"], 0)
+            self.assertEqual(started["links"]["Front"], f"http://127.0.0.1:{worktree_port}")
+            self.assertEqual(core.project_status(core.load_config(path), first["id"])["state"], "running")
+            with self.assertRaisesRegex(core.ProjectError, "No free worktree port slots"):
+                core.start(second, timeout=1)
+            self.assertEqual(mcp._call(projects, "project_stop", {"project": first["id"]})["state"], "stopped")
+            self.assertEqual(core.start(second, timeout=5)["state"], "running")
+            refreshed = core.load_config(path)
+            self.assertEqual(core.project_status(refreshed, second["id"])["state"], "running")
+            self.assertEqual(core.project_status(refreshed, first["id"])["state"], "stopped")
+        finally:
+            core.stop(first)
+            core.stop(second)
+
+    def test_worktree_flags_and_guarded_removal(self):
+        repo = self.root / "repo"
+        repo.mkdir()
+        subprocess.run(["git", "init", "-q", str(repo)], check=True)
+        identity = ["-c", "user.name=Test", "-c", "user.email=test@example.test"]
+        (repo / ".gitignore").write_text(".env\n")
+        subprocess.run(["git", "-C", str(repo), "add", ".gitignore"], check=True)
+        subprocess.run(["git", "-C", str(repo), *identity, "commit", "-qm", "initial"], check=True)
+        nested = repo / ".claude" / "worktrees" / "feature"
+        sibling = self.root / "sibling"
+        subprocess.run(["git", "-C", str(repo), "worktree", "add", "--quiet", "-b", "feature", str(nested)], check=True)
+        subprocess.run(["git", "-C", str(repo), "worktree", "add", "--quiet", "--detach", str(sibling)], check=True)
+        path = self.root / "worktrees.json"
+        path.write_text(json.dumps({"version": 1, "projects": [{
+            "id": "sample", "root": str(repo), "services": [{"id": "base", "argv": [sys.executable, "-m", "http.server", str(self.port)], "ports": [self.port]}],
+            "worktrees": {"port_base": self.free_port(), "slot_size": 1, "services": [{
+                "id": "web", "argv": [sys.executable, "-m", "http.server", "{port0}"], "ports": ["{port0}"]
+            }]}
+        }]}))
+        projects = core.load_config(path)
+        children = [project for project in projects if project.get("parent_id")]
+        self.assertEqual({project["root"] for project in children}, {str(nested.resolve()), str(sibling.resolve())})
+        feature = next(project for project in children if project["root"] == str(nested.resolve()))
+        detached = next(project for project in children if project["root"] == str(sibling.resolve()))
+        note = nested / "note.txt"
+        note.write_text("saved\n")
+        self.assertTrue(core.worktree_flags(feature)["untracked"])
+        self.assertTrue(mcp._call(projects, "worktree_flags", {"project": feature["id"]})["untracked"])
+        with self.assertRaisesRegex(core.ProjectError, "untracked"):
+            core.remove_worktree(feature, projects[0])
+        subprocess.run(["git", "-C", str(nested), "add", "note.txt"], check=True)
+        subprocess.run(["git", "-C", str(nested), *identity, "commit", "-qm", "saved"], check=True)
+        note.write_text("changed\n")
+        self.assertTrue(core.worktree_flags(feature)["dirty"])
+        note.write_text("saved\n")
+        self.assertTrue(core.worktree_flags(feature)["unpushed"])
+        self.assertTrue(core.worktree_flags(detached)["detached"])
+        with self.assertRaisesRegex(core.ProjectError, "Detached worktree"):
+            core.remove_worktree(detached, projects[0])
+        (nested / ".env").write_text("LOCAL=secret\n")
+        self.assertTrue(core.worktree_flags(feature)["ignored"])
+        self.assertIn("worktree_remove", {tool["name"] for tool in mcp._tools()})
+        with self.assertRaisesRegex(core.ProjectError, "ignored local files"):
+            mcp._call(projects, "worktree_remove", {"project": feature["id"]})
+        self.assertTrue(mcp._call(projects, "worktree_remove", {"project": feature["id"], "confirmation": "feature"})["deleted"])
+        self.assertFalse(nested.exists())
+        self.assertIn("feature", subprocess.run(["git", "-C", str(repo), "branch", "--list", "feature"], capture_output=True, text=True, check=True).stdout)
+        self.assertNotIn(feature["id"], [project["id"] for project in core.load_config(path)])
 
     def test_dashboard_offers_current_token_after_stale_action(self):
         path = self.root / "dashboard.json"

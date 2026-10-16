@@ -2,7 +2,7 @@
 
 `bin/devkit-projects` runs configured development services and exposes the same actions through a local dashboard and an optional MCP server. It uses Python 3.9+ and the standard library. Each developer keeps their own config at the repository root as `projects.json`, which Git ignores. Copy `examples/projects.example.json` there to start. `DEVKIT_PROJECTS_CONFIG` or `--config` selects another file. Only the generic example belongs in Git.
 
-Restart the dashboard and MCP server after editing `projects.json`; the Refresh button updates status, not project definitions.
+The dashboard and MCP server reread `projects.json` and discover Git worktrees on each request. Refreshing the dashboard shows new worktrees without restarting it.
 
 ```bash
 ~/.claude/agentic-devkit/bin/devkit-projects status
@@ -21,6 +21,27 @@ Each `projects` entry has an `id`, `name`, checkout `root`, and one or more `ser
 Commands inherit the dashboard or MCP process's runtime environment. A version file such as `.nvmrc` does not select Node by itself for background launches. On a machine with fnm, use an `argv` such as `["fnm", "exec", "--", "corepack", "pnpm", "dev"]` to follow the project's version file.
 
 Starting a project launches its configured service group and waits up to 60 seconds for both managed and external checks. If an external check stays unavailable, the error names the failed check and leaves the managed services available for debugging. The dashboard shows an indeterminate progress indicator during the wait. The tool records process identity in `~/.local/state/agentic-devkit/projects` and stops only matching processes it launched. Existing listeners are shown as ports occupied outside the dashboard; stop them in their original terminal before starting the project here. They are never adopted or stopped. Logs redact common credential patterns before display; applications should still avoid printing secrets.
+
+To manage Git worktrees, add one `worktrees` template to the parent project in the ignored `projects.json`. Individual worktrees need no config entry. Discovery uses `git worktree list`, so registered worktrees under `~/www`, `<project>/.claude/worktrees`, and other paths appear in the same expandable list. Each row can start, stop, open, inspect logs, or remove its checkout. `status <project>` and MCP `projects_status` with a project ID show the worktree IDs for CLI and agent actions.
+
+```json
+"worktrees": {
+  "port_base": 3200,
+  "slot_size": 1,
+  "slots": 10,
+  "services": [{
+    "id": "web",
+    "argv": ["pnpm", "dev", "--port", "{port0}"],
+    "ports": ["{port0}"],
+    "checks": [{"type": "tcp", "host": "127.0.0.1", "port": "{port0}"}]
+  }],
+  "links": {"Фронт": "http://127.0.0.1:{port0}"}
+}
+```
+
+`port_base` begins a project-specific range. A slot has `slot_size` ports, addressed as `{port0}`, `{port1}`, and so on in commands, environment values, checks, and links. By default the range has room for up to ten ports: ten one-port slots or five two-port slots. All discovered worktrees appear in the list even when there are more worktrees than slots; stopped worktrees give up their slot when another needs it. Slots are assigned on first start, kept across restarts, and recycled from stopped worktrees when needed. Configure distinct ranges for projects and keep them clear of base project ports. Worktrees run in their own checkout and use that checkout's dependencies and `.env`; prepare those files before starting. Use commands that accept a port override rather than a script that hardcodes the base project's port.
+
+The row icons mark modified tracked files (✎), untracked files (＋), files ignored by Git (◇), and commits not found on a remote branch (↑). Hover or focus an icon for its meaning. Git status is fetched when the list is expanded. The start/stop button also shows each worktree's state. Delete removes only a stopped worktree without tracked or untracked changes and leaves its branch in Git. Ignored files such as `.env` require typing the worktree name before deletion because those files disappear with the checkout. A detached worktree with unpublished commits cannot be deleted from the dashboard. The manager does not force removal or delete branches.
 
 For applications with selectable variants, add `profile_env_file`, `profiles`, and optional `profile_hooks`:
 
@@ -57,6 +78,6 @@ For Cursor, merge the server into the user-level `~/.cursor/mcp.json` so it is a
 }
 ```
 
-Adjust the path to that machine's devkit clone, preserving any other entries already in `mcpServers`. Restart Cursor after editing the file, then check `cursor-agent mcp list-tools devkit-projects`. The MCP server offers `projects_status`, `project_start`, `project_stop`, `project_logs`, and `project_select_profile`. It never accepts a shell command from the model; project IDs and commands come from the local config.
+Adjust the path to that machine's devkit clone, preserving any other entries already in `mcpServers`. Restart Cursor after editing the file, then check `cursor-agent mcp list-tools devkit-projects`. The MCP server offers `projects_status`, `project_start`, `project_stop`, `project_logs`, `worktree_flags`, `worktree_remove`, and `project_select_profile`. The project start, stop, and log tools accept discovered worktree IDs. `worktree_remove` keeps the branch and applies the same safeguards as the dashboard. The server never accepts a shell command from the model; project IDs and commands come from the local config.
 
 MCP registration makes the tools available but does not force agents to use them. Put a preference in each agent's global instructions to check `projects_status`, start a stopped configured project, and use its configured link before local browser QA. The CLI offers the same flow when MCP is unavailable.
