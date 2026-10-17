@@ -30,6 +30,8 @@ You may inspect technical evidence to establish the facts. Keep raw artifacts pr
 
 This boundary applies to implementation vocabulary, not to factual detail. Translate technical fields into their business meaning. Keep an operational identifier only when it helps the reader locate the affected item or act on the message.
 
+Preserve an external provider's response status or error code exactly when it explains the failure or helps the reader follow up with the provider. Pair the code with a plain-language explanation, and do not infer the current status from an earlier response.
+
 ## Hard boundary: preserve actionable instructions
 
 Direct instructions are essential content, not technical noise. When the source tells the reader what to do, preserve the instruction directly with the same actor, target, sequence, and conditions. For example, retain "открыть операцию №4352 и нажать «Повторить завершение»" rather than summarizing it as "вручную повторить обработку операции".
@@ -81,7 +83,7 @@ Default to a manager or non-technical employee when the user does not specify a 
 
 ### 3. Extract verified facts
 
-Extract confirmed facts, assumptions, and unknowns. Select facts using the content contract. Separately list every direct instruction and the exact user-visible labels, identifiers, conditions, and fallback steps needed to carry it out.
+Extract confirmed facts, assumptions, and unknowns. Select facts using the content contract. Separately list every direct instruction and the exact user-visible labels, identifiers, provider response codes, conditions, and fallback steps needed to carry it out.
 
 ### 4. Rewrite at business level
 
@@ -89,7 +91,7 @@ Replace codebase structure with user-visible behaviour, operational consequences
 
 ### 5. Run the disclosure scrub
 
-Before answering, check every sentence for file paths, file names, table names, column names, class names, function names, stack traces, raw errors, commands, code identifiers, and repository references. Rewrite or remove every hit.
+Before answering, check every sentence for file paths, file names, table names, column names, class names, function names, stack traces, raw errors, commands, code identifiers, and repository references. Rewrite or remove every hit except a relevant external provider response code, which must remain exact and be explained in plain language.
 
 Then compare the result with the content contract and source. Restore any material fact lost during simplification, and confirm that every retained action still names the exact control and target when the source supplied them.
 
