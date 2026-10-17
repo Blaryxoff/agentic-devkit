@@ -17,6 +17,7 @@ Fill in this table before declaring done. Mark each ✅ or ❌, with a one-line 
 | Evidence cited      | Does every non-trivial claim or finding cite a file, line, plan, or conduct rule? |
 | Open questions      | Are all blocking ambiguities resolved (see `clarification-protocol.md`)?          |
 | Conduct compliance  | Does the output respect rules from active plugin conduct docs?                    |
+| Workspace cleanup   | Were task-created worktrees and temporary clones removed or reported with path and state? |
 | Output format       | For reviewers: does the output follow `review-findings-format.md`?                |
 
 If any gate is ❌, the output is **not ready**. Either fix it, ask the user, or surface the failing gate explicitly in the result.

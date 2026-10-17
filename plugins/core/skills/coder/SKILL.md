@@ -61,6 +61,7 @@ Resolve the active plugins, identify which layers the target actually touches, t
 - Code matches local conventions in sibling files; no DRY/SOLID violations introduced.
 - The stack's lint and typecheck pass (use the project's own commands rather than hardcoded commands).
 - If tests are intended and permitted by project policy, create or update them only after every preceding implementation and non-test verification item is complete and green, then run the eligible focused tests.
+- Before the final response, clean up every worktree or temporary clone this task created per `plugins/core/conduct/parallel-sessions.md`. This does not require merging the branch or invoking `wrapup`; report any checkout whose contents cannot be safely preserved and removed.
 - Before the final response, run `plugins/core/conduct/learning-capture-gate.md` from the top-level session. Invoke
   `devkit-learn` only when a durable candidate passes. Offer a fix or backlog deferral in one line when the finding is
   actionable repository work instead; otherwise finish silently.

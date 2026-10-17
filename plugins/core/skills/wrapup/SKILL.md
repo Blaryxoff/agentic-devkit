@@ -78,7 +78,7 @@ Commit the `session` bucket plus any `related` paths the user approved. Split in
 
 ## Step 6 — Worktree cleanup
 
-Remove the session's worktree with `git worktree remove <path>` when its branch is merged or the user asked. Delete the branch only on request. Step 2 should have emptied the worktree; confirm before removing one that still holds content.
+Follow `plugins/core/conduct/parallel-sessions.md` for every worktree or temporary clone created in this session. After Step 5, remove each clean session worktree even when its branch is unmerged; verify it is absent from `git worktree list`. Keep the branch unless the user asks to delete it. Remove a temporary clone only after confirming it holds no unique work. Never force-remove a dirty, locked, or ambiguously owned checkout; report its path and state as a leftover.
 
 ## Step 7 — Report (the deliverable)
 
