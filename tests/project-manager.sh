@@ -226,6 +226,57 @@ class ProjectManagerTest(unittest.TestCase):
             core.stop(first)
             core.stop(second)
 
+    def test_worktrees_from_two_repositories_share_one_project_card(self):
+        roots = []
+        checkouts = []
+        identity = ["-c", "user.name=Test", "-c", "user.email=test@example.test"]
+        for name in ("front", "api"):
+            root = self.root / name
+            root.mkdir()
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            subprocess.run(["git", "-C", str(root), *identity, "commit", "-qm", "initial", "--allow-empty"], check=True)
+            checkout = self.root / f"{name}-worktree"
+            subprocess.run(["git", "-C", str(root), "worktree", "add", "--quiet", "-b", "topic", str(checkout)], check=True)
+            roots.append(root)
+            checkouts.append(checkout)
+        ports = []
+        while len(ports) < 2:
+            port = self.free_port()
+            if port != self.port and port not in ports:
+                ports.append(port)
+        sources = []
+        for name, root, port in zip(("front", "api"), roots, ports):
+            sources.append({"id": name, "name": name.upper(), "root": str(root), "port_base": port, "slot_size": 1, "slots": 1,
+                            "services": [{"id": "web", "argv": [sys.executable, "-m", "http.server", "{port0}", "--bind", "127.0.0.1"],
+                                          "ports": ["{port0}"], "checks": [{"type": "tcp", "host": "127.0.0.1", "port": "{port0}"}]}],
+                            "links": {"Open": "http://127.0.0.1:{port0}"}})
+        path = self.root / "two-repositories.json"
+        path.write_text(json.dumps({"version": 1, "projects": [{
+            "id": "sample", "root": str(roots[0]),
+            "services": [{"id": "base", "argv": [sys.executable, "-m", "http.server", str(self.port)], "ports": [self.port]}],
+            "worktrees": sources,
+        }]}))
+        projects = core.load_config(path)
+        parent = projects[0]
+        children = {project["source"]: project for project in projects if project.get("parent_id") == "sample"}
+        self.assertEqual(set(children), {"FRONT", "API"})
+        self.assertEqual({project["root"] for project in children.values()}, {str(checkout.resolve()) for checkout in checkouts})
+        self.assertEqual(core.project_status(projects, "sample")["worktree_count"], 2)
+        self.assertEqual({source["name"] for source in core.status(parent)["worktree_sources"]}, {"FRONT", "API"})
+        try:
+            for name, port in zip(("FRONT", "API"), ports):
+                self.assertEqual(core.start(children[name], timeout=5)["links"]["Open"], f"http://127.0.0.1:{port}")
+            self.assertEqual(core.status(children["FRONT"])["state"], "running")
+            self.assertEqual(core.status(children["API"])["state"], "running")
+            core.stop(children["API"])
+            self.assertTrue(core.remove_worktree(children["API"], parent)["deleted"])
+            self.assertFalse(checkouts[1].exists())
+            self.assertTrue(checkouts[0].exists())
+        finally:
+            core.stop(children["FRONT"])
+            if checkouts[1].exists():
+                core.stop(children["API"])
+
     def test_worktree_flags_and_guarded_removal(self):
         repo = self.root / "repo"
         repo.mkdir()

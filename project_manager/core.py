@@ -129,15 +129,14 @@ def load_config(path=CONFIG_PATH):
                 raise ProjectError(f"Invalid profile hook for {identifier}")
     ranges = []
     for project in projects:
-        settings = project.get("worktrees")
-        if settings is None:
-            continue
-        start = settings["port_base"]
-        end = start + settings["slots"] * settings["slot_size"]
-        base_ports = (port for parent in projects if not parent.get("parent_id") for service in parent["services"] for port in service.get("ports", []))
-        if any(start <= port < end for port in base_ports) or any(start < other_end and other_start < end for other_start, other_end in ranges):
-            raise ProjectError(f"Reserved worktree ports overlap in {project['id']}")
-        ranges.append((start, end))
+        for source in project.get("_worktree_sources", []):
+            settings = source["settings"]
+            start = settings["port_base"]
+            end = start + settings["slots"] * settings["slot_size"]
+            base_ports = (port for parent in projects if not parent.get("parent_id") for service in parent["services"] for port in service.get("ports", []))
+            if any(start <= port < end for port in base_ports) or any(start < other_end and other_start < end for other_start, other_end in ranges):
+                raise ProjectError(f"Reserved worktree ports overlap in {project['id']}")
+            ranges.append((start, end))
     return projects
 
 
@@ -211,8 +210,7 @@ def _write_worktree_registry(registry):
             os.unlink(temp)
 
 
-def _worktree_settings(project):
-    settings = project["worktrees"]
+def _worktree_settings(project, settings):
     if not isinstance(settings, dict):
         raise ProjectError(f"Invalid worktree settings for {project['id']}")
     if "slots" not in settings and isinstance(settings.get("slot_size"), int) and settings["slot_size"] > 0:
@@ -233,6 +231,38 @@ def _worktree_settings(project):
             if not match or int(match.group(1)) >= settings["slot_size"]:
                 raise ProjectError(f"Worktree managed ports must use a slot offset in {project['id']}")
     return settings
+
+
+def _worktree_sources(parent):
+    configured = parent["worktrees"]
+    multiple = isinstance(configured, list)
+    if not isinstance(configured, dict) and (not multiple or not configured):
+        raise ProjectError(f"Invalid worktree settings for {parent['id']}")
+    entries = configured if multiple else [configured]
+    parent_root = Path(parent["root"]).expanduser().resolve()
+    seen_ids = set()
+    seen_roots = set()
+    sources = []
+    for settings in entries:
+        if not isinstance(settings, dict):
+            raise ProjectError(f"Invalid worktree settings for {parent['id']}")
+        source_id = settings.get("id") if multiple else None
+        if multiple and (not isinstance(source_id, str) or not IDENTIFIER.fullmatch(source_id) or source_id in seen_ids):
+            raise ProjectError(f"Invalid or repeated worktree source ID in {parent['id']}: {source_id}")
+        name = settings.get("name", source_id)
+        if multiple and (not isinstance(name, str) or not name):
+            raise ProjectError(f"Invalid worktree source name in {parent['id']}")
+        root_value = settings.get("root", parent["root"])
+        if not isinstance(root_value, str) or not root_value:
+            raise ProjectError(f"Invalid worktree source root in {parent['id']}")
+        root = Path(root_value).expanduser().resolve()
+        if not root.is_dir() or root in seen_roots:
+            raise ProjectError(f"Missing or repeated worktree source directory in {parent['id']}: {root}")
+        seen_ids.add(source_id)
+        seen_roots.add(root)
+        sources.append({"id": source_id, "name": name, "root": str(root), "settings": _worktree_settings(parent, settings),
+                        "registry_key": parent["id"] if root == parent_root else f"{parent['id']}:{source_id or 'extra'}"})
+    return sources
 
 
 def _render_worktree(value, settings, slot):
@@ -277,19 +307,25 @@ def _discover_worktrees(parents):
         root = Path(parent["root"]).expanduser().resolve()
         if not root.is_dir():
             raise ProjectError(f"Missing project directory for {parent['id']}: {root}")
-        settings = _worktree_settings(parent)
-        records = _worktree_records(root)
-        parent["_worktree_count"] = len(records)
-        assignments = registry.get(parent["id"], {})
-        for record in records:
-            path = record["path"]
-            slot = assignments.get(str(path), {}).get("slot")
-            child = {"id": _worktree_id(parent["id"], path), "name": record["branch"], "root": str(path),
-                     "parent_id": parent["id"], "branch": record["branch"], "detached": record["detached"], "slot": None,
-                     "created_at": record["created_at"], "_worktree_template": settings, "services": [], "links": {}}
-            if isinstance(slot, int) and not isinstance(slot, bool) and 0 <= slot < settings["slots"]:
-                _materialize_worktree(child, slot)
-            children.append(child)
+        sources = _worktree_sources(parent)
+        parent["_worktree_sources"] = sources
+        parent["_worktree_count"] = 0
+        for source in sources:
+            records = _worktree_records(Path(source["root"]))
+            parent["_worktree_count"] += len(records)
+            assignments = registry.get(source["registry_key"], {})
+            settings = source["settings"]
+            for record in records:
+                path = record["path"]
+                slot = assignments.get(str(path), {}).get("slot")
+                child = {"id": _worktree_id(parent["id"], path), "name": record["branch"], "root": str(path),
+                         "parent_id": parent["id"], "branch": record["branch"], "detached": record["detached"], "slot": None,
+                         "created_at": record["created_at"], "source": source["name"] if source["id"] else None,
+                         "_worktree_source_root": source["root"], "_worktree_registry_key": source["registry_key"],
+                         "_worktree_template": settings, "services": [], "links": {}}
+                if isinstance(slot, int) and not isinstance(slot, bool) and 0 <= slot < settings["slots"]:
+                    _materialize_worktree(child, slot)
+                children.append(child)
     return children
 
 
@@ -306,10 +342,11 @@ def _worktree_slot_running(parent_id, path, settings):
 def _assign_worktree_slot(project):
     settings = project["_worktree_template"]
     parent_id = project["parent_id"]
+    registry_key = project["_worktree_registry_key"]
     path = project["root"]
     with _locked({"id": "worktree-slots"}):
         registry = _worktree_registry()
-        assignments = registry.setdefault(parent_id, {})
+        assignments = registry.setdefault(registry_key, {})
         existing = assignments.get(path)
         if existing:
             slot = existing["slot"]
@@ -336,7 +373,7 @@ def _assign_worktree_slot(project):
 def _clear_worktree_pending(project):
     with _locked({"id": "worktree-slots"}):
         registry = _worktree_registry()
-        entry = registry.get(project["parent_id"], {}).get(project["root"])
+        entry = registry.get(project["_worktree_registry_key"], {}).get(project["root"])
         if entry and entry.get("slot") == project["slot"]:
             entry.pop("pending_until", None)
             _write_worktree_registry(registry)
@@ -394,7 +431,7 @@ def remove_worktree(project, parent, confirmation=None):
     with _locked({"id": "worktree-slots"}):
         with _locked(project):
             registry = _worktree_registry()
-            entry = registry.get(parent["id"], {}).get(project["root"], {})
+            entry = registry.get(project["_worktree_registry_key"], {}).get(project["root"], {})
             if entry.get("pending_until", 0) > time.time() or any(_owned(project, service) for service in project["services"]):
                 raise ProjectError("Stop this worktree before deleting it")
             flags = worktree_flags(project)
@@ -403,7 +440,7 @@ def remove_worktree(project, parent, confirmation=None):
             if (flags["dirty"] or flags["untracked"] or flags["ignored"]) and confirmation != project["branch"]:
                 raise ProjectError("Deleting local files requires the worktree branch name as confirmation")
             try:
-                command = ["git", "-C", parent["root"], "worktree", "remove"]
+                command = ["git", "-C", project["_worktree_source_root"], "worktree", "remove"]
                 if flags["dirty"] or flags["untracked"]:
                     command.append("--force")
                 result = subprocess.run([*command, "--", project["root"]], capture_output=True, text=True, timeout=30, check=False)
@@ -411,7 +448,7 @@ def remove_worktree(project, parent, confirmation=None):
                 raise ProjectError(f"Cannot remove worktree: {error}") from error
             if result.returncode:
                 raise ProjectError(f"Cannot remove worktree: {redact(result.stderr.strip())}")
-            registry.get(parent["id"], {}).pop(project["root"], None)
+            registry.get(project["_worktree_registry_key"], {}).pop(project["root"], None)
             _write_worktree_registry(registry)
     return {"id": project["id"], "deleted": True}
 
@@ -549,8 +586,11 @@ def selected_profile(project):
 
 def status(project):
     if project.get("parent_id") and project.get("slot") is None:
-        return {"id": project["id"], "name": project["name"], "root": project["root"], "state": "stopped", "services": [], "external": [], "links": {}, "profiles": [], "profile": None,
-                "parent_id": project["parent_id"], "branch": project["branch"], "slot": None, "created_at": project.get("created_at")}
+        result = {"id": project["id"], "name": project["name"], "root": project["root"], "state": "stopped", "services": [], "external": [], "links": {}, "profiles": [], "profile": None,
+                  "parent_id": project["parent_id"], "branch": project["branch"], "slot": None, "created_at": project.get("created_at")}
+        if project.get("source"):
+            result["source"] = project["source"]
+        return result
     services = []
     for service in project["services"]:
         owned = _owned(project, service)
@@ -564,8 +604,12 @@ def status(project):
     result = {"id": project["id"], "name": project.get("name", project["id"]), "root": project["root"], "state": overall, "services": services, "external": external, "links": project.get("links", {}), "profiles": list(project.get("profiles", {})), "profile": selected_profile(project)}
     if project.get("parent_id"):
         result.update(parent_id=project["parent_id"], branch=project["branch"], slot=project["slot"], created_at=project.get("created_at"))
+        if project.get("source"):
+            result["source"] = project["source"]
     elif "_worktree_count" in project:
         result["worktree_count"] = project["_worktree_count"]
+        if isinstance(project["worktrees"], list):
+            result["worktree_sources"] = [{"name": source["name"], "root": source["root"]} for source in project["_worktree_sources"]]
     return result
 
 
