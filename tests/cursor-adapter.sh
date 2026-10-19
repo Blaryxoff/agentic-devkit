@@ -85,6 +85,22 @@ jq -e '.hooks.preToolUse | any(.command == "custom-legacy-hook" and .matcher == 
   || fail "legacy Cursor hook was not preserved and converted"
 [ ! -f "$PROJECT/.cursor/hooks/hooks.json" ] || fail "legacy Cursor hook file still active after migration"
 
+old_update="$TMP_DIR/old-clone/bin/devkit-update --if-stale"
+jq --arg old "$old_update" '
+  .hooks.sessionStart += [{command: $old, timeout: 60}, {command: "custom-session-hook", timeout: 10}]
+  | .hooks.workspaceOpen += [{command: $old, timeout: 60}, {command: "custom-workspace-hook", timeout: 10}]
+' "$hooks" > "$TMP_DIR/hooks-with-old-update.json"
+mv "$TMP_DIR/hooks-with-old-update.json" "$hooks"
+run_adapter cursor > "$out" 2>&1 || fail "Cursor adapter failed to replace old clone update hooks"
+for event in sessionStart workspaceOpen; do
+  jq -e --arg event "$event" --arg current "$CLONE/bin/devkit-update --if-stale" --arg old "$old_update" '
+    (.hooks[$event] | map(.command)) as $commands |
+    ($commands | map(select(. == $current)) | length) == 1 and
+    ($commands | index($old)) == null and
+    ($commands | index(if $event == "sessionStart" then "custom-session-hook" else "custom-workspace-hook" end)) != null
+  ' "$hooks" >/dev/null || fail "Cursor $event hooks lost a custom command or retained the old clone update"
+done
+
 # --- paths.skills and the SKILL.md requirement ---------------------------------
 
 [ -L "$PROJECT/.cursor/skills/devkit-fixture-real" ] \

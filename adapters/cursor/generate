@@ -262,7 +262,7 @@ cursor_hooks=$(echo "$cursor_hooks" | jq --arg cmd "$update_cmd" '
   def ensure_event($event):
     .[$event] = (
       (.[$event] // [])
-      | map(select(.command != $cmd))
+      | map(select((.command // "" | tostring | test("^/.+/bin/devkit-update --if-stale$")) | not))
     ) + [{command: $cmd, timeout: 60}];
   ensure_event("sessionStart") | ensure_event("workspaceOpen")
 ')
