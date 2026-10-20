@@ -1,6 +1,11 @@
 # Parallel Sessions
 
-Run concurrent AI sessions on the same repo in isolated git worktrees so edits never collide. A worktree is a second working directory on its own branch sharing one `.git` — cheaper and safer than cloning the repo.
+Run independent concurrent AI tasks on the same repo in isolated git worktrees so edits never collide. A worktree is a second working directory on its own branch sharing one `.git` — cheaper and safer than cloning the repo.
+
+## Continue an existing branch
+
+- Apply requested fixes and follow-up work to the existing branch in its current checkout. Create or switch to another branch, worktree, or clone only when the user explicitly requests it; parallel-session isolation does not override this rule.
+- Preserve unrelated changes in that checkout and edit only the requested scope. Unrelated changes alone do not justify moving the fixes elsewhere; if concurrent edits prevent safe work in place, explain the conflict and ask how to proceed.
 
 ## When to parallelize
 
@@ -16,7 +21,7 @@ Run concurrent AI sessions on the same repo in isolated git worktrees so edits n
 
 ## Worktree discipline
 
-- Create one worktree per branch: `git worktree add ../<repo>-<feature> -b feature/<id>-<slug>` (Claude Code: `claude --worktree <feature>`).
+- For a separate task that needs isolation, create one worktree per branch: `git worktree add ../<repo>-<feature> -b feature/<id>-<slug>` (Claude Code: `claude --worktree <feature>`). For follow-up work, apply the existing-branch rule above.
 - Record the path and owning repository of every worktree or temporary clone this task creates. Never treat another session's checkout or the main repository as task-owned.
 - Name the directory after the feature; keep it a sibling of the main checkout, not nested inside it.
 - Each worktree gets its own dev server / port if one is needed — do not share a single server across worktrees.
