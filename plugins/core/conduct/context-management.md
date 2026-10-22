@@ -37,7 +37,9 @@ Bad breakpoints:
 
 - Treat unrelated tasks as separate sessions — clear context between them.
 - When a session becomes long and unfocused, summarize progress and start fresh.
-- Before compacting, ensure any critical decisions or findings are recorded outside the session (commit messages, plan files, comments).
+- Before compacting or moving unfinished work to a fresh session, save a compact handoff in the existing task document or session scratchpad. Include the objective, scope and acceptance criteria, completed work and changed paths, verification results, unresolved issues and known risks, and the next action.
+- Preserve consequential decisions there with the chosen option, the reason or constraint behind it, and the condition for reconsidering it. Omit routine choices and facts recoverable from code.
+- When resuming, read the handoff and check the current files and relevant source sections before continuing.
 
 ## CLI loop session state
 
