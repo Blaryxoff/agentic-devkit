@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="@@LANG@@">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>@@TITLE@@</title>
+<style>
+:root{color-scheme:light dark;--accent:var(--agterm-color-5,#a629bf);--line:color-mix(in srgb,currentColor 17%,transparent);--soft:color-mix(in srgb,currentColor 5%,transparent)}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}body{margin:0;background:var(--agterm-background,Canvas);color:var(--agterm-foreground,CanvasText);font:16px/1.6 system-ui,-apple-system,sans-serif}
+main{max-width:1260px;margin:auto;padding:48px 36px 64px}.eyebrow{color:var(--accent);font-size:13px;font-weight:750;letter-spacing:.08em}h1{font-size:clamp(30px,4vw,48px);line-height:1.15;margin:10px 0 16px;letter-spacing:-.04em}.intro{max-width:780px;opacity:.76;margin:0}.tags{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 28px}.tags span{font-size:12px;padding:4px 10px;border:1px solid var(--line);border-radius:30px}
+nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:8px;margin-bottom:48px}nav a{display:flex;gap:14px;align-items:center;text-decoration:none;color:inherit;border:1px solid var(--line);padding:12px 16px;border-radius:12px;font-size:14px}nav a:hover{background:var(--soft);border-color:var(--accent)}nav b{color:var(--accent);font-variant-numeric:tabular-nums}
+section{border-top:1px solid var(--line);padding-top:28px;margin-bottom:44px}section header{display:flex;align-items:flex-start;gap:18px;margin-bottom:20px}.number{display:grid;place-items:center;min-width:44px;height:44px;padding:4px;background:var(--soft);color:var(--accent);border-radius:12px;font-size:18px;font-weight:750}h2{font-size:24px;line-height:1.3;margin:2px 0 8px}header p{margin:0;max-width:880px;opacity:.75}h1,h2,p,figcaption,nav span{overflow-wrap:anywhere}
+.shots{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr))}figure{margin:0;min-width:0}.shot{display:block;padding:12px;border:1px solid var(--line);background:var(--soft);width:100%;border-radius:16px;cursor:zoom-in;height:420px}.shot:hover{border-color:var(--accent)}.shot img{display:block;width:100%;height:100%;object-fit:contain;border-radius:8px}.count-1 .shot{height:560px}.count-1 figure{max-width:960px}figcaption{font-size:13px;opacity:.8;padding:10px 4px;line-height:1.5}figcaption span{white-space:nowrap;color:var(--accent);margin-left:8px}footer{border-top:1px solid var(--line);padding-top:20px;font-size:13px;opacity:.7}footer:empty{display:none}a{color:var(--accent)}
+dialog{width:min(96vw,1600px);max-width:none;height:94vh;max-height:none;border:1px solid var(--line);border-radius:16px;padding:16px;background:var(--agterm-background,Canvas);color:var(--agterm-foreground,CanvasText)}dialog::backdrop{background:#000b}dialog[open]{display:flex;flex-direction:column}dialog .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}dialog strong{overflow-wrap:anywhere}dialog button{font:inherit;border:1px solid var(--line);border-radius:10px;padding:6px 14px;background:var(--soft);color:inherit;cursor:pointer;flex-shrink:0}dialog .image{flex:1;min-height:0;overflow:auto;text-align:center}dialog img{max-width:100%;height:auto;display:block;margin:0 auto}button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+@media(max-width:600px){main{padding:28px 18px}.shot,.count-1 .shot{height:380px}h2{font-size:21px}section header{gap:12px}.bar{flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<main>
+<div class="eyebrow">@@ENVIRONMENT@@</div>
+<h1>@@TITLE@@</h1><p class="intro">@@INTRO@@</p>
+<div class="tags"><span>@@DATE@@</span></div>
+<nav aria-label="@@NAV_LABEL@@">@@NAV@@</nav>
+@@SECTIONS@@
+<footer>@@SOURCE@@</footer>
+</main>
+<dialog id="zoom" aria-label="@@SHOT_LABEL@@"><div class="bar"><strong id="caption"></strong><button id="close" type="button">@@CLOSE@@</button></div><div class="image"><img id="full" alt=""></div></dialog>
+<script>
+const dialog=document.getElementById('zoom');
+let opener;
+document.querySelectorAll('.shot').forEach(button=>button.addEventListener('click',()=>{
+  const source=button.querySelector('img');
+  opener=button;
+  document.getElementById('full').src=source.src;
+  document.getElementById('full').alt=source.alt;
+  document.getElementById('caption').textContent=source.alt;
+  dialog.querySelector('.image').scrollTop=0;
+  dialog.showModal();
+  document.getElementById('close').focus();
+}));
+document.getElementById('close').addEventListener('click',()=>dialog.close());
+dialog.addEventListener('close',()=>opener?.focus());
+dialog.addEventListener('click',event=>{
+  const bounds=dialog.getBoundingClientRect();
+  if(event.target===dialog&&(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom))dialog.close();
+});
+</script>
+</body>
+</html>
