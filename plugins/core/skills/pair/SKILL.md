@@ -98,6 +98,10 @@ A peer message that asks a question or reports something needing attention gets 
 script, in the same turn** — text written only in your own pane never reaches the peer. Closing
 acknowledgements and confirmations of work already done end the exchange without another reply.
 
+Keep routine peer exchanges in the peer channel. Update the user when meaningful work completes, a blocker
+appears, or a decision is needed; a peer message alone does not require a user-facing summary. Use the language
+of the user's latest direct message for user-facing updates, unless the user explicitly requested another language.
+
 ## Resume when a reply arrives
 
 Rely on the peer reply to wake you. Continue independent work or yield while the peer responds; resume
