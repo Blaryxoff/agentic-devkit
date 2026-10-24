@@ -9,7 +9,7 @@ description: >-
 
 Continue a task discussion with a brief Russian update about fixes completed in the latest development session.
 Use the task's language when the user requests it. Read history to understand the conversation and avoid repetition.
-Report only the new contribution; do not recap earlier fixes or reconfirmations.
+Report only concrete work completed in the selected session; do not recap earlier fixes or reconfirmations.
 Report existing work; do not implement fixes, run a new QA pass, or deploy while composing the update.
 
 ## Workflow
@@ -38,21 +38,25 @@ Report existing work; do not implement fixes, run a new QA pass, or deploy while
    diffs or checks when needed. Include a fix to an old QA report if the fix happened this session. Exclude plans,
    attempted or reverted fixes, other people's work, earlier fixes merely rechecked this session, and the same
    resolution already reported in the discussion. Include a new session fix after a bug was reopened; describe the
-   corrected behavior without recapping the earlier fix. Keep implementation, verification, and deployment states
-   distinct; passing tests alone does not establish availability on the QA environment. Never invent a check,
-   deployment, resolution, or fixed count.
+   corrected behavior without recapping the earlier fix. Identify the actual symptom fixed and resulting behavior;
+   a summary saying only "additional fixes were made" is insufficient evidence for a comment. Keep implementation,
+   verification, and deployment evidence distinct. Branch membership does not prove deployment to a server, and
+   passing tests does not establish availability on staging or production. Never invent a check, deployment,
+   resolution, or fixed count.
 5. **Resolve recipients.** Mention the authors/testers whose remarks this update addresses. Add the task owner or
    decision maker only when they need the update or must answer a question. Resolve native mention syntax and identities
    through actual discussion mentions, tracker user records, or supported user lookup. Do not derive handles from email
    addresses or copy a fixed recipient list from an example. Ask about an unresolved necessary recipient rather than
    tagging a guessed person; do not notify every watcher by default.
-6. **Compose the continuation.** Apply [Comment style](#comment-style). Report fixes completed in this session. Add an
-   unresolved issue only when this session changed its status, exposed a blocker, or needs a specific answer to proceed.
-   Omit the historical open-issue list. A newly changed blocker or necessary unanswered question can stand alone;
-   do not invent fixes to fill a template. If there is no new fix, changed blocker, or necessary unanswered question,
-   tell the user and do not post an empty update.
+6. **Compose the continuation.** Apply [Comment style](#comment-style). Describe the concrete fixes or other completed
+   task work from this session. Keep a limitation only when needed to describe the scope of that completed work
+   accurately. Omit task-wide status reports, outstanding QA acknowledgments, open-issue lists, recommendations,
+   and instructions about testing, releasing, or closing the task. Include a question only when the user explicitly
+   asks for one. If no concrete new work can be established, explain the evidence gap to the user and do not post a
+   generic status update or invent completed work.
 7. **Check and deliver.** Confirm every claim is supported, every issue name is understandable without hidden IDs,
-   mentions resolve to the intended people, and the text adds something beyond existing comments. Refresh the latest
+   mentions resolve to the intended people, and each item describes completed work rather than a task status or
+   instruction to the team. Verify that branch names and inferred server availability are absent. Refresh the latest
    discussion before posting to catch intervening replies or duplicate updates. Reconcile any relevant changes before
    sending. Submit one comment with the tracker's native formatting and mention support. Use an idempotency/request key
    when supported; after a timeout or uncertain result, read the discussion to establish whether it posted before
@@ -65,21 +69,26 @@ Report existing work; do not implement fixes, run a new QA pass, or deploy while
 ## Comment style
 
 - Write concise Russian prose that follows the conversation. Start with relevant native mentions on a separate line.
-- Lead each fix with a **short descriptive name**, then one or two sentences explaining the corrected behavior and any
-  condition needed to retest it. Combine related fixes when they share a scenario; keep materially different outcomes
+- Lead each fix with a **short descriptive name**, then one or two sentences explaining the corrected behavior and
+  the conditions under which it applies. Combine related fixes when they share a scenario; keep materially different outcomes
   separate. Prefer user-visible outcomes and exact UI labels over code internals.
 - Use descriptive names such as **Вход гостя во внешнюю встречу**, rather than bug abbreviations or comment numbers.
   Omit internal comment IDs and shorthand bug codes from the posted text. Keep a visible task link only when it helps
   the reader find an actual dependency or follow-up.
 - Bold issue names, any section titles, and complete questions requiring an answer. Use the tracker's equivalent of
   Markdown bold and native mentions; do not assume raw `**text**` or `@handle` works everywhere.
-- Use sections only when they make several new outcomes easier to scan. A short comment needs no title, introduction,
-  fixed template, completion totals, sign-off, or summary. Never add a section about previously confirmed fixes.
-- Include verification, environment, or deployment detail only when it changes what QA can test or how much confidence
-  to place in the result. Say when a fix is still local or has not reached the test environment. Omit routine test
-  counts, commit hashes, branches, logs, and implementation detail unless needed to act on this update.
-- Mention remaining work or ask a question only when it affects the next action now. Do not restate settled decisions,
-  repeat earlier questions, or imply an entire task is complete because this session's fixes are complete.
+- Use sections only when they make several concrete completed outcomes easier to scan. A short comment needs no
+  introduction, fixed template, completion totals, sign-off, or summary. Name the actual fix instead of using generic
+  headings such as "Состояние реализации" or "Доступность для проверки". Never recap previously confirmed fixes.
+- Mention environment availability only when supported by deployment or server evidence. Refer to staging or production
+  servers, using their established names or URLs when useful. Never mention git branches, including `master`, `main`,
+  or `dev`, and never translate a branch name into a server name. If deployment is unverified, omit availability claims
+  and generic uncertainty paragraphs; report the completed fix without implying it is already on a server.
+- Keep verification detail only when it describes a relevant check completed in this session. Omit routine test
+  counts, commit hashes, logs, and implementation detail unless needed to understand the completed work.
+- End after reporting the completed work. Omit "Перед закрытием задачи нужно…", retest/release requests, closing
+  checklists, advice, and reminders of the team's responsibilities. Do not add a missing QA confirmation as a caveat
+  or imply an entire task is complete because this session's fixes are complete.
 
 Example body after resolved mentions, assuming these fixes are verified on the test environment:
 
