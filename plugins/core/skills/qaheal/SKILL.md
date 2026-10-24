@@ -28,6 +28,9 @@ fallback instructions when a connector is unavailable; keep credentials out of o
    and hard Git rules before changing files. Preserve unrelated dirty changes and use the correct existing branch/worktree.
    Map each implementation variant to its owning branch; a shared backend and its client or theme may have separate
    source branches. Integrate through their contracts rather than copying whole trees or merging unrelated history.
+   Follow the project's operator and designer Git routes. When operators may work directly on the default branch,
+   do not require a PR solely for deployment. Preserve an active checkout with a clean worktree for the authorized
+   integration or release; retain any separate designer PR requirements.
    If ownership remains ambiguous, continue independent findings and ask about only the blocked one.
 4. **Fix the finding.** Use `devkit-coder` for implementation. Make the smallest complete change that addresses the
    reproduced cause; preserve the project's conventions and existing tests. Do not broaden the task to unrelated cleanup.
