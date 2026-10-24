@@ -5,6 +5,9 @@ Apply these rules to Drizzle persistence. Identify the installed ORM/Kit version
 ## Routing
 
 - Schema, SQL, transactions, migrations, concurrency, or data checks → [database-safety.md](./database-safety.md).
+- Schema design, source/snapshot drift, query/index/cascade design, or data backfill specifications → [schema-design.md](./schema-design.md).
+- Typed boundary/status contracts or config/dependency changes → [typed-javascript.md](../../core/conduct/typed-javascript.md) or [runtime-configuration.md](../../core/conduct/runtime-configuration.md).
+- Query/pool diagnostics → [logging-observability.md](../../core/conduct/logging-observability.md).
 - Request authorization and jobs → the enabled backend plugin's security and integration conduct.
 
 ## Boundaries

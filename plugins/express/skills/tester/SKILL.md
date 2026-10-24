@@ -7,8 +7,10 @@ claudeSubagent: true
 
 # Express Tester
 
+Apply `plugins/core/conduct/test-implementation.md`: require named testcase documents, map every test to a case, preserve production code, and use independent deterministic fixtures. If cases are absent, route to `devkit-test-case-creator` before writing tests.
+
 1. Confirm production implementation is complete and applicable non-test checks are green. Apply `plugins/core/conduct/agent-test-restraint.md` and the project test policy.
-2. Read the named cases or acceptance criteria, source, runner config, and `plugins/express/conduct/testing.md`. Request test-case design when expected behavior is missing.
+2. Read the identified test-case documents, source, runner config, and `plugins/express/conduct/testing.md`. Implement only those cases; request test-case design for missing coverage.
 3. Cover registered HTTP routes and actual middleware with the existing Supertest/Jest or integration harness. Exercise failure, denied access, scope changes, cleanup, and lifecycle behavior required by the changed contract; control time and external calls.
 4. Run the smallest eligible focused command and required runtime checks. Report missing environments and distinguish mocked/unit results from native, packaged, or real-infrastructure verification.
 

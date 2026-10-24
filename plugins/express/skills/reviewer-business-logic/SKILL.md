@@ -8,6 +8,8 @@ claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 
 # Express Reviewer Business Logic
 
+Apply **every applicable step** in `plugins/core/conduct/behavioral-completeness.md`, including the grounding/confidence gate, all-write-path graph, criterion ledger, complete view states, defect taxonomy, and completion bar. The platform steps below identify its concrete entries; they do not replace that protocol.
+
 1. Read the acceptance criteria or spec, project rules, and changed code. Load `plugins/express/conduct/overview.md` and relevant routed conduct.
 2. Build in-scope states, transitions, actors, guards, and side effects from every entry: requests, workers, callbacks, scheduled tasks, and collaboration events.
 3. Trace each required flow through router registration and middleware through validated actor/tenant scope, services, SQL/integrations, and HTTP or stream output. Check denied actors, wrong scope, invalid state, duplicate action/delivery, cancellation, and recovery after partial failure where required.
@@ -15,3 +17,5 @@ claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 5. Run `plugins/core/conduct/risk-probe-gate.md` for state-changing transitions; return findings and uncovered verification surfaces.
 
 Keep the review read-only. Code quality belongs to `devkit-reviewer-deep-express`.
+
+Search Drizzle/SQL direct writes, service mutations, listeners, jobs/schedules, webhook/callback routes, and integration completion paths. Check orphan cleanup, time triggers, current-state authorization, and durable side-effect recovery.

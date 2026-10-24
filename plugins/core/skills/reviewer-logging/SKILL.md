@@ -18,6 +18,8 @@ Your job is to review logging behaviour:
 
 If the project uses the devkit toolkit, read `.devkit/toolkit.json` to identify enabled plugins. For each active plugin, read its conduct docs (`plugins/<plugin>/conduct/`) for logging-related rules. Apply those standards alongside the checks below.
 
+For JavaScript/TypeScript application scope, load `plugins/core/conduct/logging-observability.md` and the touched platform's index. Check async context isolation, single reporting ownership, bounded metric labels, client/crash redaction, and actual runtime signal verification when relevant.
+
 ## Check for
 
 1. Correct log level for each event (debug/info/warning/error)

@@ -7,5 +7,6 @@
 - Validate outbound schemes and destinations for URL fetch/import, redirects, callbacks, and embedded services. Block access to private/metadata networks where users choose a URL; recheck redirects and resolution through the project's SSRF control.
 - Authorize object-storage keys before issuing signed URLs; enforce upload size/type policy and safe filenames. Treat extracted documents, generated HTML, tool arguments, and model output as untrusted input.
 - Keep provider keys server-side. Redact cookies, bearer tokens, secrets, prompts containing private content, and personal data from logs; retain safe request/job IDs for diagnosis.
+- Use the project's maintained password hashing and constant-time verification helpers; never store plaintext or manually compare hashes. Preserve token expiry/rotation/revocation policy, TLS, security headers, and session invalidation when auth changes.
 
 Sources: [Express security](https://expressjs.com/en/advanced/best-practice-security.html), [proxy configuration](https://expressjs.com/en/guide/behind-proxies.html), [OWASP API object authorization](https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/).

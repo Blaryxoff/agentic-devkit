@@ -23,24 +23,13 @@ Return review findings and the pass outcome; leave fixes to a separate implement
 
 ## Procedure
 
-1. Read `.devkit/toolkit.json` to determine enabled plugins. If absent, detect stack from `composer.json` and `package.json`.
-2. Decide which variants apply:
-   Scope variants to changed responsibilities. Assign native screens to React Native, desktop main/preload/packaging to Electron, and web renderer UI to Frontend; include both sides for a change crossing a platform bridge. Resolve transitive plugin dependencies, including shared React and Drizzle conduct, before dispatch.
-   - **Laravel variant** (`devkit-reviewer-deep-laravel`, at `plugins/laravel/skills/reviewer-deep/SKILL.md`) — when `devkit-laravel` is enabled.
-   - **NestJS variant** (`devkit-reviewer-deep-nestjs`, at `plugins/nestjs/skills/reviewer-deep/SKILL.md`) — when `devkit-nestjs` is enabled.
-   - **Express variant** (`devkit-reviewer-deep-express`, at `plugins/express/skills/reviewer-deep/SKILL.md`) — when `devkit-express` is enabled and the changed paths touch that platform.
-   - **React Native variant** (`devkit-reviewer-deep-react-native`, at `plugins/react-native/skills/reviewer-deep/SKILL.md`) — when `devkit-react-native` is enabled and the changed paths touch that platform.
-   - **Electron variant** (`devkit-reviewer-deep-electron`, at `plugins/electron/skills/reviewer-deep/SKILL.md`) — when `devkit-electron` is enabled and the changed paths touch that platform.
-   - **Frontend variant** (`devkit-reviewer-deep-frontend`, at `plugins/frontend/skills/reviewer-deep/SKILL.md`) — when any frontend stack plugin is enabled (`devkit-frontend`, `devkit-nextjs`, `devkit-nuxt`, `devkit-vue`, `devkit-inertia`).
-   - **Generic quality fallback** — for changed code not covered by any active stack variant; use the role defined in
-     `plugins/core/conduct/review-specialist-fanout.md`.
+1. Resolve enabled plugins, transitive dependencies, and changed responsibilities under `plugins/core/conduct/reviewer-dispatch.md`.
+2. Discover applicable `reviewer-deep` capabilities from those plugins' declared skill directories and frontmatter. Select only the responsibility owners, and add the **Generic quality fallback** for uncovered scope; keep framework names and APIs in plugin conduct.
 3. Resolve the risk-gated testing, documentation, and visual-reference specialists, then dispatch every applicable reviewer per
    `plugins/core/conduct/review-specialist-fanout.md`. For a standalone deep review, this top-level skill owns dispatch.
    For a full review, the top-level session registers applicable business-logic variants and owns one shared dispatch;
    the paired business-logic skill must not dispatch them again. Never rely on a subagent to fan out further.
-4. Present Express, React Native, and Electron reports under their own stack headings alongside `## Laravel — Deep review`, `## NestJS — Deep review`, `## Frontend — Deep review`,
-   `## Core/general — Deep review`, `## Testing`, `## Documentation`, and `## Design-reference fidelity`. Omit unopened
-   gates and unused fallbacks. Keep each review axis in its own section.
+4. Present each resolved stack/responsibility report, generic fallback, and opened specialist under its own named heading. Keep quality and behavioral axes separate; omit unopened gates and unused fallbacks.
 5. **Cross-check in Codex.** Once the variant reports are assembled, run the cross-agent cross-check per `plugins/core/conduct/cross-agent-review.md`, using Codex skill slug `devkit-core--reviewer-deep`. Merge kept findings into the matching stack or specialist section, tagged `(via Codex)`. **This step is mandatory when the gate holds** — the gate requires Claude Code or Cursor Agent, so when this skill runs inside Codex it is closed and you review natively without a cross-check. Otherwise run `command -v codex`, do not treat it as optional or proportional, and state the gate outcome explicitly. Skip only when a gating condition genuinely fails, naming which.
 6. Apply the review completion gate in `plugins/core/conduct/review-findings-format.md` after all requested review skills finish. When paired with business-logic review, wait for both reports before deciding the combined pass outcome.
 7. Stop only when the complete resolved reviewer set—stack variants, generic fallback, testing, documentation, and

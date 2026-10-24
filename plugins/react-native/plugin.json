@@ -4,6 +4,6 @@
   "description": "React Native and Expo routing, native lifecycles, security, builds, and review workflows",
   "layer": "framework",
   "defaultEnabled": false,
-  "dependencies": ["devkit-core", "devkit-react"],
+  "dependencies": ["devkit-core", "devkit-react", "devkit-frontend"],
   "paths": {"skills": "./skills", "conduct": "./conduct"}
 }

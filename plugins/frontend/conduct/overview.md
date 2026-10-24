@@ -1,6 +1,6 @@
 # Frontend Conduct
 
-This section contains tool-agnostic frontend architecture and generic CSS best practices.
+This section contains shared UI architecture, design and motion policy, plus browser-specific CSS and visual verification.
 
 ## Scope
 
@@ -14,13 +14,16 @@ This section contains tool-agnostic frontend architecture and generic CSS best p
 
 - Do not include tool-specific rules here (Nuxt, Inertia, Vue internals, Tailwind internals).
 - Reference `plugins/core/conduct/ownership-map.md` when in doubt.
+- Apply shared design and motion decisions through the active runtime's adapter. CSS/DOM/Playwright mechanics apply to browser renderers only; use the target runtime's layout/accessibility and interaction evidence elsewhere.
 
 ## Routing
 
+- Reference implementation, guarded visual changes, or choosing runtime verification tools → [visual-workflow.md](./visual-workflow.md); resolve the surface/host adapter before applying mechanics.
 - Visual direction, redesign preservation, hierarchy, and anti-slop review → [design-quality.md](./design-quality.md).
 - Animation purpose, timing, physicality, interruption, and reduced-motion behavior → [motion.md](./motion.md).
 - Visual implementation, screenshot comparison, and baseline approval → [visual-implementation.md](./visual-implementation.md).
 - Deterministic local visual baselines and Playwright Test diff triage → [playwright-visual-regression.md](./playwright-visual-regression.md).
+- Non-browser surfaces and host/window integration → the matching enabled plugin index's visual/interaction verification route.
 
 ## Architecture
 
@@ -30,7 +33,7 @@ This section contains tool-agnostic frontend architecture and generic CSS best p
 - Require clear loading, empty, and error states for every async UI.
 - Avoid duplicated logic and duplicated UI patterns when a shared abstraction is appropriate.
 
-## Generic CSS rules
+## Generic CSS rules (browser renderers)
 
 - Avoid duplicated hardcoded values for repeated styles (especially colors, spacing, radius).
 - Move repeated values to reusable CSS variables or design tokens.

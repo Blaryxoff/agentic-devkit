@@ -16,8 +16,7 @@ Act as a senior design engineer reviewing whether motion feels responsive, coher
 2. Identify the framework, motion libraries, existing duration/easing/spring tokens, and the interaction frequency of the
    changed surfaces.
 3. Read the animation diff and its trigger/state code; ground each judgment in the interaction that invokes it.
-4. When feel cannot be established from code, inspect the running interaction with chrome-devtools MCP or require a
-   targeted feel-check instead of guessing.
+4. Resolve the target runtime and its interaction/visual adapter through enabled plugin indexes under `plugins/frontend/conduct/visual-workflow.md` §1. Use that adapter to verify system motion preferences, input/gesture interruption, frame/resource cost, and host context. Inspect the actual interaction or report a targeted verification gap rather than guessing from a different runtime.
 
 ## Review checks
 
@@ -47,5 +46,5 @@ failure, serious accessibility/performance risk, or clearly feel-breaking motion
 
 - Keep the review read-only and within the requested frontend concerns.
 - Prefer an instant state change when it communicates more clearly than animation.
-- Check the actual browser, library, and product context before applying upstream guidance.
+- Check the actual runtime, library, and product context before applying upstream guidance.
 - Reuse project motion tokens for curves and spring values.

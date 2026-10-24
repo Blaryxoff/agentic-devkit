@@ -76,19 +76,19 @@ part of review acceptance even when the user did not separately ask for a design
 
 Prompt the specialist to:
 
-- inspect the running UI at every referenced page/state × applicable viewport; start only the project's minimal local
-  server when needed and leave pre-existing servers running;
-- apply `plugins/frontend/conduct/design-quality.md` **Reference fidelity** and use
-  `plugins/frontend/conduct/visual-implementation.md` §2–§4 for measured browser comparison;
+- resolve the surface/runtime and host adapter through enabled plugin indexes under
+  `plugins/frontend/conduct/visual-workflow.md` §1; inspect every referenced surface/state × applicable target configuration;
+- start only the project's minimal required runtime when needed and preserve pre-existing sessions/servers;
+- apply `plugins/frontend/conduct/design-quality.md` **Reference fidelity** and the selected adapter's measured comparison;
 - run the mandated whole-frame composition and complete element-inventory pass before inspecting individual colors,
   spacing, typography, dividers, or other local details. Matching local details never substitutes for the first pass;
-- cite the reference, route/state, viewport, expected versus actual measurement or appearance, screenshot evidence, and
+- cite the reference, route/screen/state, target configuration, expected versus actual measurement or appearance, screenshot evidence, and
   `file:line` when the source cause is traceable;
-- list unchecked reference states/viewports as unverified. If the reference or running page is inaccessible, report the
-  blocked gate and mark the visual result unverified until browser evidence is available.
+- list unchecked reference states/target configurations as unverified. If the reference or actual runtime is inaccessible,
+  report the blocked gate and mark the visual result unverified until evidence from that runtime is available.
 
 Keep this specialist read-only. It reports implementation deltas, not subjective redesign preferences, and never
-updates baselines or fixes CSS.
+updates baselines or edits implementation.
 
 ## Simplification
 

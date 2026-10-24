@@ -1,5 +1,6 @@
 # Native Verification and Builds
 
+- Apply [test-implementation.md](../../core/conduct/test-implementation.md) for named cases, isolation, runner boundaries, and failure reporting. Use [visuals.md](./visuals.md) for approved native baselines and actual device evidence.
 - Run configured lint, typecheck, and eligible Jest/jest-expo or React Native Testing Library checks for the changed package. Match React, renderer, preset, transform allowlist, and library versions to the installed SDK.
 - Verify changed native behavior on the relevant iOS/Android simulator or device: cold launch, deep link, auth restoration, denied permissions, keyboard/safe area, background/foreground, reconnect, and orientation when affected.
 - Use existing browser Playwright flows for the web target only. Route browser QA to `devkit-browser`; use the available native/device tooling for native flows and report when it is unavailable.

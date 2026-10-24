@@ -1,5 +1,6 @@
 # Electron Lifecycle, Packaging, and Verification
 
+- Apply [test-implementation.md](../../core/conduct/test-implementation.md) for testcase traceability, independent fixtures, and test-only scope. Use [architecture.md](./architecture.md) for the updater/IPC state graph and actual packaged-window visual checks.
 - Resolve package scripts before invoking Electron or builder. If the environment sets `ELECTRON_RUN_AS_NODE`, clear it using the project's launcher; otherwise Electron can start as Node instead of opening the app.
 - Run configured checks for main/preload and renderer separately. Smoke-test startup, restored session, login/logout, deep links, external windows, app quit/reopen, tray/window behavior, and denied IPC/permissions when affected.
 - Preserve window and renderer identity across layout/theme changes; close listeners, windows, timers, and background processes deliberately. Verify background streaming behavior when changing throttling or power settings.

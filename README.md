@@ -120,8 +120,8 @@ Supported adapters: `claude`, `cursor`, `codex`.
 | `devkit-express` | framework | Express APIs, authorization, queues, streams, and review workflows                     | core                |
 | `devkit-drizzle` | stack     | Drizzle ORM, PostgreSQL transactions, schema, and migration safety                     | core                |
 | `devkit-react`   | stack     | Shared React hooks, TanStack Query, and Zustand state                                   | core                |
-| `devkit-react-native` | framework | React Native/Expo lifecycle, routing, security, builds, and review workflows       | core, react         |
-| `devkit-electron` | framework | Electron privileges, desktop lifecycle, packaging, updates, and review workflows     | core                |
+| `devkit-react-native` | framework | React Native/Expo lifecycle, routing, security, builds, and review workflows       | core, react, frontend |
+| `devkit-electron` | framework | Electron privileges, desktop lifecycle, packaging, updates, and review workflows     | core, frontend      |
 | `devkit-nextjs`  | framework | Next.js App Router and React server/client boundaries                                  | core, frontend, react |
 | `devkit-nuxt`     | framework | Nuxt conventions: SSR, data-fetching, TypeScript, BEM/SCSS workflows                    | core, frontend, vue |
 | `devkit-vue`      | framework | Vue component, composable, and state organization conventions                           | core, frontend      |
@@ -151,7 +151,7 @@ bin/devkit-resolve --preset=express-native-desktop --project=/path/to/project
 bin/devkit-install --claude --cursor --codex --project=/path/to/project
 ```
 
-Express, React Native, and Electron mirror the architect, fast/deep/business-logic reviewer, and tester workflows. React and Drizzle provide shared conduct loaded by the owning layer. Next.js includes the web frontend and shared React rules; native apps use React conduct without inheriting DOM/CSS assumptions. Each plugin links upstream sources and requires the consuming project's installed versions and commands.
+Express, React Native, and Electron mirror the architect, fast/deep/business-logic reviewer, and tester workflows. React and Drizzle provide shared conduct loaded by the owning layer. UI plugins reuse the shared design, reference-build, visual-guard, and motion workflows, resolving verification mechanics from the active runtime's conduct. Each plugin links upstream sources and requires the consuming project's installed versions and commands. See the [Laravel/Frontend coverage map](./howto/stack-coverage.md) for baseline obligations and their canonical owners.
 
 ### Laravel + Vue + Tailwind
 

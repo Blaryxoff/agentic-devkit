@@ -5,6 +5,9 @@ Apply these rules to React web and native clients. Read each app's React version
 ## Routing
 
 - Query caches, Zustand, session restoration, effects, or streaming state → [state.md](./state.md).
+- Forms, client failures, complete view states, or route recovery → [ui-contracts.md](./ui-contracts.md).
+- Cross-layer architecture or requested specifications → [feature-design.md](../../core/conduct/feature-design.md).
+- Types/errors, config/dependencies, or diagnostics → [typed-javascript.md](../../core/conduct/typed-javascript.md), [runtime-configuration.md](../../core/conduct/runtime-configuration.md), or [logging-observability.md](../../core/conduct/logging-observability.md), matched to the changed risk.
 - Next.js server/client boundaries and caching → `plugins/nextjs/conduct/overview.md` when enabled.
 - Native routing, styling, permissions, and app lifecycle → `plugins/react-native/conduct/overview.md` when enabled.
 - Web markup, accessibility, visual design, or CSS → `plugins/frontend/conduct/overview.md` when enabled.

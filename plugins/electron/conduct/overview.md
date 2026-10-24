@@ -5,6 +5,8 @@ Apply these rules to Electron shells and desktop clients. Inspect Electron, buil
 ## Routing
 
 - Main/preload/renderer flow, IPC, URLs, permissions, or credentials → [security.md](./security.md).
+- Application/renderer boundaries, state graphs, feature specifications, visual checks, or performance → [architecture.md](./architecture.md).
+- Types/errors, config/dependencies/CLI, or telemetry → the risk-matched [typed JavaScript](../../core/conduct/typed-javascript.md), [runtime configuration](../../core/conduct/runtime-configuration.md), or [logging/observability](../../core/conduct/logging-observability.md) rules.
 - Window/app lifecycle, builds, update feeds, signing, or test code → [testing.md](./testing.md).
 - Web renderer UI → the enabled frontend/Next.js/React conduct for that renderer.
 

@@ -5,6 +5,12 @@ Apply these rules to Express APIs and their Node workers. Read the workspace man
 ## Routing
 
 - Routes, services, dependency boundaries, or startup/shutdown → [architecture.md](./architecture.md).
+- Feature design/specification, jobs/events contract, or edge rollout → [specification.md](./specification.md).
+- New/moved responsibilities or code review → [anti_patterns.md](./anti_patterns.md) and risk-matched rules.
+- Failure mapping, cancellation, retry, or async ownership → [error_handling.md](./error_handling.md).
+- TypeScript contracts/statuses → [typed-javascript.md](../../core/conduct/typed-javascript.md).
+- Config, package choice, CLI, Make/task scripts, or bootstrap → [runtime-configuration.md](../../core/conduct/runtime-configuration.md).
+- Logging, metrics, tracing, health, or operations → [logging-observability.md](../../core/conduct/logging-observability.md).
 - Input, cookies, bearer tokens, workspaces, uploads, outbound URLs, or logging → [security.md](./security.md).
 - BullMQ, Redis, SSE, WebSockets, Yjs, vectors, storage, or provider calls → [integrations.md](./integrations.md).
 - Drizzle queries or migrations → `plugins/drizzle/conduct/overview.md` when `devkit-drizzle` is enabled; otherwise inspect the project's selected persistence adapter.

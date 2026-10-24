@@ -40,11 +40,14 @@ Resolve the active plugins, identify which layers the target actually touches, t
 3. Read `overview.md` for each touched non-core plugin when it exists, then add only the risk-specific documents needed:
    - new/moved files, cross-layer flow, or changed responsibility → `architecture.md`, `anti_patterns.md`, and layering documents such as `thin_controller_model.md`;
    - PHP/public APIs/comments → `php.md`, `documentation.md`;
+   - JavaScript/TypeScript boundary types, finite states, or async errors → `plugins/core/conduct/typed-javascript.md`;
    - authentication, authorization, external input, secrets → `security.md`;
    - migrations, queries, transactions, models, schema assumptions → `database-safety.md`, `database_snapshot.md`, `enums.md`;
    - exceptions, retries, fallbacks → `error_handling.md`;
    - configuration or dependencies → `configs.md`, `dependencies.md`;
+   - JavaScript runtime config, package dependencies, or bootstrap → `plugins/core/conduct/runtime-configuration.md`;
    - logs/metrics → `logging.md`, `observability.md`;
+   - JavaScript logs, traces, metrics, or runtime diagnosis → `plugins/core/conduct/logging-observability.md`;
    - Pinia/Nuxt state → `stores.md`;
    - CLI commands → `cmd.md`.
 4. Skip review, planning, git, Makefile, and testing documents unless the requested change directly targets those artifacts.

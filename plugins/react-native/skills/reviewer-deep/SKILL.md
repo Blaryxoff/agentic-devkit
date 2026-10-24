@@ -15,3 +15,5 @@ claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 5. Run `plugins/core/conduct/risk-probe-gate.md` on state-changing paths and fold newly supported findings into the report.
 
 Keep the review read-only. Behavioral completeness belongs to `devkit-reviewer-business-logic-react-native`.
+
+Check dependency/supply-chain and config changes under `plugins/core/conduct/runtime-configuration.md`, typed errors/status contracts under `typed-javascript.md`, and logs/traces/metrics under `logging-observability.md` when the diff touches those risks. Include the platform visual/accessibility/performance adapter for rendered changes.

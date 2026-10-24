@@ -8,8 +8,14 @@ Start with `conduct-loading.md`, then open only the documents routed by the acti
 | Grounding, research, external libraries, or clarification | [inputs-grounding-gate.md](./inputs-grounding-gate.md), [research-first.md](./research-first.md), [library-docs.md](./library-docs.md), [clarification-protocol.md](./clarification-protocol.md) |
 | Readiness, terminal learning, or risk analysis | [readiness-gate.md](./readiness-gate.md), [learning-capture-gate.md](./learning-capture-gate.md), [risk-probe-gate.md](./risk-probe-gate.md) |
 | Surgical implementation, abstractions, comments, or smells | [surgical-changes.md](./surgical-changes.md), [solid-dry.md](./solid-dry.md), [code-comments.md](./code-comments.md), [code-smells.md](./code-smells.md) |
+| JavaScript/TypeScript types, finite states, or error ownership | [typed-javascript.md](./typed-javascript.md) |
+| Runtime config, dependencies, bootstrap, CLI, or task scripts | [runtime-configuration.md](./runtime-configuration.md) |
+| Structured logs, traces, metrics, or operational recovery | [logging-observability.md](./logging-observability.md) |
+| Cross-layer feature design or ordinary specifications | [feature-design.md](./feature-design.md) |
+| Entity, flow, view, or store completeness | [behavioral-completeness.md](./behavioral-completeness.md) |
+| Stack tester traceability, isolation, or implementation boundaries | [test-implementation.md](./test-implementation.md) |
 | Implementation completion and verification | [review-gate.md](./review-gate.md), [verification-loop.md](./verification-loop.md), [agent-test-restraint.md](./agent-test-restraint.md) |
-| Review routing, specialist fan-out, finding format, cross-checking, or peer-CLI invocation | [review-routing.md](./review-routing.md), [review-specialist-fanout.md](./review-specialist-fanout.md), [review-findings-format.md](./review-findings-format.md), [cross-agent-review.md](./cross-agent-review.md) |
+| Review routing, capability discovery, specialist fan-out, finding format, cross-checking, or peer-CLI invocation | [review-routing.md](./review-routing.md), [reviewer-dispatch.md](./reviewer-dispatch.md), [review-specialist-fanout.md](./review-specialist-fanout.md), [review-findings-format.md](./review-findings-format.md), [cross-agent-review.md](./cross-agent-review.md) |
 | Supervised multi-agent review delegated to revmux | [revmux-review.md](./revmux-review.md) |
 | Git, commit workflow, or deferred-work backlog | [git-commit-workflow.md](./git-commit-workflow.md), [deferred-work-backlog.md](./deferred-work-backlog.md) |
 | Context, parallel work, token use, or MCP economy | [context-management.md](./context-management.md), [parallel-sessions.md](./parallel-sessions.md), [token-optimization.md](./token-optimization.md), [mcp-economy.md](./mcp-economy.md) |

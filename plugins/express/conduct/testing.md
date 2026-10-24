@@ -1,5 +1,6 @@
 # Express Verification
 
+- Apply [test-implementation.md](../../core/conduct/test-implementation.md) for testcase traceability, unit/integration boundaries, deterministic isolation, fixtures, and test-only scope.
 - Resolve commands from the target package and project test policy. Run configured lint and TypeScript build/typecheck before the eligible focused tests; preserve the installed Jest major and accepted CLI flags.
 - Exercise registered routes and actual middleware with the project's existing HTTP test harness, such as Supertest. Cover invalid input, unauthenticated access, denied roles, wrong workspace/object, stable error bodies, and expected persisted effects.
 - Use an isolated database/Redis environment for transaction, constraint, migration, and worker behavior that mocks cannot establish. Mock paid providers and external deliveries unless the project explicitly requests a sandbox integration.

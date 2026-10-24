@@ -16,9 +16,7 @@ modifying code.
 1. Read `plugins/frontend/conduct/overview.md` and `plugins/frontend/conduct/design-quality.md`.
 2. Read the smallest representative set of project tokens, components, and routes needed to understand the target.
 3. If Figma, brand guidance, or approved screenshots exist, treat them as stronger evidence than generic taste.
-4. When a running page is available, inspect it at the relevant mobile and desktop viewports using chrome-devtools MCP.
-   Use `plugins/frontend/conduct/visual-implementation.md` for browser mechanics. Keep baseline creation and approval
-   outside the critique.
+4. Resolve the target runtime and its verification adapter through enabled plugin indexes under `plugins/frontend/conduct/visual-workflow.md` §1. Inspect the actual rendered surface at the relevant configurations using that adapter; include host interaction checks where applicable. Keep baseline creation/approval outside the critique and report unavailable surfaces without claiming a match.
 
 ## Workflow
 

@@ -8,6 +8,9 @@ Apply these rules to native clients, including Expo projects. Inspect installed 
 - Session persistence, deep links, permissions, notifications, streams, or WebViews → [security.md](./security.md).
 - Builds, device checks, test code, or QA → [testing.md](./testing.md).
 - Shared hooks, Query, and Zustand → `plugins/react/conduct/overview.md` and its routed state rules.
+- Design/reference fidelity, visual protection, accessibility, animation, or native performance → [visuals.md](./visuals.md); reuse enabled frontend design/motion policy with this native adapter.
+- Feature architecture/specification → [feature-design.md](../../core/conduct/feature-design.md).
+- Types/errors, configuration/dependencies, or telemetry → the risk-matched [typed JavaScript](../../core/conduct/typed-javascript.md), [runtime configuration](../../core/conduct/runtime-configuration.md), or [logging/observability](../../core/conduct/logging-observability.md) rules.
 
 ## Boundaries
 

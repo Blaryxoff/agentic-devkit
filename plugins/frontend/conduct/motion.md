@@ -1,7 +1,6 @@
 # Motion Design
 
-Tool-agnostic policy for CSS, Web Animations API, and framework motion libraries. Motion must improve comprehension or
-feedback without making frequent work feel slower.
+Shared policy for interaction motion across runtimes. Motion must improve comprehension or feedback without making frequent work feel slower. Resolve implementation and verification mechanics through the active runtime adapter; CSS/WAAPI examples below apply to browser renderers.
 
 ## Purpose gate
 

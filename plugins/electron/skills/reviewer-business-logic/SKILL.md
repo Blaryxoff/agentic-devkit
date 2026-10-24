@@ -8,6 +8,8 @@ claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 
 # Electron Reviewer Business Logic
 
+Apply **every applicable step** in `plugins/core/conduct/behavioral-completeness.md`, including the grounding/confidence gate, all-write-path graph, criterion ledger, complete view states, defect taxonomy, and completion bar. The platform steps below identify its concrete entries; they do not replace that protocol.
+
 1. Read the acceptance criteria or spec, project rules, and changed code. Load `plugins/electron/conduct/overview.md` and relevant routed conduct.
 2. Build in-scope states, transitions, actors, guards, and side effects from every entry: app launch/reopen/quit, window navigation, IPC, downloads, media permissions, and update transitions.
 3. Trace each required flow through startup/deep-link entry through windows and session partitions, preload bridge, validated IPC, privileged operations, and renderer outcome. Check denied actors, wrong scope, invalid state, duplicate action/delivery, cancellation, and recovery after partial failure where required.
@@ -15,3 +17,5 @@ claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 5. Run `plugins/core/conduct/risk-probe-gate.md` for state-changing transitions; return findings and uncovered verification surfaces.
 
 Keep the review read-only. Code quality belongs to `devkit-reviewer-deep-electron`.
+
+Trace the update/download/install graph, single-instance/deep-link handling, IPC sender actors, destroyed/reopened windows, persistent partitions, and cross-window session/revocation behavior under `plugins/electron/conduct/architecture.md`.

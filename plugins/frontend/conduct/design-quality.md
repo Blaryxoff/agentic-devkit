@@ -82,7 +82,7 @@ Run the comparison in this order. Do not start with isolated element details:
 A set of matching local details does not prove fidelity. Never issue a clean verdict when the whole-frame composition
 and complete element inventory were not checked explicitly.
 
-- Use measured design values and rendered DOM/computed styles when available. Do not approve fidelity from a casual
+- Use measured design values and live layout/style/accessibility data from the selected runtime adapter when available. Do not approve fidelity from a casual
   screenshot glance when exact evidence can be obtained.
 - Report every unexplained delta with the reference, route/state, viewport, expected value or appearance, actual value
   or appearance, and screenshot evidence. Do not claim a match for reference states or viewports that were not checked.

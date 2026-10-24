@@ -14,11 +14,13 @@ To avoid duplicated or conflicting rules, each policy family has one owner plugi
   - global review/reporting conventions
   - context management and token optimization
   - research-first and verification loop disciplines
+  - shared typed-JavaScript, runtime configuration, telemetry, feature-design, and behavioral/test traceability protocols
 - `devkit-laravel`:
   - Laravel and backend architecture conventions
   - FormRequest, Policy/Gate, Eloquent, service/action patterns
 - `devkit-frontend`:
   - tool-agnostic frontend architecture
+  - shared visual design and motion decisions; browser visual verification mechanics
   - generic CSS best practices (deduplication, reusable variables/tokens)
 - `devkit-inertia`:
   - Inertia transport, page props contracts, and form/navigation behavior

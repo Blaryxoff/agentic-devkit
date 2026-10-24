@@ -20,6 +20,8 @@ Produce test-case documents; leave test implementation to a separate coding task
 
 If the project uses the devkit toolkit, read `.devkit/toolkit.json` to identify enabled plugins. For each active plugin, read its conduct docs (`plugins/<plugin>/conduct/`) for testing-related rules and conventions. Apply those standards when designing test cases.
 
+Use `plugins/core/conduct/test-implementation.md`'s Test-case handoff fields and the active platform's testing rules. Include complete UI states and app/window/stream lifecycle where the requirement depends on them; keep test design separate from implementation.
+
 ## Coverage areas to include
 
 1. Happy path / expected use

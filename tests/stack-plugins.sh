@@ -47,6 +47,18 @@ for plugin in express react-native electron; do
   done
 done
 
+for workflow in design-critique pixel-build pixel-guard reviewer-motion; do
+  skill="$ROOT/plugins/frontend/skills/$workflow/SKILL.md"
+  name=$(sed -n 's/^name: //p' "$skill" | head -1)
+  [ -f "$PROJECT/.cursor/skills/$name/SKILL.md" ] || fail "Cursor missing shared $name"
+  [ -f "$PROJECT/.codex/skills/devkit-frontend--$workflow/SKILL.md" ] || fail "Codex missing shared $name"
+  if grep -Fq 'claudeSubagent: true' "$skill"; then
+    [ -f "$PROJECT/.claude/agents/$name.md" ] || fail "Claude missing shared $name agent"
+  else
+    [ -f "$PROJECT/.claude/skills/devkit-frontend--$workflow/SKILL.md" ] || fail "Claude missing shared $name skill"
+  fi
+done
+
 for plugin in react drizzle express react-native electron; do
   grep -Fq "plugins/$plugin/conduct" "$PROJECT/AGENTS.md" || fail "Codex missing $plugin conduct"
   rule="$PROJECT/.cursor/rules/devkit-$plugin.mdc"
@@ -78,4 +90,16 @@ for plugin in express react-native electron; do
   done
 done
 grep -Fq 'plugins/react/conduct' "$PROJECT/AGENTS.md" || fail "Next.js lost its transitive React conduct"
+
+for plugin in react-native electron; do
+  printf '{"version":1,"enabled":["devkit-%s"]}\n' "$plugin" > "$PROJECT/.devkit/toolkit.json"
+  resolved=$(bash "$ROOT/bin/devkit-resolve" --project="$PROJECT")
+  printf '%s\n' "$resolved" | grep -qx devkit-frontend || fail "$plugin lost shared UI conduct dependency"
+  for adapter in claude cursor codex; do
+    generate "$adapter"
+  done
+  [ -f "$PROJECT/.codex/skills/devkit-frontend--pixel-build/SKILL.md" ] || fail "$plugin cannot discover shared visual build"
+  [ -f "$PROJECT/.cursor/skills/devkit-pixel-guard/SKILL.md" ] || fail "$plugin cannot discover shared visual guard"
+  [ -f "$PROJECT/.claude/agents/devkit-pixel-build.md" ] || fail "$plugin cannot discover shared Claude visual agent"
+done
 echo "stack-plugins: all assertions passed"

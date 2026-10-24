@@ -13,3 +13,5 @@ claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 3. Ground findings with `file:line` and use `plugins/core/conduct/review-findings-format.md`. Run `risk-probe-gate.md` as the final pass.
 
 Keep the review read-only; leave fixes to `devkit-coder`.
+
+When the changed contract affects another enabled layer, trace its caller/consumer and hand that scope to the matching reviewer. Include UI state/accessibility regressions for changed renderer contracts; keep browser and native verification surfaces distinct.

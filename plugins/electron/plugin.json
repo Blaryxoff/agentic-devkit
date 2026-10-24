@@ -4,6 +4,6 @@
   "description": "Electron main/preload/renderer boundaries, remote-content security, packaging, and review workflows",
   "layer": "framework",
   "defaultEnabled": false,
-  "dependencies": ["devkit-core"],
+  "dependencies": ["devkit-core", "devkit-frontend"],
   "paths": {"skills": "./skills", "conduct": "./conduct"}
 }
