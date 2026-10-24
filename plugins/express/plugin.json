@@ -1,0 +1,9 @@
+{
+  "name": "devkit-express",
+  "version": "0.1.0",
+  "description": "Express TypeScript APIs, authorization, jobs, streaming, and review workflows",
+  "layer": "framework",
+  "defaultEnabled": false,
+  "dependencies": ["devkit-core"],
+  "paths": {"skills": "./skills", "conduct": "./conduct"}
+}

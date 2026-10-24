@@ -21,6 +21,11 @@ plugins/                 All plugins (convention: plugins/*/plugin.json)
   frontend/              Generic frontend architecture + CSS
   laravel/               Laravel framework skills + conduct
   nestjs/                NestJS backend skills + conduct
+  express/               Express API, jobs/streams, review and test skills + conduct
+  drizzle/               Drizzle/PostgreSQL query and migration conduct
+  react/                 Shared React, Query, and Zustand conduct for web/native
+  react-native/          React Native/Expo architecture, review and test skills + conduct
+  electron/              Electron security, packaging, review and test skills + conduct
   nextjs/                Next.js App Router and React conduct
   nuxt/                  Nuxt framework skills + conduct
   vue/                   Vue component/state conventions

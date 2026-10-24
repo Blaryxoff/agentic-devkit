@@ -1,0 +1,9 @@
+{
+  "name": "devkit-drizzle",
+  "version": "0.1.0",
+  "description": "Drizzle ORM schema, PostgreSQL queries, transactions, and migration safety",
+  "layer": "stack",
+  "defaultEnabled": false,
+  "dependencies": ["devkit-core"],
+  "paths": {"conduct": "./conduct"}
+}

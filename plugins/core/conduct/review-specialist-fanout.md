@@ -28,6 +28,8 @@ independently inspect the scope before sharing conclusions across reviewers.
 
 Use these read-only roles only for changed scope that no active stack reviewer covers:
 
+Load each touched enabled plugin's `overview.md` and risk-matched conduct before applying a fallback, including conduct-only React and Drizzle plugins.
+
 - **Generic quality** — review architecture, security, data correctness, error handling, performance, and simplification.
   Apply `code-smells.md` and local project conventions. Limit this review to scope not covered by a stack quality variant.
 - **Generic implementation** — review behavioral completeness against the request, plan, acceptance criteria, and nearby

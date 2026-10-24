@@ -162,6 +162,11 @@ declare_globs() {
     devkit-frontend)  echo '**/*.vue,**/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.css,**/*.scss' ;;
     devkit-laravel)   echo '**/*.php,app/**,routes/**,database/**,config/**' ;;
     devkit-nestjs)    echo 'apps/api/**,apps/backend/**,src/**,test/**,**/*.controller.ts,**/*.module.ts,**/*.service.ts,**/*.guard.ts,**/*.pipe.ts' ;;
+    devkit-express)   echo 'apps/api/**,apps/backend/**,src/**,test/**,**/*.router.ts,**/*.middleware.ts,**/workers/**' ;;
+    devkit-drizzle)   echo '**/db/**,**/database/**,**/migrations/**,**/*schema*.ts,**/drizzle.config.*,**/*.sql' ;;
+    devkit-react)     echo '**/*.tsx,**/*.jsx,**/hooks/**,**/store/**,**/stores/**,**/*query*.ts' ;;
+    devkit-react-native) echo 'apps/mobile*/**,**/*.native.*,**/*.ios.*,**/*.android.*,**/metro.config.*,**/app.json,**/app.config.*,**/ios/**,**/android/**' ;;
+    devkit-electron)  echo 'apps/desktop/**,**/electron/**,**/*preload*,**/electron-builder.*,**/main.js,**/main.cjs,**/main.mjs,**/main.ts' ;;
     devkit-nextjs)    echo 'apps/web/**,app/**,pages/**,src/app/**,src/pages/**,**/*.tsx,**/*.jsx,**/next.config.*' ;;
     devkit-nuxt)      echo '**/*.vue,**/*.ts,pages/**,composables/**,components/**' ;;
     devkit-vue)       echo '**/*.vue,**/*.ts,components/**,composables/**' ;;

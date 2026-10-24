@@ -117,7 +117,12 @@ Supported adapters: `claude`, `cursor`, `codex`.
 | `devkit-frontend` | stack     | Tool-agnostic frontend architecture and generic CSS standards                           | core                |
 | `devkit-laravel`  | framework | Laravel conventions: architecture, PHP, security, Inertia integration                   | core                |
 | `devkit-nestjs`  | framework | NestJS architecture, security, data, jobs, testing, and review workflows               | core                |
-| `devkit-nextjs`  | framework | Next.js App Router and React server/client boundaries                                  | core, frontend      |
+| `devkit-express` | framework | Express APIs, authorization, queues, streams, and review workflows                     | core                |
+| `devkit-drizzle` | stack     | Drizzle ORM, PostgreSQL transactions, schema, and migration safety                     | core                |
+| `devkit-react`   | stack     | Shared React hooks, TanStack Query, and Zustand state                                   | core                |
+| `devkit-react-native` | framework | React Native/Expo lifecycle, routing, security, builds, and review workflows       | core, react         |
+| `devkit-electron` | framework | Electron privileges, desktop lifecycle, packaging, updates, and review workflows     | core                |
+| `devkit-nextjs`  | framework | Next.js App Router and React server/client boundaries                                  | core, frontend, react |
 | `devkit-nuxt`     | framework | Nuxt conventions: SSR, data-fetching, TypeScript, BEM/SCSS workflows                    | core, frontend, vue |
 | `devkit-vue`      | framework | Vue component, composable, and state organization conventions                           | core, frontend      |
 | `devkit-inertia`  | framework | Inertia.js transport, page props contracts, and form/navigation behavior                | core                |
@@ -135,7 +140,18 @@ Supported adapters: `claude`, `cursor`, `codex`.
 }
 ```
 
-Resolves: `core, frontend, nestjs, nextjs, tailwind`.
+Resolves: `core, frontend, react, nestjs, nextjs, tailwind`.
+
+### Express + Drizzle + Next.js + Expo + Electron
+
+Use [examples/express-native-desktop.json](./examples/express-native-desktop.json) for a pnpm workspace with API, web/admin, mobile, and desktop apps:
+
+```bash
+bin/devkit-resolve --preset=express-native-desktop --project=/path/to/project
+bin/devkit-install --claude --cursor --codex --project=/path/to/project
+```
+
+Express, React Native, and Electron mirror the architect, fast/deep/business-logic reviewer, and tester workflows. React and Drizzle provide shared conduct loaded by the owning layer. Next.js includes the web frontend and shared React rules; native apps use React conduct without inheriting DOM/CSS assumptions. Each plugin links upstream sources and requires the consuming project's installed versions and commands.
 
 ### Laravel + Vue + Tailwind
 

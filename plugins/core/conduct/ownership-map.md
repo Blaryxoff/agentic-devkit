@@ -28,6 +28,20 @@ To avoid duplicated or conflicting rules, each policy family has one owner plugi
   - Tailwind utility conventions and repeated arbitrary value policy
 - `devkit-nuxt`:
   - Nuxt runtime/SSR/data-fetching conventions
+- `devkit-nestjs`:
+  - Nest modules, dependency injection, controllers, guards, and backend integration rules
+- `devkit-express`:
+  - Express middleware, router/service boundaries, Node jobs, streams, and backend integration rules
+- `devkit-drizzle`:
+  - Drizzle schema, SQL, transaction context, and migration safety
+- `devkit-react`:
+  - Shared React hooks, TanStack Query, Zustand, and account-scoped client state
+- `devkit-nextjs`:
+  - Next.js App Router, server/client boundaries, rendering, and cache semantics
+- `devkit-react-native`:
+  - React Native/Expo routing, native lifecycle, NativeWind integration, secure storage, and native builds
+- `devkit-electron`:
+  - Electron main/preload/renderer privilege boundaries, sessions, packaging, and updates
 
 ## Ownership Rules
 

@@ -23,6 +23,8 @@ Run `git diff --name-only <base>` (or scope to the named files/branch) and class
 | "test", "протестируй", "QA", "smoke-test", "прокликай" | running UI or browser flow | `devkit-browser` |
 | "test", "QA", "smoke-test" | API, worker, or backend integration behavior | `devkit-verify` with the project's focused integration/E2E command or runtime probe |
 | "write/add tests" | NestJS backend test code | `devkit-coder` before editing, then `devkit-tester-nestjs` when `devkit-nestjs` is enabled |
+| "write/add tests" | Express, React Native/Expo, or Electron test code | `devkit-coder` before editing, then the enabled plugin's `devkit-tester-express`, `devkit-tester-react-native`, or `devkit-tester-electron` |
+| "test", "QA", "smoke-test" | native mobile or packaged desktop behavior | `devkit-verify` with project device/simulator or Electron commands; browser QA covers only the browser renderer/web target |
 | `revmux` named as the review **engine** — "revmux this branch", "run revmux", "review it with revmux" | any target | upstream `revmux` skill — [revmux-review.md](./revmux-review.md) |
 
 ## Rules

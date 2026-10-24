@@ -26,6 +26,7 @@ SCRIPTS=(
   resolve.sh
   skill-eval.sh
   sprint-skill.sh
+  stack-plugins.sh
   timesheet-skill.sh
 )
 

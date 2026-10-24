@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "enabled": [
+    "devkit-express",
+    "devkit-drizzle",
+    "devkit-nextjs",
+    "devkit-react-native",
+    "devkit-electron",
+    "devkit-tailwind"
+  ]
+}

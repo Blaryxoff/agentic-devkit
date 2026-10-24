@@ -1,0 +1,9 @@
+{
+  "name": "devkit-electron",
+  "version": "0.1.0",
+  "description": "Electron main/preload/renderer boundaries, remote-content security, packaging, and review workflows",
+  "layer": "framework",
+  "defaultEnabled": false,
+  "dependencies": ["devkit-core"],
+  "paths": {"skills": "./skills", "conduct": "./conduct"}
+}

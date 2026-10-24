@@ -1,12 +1,13 @@
 # Next.js Conduct
 
-Apply these rules to Next.js App Router code. Load the installed version's relevant guides under `node_modules/next/dist/docs/` before changing framework APIs or file conventions; project `AGENTS.md` may require this explicitly. Use the [official App Router documentation](https://nextjs.org/docs/app) when installed guides are unavailable.
+Apply these rules to Next.js App Router code. Load the installed version's relevant guides under `node_modules/next/dist/docs/` before changing framework APIs or file conventions; project `AGENTS.md` may require this explicitly. When installed guides are unavailable, select the matching major in the [official App Router documentation](https://nextjs.org/docs/app), such as the [Next.js 14 guides](https://nextjs.org/docs/14/app). Do not apply current-only Proxy, async request API, or cache conventions to an older major.
 
 ## Routing
 
 - New routes, layouts, loading states, or error boundaries: inspect the adjacent route segments and the installed App Router file-convention guide.
 - Server/client component boundaries, data fetching, caching, mutations, Proxy, or Route Handlers: read the matching installed guide before editing.
 - Shared UI structure, accessibility, and visual behavior: load `plugins/frontend/conduct/overview.md` and its relevant routed document.
+- React hooks, TanStack Query, Zustand, session hydration, or streaming state: load `plugins/react/conduct/overview.md` and its routed state rules.
 
 ## Boundaries
 

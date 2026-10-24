@@ -1,0 +1,9 @@
+{
+  "name": "devkit-react-native",
+  "version": "0.1.0",
+  "description": "React Native and Expo routing, native lifecycles, security, builds, and review workflows",
+  "layer": "framework",
+  "defaultEnabled": false,
+  "dependencies": ["devkit-core", "devkit-react"],
+  "paths": {"skills": "./skills", "conduct": "./conduct"}
+}

@@ -1,0 +1,9 @@
+{
+  "name": "devkit-react",
+  "version": "0.1.0",
+  "description": "Shared React hooks, TanStack Query, and Zustand state conventions for web and native clients",
+  "layer": "stack",
+  "defaultEnabled": false,
+  "dependencies": ["devkit-core"],
+  "paths": {"conduct": "./conduct"}
+}
