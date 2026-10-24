@@ -1,11 +1,9 @@
 ---
 name: devkit-task
 description: >-
-  carry a whole task specification from text to a pushed branch with a peer CLI — freeze the spec, analyse,
-  implement, run an adversarial review/fix loop, delegate runtime QA for the changed surface, then wrapup. Manual trigger ONLY: the
-  operator hands over a specification AND names the pipeline ("прогони по процессу", "ship this spec", "work it
-  with codex end to end", "/task", "full pipeline"). A bare feature request is NOT a trigger — that is
-  devkit-core--coder. Does NOT deploy or open PRs.
+  take supplied specs to a pushed branch: peer-CLI implementation, adversarial review/fix, runtime QA, wrapup.
+  Manual trigger ONLY when operator names the pipeline: "прогони по процессу", "ship this spec", "work it with
+  codex end to end", "/task", or "full pipeline". Bare requests use devkit-core--coder. No deploy/PR.
 ---
 
 # Task Pipeline

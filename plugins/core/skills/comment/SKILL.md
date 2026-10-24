@@ -1,8 +1,8 @@
 ---
 name: devkit-comment
 description: >-
-  write brief updates on session fixes in any task tracker. Use on "comment on the task", "отпишись по
-  замечаниям QA", or /comment. Continues a task discussion; not release notes.
+  write updates on verified task fixes. Use for "comment on the task", "отпишись по замечаниям QA", or
+  /comment; not release notes.
 ---
 
 # Comment
