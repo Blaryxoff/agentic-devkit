@@ -22,9 +22,9 @@ SECRET = re.compile(r"(?i)\b(api[_-]?key|password|secret|token)\s*([:=])\s*([^\s
 WTF = re.compile(r"(?i)\bwtf\b")
 PRIVATE_KEY = re.compile(r"-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----")
 AREAS = {
-    "skill": "A reusable skill's instructions, workflow, or supporting script caused the complaint",
-    "guidance": "Global CLAUDE.md, AGENTS.md, or devkit-managed agent instructions caused it",
-    "hook": "An agent hook, installer, or automation caused it",
+    "skill": "The coding assistant's reusable skill, workflow, or supporting script caused the complaint",
+    "guidance": "Coding-agent instructions or preferences: CLAUDE.md, AGENTS.md, branch/worktree handling, approvals, or communication",
+    "hook": "The coding assistant's harness hook, installer, or automation caused it",
     "memory": "A remembered user preference or fact was wrong or missing",
     "other": "The complaint is about a one-off task, project code, or an unknown cause",
 }
@@ -124,13 +124,24 @@ def classify(prompt: str) -> tuple[float, float, str, float]:
     answers, _, _ = jev.run({
         "state": {"user_prompt": prompt},
         "questions": {
+            "target": {
+                "type": "choice",
+                "instructions": "Classify the object the user wants corrected. The coding assistant and its development tools are assistant; the application it develops is product. A coding-agent hook that blocks commands is assistant. A recruiter bot that forgets answers or cannot reschedule is product, even if its prompt or memory needs fixing. Asking a subagent to fix a product does not change the target. Use other if unclear; frustration or WTF alone supplies no evidence.",
+                "criteria": {
+                    "assistant": "Coding-assistant behavior or development tooling: skills, peer chat, git worktrees, authorization checks, harness hooks, or agent instructions",
+                    "product": "Application runtime behavior: recruiter/candidate conversations, chatbot prompts or memory, business rules, UI, data, or integrations",
+                    "other": "An external service, ordinary task request, or unclear target",
+                },
+            },
             "feedback": {
                 "type": "noul",
-                "instructions": "Should this user message create a candidate to improve an AI coding agent workflow? Say yes only when the user corrects, challenges, or complains about the assistant’s work and a reusable change to its skills, conduct, hooks, project guidance, or agent memory could plausibly prevent recurrence. An indirect question can count when it identifies an omitted check or workflow flaw. Say no for ordinary progress/status questions, current-task product code or data fixes, one-off scope decisions, and external-service problems. A copied peer message counts only if it reports a concrete failure of the agent workflow. Do not assume the issue was already fixed after this message.",
+                "instructions": "Should this user message create a candidate to improve an AI coding agent workflow? Say yes when the user corrects, challenges, or complains about the coding assistant's work, or states a reusable preference for how it should work, and a change to its skills, conduct, hooks, project guidance, or agent memory could prevent recurrence. Branch/worktree handling and peer-update preferences count even when phrased as direct instructions. An indirect question can count when it identifies an omitted check or workflow flaw. Say no for ordinary progress/status questions, current-task product code or data fixes, one-off scope decisions, and external-service problems. Feedback about an application's chatbot or its prompts is product feedback, not feedback about the coding assistant. Do not assume the issue was already fixed after this message.",
             },
         },
     })
     feedback = float(answers["feedback"]["noul"])
+    if answers["target"]["choice"] != "assistant":
+        return feedback, 0.0, "other", 0.0
     if feedback < 0.5 and not WTF.search(prompt):
         return feedback, 0.0, "other", 0.0
     answers, _, _ = jev.run({
@@ -142,7 +153,7 @@ def classify(prompt: str) -> tuple[float, float, str, float]:
             },
             "repair_area": {
                 "type": "choice",
-                "instructions": "If there is reusable agent-workflow feedback, which part is most likely worth investigating? If evidence is insufficient, choose other.",
+                "instructions": "Which coding-assistant resource should be investigated for this reusable workflow feedback? Branch/worktree, approval, and communication preferences belong to guidance; an explicitly named skill belongs to skill; coding-agent harness hooks belong to hook. Select the best investigation area without requiring proof of the root cause. Choose other for product feedback or when no coding-assistant resource is implicated.",
                 "criteria": AREAS,
             },
         },

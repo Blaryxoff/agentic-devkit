@@ -203,9 +203,9 @@ with tempfile.TemporaryDirectory() as temporary:
         def run(self, payload):
             self.calls.append(payload)
             if len(self.calls) == 1:
-                return {"feedback": {"noul": 0.2}}, 0, 0
+                return {"target": {"choice": "assistant"}, "feedback": {"noul": 0.2}}, 0, 0
             if len(self.calls) == 2:
-                return {"feedback": {"noul": 0.8}}, 0, 0
+                return {"target": {"choice": "assistant"}, "feedback": {"noul": 0.8}}, 0, 0
             return {"reusable": {"noul": 0.6}, "repair_area": {"choice": "other", "confidence": 0.4}}, 0, 0
 
     fake = FakeJev()
@@ -222,13 +222,37 @@ with tempfile.TemporaryDirectory() as temporary:
         def run(self, payload):
             self.calls.append(payload)
             if len(self.calls) == 1:
-                return {"feedback": {"noul": 0.2}}, 0, 0
+                return {"target": {"choice": "assistant"}, "feedback": {"noul": 0.2}}, 0, 0
             return {"reusable": {"noul": 0.7}, "repair_area": {"choice": "skill", "confidence": 0.9}}, 0, 0
 
     wtf_jev = WtfJev()
     with patch.object(feedback, "jev_module", return_value=wtf_jev):
         assert feedback.classify(wtf_prompt) == (0.2, 0.7, "skill", 0.9)
     assert len(wtf_jev.calls) == 2
+
+    class ProductJev:
+        def __init__(self, target):
+            self.target = target
+            self.calls = []
+
+        def run(self, payload):
+            self.calls.append(payload)
+            assert len(self.calls) == 1, "Product feedback must not reach repair classification"
+            return {"target": {"choice": self.target}, "feedback": {"noul": 0.95}}, 0, 0
+
+    for target, product_prompt in (
+        ("product", "The recruiter bot refuses to reschedule. Fix its prompt."),
+        ("product", "WTF, the chatbot forgets candidate answers. Ask a subagent to fix its memory."),
+        ("other", "WTF, this external service failed again."),
+    ):
+        product_jev = ProductJev(target)
+        product_id = hashlib.sha256(f"{session}\0{product_prompt}".encode()).hexdigest()[:20]
+        before = set(feedback.QUEUE.glob("*.md"))
+        with patch.object(feedback, "jev_module", return_value=product_jev):
+            feedback.handle_prompt({"session_id": session, "prompt": product_prompt})
+        assert len(product_jev.calls) == 1
+        assert not (feedback.session_tickets(session) / f"{product_id}.json").exists()
+        assert set(feedback.QUEUE.glob("*.md")) == before
 
 print("jev-feedback tests passed")
 PY
