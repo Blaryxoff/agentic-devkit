@@ -1,11 +1,8 @@
 ---
 name: devkit-release-notes
 description: >-
-  compose a chat-ready release notes post in Russian from git history plus local Claude, Codex and Cursor
-  sessions since a given date, across one or several repos. Use for "релиз-ноуты", "что вошло в релиз", "собери
-  релиз с 10.06", "мини-релиз", "release notes since <date>" — anything meant for a product/stakeholder chat.
-  Always writes Russian regardless of the prompt language. For an English, tag-range, CHANGELOG.md-style
-  document use devkit-changelog-generator.
+  compose Russian release posts for product chats. Use for "релиз-ноуты", "что вошло в релиз", "мини-релиз",
+  or "release notes since <date>". For English or tag-range changelogs use devkit-changelog-generator.
 ---
 
 # Release Notes (RU)
