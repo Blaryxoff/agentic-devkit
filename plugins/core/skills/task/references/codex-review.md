@@ -10,7 +10,15 @@ Point it at `TASK.md`, `process-log.md`, the base branch, the exported diff file
 Write the complete resolved prompt to a scratchpad file with the environment's file-write tool, set `prompt_file` to
 that path, then pass it as `"$(cat "$prompt_file")"`. Never paste the prompt inline or create it with `echo` or an
 unquoted heredoc: backticks and `$` in review instructions must reach Codex literally, not execute in the launcher shell.
-Require this output:
+Set `review_answer`, `review_stdout`, and `review_stderr` to distinct, fresh scratchpad paths for this pass. Launch:
+
+```bash
+DEVKIT_FEEDBACK_WORKER=1 codex exec --sandbox read-only --skip-git-repo-check \
+  -o "$review_answer" "$(cat "$prompt_file")" < /dev/null > "$review_stdout" 2> "$review_stderr"
+```
+
+Read `review_answer` only after completion; stdout holds the transcript and stderr holds diagnostics, not findings.
+Apply the channel and completion rules from "Peer CLI invocation" above. Require this final-answer output:
 
 ```text
 CRITICAL: file:line — defect and impact
@@ -27,20 +35,21 @@ Require `NO ISSUES FOUND` when no material issue exists. The prompt must ask Cod
 - report material, evidenced findings only;
 - answer directly without editing files or invoking another agent.
 
-Treat an empty response, a response with neither a severity tag nor `NO ISSUES FOUND`, or a run without repository
-access as reviewer failure, never as a clean review. Scan the complete response for every severity tag before evaluating
-the clean marker. `NO ISSUES FOUND` counts as clean only when no severity tag appears; findings win when a reviewer emits
-both.
+Treat a missing/empty answer file, an answer with neither a severity tag nor `NO ISSUES FOUND`, a non-zero exit,
+or a run without repository access as reviewer failure, never as a clean review. A timeout or interruption invalidates
+partial output. Report the failure and stop the pipeline; do not advance to QA or wrapup. Scan the complete final answer
+for every severity tag before evaluating the clean marker. `NO ISSUES FOUND` counts as clean only when no severity tag appears;
+findings win when a reviewer emits both.
 
 ## Iteration
 
 1. Export fresh diffs and untracked files before every Codex pass.
-2. Save the complete Codex response in the scratchpad; do not summarize it before triage.
+2. Save the complete final answer and separate diagnostic files in the scratchpad; do not summarize the answer before triage.
 3. Verify every finding against the cited code. Fix confirmed issues from this task, discard false positives, and defer
    only issues allowed by the Stage 4 triage table in `../SKILL.md`.
 4. Record confirmed fixes, discarded findings, and deferred findings with reasons in `process-log.md`.
 5. Run the task's validation commands after every fix batch. A failed validation keeps the review iteration open.
-6. Scan the complete response for `CRITICAL`, `MAJOR`, and `MINOR` before checking `NO ISSUES FOUND`.
+6. Scan the complete final answer for `CRITICAL`, `MAJOR`, and `MINOR` before checking `NO ISSUES FOUND`.
 7. Stop on `NO ISSUES FOUND` only when no severity tag appears.
 8. If the pass has findings but none tagged `CRITICAL` or `MAJOR`, fix confirmed minor findings and stop without another
    Codex pass.

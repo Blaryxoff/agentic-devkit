@@ -138,6 +138,9 @@ assert_link "$claude_home/skills/devkit-core--timesheet" "$ROOT/plugins/core/ski
 assert_link "$claude_home/skills/devkit-core--learn" "$ROOT/plugins/core/skills/learn"
 assert_link "$claude_home/skills/devkit-core--nontech" "$ROOT/plugins/core/skills/nontech"
 assert_link "$claude_home/skills/devkit-core--task" "$ROOT/plugins/core/skills/task"
+for harness_home in "$claude_home" "$codex_home"; do
+  python3 "$ROOT/tests/peer-review-output.py" "$harness_home/skills/devkit-core--task" "$ROOT"
+done
 assert_link "$claude_home/skills/devkit-core--lunaqa" "$ROOT/plugins/core/skills/lunaqa"
 assert_contains "$claude_home/commands/lunaqa.md" 'Skill(devkit-core--lunaqa)'
 python3 - "$ROOT/bin/devkit-model" <<'PY'
