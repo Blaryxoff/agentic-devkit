@@ -45,9 +45,11 @@ normalised value before collecting.
 6. **Resolve opaque commits.** Map a commit to a session using an explicit SHA, changed paths, or task details supported
    by the diff — never timing alone. If still unclear, read `git show --stat` and then the real diff. A commit you cannot
    explain is dropped, never guessed.
-7. **Filter noise.** Drop dependency bumps, lint/format, CI config, test-only commits, reverts that cancel out, and
-   refactors with no behaviour change. Keep infra work only when it changed reliability, deploy, or performance the team
-   will notice.
+7. **Filter noise by impact.** Inspect runtime/platform upgrades and security patches before dropping technical work,
+   regardless of `build`, `chore`, or `ci` commit prefixes. Keep changes that affect security, runtime compatibility,
+   or support lifetime. Drop routine dependency bumps without those effects, lint/format, CI config, test-only commits,
+   reverts that cancel out, and refactors with no behaviour change. Keep other infra work when it changed reliability,
+   deploy, or performance the team will notice.
 8. **Resolve non-code and session-only candidates once.** In one question, list unverified completed session work and
    ask about other content/data imports, production reference updates, third-party account/config changes, or manual
    production actions. Include only the items the user confirms shipped.
@@ -56,10 +58,12 @@ normalised value before collecting.
 10. **Write the post** per `references/style.md`. Russian only.
 11. **Flag ops follow-ups.** Anything needing a manual step after deploy — API keys, env vars, migrations, seeders, cron,
    catalog import, third-party account — gets a `⚠️ Важно:` line inside its section.
-12. **Verify before delivering.** Every line traceable to git, dated session evidence of a successful production action,
-    or a user-confirmed item, and every included ledger entry represented in the post. No SHAs, paths, ticket/session
-    ids, prompt text, or secrets leaked; fix-flavoured sections last; Russian throughout. Outside the post, state the
-    roots/range and which of Claude, Codex, and Cursor were available.
+12. **Verify before delivering.** Trace every line to git, dated session evidence of a successful production action,
+    or a user-confirmed item, and map every included ledger entry to a specific post line. Recheck dropped runtime,
+    security, and build changes against their diffs and available deployment evidence. Name shipped runtime upgrades
+    and security fixes explicitly in the post; a generic reliability line does not cover them. No SHAs, paths,
+    ticket/session ids, prompt text, or secrets leaked; fix-flavoured sections last; Russian throughout. Outside the
+    post, state the roots/range and which of Claude, Codex, and Cursor were available.
 
 ## Agent session sources
 
