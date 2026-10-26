@@ -238,12 +238,15 @@ button:disabled { opacity: .46; cursor: default; box-shadow: none; }
 .profile-select select { appearance: none; min-width: 140px; max-width: 170px; padding-right: 36px; background: #fff; }
 .chevron { position: absolute; right: 15px; top: 50%; width: 8px; height: 8px; border-right: 1.5px solid #788a7e; border-bottom: 1.5px solid #788a7e; transform: translateY(-70%) rotate(45deg); pointer-events: none; }
 .expanders { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-top: 16px; }
-.log-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .log-toggle { align-self: flex-start; min-height: 0; padding: 0; border: 0; background: transparent; color: #829187; font-size: 11px; font-weight: 600; }
 .log-toggle:hover:not(:disabled), .log-toggle:focus-visible { border: 0; background: transparent; color: #28764f; text-decoration: underline; }
 .worktree-toggle { gap: 6px; min-height: 0; padding: 0; border: 0; background: transparent; color: #526c5d; font-size: 11px; font-weight: 700; }
 .worktree-toggle:hover:not(:disabled), .worktree-toggle:focus-visible { border: 0; background: transparent; color: #28764f; text-decoration: underline; }
-.log-service { min-height: 30px; padding: 5px 9px; font-size: 11px; }
+.log-sources { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.log-sources-label { margin-right: 4px; color: #66786b; font-size: 11px; }
+.log-source { min-height: 32px; padding: 6px 10px; font-size: 11px; }
+.log-source[aria-pressed="true"] { border-color: #28764f; background: #eff8f1; color: #267248; }
+.log-sources + .log { margin-top: 8px; }
 .expander-panel { display: grid; grid-template-rows: 0fr; overflow: hidden; opacity: 0; transition: grid-template-rows .24s ease, opacity .2s ease; }
 .expander-panel.expanded { grid-template-rows: 1fr; opacity: 1; }
 .expander-inner { min-height: 0; overflow: hidden; }
@@ -416,21 +419,25 @@ function card(project,children){
     const progress=el('div','progress');progress.setAttribute('role','progressbar');progress.setAttribute('aria-label',operation.textContent);
     operation.append(progress);body.append(operation);
   }
-  const expanders=el('div','expanders');const logRow=el('div','log-row');const toggle=el('button','log-toggle',(openLogs.has(project.id)?'▾':'▸')+' Журнал запуска');toggle.setAttribute('aria-expanded',String(openLogs.has(project.id)));logRow.append(toggle);expanders.append(logRow);
-  let logService=null;
+  const expanders=el('div','expanders');const toggle=el('button','log-toggle',(openLogs.has(project.id)?'▾':'▸')+' Журнал запуска');toggle.setAttribute('aria-expanded',String(openLogs.has(project.id)));expanders.append(toggle);
+  let logService=project.services.find(service=>service.id===selectedLogs.get(project.id))?.id||project.services[0].id;
+  const log=el('pre','log');const logPanel=el('div','expander-panel');const logInner=el('div','expander-inner');
   if(project.services.length>1){
-    logService=el('select','log-service');
-    for(const service of project.services){const option=el('option','',service.id);option.value=service.id;logService.append(option)}
-    logService.value=selectedLogs.get(project.id)||project.services[0].id;
-    logService.setAttribute('aria-label','Сервис журнала '+project.name);
-    logService.onchange=()=>{selectedLogs.set(project.id,logService.value);if(openLogs.has(project.id))loadLog()};
-    logRow.append(logService);
+    const sources=el('div','log-sources');sources.setAttribute('role','group');sources.setAttribute('aria-label','Показать журнал модуля '+project.name);sources.append(el('span','log-sources-label','Журнал модуля:'));
+    for(const service of project.services){
+      const name=service.checks.length===1?service.checks[0].id:service.id;const button=el('button','log-source',name);button.setAttribute('aria-pressed',String(service.id===logService));
+      button.onclick=()=>{logService=service.id;selectedLogs.set(project.id,logService);for(const source of sources.querySelectorAll('button'))source.setAttribute('aria-pressed',String(source===button));loadLog()};
+      sources.append(button);
+    }
+    logInner.append(sources);
   }
-  const log=el('pre','log');const logPanel=el('div','expander-panel');const logInner=el('div','expander-inner');logInner.append(log);logPanel.append(logInner);
+  logInner.append(log);logPanel.append(logInner);
+  let logRequest=0;
   async function loadLog(){
-    const service=logService?logService.value:project.services[0].id;
-    try{const response=await api('/api/logs?project='+encodeURIComponent(project.id)+'&service='+encodeURIComponent(service));log.textContent=response.log||'Нет записей'}
-    catch(error){log.textContent=error.message}
+    const request=++logRequest;log.textContent='Загрузка журнала…';log.setAttribute('aria-busy','true');
+    try{const response=await api('/api/logs?project='+encodeURIComponent(project.id)+'&service='+encodeURIComponent(logService));if(request!==logRequest)return;log.textContent=response.log||'Нет записей'}
+    catch(error){if(request!==logRequest)return;log.textContent=error.message}
+    if(request!==logRequest)return;log.setAttribute('aria-busy','false');
     scrollLogToEnd(log);
   }
   logPanel.classList.toggle('expanded',openLogs.has(project.id));logPanel.inert=!openLogs.has(project.id);
