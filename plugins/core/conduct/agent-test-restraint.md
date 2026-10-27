@@ -1,21 +1,26 @@
 # Agent Test Restraint
 
-Test permission and execution policy are owned by the consuming project. Test-authoring timing is owned by this toolkit.
+Test permission, commands, execution limits, and project-specific timing are owned by the consuming project. Use the defaults below when the project permits tests and does not prescribe another development sequence.
 
-## Hard rule: tests are the final coding phase
+## Test-first defaults
 
-During continuous implementation, complete production-code iterations first and reserve test creation or updates for the final coding phase.
+Use test-first development for reproducible defects and clear behavioral contracts. Resolve project permissions before creating test artifacts or running commands; test-first timing grants no additional permission.
 
-When tests are intended by the task and allowed by project policy:
+Choose the sequence from the change:
 
-1. Finish all requested production code, configuration, documentation, and cleanup first.
-2. Make the applicable non-test checks green: lint, type check, manual review, smoke checks, and security spot-checks.
-3. Only then, at the commit-ready handoff stage, create or update the tests in one focused pass.
-4. Run the eligible test command according to project policy.
+- **Bug fix:** write or update a focused regression test and observe it fail for the reported defect before changing production behavior. Make the smallest fix, observe the test pass, then refactor while preserving that behavior.
+- **Clear business behavior:** derive expected outcomes from requirements, write one focused behavior test, observe the expected failure, implement the behavior, and refactor. Repeat in small units for permissions, calculations, validation, state transitions, and retry semantics.
+- **Refactoring:** establish passing behavior or characterization tests before changing structure. Keep them green; do not invent a failing requirement for a behavior-preserving change.
+- **UI exploration, prototypes, or infrastructure:** allow implementation first while the contract or automated testing surface is unsettled. Record why test-first is impractical and the alternative verification before production edits; add permitted tests once behavior is concrete.
+- **Test-only work:** implement the approved cases against the existing or planned public contract. Report expected preimplementation failures to the coder; preserve production source.
 
-If a late production-code change invalidates the new tests, finish that production-code iteration and restore the non-test checks before revisiting the tests. Keep production edits and test rewrites in separate phases rather than alternating them in a red/green loop.
+An expected RED result must reach the intended behavior assertion or expected-error check. Missing imports, syntax/type errors, or broken fixtures do not establish RED. For a new interface, `devkit-coder` adds only the minimal public wiring needed to reach that check before implementing behavior. Test-only agents report a missing production seam to the coder and rerun their focused test after it exists; they do not add that wiring themselves.
 
-A test-only task for already-complete production code starts at the final test phase, but the agent must still establish that the related implementation is complete and its applicable non-test checks are green before editing tests.
+Treat planned assertion-level RED as stage evidence within an already-authorized implementation task. The coder may continue with that authorized behavior; RED grants no permission to change unrelated production code. Apply project failure handling to unexpected failures, and honor any project rule that explicitly requires stopping or handing off even on expected RED. Test-only agents return RED to the coder without implementing the behavior.
+
+If a meaningful automated test is impractical, or project rules prevent authoring or execution, record the specific limitation and the available before/after reproduction evidence. Do not claim an unexecuted test demonstrated RED or GREEN. Do not weaken assertions to fit the implementation.
+
+Run the smallest eligible focused command during each cycle and honor project runtime limits. Complete the applicable lint, type, build, focused-test, and security checks before handoff; they are not prerequisites for the initial RED run.
 
 ## Where the policy lives
 

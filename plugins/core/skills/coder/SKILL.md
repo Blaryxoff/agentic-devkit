@@ -30,7 +30,7 @@ These rules are complete enough for a local in-place edit. Apply them directly; 
 - Do not add prose comments or explanatory docblocks to implementation code. Express intent through names, types, extracted concepts, and simpler control flow. Never convert what you learned while making the change — the mechanism you traced, why the fix works, the edge case you hit — into a comment; state it in the chat response instead, where it costs the reader nothing to skip. Private/internal narrative comments are forbidden; public docblocks are allowed only for machine-required metadata or contracts that code cannot express (`code-comments.md`).
 - Match sibling abstractions and error handling. Reuse an existing utility when it fits; add an abstraction when the task exposes multiple real uses or requires a clear extension seam (`solid-dry.md`).
 - Never hardcode secrets or environment-specific credentials. Do not add dependencies without explicit approval.
-- Treat tests as the final coding phase: do not create or update them during continuous production-code iterations. Finish the requested implementation and make non-test checks green first; only then author intended, project-permitted tests in one commit-ready pass (`agent-test-restraint.md`).
+- Follow project test permissions and `agent-test-restraint.md`: use test-first for reproducible bugs and clear behavioral contracts, observe an assertion-level failure before implementing behavior, then pass and refactor. Establish green behavior tests before refactoring; record exceptions when test-first is impractical or project rules prevent it.
 
 ## Step 3 — Load the active stack's conduct
 
@@ -66,7 +66,7 @@ Resolve the active plugins, identify which layers the target actually touches, t
 - Edits are minimal and reversible; every changed line traces to the task.
 - Code matches local conventions in sibling files; no DRY/SOLID violations introduced.
 - The stack's lint and typecheck pass (use the project's own commands rather than hardcoded commands).
-- If tests are intended and permitted by project policy, create or update them only after every preceding implementation and non-test verification item is complete and green, then run the eligible focused tests.
+- Report the focused test-first failure and passing result when applicable, or the specific exception and alternative verification. Run the eligible completion checks under project policy; an expected RED during development is not a completed feature.
 - Before the final response, clean up every worktree or temporary clone this task created per `plugins/core/conduct/parallel-sessions.md`. This does not require merging the branch or invoking `wrapup`; report any checkout whose contents cannot be safely preserved and removed.
 - Before the final response, run `plugins/core/conduct/learning-capture-gate.md` from the top-level session. Invoke
   `devkit-learn` only when a durable candidate passes. Offer a fix or backlog deferral in one line when the finding is

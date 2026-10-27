@@ -9,7 +9,7 @@ Paste the block below into your project's `CLAUDE.md` (and mirror it into `AGENT
 
 If no such section exists in either file, the toolkit applies the conservative fallback: ask the user for test permission before creating test files or running suites.
 
-Regardless of the project setting, test authoring is a finalization phase: agents finish production work and make applicable non-test checks green before creating or updating tests. Agents return to test authoring only after production work and non-test checks are complete.
+When the project permits authoring and execution, the toolkit defaults to test-first for reproducible bugs and clear behavioral contracts. Refactoring starts from passing behavior tests; UI exploration, prototypes, infrastructure, and impractical automated checks allow documented exceptions. Project-specific timing takes precedence. Permission and runtime limits still apply.
 
 ---
 
@@ -20,7 +20,7 @@ Regardless of the project setting, test authoring is a finalization phase: agent
 
 **Policy:** {{always | on-request | never}}
 
-- `always` — agents run the test suite automatically as part of verification after any non-trivial change.
+- `always` — agents run focused tests during development and the project-required completion checks after any non-trivial change.
 - `on-request` — agents run tests only when the user explicitly asks. The default verification loop skips them.
 - `never` — leave test execution to the human. Useful when tests are slow, flaky, or require external services.
 
@@ -36,13 +36,15 @@ If multiple commands are needed (e.g. PHP + frontend), list them in run-order an
 - `report-only` — agent reports the failure with full output and stops. Production code is never modified to make a test pass without explicit instruction.
 - `handoff` — agent reports and asks the user how to proceed.
 
+These actions govern unexpected failures. Planned assertion-level RED in an already-authorized test-first implementation task is stage evidence: the coder may implement the requested behavior, while test-only agents hand RED back to the coder. It does not authorize unrelated fixes. An explicit project rule to stop or hand off even on expected RED takes precedence.
+
 **Creating new test files:** {{allowed | on-request | forbidden}}
 
 - `allowed` — agents may add tests proactively for new behaviour they introduce.
 - `on-request` — agents only add tests when the user asks.
 - `forbidden` — only humans add tests.
 
-`allowed` controls permission, not timing. Allowed tests are still written only after the implementation is otherwise complete and green, at commit-ready handoff.
+`allowed` permits test authoring; the execution policy above governs running them. Use test-first for reproducible bugs and clear behavioral contracts when both are permitted. Record an exception when a meaningful automated test is impractical, and report unexecuted tests explicitly.
 ```
 
 ---
@@ -88,5 +90,5 @@ If multiple commands are needed (e.g. PHP + frontend), list them in run-order an
 
 - [`plugins/core/conduct/agent-test-restraint.md`](../plugins/core/conduct/agent-test-restraint.md) — defines the fallback default and points agents at this file.
 - [`plugins/core/skills/verify/SKILL.md`](../plugins/core/skills/verify/SKILL.md) — step 3 of the verification loop reads project policy before running tests.
-- [`plugins/laravel/skills/tester/SKILL.md`](../plugins/laravel/skills/tester/SKILL.md) and [`plugins/nuxt/skills/tester/SKILL.md`](../plugins/nuxt/skills/tester/SKILL.md) — enforce the finalization gate before authoring tests.
+- [`plugins/laravel/skills/tester/SKILL.md`](../plugins/laravel/skills/tester/SKILL.md) and [`plugins/nuxt/skills/tester/SKILL.md`](../plugins/nuxt/skills/tester/SKILL.md) — apply project permissions and shared test-first timing while preserving their test-only scope.
 - [`plugins/laravel/conduct/git.md`](../plugins/laravel/conduct/git.md) and [`plugins/nuxt/conduct/git.md`](../plugins/nuxt/conduct/git.md) — pre-commit checks defer the test command to project rules.

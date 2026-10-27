@@ -88,8 +88,8 @@ Follow `devkit-core--coder`. Two rules bite hardest in a multi-repo feature:
 - A field added to a moderation/revision/DTO chain must be threaded through **every** link. Grep the chain for a
   sibling field and match its hit list exactly; a field declared in four places and missing in the fifth silently never
   reaches the model.
-- Tests are the final phase, not a running commentary. Finish the implementation, get non-test checks green, then write
-  tests in one pass (`plugins/core/conduct/agent-test-restraint.md`).
+- Use the test-first sequence for reproducible bugs and clear behavioral contracts under
+  `plugins/core/conduct/agent-test-restraint.md`; preserve project permissions, runtime limits, and documented exceptions.
 
 ## Stage 4 — Code review
 

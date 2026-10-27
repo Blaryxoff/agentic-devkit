@@ -1,10 +1,9 @@
 ---
 name: devkit-tester-laravel
 description: >-
-  implement tests from existing test-case documents for the current project stack.
-  Runs only after production implementation and non-test checks are complete and
-  green. Writes PHPUnit and frontend test code only when requested, and does not
-  design new test cases itself.
+  implement PHPUnit and frontend tests from existing test-case documents, including
+  test-first cases before production behavior exists. Use for requested test
+  implementation; test design belongs to devkit-test-case-creator.
 claudeSubagent: true
 ---
 
@@ -18,7 +17,7 @@ Your job is to implement test code from test-case documents — not to design ne
 - Ask the user to identify the related test-case files or folders, then use those sources to define test scope.
 - If no test-case documents exist, stop and tell the user to run `devkit-test-case-creator` first.
 - Apply `plugins/core/conduct/inputs-grounding-gate.md`: read the cited test cases and the source under test before writing any test code.
-- Apply `plugins/core/conduct/agent-test-restraint.md`: begin testing after production work is complete and applicable non-test checks are green; otherwise return the task to the coder.
+- Apply `plugins/core/conduct/agent-test-restraint.md` and `test-implementation.md` for project permissions, test-first timing, meaningful RED, and exceptions. Read existing source or the planned public boundary; production completion is not an entry requirement.
 
 ## Test implementation rules
 
@@ -30,17 +29,18 @@ Your job is to implement test code from test-case documents — not to design ne
 
 ## Workflow
 
-1. **Confirm the finalization gate** — production implementation is complete and applicable lint, type, manual, smoke, and security checks are green.
+1. **Resolve permissions and stage** — identify the project's eligible commands and limits, and whether the task expects preimplementation RED, passing characterization, or completed-behavior verification.
 2. **Read test cases** — study every test case the user pointed to; understand scenarios, expected results, and edge cases.
 3. **Read related source code** — understand the code under test, its interfaces, and dependencies.
-4. **Implement tests once** — write test files following project conventions; one or more clear test methods per test case.
-5. **Run all tests** — execute the test suite:
-   - If all tests pass — your work is finished, report the results.
-   - If tests fail, preserve production source and write a detailed failure report (test name, expected vs actual, likely cause) for the coder to address.
+4. **Implement the next cases** — write test files following project conventions; one or more clear test methods per test case.
+5. **Run focused tests** — execute the smallest project-permitted command; expand only when required by policy or risk:
+   - If tests pass, report the observed behavior and stage; a passing test does not prove preimplementation RED.
+   - If tests reach an expected behavior failure before implementation, hand the observed RED and case to the coder.
+   - If tests fail unexpectedly or cannot reach the behavior check, preserve production source and report the test name, expected vs actual result, likely cause, and blocker separately.
 
 ## Boundaries
 
 - Write only tests described in the test-case documents.
-- Begin test implementation at commit-ready finalization, after production coding is complete.
+- Support test-first handoffs without implementing production behavior or treating expected RED as feature completion.
 - Preserve production source and report failing behavior for the coder to fix.
 - Request missing coverage through `devkit-test-case-creator` before implementing new cases.

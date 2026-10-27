@@ -1,6 +1,6 @@
 # Test Implementation Contracts
 
-Use this document for tester workflows together with the project test policy and [agent-test-restraint.md](./agent-test-restraint.md). Test authoring begins after production implementation and applicable non-test checks are complete.
+Use this document for tester workflows together with the project test policy and [agent-test-restraint.md](./agent-test-restraint.md). Testers may author tests before production behavior exists, using approved cases and the public contract; preserve production source.
 
 ## Scope and traceability
 
@@ -15,7 +15,8 @@ Use this document for tester workflows together with the project test policy and
 - Cover happy, boundary/empty/null, validation/denial, concurrency, retry/cancellation, and relevant platform lifecycle cases from the actual requirement. Use a criterion-to-case ledger to expose missing coverage; do not duplicate a lower-level scenario at E2E without a distinct wiring risk.
 - Apply `behavioral-completeness.md` → **Risk-driven case generation** to the affected contracts. Give each distinct mechanism its own case ID, identity/history fixtures and observable outcome; one family label cannot stand in for untested mechanisms. Reuse the requirement/source ledger and challenge applicable omissions before handoff.
 - Preserve execution provenance with results: source/run/build, actual method/surface, outcome, cause and evidence. Runtime checks use `runtime-qa-evidence.md`; authored tests, code inspection, expected failures and inherited evidence do not become a new runtime PASS.
-- Hand case documents to the tester separately from production changes. Missing product behavior goes back to the task owner; a testcase designer does not invent requirements.
+- Hand case documents to the tester separately from production changes. Record the intended stage: preimplementation RED, passing characterization, or completed-behavior verification. Missing product behavior goes back to the task owner; a testcase designer does not invent requirements.
+- Report observed expected RED separately from unexpected failures, blocked execution, and passing tests. RED must reach the intended behavior assertion or expected-error check; import, compiler, fixture, or environment failures do not prove the behavior gap. Return expected RED to the coder for implementation; do not mark the feature complete.
 
 ## Isolation and quality
 
@@ -30,6 +31,6 @@ Use this document for tester workflows together with the project test policy and
 
 - Use mutation testing when explicitly requested or required by project policy; otherwise propose a focused pilot only when changed high-risk logic needs stronger assertion evidence, such as authorization, financial calculations, or state transitions. Follow the project's test-execution policy and time limits.
 - Use the project's installed, configured mutation runner and focused test command after the baseline passes. Scope execution to the affected logic in an isolated workspace; keep production code and unrelated work intact. Obtain approval before adding dependencies.
-- Review surviving mutants against required behavior. Add or strengthen permitted tests only in the final test-authoring phase; report equivalent or irrelevant mutants with a reason instead of changing behavior to improve a score.
+- Review surviving mutants against required behavior. Add or strengthen tests only when project permissions and the task's authoring scope allow it; report equivalent or irrelevant mutants with a reason instead of changing behavior to improve a score.
 - Report the runner, scope, baseline, detected and surviving changes, uncovered sites, and tool exclusions. Separate assertion-detected changes from compilation failures, timeouts, or infrastructure failures when the runner exposes them; disclose when its score combines these outcomes.
 - Treat mutation, coverage, complexity, and structural-similarity scores as evidence for review. Apply only project-configured thresholds; do not impose universal CRAP, duplication, or mutation-score gates, or extract shared code solely to satisfy a similarity score.

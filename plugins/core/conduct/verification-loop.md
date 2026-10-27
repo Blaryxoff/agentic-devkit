@@ -14,13 +14,15 @@ After completing an implementation task (or a coherent subset), run these checks
 
 A running dev server can surface compile and bundle errors during implementation, but it does not replace a required production build.
 
+This order is the completion gate. During development, run project-permitted focused RED/GREEN checks under [agent-test-restraint.md](./agent-test-restraint.md) before production implementation or full lint/type/build checks when the test-first sequence calls for them.
+
 ## Reproduce before fixing
 
-Reproduce the reported defect before changing production code, using an existing project-permitted test, runtime probe, or manual steps. Record the expected and observed behavior.
+For a reproducible defect, write or update a project-permitted focused regression test before changing production behavior. Observe it fail for the reported defect, then make the smallest fix and observe it pass. Record the expected and observed behavior.
 
-- Author new or updated regression tests only in the final coding phase under [agent-test-restraint.md](./agent-test-restraint.md), after implementation and applicable non-test checks are complete.
-- When a regression test is intended and permitted, verify that it detects the original defect on a safely isolated pre-fix version and passes on the fixed version. Preserve current work; do not revert the working tree to demonstrate failure.
-- If that comparison is impractical or tests are not permitted, report the limitation and the before/after reproduction evidence. Do not claim that a test proved the regression without observing its failure on the original defect.
+- Apply [agent-test-restraint.md](./agent-test-restraint.md) for meaningful RED, project permissions, and documented exceptions. If automated reproduction is impractical or not permitted, record the limitation and use an authorized runtime probe or manual steps before and after the fix.
+- If a regression test was added after the fix under an exception, demonstrate its failure on a safely isolated pre-fix version when practical. Preserve current work; do not revert the working tree to demonstrate failure.
+- Report any missing RED/GREEN observation explicitly. Do not claim that a test proved the regression without observing its failure on the original defect.
 - Complete the fix only when the original reproduction no longer exhibits the defect and the eligible focused checks pass. A test that passes on both versions does not establish regression coverage.
 
 ## Selective mutation testing
