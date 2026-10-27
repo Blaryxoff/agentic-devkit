@@ -84,8 +84,9 @@ Report existing work; do not implement fixes, run a new QA pass, or deploy while
   servers, using their established names or URLs when useful. Never mention git branches, including `master`, `main`,
   or `dev`, and never translate a branch name into a server name. If deployment is unverified, omit availability claims
   and generic uncertainty paragraphs; report the completed fix without implying it is already on a server.
-- Keep verification detail only when it describes a relevant check completed in this session. Omit routine test
-  counts, commit hashes, logs, and implementation detail unless needed to understand the completed work.
+- Describe corrected behavior in language the task's readers understand. Keep internal verification tools and process
+  out of the comment: omit LunaQA, PHPUnit, Vitest, CI jobs, routine test results/counts, commit hashes, and logs.
+  Include a checked scenario only when it clarifies the resulting behavior; describe it without naming the tools.
 - End after reporting the completed work. Omit "Перед закрытием задачи нужно…", retest/release requests, closing
   checklists, advice, and reminders of the team's responsibilities. Do not add a missing QA confirmation as a caveat
   or imply an entire task is complete because this session's fixes are complete.
