@@ -43,6 +43,7 @@
 ## 3. Outcomes and handoff
 
 - Mark a case `passed` only when the observed evidence establishes its expected result on the recorded boundary. Record `failed` when an executed assertion disagrees; use `blocked` when a required prerequisite or evidence boundary cannot be established after authorized recovery.
+- Split compound checks into identifiable subchecks when their actors, boundaries or outcomes differ. Preserve each outcome; a parent with an unproven obligation cannot be `passed`. Report partial success and remaining gaps separately instead of counting “passed for reachable cases” as complete coverage.
 - Report skipped and missing checks explicitly outside successful coverage, with their reason and affected criterion. Keep runner-marked known failures (`xfail` / `test.fail`) visible even when the suite exits successfully. A negative case that proves the required rejection is a passing assertion, not a known product failure.
 - Classify causes as product, test/setup, data, environment, or unclear contract after inspecting the relevant session, fixture, network, and server signals. Promote only confirmed product failures to product defects.
 - Preserve unresolved cause as uncertainty and name the next discriminating check. Missing deployment/module/provider evidence blocks dependent acceptance; it does not by itself prove faulty product code.

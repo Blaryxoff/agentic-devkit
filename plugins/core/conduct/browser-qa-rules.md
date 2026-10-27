@@ -205,6 +205,14 @@ is not applicable only when adequate existing fixtures are verified, the scope i
 explicit data-read-only restriction applies. For a remaining blocker, report attempted setup paths, exact denial/error
 and affected cell IDs; keep those cells blocked/uncovered and the pass incomplete.
 
+Verify eligibility through the same role, tenant, configuration and selection rules used by the runtime entry point;
+an existing record with an enabled flag does not prove it is selectable or actionable. Inspect the downstream effects
+of a planned mutation, including jobs, notifications and provider calls. A local origin or mocked first step does not
+establish that later integrations are simulated. Use isolated test configuration where supported; keep unavailable
+provider boundaries blocked. Record any test-only role restriction instead of crediting that path to an ordinary user.
+Prepare rejected-input probes so their effects remain permitted even if validation fails. An expected rejection is
+not a guard against a prohibited submission; select an allowed mode or keep that negative check blocked.
+
 For a form-submission lane, inspect the client and server validation that the planned submit will exercise, including
 conditional fields outside the feature under test. Verify its test account and related records satisfy those prerequisites
 before dispatch; record the values or states checked. When the mutation policy permits an upload, stage a harmless test
@@ -281,6 +289,10 @@ expected outcome, mark the cell blocked with the missing contract named; do not 
 4.12. **Challenge coverage before dispatch** — the planning owner compares the proposed ledger against original
 requirements and applicable risks from §4.9, adds omitted cases, or records material coverage gaps. The coverage reviewer
 checks for missing applicable scenarios as well as results for submitted rows; keep the existing reviewer, not another layer.
+For targeted and exhaustive passes, map each in-scope acceptance criterion back to assigned case IDs or a named gap
+with its prerequisite; case-to-source citations alone cannot reveal an entirely omitted criterion. Include inherited
+requirements referenced by the feature specification. Reconcile this compact map before dispatch and at completion;
+do not expand a targeted scope to unrelated criteria or replace the spot workflow with this map.
 Preserve the scope selected in §1: targeted omissions stay explicit, and spot checks retain §1.6 without a ledger.
 Load `qa-output-verification.md` only for generated files, exports, media, notifications or activity telemetry; load
 `qa-touch-and-device.md` only for affected touch/mobile, engine-specific or native behavior. Assign relevant evidence to
@@ -298,6 +310,8 @@ Exhaustive coverage requires all dimensions below; neither skill may skip a dime
 
 5.4. **Per page × viewport** — `resize_page`/`emulate`; `take_snapshot`; run the §6.3 DOM/layout audit; check adaptive
 layout. Run existing Playwright Test visual assertions when the project provides them. Capture pixels only under §6.6.
+After changing emulation, verify the actual route, role and rendered state as well as viewport width. A tool-induced
+reload may reset a form or wizard; restore the assigned state through real controls before labeling its layout evidence.
 
 5.5. **Entity lifecycle** — create/read/update/delete + state transitions (`fill_form`, `click`, `handle_dialog`).
 For each stateful core flow, verify the intermediate state, then reload or leave and return; resume from the same
@@ -340,6 +354,11 @@ affected role's view (for example a student count against an admin count). A UI 
 prove server success. Verify that a changed selection actually persists; a server rejection with a success-looking UI
 is a failure. Probe protected response data when the feature promises to hide information, not only the visible page.
 If a signal is unavailable, mark that checkpoint unproven rather than passing it from another signal.
+
+When a displayed form value and its submitted value disagree, verify the input method before attributing a product
+binding or validation defect. An automation fill can change a DOM value without delivering the framework's input
+event. Recheck with real keyboard editing and blur through the selected surface, verifying the selection/empty value
+and actual request payload. Preserve both attempts; do not inject DOM events or edit framework state to force success.
 
 5.14. **Timing and multiple sessions** — For operations involving polling, heartbeats, media, jobs, recording,
 autosave, or delayed feedback, assert both pending and terminal states using an observed condition and a recorded
@@ -407,6 +426,14 @@ baseline whose pins or rendered state differ. The QA lead keeps each required di
 evaluation for multiple read-only assertions; never replace a user interaction or server-side permission check with
 synthetic DOM mutation.
 
+Bound keyboard recovery by observed progress. Record the focused element after Tab; if focus returns to an already
+visited element without a relevant state change, stop traversing that cycle. Inspect the target's visibility,
+focusability and occlusion, then use a supported UI recovery or report the named check blocked/failed. Repeating
+Tab and DOM reads through the same cycle is a stall, not additional coverage. A click with no request or state change
+likewise needs diagnosis before another attempt; preserve the original outcome and any recovery as separate evidence.
+For a focus-style assertion, a real click on a nearby control followed by Tab can reach the target without traversing
+the whole page again. Keep a required keyboard-only journey separate; that shorter method does not prove it.
+
 6.6. Capture pixels only for a supplied design-reference comparison, a local visual-regression baseline/diff, or evidence
 for a confirmed visual finding. Pass `filePath` so chrome-devtools saves the image instead of attaching it to the model
 response. `filePath` must resolve inside the MCP server's writable root, normally the project directory; a path outside
@@ -450,7 +477,10 @@ Missing prerequisites and unexercised cells are coverage blockers, not automatic
 7.4. **Confirm before filing.** Every retained finding must identify the violated expectation from the user's scope,
 acceptance criteria, project/business rules, supplied design reference, or an applicable canonical UI/layout oracle.
 Require a reproducible expected-versus-actual failure in the pinned environment, account, fixture state and viewport,
-with §6 browser evidence. Apply `browser-ui-oracles.md` §3.4 to every visual probe candidate. Styling preference,
+with §6 browser evidence. Verify the actual implementation variant from runtime/fixture evidence and check its
+specific requirements and authorized overrides before applying an inherited shared rule. A shared component or
+specification filename does not establish which variant's contract governs the finding.
+Apply `browser-ui-oracles.md` §3.4 to every visual probe candidate. Styling preference,
 speculation, source inspection alone and reviewer agreement are not browser proof. Keep uncertain candidates separate
 from confirmed findings, retain them as unresolved, and request a named follow-up cell.
 
@@ -546,11 +576,18 @@ After the kill, call no chrome-devtools tool: the server's `getContext()` relaun
 
 10.4. Never signal a shared/current-session MCP server, and never kill any MCP or browser by a pattern. The only MCP exception is the exact dedicated-executor cleanup in §10.8 after the executor's final browser call and ownership revalidation. Forbidden: `pkill -f chrome-devtools-mcp`, `pkill -f node`, `pkill -f puppeteer_dev_chrome_profile`, `pkill -f chrome`, `killall "Google Chrome"`, and every other glob or wrapper (`npx`, `npm exec`) match. Killing a chrome-devtools-mcp server tears down the whole MCP connection for that session — the failure this rule exists to prevent — and a glob over profiles or the Chrome binary destroys the browsers of concurrent sessions (extra terminals, worktrees, sibling repos), each of which owns its own isolated profile, along with the user's personal Chrome. Killing this pass's Chrome browser process leaves its MCP server healthy: the server relaunches Chrome on the next tool call.
 
-10.5. When the §2.8 delta is not exactly one path, kill nothing. Empty means Chrome belongs to an earlier pass in the same MCP server, or the project is on a shared non-isolated profile (`~/.cache/chrome-devtools-mcp/…`) that other sessions may attach to; two or more paths mean a concurrent session raced the §2.8 window and ownership is ambiguous. Report that the browser was left running and why. For the shared-profile case, tell the user to regenerate the MCP config (`bin/devkit-install --claude --project=.`) to get `--isolated`.
+10.5. When the initial §2.8 delta is not exactly one path, kill nothing. Empty can mean Chrome already exists in the same MCP server, or the project uses a shared non-isolated profile (`~/.cache/chrome-devtools-mcp/…`); two or more paths mean a concurrent session may have raced the snapshot. Report ambiguous ownership and leave those processes untouched. A previously verified dedicated executor may recover an automatic browser replacement under §11.6; this exception does not establish initial ownership or permit claiming a shared profile. For the shared-profile case, tell the user to regenerate the MCP config (`bin/devkit-install --claude --project=.`) to get `--isolated`.
 
 10.6. Report the cleanup outcome in the QA summary: which servers were stopped, which Chrome profile was killed (or why not).
 
-10.7. Allow multi-agent browser fan-out only after an ownership handshake. Start executors through their first chrome-devtools call one at a time so §2.8 yields exactly one profile per lane. Before releasing concurrent work, each executor records its literal profile path, exact Chrome browser PID, and the dedicated `chrome-devtools-mcp` ancestor PID plus process start identity. Assert that every lane has a distinct profile, Chrome PID, and MCP PID. Ambiguous or shared ownership runs sequentially and leaves the ambiguous process untouched.
+10.7. Allow multi-agent browser fan-out only after an ownership handshake. Start executors through their first chrome-devtools call one at a time so §2.8 yields exactly one profile per lane. Each executor records its literal profile path, exact Chrome browser PID, and dedicated MCP ancestor PID plus process start identity, then waits at that checkpoint. The lead independently verifies the recorded process ancestry belongs to that executor and every lane has distinct profile, Chrome and MCP identities. Release application navigation/login/actions only after this verification, using a pass-owned release record tied to the verified identities. An isolated tab/context in a pre-existing shared browser is not a dedicated executor. Unproved ownership blocks concurrent dispatch; any sequential fallback leaves shared processes untouched and retains the selected-surface rules.
+
+Name separate, lane-unique ready and release JSON paths in the brief; neither is the final `-o` result. The ready record
+contains `executor_pid`, `executor_start`, `chrome_pid`, `chrome_start`, `mcp_pid`, `mcp_start`, `profile` and `binding`. The executor waits
+for the release file with polls no longer than 30 seconds. After independent verification, the lead atomically writes matching
+executor/Chrome/MCP IDs and start identities, profile, and `ready_sha256` for the exact ready-file bytes. Compare each
+start identity with the live process before release. A missing or mismatched release
+keeps the gate closed; elapsed time does not authorize application actions.
 
 10.8. Clean each completed executor tree immediately. After its last browser call, the executor closes the exact Chrome browser per §10.3, then revalidates the recorded dedicated MCP PID and process start identity and sends one SIGTERM to that exact MCP PID — never a name/pattern match. Verify that its telemetry watchdog and Chrome helpers exited; if a recorded child survives, signal only that exact revalidated child. Remove the literal profile directory only after no live process references it. Report the profile, MCP PID, and cleanup result before the executor returns. This dedicated-executor exception does not permit signaling a shared/current-session MCP (§10.4).
 
@@ -575,6 +612,15 @@ sessions. Report the concrete binding, pre-existing tabs preserved, and pass-cre
 
 11.5. When the browser tools are already gone because a server was killed, stop browser execution, report the loss and
 tell the user to reconnect via `/mcp`. Resume on the selected surface after reconnection under §2.6.
+
+11.6. Recover a browser replacement within a previously verified dedicated executor before abandoning its remaining
+cells. Revalidate the recorded MCP PID, start identity and executor ancestry from §10.7; a live tool connection alone
+does not prove ownership. After a successful recovery call, inspect that exact tree for one Chrome browser process
+(exclude helpers), its literal `--user-data-dir`, and process start identity. Require the isolated profile to differ
+from every other active lane and reject fixed/shared profiles. Record the replacement and retire the old browser pin;
+an empty global directory delta after an automatic relaunch is not, by itself, a blocker. If the dedicated tree cannot
+prove a unique owner, keep execution blocked and signal nothing. Re-pin origin, role and persisted fixture state before
+resuming only incomplete cells; do not replay an uncertain mutation. Apply §10.3/§10.8 to the newly verified identities.
 
 ## 12. Lane briefs
 
@@ -604,6 +650,10 @@ roles and flows. An explicit spot scope or named follow-up under §1.7 can cover
 For a follow-up, include §1.7, accepted evidence references and only the remaining actions/dimensions plus necessary
 setup. Scope the follow-up to those remaining checks and retain accepted results from the original matrix.
 
+Sequence pre-transition and negative checks before consuming their shared fixture, or provide separate fixtures for
+the later checks. Track the state each case will inherit; initial readiness alone does not prove readiness after an
+activation, deletion or other terminal transition.
+
 12.4. Inline the probe bytes (`browser-ui-oracles.md` §3.1) only when an assigned check needs that probe. Cite applicable conduct sections by path when the executor can read
 the toolkit; copy the applicable excerpt verbatim when it cannot, preserving the canonical rule.
 
@@ -613,6 +663,10 @@ visible at rest", not "check the hierarchy". A presence question cannot find the
 12.6. A dispatched lane writes its result into a pass-owned temporary directory outside the repository, named in its
 brief as an exception to the skill's no-report-file rule. The top-level pass ingests the result, reports in chat, and
 deletes the directory unless the user asked to keep it.
+Persist a compact evidence checkpoint after each core transition or confirmed failure, before unrelated checks or
+browser cleanup. Include the assertion, actor/fixture, time with timezone, request/action identity and observation;
+link to retained evidence rather than relying on tool IDs that disappear with the session. Keep partial subchecks
+distinct under `runtime-qa-evidence.md` §3 so a restart can resume from the proven boundary.
 Before cleanup, reconcile collected evidence against the assigned checks. Complete any still-available missing checks
 in the same owned browser, including hover/focus and lazy-loaded panels reached through real scrolling and readiness
 checks. Keep ownership through completion of the available assigned checks, then clean up. If a prerequisite prevents
@@ -628,7 +682,8 @@ DEVKIT_FEEDBACK_WORKER=1 codex exec --sandbox danger-full-access -c 'approval_po
 
 - Apply these permissions to ordinary browser QA, Luna QA, missing-evidence waves and resumed workers unless the user explicitly restricts access.
 - Keep the `DEVKIT_FEEDBACK_WORKER=1` prefix on every worker launch and resume so the Jev feedback hook skips lane briefs.
-- Resolve per-tool overrides before dispatch; `approval_policy="never"` alone rejects tools that still require approval.
+- Resolve per-tool overrides for the actual worker MCP binding before dispatch; replace the example server name when
+  using a uniquely named entry. `approval_policy="never"` alone rejects tools that still require approval.
 - Keep the lane's task scope and mutation policy; full runtime access does not authorise application-source edits or production mutation (§9.5).
 - Keep each attempt's log under its own name; shell redirection truncates the previous one.
 - Supervise progress and process exit (§12.8) and let a progressing lane continue. Stop only at an explicit user deadline or after confirming a stalled process/provider; preserve evidence and rerun incomplete cells.

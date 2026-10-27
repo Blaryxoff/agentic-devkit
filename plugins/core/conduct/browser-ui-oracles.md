@@ -5,6 +5,8 @@
 1.1. Scope every run to the smallest root that contains the change — a section, card, form or table. With no root the
 probe uses `main`, then `body`. An explicit root that is invalid or matches nothing returns `blocked`; report that
 instead of re-running unscoped.
+Inspect the current DOM to identify a corrected explicit root within the assigned scope, then retry that root.
+Keep the check blocked only when the intended component cannot be located; do not silently broaden the audit.
 
 1.2. Run only the oracles the change can affect, chosen from §2. A one-section change runs one to three scripted keys
 plus the applicable manual oracle, at two viewports, in one `evaluate_script` call per viewport. An exhaustive pass runs
@@ -116,10 +118,13 @@ keep an edge of at least 3:1 (§5.3).
 font size, or a height outside `opts.scale`. Checkboxes, radios and a field's own adornments are excluded. Name the
 control that should change and to what size.
 
-5.3. **`boundaries`** — a control whose edge is drawn by no real shadow needs a fill, border or outline of at least 3:1
-against what is behind it. `kind: field` and `kind: icon` need a visible boundary to be identified; `kind: text` is a
-finding only when the same primitive draws an edge in another state or on another screen, because its label already
-identifies it. Report both colours and the ratio.
+5.3. **`boundaries`** — identify which visible cue establishes the control and its required state before judging the
+probe's edge candidate. A field that depends on its boundary needs a fill, border or outline of at least 3:1 against
+its adjacent colour. For `kind: icon`, measure the meaningful glyph against its painted background: a sufficiently
+contrasting, recognizable icon does not also require a contrasting hit-area boundary. Keep unclear glyph paint
+unverified pending a crop/measurement; an accessible name alone does not prove visual contrast. For `kind: text`,
+confirm a separate boundary requirement against the design system or supplied reference. Report the relevant cue,
+both colours and ratio; preserve focus/selected-state checks separately. See [WCAG non-text contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast#boundaries).
 
 5.4. **`surfaces`** — `bare` lists boxes wider than 240px, drawn by a border or by a rounded fill, with no real shadow
 and a fill — transparent or opaque — that does not separate them from what is directly behind them: visible only by an

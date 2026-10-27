@@ -53,7 +53,9 @@ waves and rechecks; resolve again on the next pass. Lookup failure blocks dispat
    For a spot pass, whether explicit or inferred from the active task, dispatch one Luna executor under
    `browser-qa-rules.md` §1.6 instead of running it in the caller; retain the spot output and all other spot rules.
 2. For targeted and exhaustive passes, fan out across the independent lanes derived under canonical §12.3, in waves
-   when harness slots are exhausted. “Gazillion” means broad coverage, not a literal worker count or agents per cell.
+   when harness slots are exhausted. Reconcile the criterion-to-case map under §4.12 before launching lanes; record
+   named gaps rather than discovering omitted requirements only after execution. “Gazillion” means broad coverage,
+   not a literal worker count or agents per cell.
    Apply §2.10 resource checks to each wave.
 3. Pin the existing project environment and origin under §2.2 before starting a server or preparing fixtures. Use its
    configured database; do not substitute a test database or override session settings to make browser login work.
@@ -87,16 +89,30 @@ source and return its evidence in the final message, which `-o` writes to that r
 executor is a leaf: it must not invoke `lunaqa` or `browser` as an orchestrator, start another agent, or dispatch a CLI
 lane. The lead alone owns further dispatch.
 
+Give each CLI lane an invocation-only MCP name for its browser server. Copy the resolved chrome-devtools stdio entry's
+command, arguments and environment under that unique name, retaining `--headless --isolated`; disable the inherited
+stdio entry only for that worker. Populate `qa_mcp_config` with those `-c` overrides and `qa_mcp_name` with the new name.
+Require the executor to use that exact tool binding: a similarly named shared connector is not a fallback. Keep the
+§10.7 ownership checkpoint closed until the lead verifies ancestry and writes its release record; do not put application
+actions before that gate. This changes no global MCP configuration or HTTP connector availability.
+Include the lead's verified project-discovery receipt and runtime pin in the startup brief. An ownership-only executor
+does not repeat project-registry discovery or start servers; it reports missing pins to the lead and checks only its
+assigned browser binding. Preserve the project's required discovery step in the lead's preflight.
+
 ```bash
+: "${qa_mcp_name:?resolve a unique worker MCP binding}"
+: "${qa_mcp_config:?populate invocation-only server overrides}"
 DEVKIT_FEEDBACK_WORKER=1 codex exec -C "$project_root" --skip-git-repo-check --sandbox danger-full-access \
   -m "$luna_model" "${luna_cli_args[@]}" -c 'approval_policy="never"' \
-  -c 'mcp_servers.chrome-devtools.default_tools_approval_mode="approve"' \
+  "${qa_mcp_config[@]}" -c "mcp_servers.${qa_mcp_name}.default_tools_approval_mode=\"approve\"" \
   -o "$lane_result" "$(cat "$lane_brief")" < /dev/null > "$lane_log" 2>&1
 ```
 
 Resolve these paths before launch; use unique result/log paths per attempt. Apply §2.10 MCP selection and §12.7–§12.10
-full-access permissions, progress supervision, provider recovery and isolation to every wave and resume. Follow
-`shell-invocation.md` for stdin and shell portability. Workers return missing fixture IDs/states or setup denials to
+full-access permissions, progress supervision, provider recovery and isolation to every wave and resume. Apply §12.6
+for incremental evidence and §11.6 for a replaced browser within a verified dedicated executor; preserve proven
+subchecks when redispatching a gap. Follow `shell-invocation.md` for stdin and shell portability.
+Workers return missing fixture IDs/states or setup denials to
 the lead, which prepares them through authorised tools or a Luna fixture lane and redispatches the affected cells.
 An explicitly restricted worker sandbox affects the worker, not the QA lead’s fixture-preparation responsibility under §3.1.
 Report a blocker only after those setup paths fail; include attempted commands, exact denial/error and uncovered cell
