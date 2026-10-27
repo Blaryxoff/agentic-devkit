@@ -40,8 +40,8 @@ Core workflows cover implementation, code and business-logic review, browser QA,
 commit/push wrapup. Stack plugins add framework-specific conventions without putting every stack's rules into an
 agent's context. See [Available Plugins](#available-plugins) and [How It Works](#how-it-works).
 
-Use `/showcase` in Claude Code or `$devkit-showcase` in Codex to present completed work as a portable HTML gallery
-of real screenshots. The [showcase workflow](plugins/core/skills/showcase/SKILL.md) opens the report in a sibling
+Use `/demo` in Claude Code or `$devkit-demo` in Codex to present completed work as a portable HTML gallery
+of real screenshots. The [demo workflow](plugins/core/skills/demo/SKILL.md) opens the report in a sibling
 agterm panel in the same session, keeping the conversation visible; outside agterm it uses a browser.
 
 Use `/lunaqa <scope>` in Claude Code or `$devkit-lunaqa <scope>` in Codex for exhaustive local browser QA with many

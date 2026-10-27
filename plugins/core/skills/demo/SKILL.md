@@ -1,10 +1,10 @@
 ---
-name: devkit-showcase
+name: devkit-demo
 description: >-
-  Screenshots; use on showcase/покажи правки. Not QA.
+  Screenshots; use on demo/покажи правки. Not QA.
 ---
 
-# Showcase
+# Demo
 
 Create a polished, self-contained HTML gallery from real screenshots of the completed work. A bare invocation
 uses the current task. Preserve the user's conversation while opening the report beside it.

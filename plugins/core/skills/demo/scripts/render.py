@@ -83,14 +83,14 @@ def render(manifest_path, output):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Render a portable screenshot showcase from a JSON manifest.")
+    parser = argparse.ArgumentParser(description="Render a portable screenshot demo from a JSON manifest.")
     parser.add_argument("manifest", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
         render(args.manifest.resolve(), args.output.resolve())
     except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
-        parser.exit(1, f"showcase: {error}\n")
+        parser.exit(1, f"demo: {error}\n")
 
 
 if __name__ == "__main__":
