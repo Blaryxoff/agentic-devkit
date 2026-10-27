@@ -51,17 +51,23 @@ fallback instructions when a connector is unavailable; keep credentials out of o
    login and fixture path. Record the actual checks and results; never claim a pass for an unexecuted or blocked check.
    Do not run a suite expected to take over two minutes without user confirmation. A focused check may establish a narrow
    fix, but must not be presented as full task acceptance.
-6. **Wait for deployment.** Before posting, identify the environment where the reporters can check the result and
-   verify that its deployment containing every fix claimed in the reply has succeeded. Match the deployed revision to
-   the fixes through deployment records and confirm that the environment is available for checking. Local verification,
-   green test jobs, a push, or an older successful deployment do not satisfy this gate. Monitor an in-progress deployment
-   through available CI/deployment tools; keep progress in the user conversation. If deployment fails, is unavailable,
-   or cannot be verified, withhold the tracker reply and report the blocker to the user. Deployment itself still requires
-   separate authorization. Bypass this gate only when the user explicitly asks to post before a green deployment;
-   honor that request without adding "Deploy is pending", equivalent caveats, or unsupported availability claims.
-7. **Update the tracker.** After the deployment gate or its explicit exception, use `devkit-comment` to post one concise
-   continuation per affected task, describing only verified, unreported fixes when the user requested comments or
-   explicitly invoked this workflow. For an
+6. **Confirm deployment and fast-test the target.** Before drafting or posting a ready comment, identify the remote
+   environment where the reporters can check the result and verify that its deployment containing every fix claimed
+   in the reply has succeeded. Match the deployed revision to the fixes through deployment records, then run a focused
+   smoke check of each claimed fix on that deployed remote
+   target. Use the affected UI flow or API/runtime behavior and confirm the expected outcome; server availability or
+   HTTP 200 alone is insufficient. Record the target, deployed revision, checks, and results in the user conversation.
+   Local verification, green test jobs, a push, or an older successful deployment do not satisfy this gate. Apply it to
+   existing fixes too; reuse remote results only when they cover the claimed fixes on the confirmed deployed revision.
+   Monitor an in-progress deployment through available CI/deployment tools; keep progress in the user conversation.
+   If deployment fails, is unavailable, or cannot be verified, or a remote check fails or is blocked, withhold ready
+   drafts and tracker replies and report the blocker to the user. Deployment itself still requires separate
+   authorization. Waive deployment confirmation or remote checks only when the user explicitly requests that exception;
+   a request for comments alone is not a waiver. Honor an explicit exception without adding "Deploy is pending",
+   equivalent caveats, or unsupported deployment or verification claims.
+7. **Update the tracker.** After the deployment and remote-check gate or its explicit exception, use `devkit-comment`
+   to post one concise continuation per affected task, describing only verified, unreported fixes when the user
+   requested comments or explicitly invoked this workflow. For an
    ordinary repair request without posting authorization, prepare a draft instead. Mention the reporters it addresses
    using supported native mention identities. Describe corrected behavior in language the reporters understand; keep
    tool names, test frameworks, CI job details, and routine verification results in the user conversation, not the
@@ -69,9 +75,10 @@ fallback instructions when a connector is unavailable; keep credentials out of o
    deployment from a branch or local check. Change a task to a discovered “Testing” status only when the user explicitly
    authorized that status change; resolve the exact status through tracker metadata and read back the saved status. Do not
    change assignees or other fields. If no unreported fix can be verified, do not post a generic update.
-8. **Close out.** Summarize each finding as fixed and locally verified, fixed with a verification gap, still blocked, or
-   not addressed, with concise evidence and relevant file references. Separate implementation, QA, task comment/status,
-   and deployment evidence. Do not commit, push, deploy, or mutate production unless separately requested.
+8. **Close out.** Summarize each finding as deployed and remotely verified, fixed and locally verified only, fixed with
+   a verification gap, still blocked, or not addressed, with concise evidence and relevant file references.
+   Separate implementation, QA, task comment/status, and deployment evidence. Do not commit, push, deploy, or mutate
+   production unless separately requested.
 
 ## Boundaries
 
@@ -80,8 +87,9 @@ fallback instructions when a connector is unavailable; keep credentials out of o
   invoke `devkit-comment` alone for a comment-only request. Invoke `devkit-task` for a full specification-
   to-pushed-branch pipeline.
 - Follow the current task discussion over stale task descriptions and earlier QA remarks.
-- Post verified fixes only after their deployment is green and available to reporters, unless the user explicitly
-  requests an earlier comment. Keep deployment blockers and pending-deployment wording out of tracker comments.
+- Draft or post ready comments only after deployment is green and focused checks of the claimed fixes pass on the
+  deployed remote target, unless the user explicitly waives the missing gate. Local checks alone are insufficient.
+  Keep deployment blockers and pending-deployment wording out of tracker comments.
 - Do not post a comment when the user asked only for a draft or when no unreported verified fix can be established.
 - Do not move tasks to “Testing” merely because code or tests are complete; require explicit user authorization.
 - Do not deploy or change production data as part of this workflow. Establish server availability through deployment
