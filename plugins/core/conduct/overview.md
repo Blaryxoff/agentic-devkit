@@ -11,9 +11,9 @@ Start with `conduct-loading.md`, then open only the documents routed by the acti
 | JavaScript/TypeScript types, finite states, or error ownership | [typed-javascript.md](./typed-javascript.md) |
 | Runtime config, dependencies, bootstrap, CLI, or task scripts | [runtime-configuration.md](./runtime-configuration.md) |
 | Structured logs, traces, metrics, or operational recovery | [logging-observability.md](./logging-observability.md) |
-| Cross-layer feature design or ordinary specifications | [feature-design.md](./feature-design.md) |
+| Cross-layer feature design, concurrent state ownership, or ordinary specifications | [feature-design.md](./feature-design.md) |
 | Entity, flow, view, or store completeness | [behavioral-completeness.md](./behavioral-completeness.md) |
-| Stack tester traceability, isolation, or implementation boundaries | [test-implementation.md](./test-implementation.md) |
+| Stack tester traceability, isolation, selective mutation testing, or implementation boundaries | [test-implementation.md](./test-implementation.md) |
 | Implementation completion and verification | [review-gate.md](./review-gate.md), [verification-loop.md](./verification-loop.md), [agent-test-restraint.md](./agent-test-restraint.md) |
 | Review routing, capability discovery, specialist fan-out, finding format, cross-checking, or peer-CLI invocation | [review-routing.md](./review-routing.md), [reviewer-dispatch.md](./reviewer-dispatch.md), [review-specialist-fanout.md](./review-specialist-fanout.md), [review-findings-format.md](./review-findings-format.md), [cross-agent-review.md](./cross-agent-review.md) |
 | Supervised multi-agent review delegated to revmux | [revmux-review.md](./revmux-review.md) |

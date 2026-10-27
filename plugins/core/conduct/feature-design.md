@@ -11,6 +11,14 @@ Load this checklist for a new or changed cross-layer capability. Use it within t
 - Keep business decisions independent from HTTP, UI, storage, queue, and OS adapters at existing seams. Use focused application operations; introduce ports/value objects/aggregates only for real invariants or replacement/test boundaries.
 - Identify data volume, concurrency, latency, privacy/security, accessibility, offline/recovery, compatibility, and operational constraints relevant to acceptance. Give concrete budgets/risks when grounded; mark unknowns rather than inventing capacity claims.
 
+## State ownership
+
+- Give independent operations or owners separate mutable state when the contract does not require sharing; check that option before adding locks or serialization.
+- For required shared state, define which actors may write, the invariant they must preserve, and the mechanism enforcing it. Choose the existing runtime's transaction, atomic operation, lease, lock, or single-writer design as the contract requires.
+- Verify overlapping operations and ownership transfer, including cancellation or failure, against that invariant.
+
+This decision order is informed by [ub-mode](https://github.com/unclebob/ub-mode/blob/57a8bdd28e45ed41900ace0bafa2ff76dd9ed70f/SKILL.md#separate-before-serializing-shared-state); no license is declared at that revision. The guidance here is independently worded.
+
 ## Responsibility blocks
 
 Include only blocks owned by the feature; resolve risks from expected responsibilities even when the draft omitted them.

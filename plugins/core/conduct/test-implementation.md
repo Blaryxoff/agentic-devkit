@@ -25,3 +25,11 @@ Use this document for tester workflows together with the project test policy and
 - Exercise critical logic branches and high-damage failures identified by the cases. Honor configured coverage thresholds and report uncovered required paths; a coverage percentage does not replace a missing behavior oracle.
 - Use installed runner/preset/renderer versions and the package's existing script. Keep one focused command per affected package, then expand only when policy or risk requires it; honor user limits for long suites.
 - Preserve the failure report for production fixes under `devkit-coder`; do not repair production source inside a tester or weaken assertions to get green.
+
+## Selective mutation testing
+
+- Use mutation testing when explicitly requested or required by project policy; otherwise propose a focused pilot only when changed high-risk logic needs stronger assertion evidence, such as authorization, financial calculations, or state transitions. Follow the project's test-execution policy and time limits.
+- Use the project's installed, configured mutation runner and focused test command after the baseline passes. Scope execution to the affected logic in an isolated workspace; keep production code and unrelated work intact. Obtain approval before adding dependencies.
+- Review surviving mutants against required behavior. Add or strengthen permitted tests only in the final test-authoring phase; report equivalent or irrelevant mutants with a reason instead of changing behavior to improve a score.
+- Report the runner, scope, baseline, detected and surviving changes, uncovered sites, and tool exclusions. Separate assertion-detected changes from compilation failures, timeouts, or infrastructure failures when the runner exposes them; disclose when its score combines these outcomes.
+- Treat mutation, coverage, complexity, and structural-similarity scores as evidence for review. Apply only project-configured thresholds; do not impose universal CRAP, duplication, or mutation-score gates, or extract shared code solely to satisfy a similarity score.

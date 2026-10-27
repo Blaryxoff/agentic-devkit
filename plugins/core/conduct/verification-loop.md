@@ -16,12 +16,24 @@ A running dev server can surface compile and bundle errors during implementation
 
 ## Reproduce before fixing
 
-For any reported bug or regression, write a failing test that reproduces the defect *before* changing production code.
+Reproduce the reported defect before changing production code, using an existing project-permitted test, runtime probe, or manual steps. Record the expected and observed behavior.
 
-- The test must fail on the current code for the reason in the bug report. A green test on the first run means it does not cover the bug — rewrite it.
-- The fix is complete only when that test passes and the rest of the suite stays green.
-- If the bug surface cannot be tested (UI glitch, infra, third-party flake), state explicitly why no test was added, then describe the manual reproduction steps you ran before and after the fix.
-- Reproduce the reported failure with a test before changing production code, even when the fix looks obvious. The test should prove the diagnosis as well as the patch.
+- Author new or updated regression tests only in the final coding phase under [agent-test-restraint.md](./agent-test-restraint.md), after implementation and applicable non-test checks are complete.
+- When a regression test is intended and permitted, verify that it detects the original defect on a safely isolated pre-fix version and passes on the fixed version. Preserve current work; do not revert the working tree to demonstrate failure.
+- If that comparison is impractical or tests are not permitted, report the limitation and the before/after reproduction evidence. Do not claim that a test proved the regression without observing its failure on the original defect.
+- Complete the fix only when the original reproduction no longer exhibits the defect and the eligible focused checks pass. A test that passes on both versions does not establish regression coverage.
+
+## Selective mutation testing
+
+Use [test-implementation.md](./test-implementation.md#selective-mutation-testing) when the task or project policy calls for checking assertion strength in changed high-risk logic. Keep this optional unless the project requires it.
+
+## Reassess repeated failures
+
+- After two fixes based on the same assumption fail the same check, pause production edits and state that assumption explicitly.
+- Compare the failures with contrary evidence from the actual inputs, state ownership, call path, and environment. Distinguish a product defect from a failing fixture, tool, or setup before choosing another explanation.
+- Use `devkit-wrong` to re-evaluate the approach or `devkit-root-cause` when the cause remains unknown. Resume implementation only with an evidence-backed explanation and a check that can distinguish it from the failed assumption.
+
+The repeated-failure trigger is informed by [ub-mode](https://github.com/unclebob/ub-mode/blob/57a8bdd28e45ed41900ace0bafa2ff76dd9ed70f/SKILL.md#attack-the-premise); no license is declared at that revision. The guidance here is independently worded.
 
 ## When to run
 

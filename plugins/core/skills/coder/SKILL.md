@@ -26,6 +26,7 @@ These rules are complete enough for a local in-place edit. Apply them directly; 
 - Before writing new code, climb the existence ladder in `solid-dry.md` and stop at the first rung that resolves the need: does it need to exist → is it already in the codebase → standard library → platform/framework native → installed dependency → one expression. Validation, error handling, security, and accessibility are never dropped or thinned to make a change smaller.
 - Keep changes limited to the task's requirements and leave unrelated code and formatting intact. Remove only orphans created by this change (`surgical-changes.md`).
 - For fixes, make the smallest code change sufficient to resolve the root cause, scoped to the necessary path.
+- After two fixes based on the same assumption fail the same check, apply `verification-loop.md` → **Reassess repeated failures** before another production edit.
 - Do not add prose comments or explanatory docblocks to implementation code. Express intent through names, types, extracted concepts, and simpler control flow. Never convert what you learned while making the change — the mechanism you traced, why the fix works, the edge case you hit — into a comment; state it in the chat response instead, where it costs the reader nothing to skip. Private/internal narrative comments are forbidden; public docblocks are allowed only for machine-required metadata or contracts that code cannot express (`code-comments.md`).
 - Match sibling abstractions and error handling. Reuse an existing utility when it fits; add an abstraction when the task exposes multiple real uses or requires a clear extension seam (`solid-dry.md`).
 - Never hardcode secrets or environment-specific credentials. Do not add dependencies without explicit approval.
@@ -41,6 +42,7 @@ Resolve the active plugins, identify which layers the target actually touches, t
    - new/moved files, cross-layer flow, or changed responsibility → `architecture.md`, `anti_patterns.md`, and layering documents such as `thin_controller_model.md`;
    - PHP/public APIs/comments → `php.md`, `documentation.md`;
    - JavaScript/TypeScript boundary types, finite states, or async errors → `plugins/core/conduct/typed-javascript.md`;
+   - concurrent operations or shared mutable state → `plugins/core/conduct/feature-design.md` → **State ownership**;
    - authentication, authorization, external input, secrets → `security.md`;
    - migrations, queries, transactions, models, schema assumptions → `database-safety.md`, `database_snapshot.md`, `enums.md`;
    - exceptions, retries, fallbacks → `error_handling.md`;

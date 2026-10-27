@@ -63,6 +63,8 @@ Test execution is governed by the **project's own rules**, not by this skill. Be
 
 Keep verification focused on existing tests; create test files or test code only during a separately authorized implementation task. See [agent-test-restraint](../../conduct/agent-test-restraint.md) for the fallback default and the project-rule template at `howto/project-test-rules.md`.
 
+When mutation testing is requested or required by project policy, follow [test-implementation.md](../../conduct/test-implementation.md#selective-mutation-testing). Report assertion gaps without editing tests or production code inside verification.
+
 For an API or worker test/QA request, use the project's focused integration or E2E command when available. Use a dedicated test environment and probe the running endpoint or worker behavior only when the requested behavior cannot be established by that command. Browser QA is for UI behavior.
 
 For behavior outside the browser, resolve the actual runtime and host from project manifests and enabled plugin indexes, then load their testing rules and configured device/process/package checks. Verification on another surface does not establish platform modules, permissions, privileged bridges, signing, or update behavior; report unavailable surfaces explicitly.
