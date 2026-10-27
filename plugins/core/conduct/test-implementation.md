@@ -13,6 +13,8 @@ Use this document for tester workflows together with the project test policy and
 
 - For requested test design, record each case's ID/title, requirement, test level/priority, actors/permissions, preconditions/fixtures, inputs, action, expected visible and persisted outcome, side effects, and cleanup. Keep implementation files organized by source/feature using the consuming runner's conventions.
 - Cover happy, boundary/empty/null, validation/denial, concurrency, retry/cancellation, and relevant platform lifecycle cases from the actual requirement. Use a criterion-to-case ledger to expose missing coverage; do not duplicate a lower-level scenario at E2E without a distinct wiring risk.
+- Apply `behavioral-completeness.md` → **Risk-driven case generation** to the affected contracts. Give each distinct mechanism its own case ID, identity/history fixtures and observable outcome; one family label cannot stand in for untested mechanisms. Reuse the requirement/source ledger and challenge applicable omissions before handoff.
+- Preserve execution provenance with results: source/run/build, actual method/surface, outcome, cause and evidence. Runtime checks use `runtime-qa-evidence.md`; authored tests, code inspection, expected failures and inherited evidence do not become a new runtime PASS.
 - Hand case documents to the tester separately from production changes. Missing product behavior goes back to the task owner; a testcase designer does not invent requirements.
 
 ## Isolation and quality

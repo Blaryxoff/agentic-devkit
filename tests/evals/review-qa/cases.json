@@ -1,0 +1,635 @@
+{
+  "schema_version": 1,
+  "input_policy": "Present exactly one case brief, contract and one opaque variant to the tested agent. Never include rubric, variant polarity, family, mechanism or sibling variant. Treat supplied traces as recorded evidence, not fresh execution.",
+  "cases": [
+    {
+      "id": "C001",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Attempts belong to an enrollment placement. Placements p1 and p2 reuse exercise e1. Content edits to e1 are shared.",
+      "variants": {
+        "a": {
+          "source": "saveAttempt(actor, placement, score) { upsert({actor, exercise: placement.exercise}, {score}); }",
+          "action": "actor u1 saves 8 at p1; opens p2"
+        },
+        "b": {
+          "source": "saveAttempt(actor, placement, score) { upsert({actor, placement: placement.id}, {score}); }",
+          "action": "actor u1 saves 8 at p1; opens p2"
+        }
+      }
+    },
+    {
+      "id": "C002",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Completion is independent per purchase cycle. u1 completed lesson l1 in cycle k1; k2 is a new purchase.",
+      "variants": {
+        "a": {
+          "source": "complete(u,l,k) { if (exists({user:u, lesson:l, cycle:k})) return; insert({user:u, lesson:l, cycle:k}); }"
+        },
+        "b": {
+          "source": "complete(u,l,k) { if (exists({user:u, lesson:l})) return; insert({user:u, lesson:l, cycle:k}); }"
+        }
+      }
+    },
+    {
+      "id": "C003",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Every authorized placement renders once, including placements using the same exercise. p1 and p2 are authorized and reference e1.",
+      "variants": {
+        "a": {
+          "source": "return authorizedPlacements.uniqueBy(p => p.exercise_id).map(render);"
+        },
+        "b": {
+          "source": "return authorizedPlacements.uniqueBy(p => p.id).map(render);"
+        }
+      }
+    },
+    {
+      "id": "C004",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Archiving group g1 at t2 archives its active members. Restore revives only members archived by that operation. m1 was removed at t1; m2 was active.",
+      "variants": {
+        "a": {
+          "source": "restore(g) { members.withDeleted().whereGroup(g).whereArchiveBatch(g.archive_batch).update({deleted_at:null}); }",
+          "data": "m1 archive_batch=null; m2 archive_batch=b2; g1 archive_batch=b2"
+        },
+        "b": {
+          "source": "restore(g) { members.withDeleted().whereGroup(g).update({deleted_at:null}); }"
+        }
+      }
+    },
+    {
+      "id": "C005",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Duplicate section s1 creates an independent section and child records; source and its ordering remain unchanged.",
+      "variants": {
+        "a": {
+          "source": "copy(s) { n=createSection(); children.whereSection(s.id).update({section_id:n.id}); return n; }"
+        },
+        "b": {
+          "source": "copy(s) { n=createSection(); for (c of children.whereSection(s.id)) insert({...c,newId:true,section_id:n.id}); return n; }"
+        }
+      }
+    },
+    {
+      "id": "C006",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Unlock requires all visible mandatory lessons complete. Hidden drafts never count. a=visible mandatory complete; b=hidden draft incomplete.",
+      "variants": {
+        "a": {
+          "source": "unlock = lessons.filter(l => l.visible && l.mandatory).every(l => l.complete);"
+        },
+        "b": {
+          "source": "unlock = lessons.every(l => l.complete);"
+        }
+      }
+    },
+    {
+      "id": "C007",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Only editors of the document tenant can save published content or drafts. Viewer u1 belongs to t1; document d1 belongs to t1.",
+      "variants": {
+        "a": {
+          "source": "save: authorizeEditor(user,doc.tenant); persist(); draft: requireLogin(user); persist();"
+        },
+        "b": {
+          "source": "save: authorizeEditor(user,doc.tenant); persist(); draft: authorizeEditor(user,doc.tenant); persist();"
+        }
+      }
+    },
+    {
+      "id": "C008",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Tenant editors can bulk edit their own documents. Viewer u1 belongs to t1; d1 belongs to t1; d2 belongs to t2.",
+      "variants": {
+        "a": {
+          "source": "bulk: transaction(() => { for (d of documents.whereIds(ids)) authorizeEditor(user,d.tenant); documents.whereIds(ids).update(payload); });"
+        },
+        "b": {
+          "source": "bulk: requireLogin(user); documents.whereIds(ids).update(payload);"
+        }
+      }
+    },
+    {
+      "id": "C009",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Assigned trainers may mark attendance for their sessions. Other trainers and students may not. Administrator may mark any session.",
+      "variants": {
+        "a": {
+          "source": "mark(u,s) { require(u.role === \"admin\"); saveAttendance(s); }"
+        },
+        "b": {
+          "source": "mark(u,s) { require(u.role === \"admin\" || (u.role === \"trainer\" && s.trainer_id === u.id)); saveAttendance(s); }"
+        }
+      }
+    },
+    {
+      "id": "C010",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Persist UTC instant. Input carries an ISO offset. Two saves without edits must preserve 2030-04-10T08:00:00Z. Display zone is +02:00.",
+      "variants": {
+        "a": {
+          "source": "save(input) { store(parseISO(input)); }",
+          "input": "2030-04-10T10:00:00+02:00"
+        },
+        "b": {
+          "source": "save(input) { store(parseISO(input).subtractHours(2)); }",
+          "input": "2030-04-10T10:00:00+02:00"
+        }
+      }
+    },
+    {
+      "id": "C011",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Gross=100; refunded=20; fee=10. Contract: net=gross-refunded-fee=70. Both settlement and dashboard show net.",
+      "variants": {
+        "a": {
+          "data": "settlement.net=70; dashboard.net=80",
+          "source": "dashboard.net = gross - refunded;"
+        },
+        "b": {
+          "data": "settlement.net=70; dashboard.net=70",
+          "source": "dashboard.net = gross - refunded - fee;"
+        }
+      }
+    },
+    {
+      "id": "C012",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Checkout acceptance targets frontend r2/API a1. Catalog lane is unaffected by checkout-only frontend changes.",
+      "variants": {
+        "a": {
+          "trace": [
+            "09:00 frontend=r1 api=a1; checkout passed",
+            "09:02 frontend=r2 api=a1; checkout invalidated; catalog evidence retained (unchanged code/config)",
+            "09:03 checkout rerun on r2 api=a1 passed"
+          ]
+        },
+        "b": {
+          "trace": [
+            "09:00 frontend=r1 api=a1; checkout passed",
+            "09:02 frontend=r2 api=a1; catalog passed",
+            "09:03 report: checkout and catalog passed on r2"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C013",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "API-only export acceptance requires API a2 and worker w2. Formatting changed only in worker w2.",
+      "variants": {
+        "a": {
+          "trace": [
+            "API a2 worker w1; job j1 processed; artifact format v1",
+            "worker now w2; report j1 verifies a2/w2"
+          ]
+        },
+        "b": {
+          "trace": [
+            "API a2 worker w1; job j1 processed",
+            "worker now w2; j1 invalidated for formatting",
+            "API a2 worker w2; fresh job j2 processed; format v2 verified"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C014",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Acceptance requires package n2 with server a2. Native offline sync code changed in n2.",
+      "variants": {
+        "a": {
+          "trace": [
+            "Inherited run: package n1 server a1; sync passed",
+            "Current runner: package n2 digest h2 server a2; same fixture reset; sync executed and passed"
+          ]
+        },
+        "b": {
+          "trace": [
+            "Inherited run: package n1 server a1; sync passed",
+            "Current: package unknown server a2; report sync passed"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C015",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Build r2 must expose /reports and its report module. Core assets may be combined during optimization.",
+      "variants": {
+        "a": {
+          "trace": [
+            "build=r2; bundle files=4 (previous 9)",
+            "GET /reports=404; module registry has [home,profile]",
+            "report: reports passed because deployment succeeded"
+          ]
+        },
+        "b": {
+          "trace": [
+            "build=r2; bundle files=4 (previous 9)",
+            "GET /reports=200; module registry has [home,profile,reports]; report controls loaded"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C016",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Completed course offers certificate in both client A and client B, which have independent menus.",
+      "variants": {
+        "a": {
+          "source": "A.menu = completed ? [\"certificate\"] : []; B.menu = completed ? [\"certificate\"] : [];",
+          "data": "course completed; user entitled"
+        },
+        "b": {
+          "source": "A.menu = completed ? [\"certificate\"] : []; B.menu = [];",
+          "data": "course completed; user entitled"
+        }
+      }
+    },
+    {
+      "id": "C017",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Certificate uses template t1, transparent seal over blue field, recipient R, and verification link /verify/x1.",
+      "variants": {
+        "a": {
+          "artifact": "HTTP 200 PDF; parsed text R; link /verify/x1; rendered seal has opaque white rectangle; template t1"
+        },
+        "b": {
+          "artifact": "HTTP 200 PDF; parsed text R; link /verify/x1; rendered seal shows blue field through transparent pixels; template t1"
+        }
+      }
+    },
+    {
+      "id": "C018",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Ready recordings must decode and play audio and video for ten seconds. Synthetic media is authorized.",
+      "variants": {
+        "a": {
+          "trace": [
+            "recording.status=ready; GET file=200",
+            "decoder: valid audio/video tracks; playback advanced 0..10s; receiver audio frames observed"
+          ]
+        },
+        "b": {
+          "trace": [
+            "recording.status=ready; GET file=200",
+            "decoder: invalid container; playback duration=0"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C019",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "After approval send one email to recipient r1 within 60 seconds. Authorized test outbox exposes queue/sent/delivery receipts.",
+      "variants": {
+        "a": {
+          "trace": [
+            "t=0 approved; t=1 queued recipient=r1",
+            "t=90 outbox sent=[] receipts=[]; report: delivered"
+          ]
+        },
+        "b": {
+          "trace": [
+            "t=0 approved; t=1 queued recipient=r1",
+            "t=4 sent recipient=r1 subject=Approved link=/items/i1",
+            "t=6 receipt recipient=r1 status=delivered; count=1"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C020",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Mobile tab opens details on touch. Element bounds are inside viewport. Overlay sits above its center; DOM click is available for diagnostics.",
+      "variants": {
+        "a": {
+          "trace": [
+            "bounds inside viewport",
+            "touch at center: tab receives event; details visible",
+            "touch at active edge: tab receives event; details visible"
+          ]
+        },
+        "b": {
+          "trace": [
+            "bounds inside viewport",
+            "programmatic tab.click(): details visible",
+            "touch at center: overlay receives event; details remains hidden"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C021",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "On mobile Safari the focused form action remains reachable above keyboard or by supported scrolling. Claim must name the observed engine.",
+      "variants": {
+        "a": {
+          "trace": [
+            "engine=Chromium touch emulation; width=390; keyboard not opened",
+            "report: Safari keyboard layout passed"
+          ]
+        },
+        "b": {
+          "trace": [
+            "engine=WebKit on named iOS device; portrait; keyboard opened",
+            "visual viewport height=410; action initially below fold; scroll reveals action; tap submits",
+            "landscape keyboard: action reachable by scrolling"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C022",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Package n2 supports sign-in on Android. Browser and native sign-in are separate implementations.",
+      "variants": {
+        "a": {
+          "trace": [
+            "Chromium mobile emulation sign-in passed",
+            "Android runner unavailable; package behavior blocked; no native result claimed"
+          ]
+        },
+        "b": {
+          "trace": [
+            "Chromium mobile emulation sign-in passed; screenshot width=390",
+            "report: Android n2 sign-in passed"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C023",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Review enrollment cap behavior. Source policy: only owner-signed decisions amend product requirements.",
+      "variants": {
+        "a": {
+          "sources": [
+            "spec v1 owner signed 2030-04-01: cap=5",
+            "decision v2 owner signed 2030-04-03: cap=8",
+            "comment v3 observer 2030-04-04: prefer cap=12"
+          ],
+          "source": "allow = enrolled < 5;"
+        },
+        "b": {
+          "sources": [
+            "spec v1 owner signed 2030-04-01: cap=5",
+            "decision v2 owner signed 2030-04-03: cap=8",
+            "comment v3 observer 2030-04-04: prefer cap=12"
+          ],
+          "source": "allow = enrolled < 8;"
+        }
+      }
+    },
+    {
+      "id": "C024",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Task requires report aggregation according to attachment A. Accessible code sums active rows; task body specifies CSV header name=Total only.",
+      "variants": {
+        "a": {
+          "sources": [
+            "attachment A fetch=403; no cached content"
+          ],
+          "source": "header=\"Total\"; sum(activeRows);",
+          "report": "Header inspected; aggregation criterion unverified until attachment available."
+        },
+        "b": {
+          "sources": [
+            "attachment A fetch=403; no cached content"
+          ],
+          "source": "header=\"Total\"; sum(activeRows);",
+          "report": "All aggregation rules verified from code."
+        }
+      }
+    },
+    {
+      "id": "C025",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Targeted QA: independent placement progress for returning users. Same content can occur twice. Fresh and historical fixtures are available; no output/device requirement.",
+      "variants": {
+        "a": {
+          "ledger": [
+            "Fresh user completes one placement: passed"
+          ],
+          "report": "All scoped behavior covered."
+        },
+        "b": {
+          "ledger": [
+            "Fresh placement completion",
+            "One content in p1,p2: progress independent",
+            "Returning user: old progress and new placement independent"
+          ],
+          "report": "Targeted progress scope; unrelated exports/devices excluded."
+        }
+      }
+    },
+    {
+      "id": "C026",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Browser handoff requests validation of checkout criterion Q1 on frontend r2/API a2, fixture cart1 state=unpaid.",
+      "variants": {
+        "a": {
+          "handoff": "Q1 run q17 at 2030-04-10T09:00Z; live Chromium touch-off; frontend r2/API a2; cart1 unpaid reset; submit -> paid persisted; receipt trace e17; no relevant change; reuse q17."
+        },
+        "b": {
+          "handoff": "Q1 already PASS; skip it. No run/build/fixture source retained."
+        }
+      }
+    },
+    {
+      "id": "C027",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "API-only verification targets refund Q2 on API a2/worker w2, refund f1 pending. No browser criterion exists.",
+      "variants": {
+        "a": {
+          "handoff": "Q2 PASS in previous check; local HEAD a2; skip API worker checks."
+        },
+        "b": {
+          "handoff": "Q2 run q18 at 2030-04-10T10:00Z; direct API a2; worker w2; f1 pending reset; POST accepted; ledger exactly one refund; worker receipt e18; unchanged components; reuse q18."
+        }
+      }
+    },
+    {
+      "id": "C028",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Slug x remains reserved while active or archived until release_at. Today=10; archived owner release_at=20. Restore preserves reservation. New owner may claim only after release.",
+      "variants": {
+        "a": {
+          "source": "available(x) = !owners.withArchived().whereReservationAfter(today).hasSlug(x); create(x) { transaction(lock(x), require(available(x)), insert(x)); }",
+          "data": "archived x at day10=false; restored x=false; released x at day21=true"
+        },
+        "b": {
+          "source": "available(x) = !owners.active().hasSlug(x); create(x) { require(available(x)); insert(x); }",
+          "data": "archived owner x exists; available(x)=true; no create request executed"
+        }
+      }
+    },
+    {
+      "id": "C029",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Refund amount=50; available balance=20 is known at request. Contract rejects before accepted refund/job/ledger/notification. Amount=10 succeeds; later provider failure is asynchronous.",
+      "variants": {
+        "a": {
+          "source": "request(amount) { refund=createAccepted(amount); enqueue(refund); return 202; } worker(refund) { if(balance<refund.amount) fail(refund); }"
+        },
+        "b": {
+          "source": "request(amount) { transaction(lockBalance(), require(balance>=amount), reserve(amount), createAccepted(amount), enqueueAfterCommit()); return 202; } worker(refund) { submitToProvider(refund); }"
+        }
+      }
+    },
+    {
+      "id": "C030",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Unique watched time reports within 1s. Video length=25s, heartbeat=10s. Continuous viewing from 0 to25 should persist25; end and page-exit flush remaining interval.",
+      "variants": {
+        "a": {
+          "source": "onHeartbeat: send(interval); onEnded: flushThenStop(); onExit: flushThenStop();",
+          "trace": "received intervals [0,10],[10,20],[20,25]; report=25"
+        },
+        "b": {
+          "source": "onHeartbeat: send(interval); onEnded: stopTimer(); onExit: stopTimer();",
+          "trace": "received intervals [0,10],[10,20]; report=20"
+        }
+      }
+    },
+    {
+      "id": "C031",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Metric is union of actually watched intervals, not farthest position. Watch0..5, seek90, watch90..95, replay0..5. Expected unique time10\u00b11.",
+      "variants": {
+        "a": {
+          "source": "report = max(events.map(e => e.position));",
+          "trace": "positions 5,90,95,5; report=95"
+        },
+        "b": {
+          "source": "report = duration(union(events.filter(e => e.watched).map(e => e.interval)));",
+          "trace": "watched intervals [0,5],[90,95],[0,5]; report=10"
+        }
+      }
+    },
+    {
+      "id": "C032",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Events are authenticated to original user/session or rejected if stale. Session s1 belongs u1, s2 belongs u2. Switching accounts must not reassign queued activity.",
+      "variants": {
+        "a": {
+          "source": "flush(event) { post(event); } server: verifyBoundSession(event);",
+          "trace": "u1/s1 watches0..5; event bound u1/s1; switch u2/s2; server rejects stale s1; u2/s2=0"
+        },
+        "b": {
+          "source": "flush(event) { post({...event,user:currentUser.id,session:currentSession.id}); }",
+          "trace": "u1/s1 watches0..5; switch u2/s2; delayed flush; stored u2/s2=5"
+        }
+      }
+    },
+    {
+      "id": "C033",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Web and native package n2 independently emit viewing intervals to API a2. Both must report10\u00b11 after synthetic10s viewing.",
+      "variants": {
+        "a": {
+          "source": "web.onInterval = postInterval; native.onInterval = updateLocalProgress;",
+          "trace": "native decoded10s; screenshot progress10; server native events=[]; native report0"
+        },
+        "b": {
+          "source": "web.onInterval = postInterval; native.onInterval = postInterval;",
+          "trace": "native n2 actual runner/API a2: viewed10; emitted/authenticated [0,10]; persisted10; report10; web equivalent10"
+        }
+      }
+    },
+    {
+      "id": "C034",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Metric v1 counts active users by cohort ID for day10 UTC. Panel and CSV use identical population/window. Cohort IDs are stable; display order may differ.",
+      "variants": {
+        "a": {
+          "source": "compare = panel.map(p => [p.id,p.count,csv.find(c => c.id===p.id).count]);",
+          "data": "panel=[A:2,B:5,C:1]; csv=[B:5,A:2,C:1]"
+        },
+        "b": {
+          "source": "compare = panel.map((p,i) => [p.id,p.count,csv[i].count]);",
+          "data": "panel=[A:2,B:5,C:1]; csv=[B:5,A:2,C:1]"
+        }
+      }
+    },
+    {
+      "id": "C035",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Metric v1 active users; cohort A; segment paid; UTC. Dashboard promises day10; CSV promises day10. Daily count=2; day9+10 count=5. No other population changes.",
+      "variants": {
+        "a": {
+          "data": "dashboard window day10 count2; CSV window day9..10 count5; comparison says count mismatch is unexplained"
+        },
+        "b": {
+          "data": "dashboard day10 count2; CSV day10 count2; optional trend day9..10 count5 clearly labeled as different window"
+        }
+      }
+    },
+    {
+      "id": "C036",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Acceptance concerns checkout on r2. Report file was edited day12. Original execution happened day10 on r1; r2 deployed day11.",
+      "variants": {
+        "a": {
+          "record": "report revised day12: wording corrected; inherited run q1 day10 r1 retained; checkout r2 not executed."
+        },
+        "b": {
+          "record": "report revised day12: all checkout cases newly passed r2. Source trace run q1 day10 r1 only."
+        }
+      }
+    },
+    {
+      "id": "C037",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Requirement: submission persists order and sends receipt. Current evidence is a screenshot of success toast and source code containing an unexecuted test.",
+      "variants": {
+        "a": {
+          "record": "screenshot e1; test file asserts receipt; report says live submit and delivery passed."
+        },
+        "b": {
+          "record": "screenshot e1 proves displayed toast only; test source inspected but not run; persistence/delivery unverified."
+        }
+      }
+    },
+    {
+      "id": "C038",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Suite has three cases: A executed successfully; B skipped because device unavailable; C expected-failure on known broken export. Exit code is0.",
+      "variants": {
+        "a": {
+          "record": "A passed; B skipped/unverified; C known failing export; suite exit0; acceptance incomplete."
+        },
+        "b": {
+          "record": "A passed; B skipped; C xfail; summary: all3 healthy and verified."
+        }
+      }
+    },
+    {
+      "id": "C039",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Targeted static review: change button label from Save to Store. No behavior, layout or output contract changes.",
+      "variants": {
+        "a": {
+          "source": "<button>Save</button> -> <button>Stores</button>"
+        },
+        "b": {
+          "source": "<button>Save</button> -> <button>Store</button>"
+        }
+      }
+    },
+    {
+      "id": "C040",
+      "brief": "Assess the supplied feature against its contract. Give concrete evidence and preserve the limits of what was observed.",
+      "contract": "Spot browser QA: confirm status label reads Ready at /status on desktop Chromium. No interaction/device/output requirement.",
+      "variants": {
+        "a": {
+          "trace": "live Chromium desktop; /status text=Ready; build r1 known"
+        },
+        "b": {
+          "trace": "live Chromium desktop; /status text=Pending; build r1 known; expected Ready"
+        }
+      }
+    }
+  ]
+}

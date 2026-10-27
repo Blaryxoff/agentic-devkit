@@ -42,7 +42,7 @@ table decides:
 | 2 | Analysis | **both, in parallel** | your design is written before the peer's lands in your context |
 | 3 | Implementation + tests | you | project lint/typecheck/build/test green where configured or required |
 | 4 | Code review | **revmux** when authorized, else Codex review/fix loop | no critical/major finding remains; every real defect fixed or explicitly deferred |
-| 5 | Runtime QA | **peer**, from your written brief | PASS/FAIL on every brief item |
+| 5 | Runtime QA | **peer**, from your written brief | evidenced `passed / failed / blocked` per item; skipped/missing coverage explicit |
 | 6 | wrapup | you | branch pushed, SHAs reported |
 
 When a stage's owner is the peer, you do not also do it yourself. Doing the peer's stage natively is a protocol
@@ -132,7 +132,17 @@ widening a guard, ask which unrelated flow it now fails.
 
 ## Stage 5 — Runtime QA, delegated
 
-Classify the finished change before writing `QA-BRIEF.md`. For a browser flow, use `references/qa-brief-template.md` and include the stand URL, auth recipe, already-verified behavior, exact expected strings, and PASS/FAIL format. For an API-only or worker-only change, brief the peer on the test environment, safe fixture setup, exact integration/E2E command or endpoint/worker probe, expected response and persisted effect, failure and authorization cases, cleanup, and PASS/FAIL evidence. For a mixed change, include both surfaces without repeating checks already completed in stage 3.
+Classify the finished change before writing `QA-BRIEF.md`. Use `plugins/core/conduct/runtime-qa-evidence.md` §§1–3 for every
+runtime surface: case/source and run/method records, relevant component/configuration revisions, role/fixture pins,
+evidence, cleanup and `passed | failed | blocked` outcomes with skipped/missing coverage explicit. Reuse stage 3 or other
+prior evidence only when those pins, scope and dependencies still match; missing provenance cannot close acceptance.
+
+For a browser flow, use `references/qa-brief-template.md` with the stand URL, auth recipe, reusable evidence and exact
+expected strings. For an API-only or worker-only change, brief the peer on the test environment, safe fixture setup, the exact integration/E2E
+command or endpoint/worker probe, expected response and persisted/side effects, failure and authorization cases, and
+cleanup. For a mixed change, include both surfaces and share matching evidence references. Check component identity
+before/after connected execution, between waves and before acceptance; partition drift and invalidate affected checks
+under the shared contract. Preserve unknown boundaries and unresolved required coverage in the handoff.
 
 The peer uses its own browser profile or API session and cannot inherit yours. Give it the authorized login/test-data path. Do not require browser QA for a backend-only change.
 

@@ -1,0 +1,391 @@
+{
+  "schema_version": 1,
+  "revision": "design-3",
+  "parent_corpus": {
+    "cases.json": "708881dea8600942bf835102e8ad1649380460a787cd76ce2419d1cd65812b21",
+    "rubric.json": "6d9572eda5693fec54ea5c6d0ffe23393fea0d99b41c717fc92c3492296654ac"
+  },
+  "policy": "Listed original rubric criterion IDs are mandatory on the named axis; evaluators cannot waive them. Clean variants retain their clean guard. Both polarities on case_generation also require the positive axis criterion. No original case or expected observation changed. Interpret mixed finding/scenario clauses under the declared axis: static review must identify source-backed mechanisms; case generation must design concrete checks; neither claims new runtime execution.",
+  "required_by_axis": {
+    "C001": {
+      "static_review": [
+        "1"
+      ],
+      "case_generation": [
+        "2"
+      ]
+    },
+    "C002": {
+      "static_review": [
+        "1"
+      ],
+      "case_generation": [
+        "2"
+      ]
+    },
+    "C003": {
+      "static_review": [
+        "1"
+      ],
+      "case_generation": [
+        "2"
+      ]
+    },
+    "C004": {
+      "static_review": [
+        "1"
+      ],
+      "case_generation": [
+        "2"
+      ]
+    },
+    "C005": {
+      "static_review": [
+        "1"
+      ],
+      "case_generation": [
+        "2"
+      ]
+    },
+    "C006": {
+      "static_review": [
+        "1"
+      ],
+      "case_generation": [
+        "2"
+      ]
+    },
+    "C007": {
+      "static_review": [
+        "1"
+      ],
+      "case_generation": [
+        "2"
+      ]
+    },
+    "C008": {
+      "static_review": [
+        "1"
+      ],
+      "case_generation": [
+        "2"
+      ]
+    },
+    "C009": {
+      "static_review": [
+        "1"
+      ],
+      "case_generation": [
+        "2"
+      ]
+    },
+    "C010": {
+      "static_review": [
+        "1"
+      ],
+      "case_generation": [
+        "2"
+      ]
+    },
+    "C011": {
+      "static_review": [
+        "1"
+      ],
+      "case_generation": [
+        "2"
+      ]
+    },
+    "C012": {
+      "case_generation": [
+        "1",
+        "2"
+      ],
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ],
+      "runtime_probe": [
+        "1",
+        "2"
+      ]
+    },
+    "C013": {
+      "case_generation": [
+        "1",
+        "2"
+      ],
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ],
+      "runtime_probe": [
+        "1",
+        "2"
+      ]
+    },
+    "C014": {
+      "evidence_adjudication": [
+        "1"
+      ]
+    },
+    "C015": {
+      "case_generation": [
+        "1",
+        "2"
+      ],
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ],
+      "runtime_probe": [
+        "1",
+        "2"
+      ]
+    },
+    "C016": {
+      "static_review": [
+        "1"
+      ],
+      "case_generation": [
+        "2"
+      ]
+    },
+    "C017": {
+      "case_generation": [
+        "1",
+        "2"
+      ],
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ],
+      "runtime_probe": [
+        "1",
+        "2"
+      ]
+    },
+    "C018": {
+      "case_generation": [
+        "1"
+      ],
+      "evidence_adjudication": [
+        "1"
+      ],
+      "runtime_probe": [
+        "1"
+      ]
+    },
+    "C019": {
+      "case_generation": [
+        "1",
+        "2"
+      ],
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ],
+      "runtime_probe": [
+        "1",
+        "2"
+      ]
+    },
+    "C020": {
+      "case_generation": [
+        "1",
+        "2"
+      ],
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ],
+      "runtime_probe": [
+        "1",
+        "2"
+      ]
+    },
+    "C021": {
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ]
+    },
+    "C022": {
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ]
+    },
+    "C023": {
+      "static_review": [
+        "1",
+        "2"
+      ],
+      "case_generation": [
+        "1",
+        "2"
+      ],
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ]
+    },
+    "C024": {
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ]
+    },
+    "C025": {
+      "case_generation": [
+        "1",
+        "2"
+      ],
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ]
+    },
+    "C026": {
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ]
+    },
+    "C027": {
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ]
+    },
+    "C028": {
+      "static_review": [
+        "1",
+        "3"
+      ],
+      "case_generation": [
+        "2",
+        "3"
+      ]
+    },
+    "C029": {
+      "static_review": [
+        "1",
+        "3"
+      ],
+      "case_generation": [
+        "2",
+        "3"
+      ],
+      "runtime_probe": [
+        "1",
+        "2",
+        "3"
+      ]
+    },
+    "C030": {
+      "case_generation": [
+        "1",
+        "2"
+      ],
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ],
+      "runtime_probe": [
+        "1",
+        "2"
+      ]
+    },
+    "C031": {
+      "case_generation": [
+        "1",
+        "2"
+      ],
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ],
+      "runtime_probe": [
+        "1",
+        "2"
+      ]
+    },
+    "C032": {
+      "case_generation": [
+        "1",
+        "2"
+      ],
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ],
+      "runtime_probe": [
+        "1",
+        "2"
+      ]
+    },
+    "C033": {
+      "static_review": [
+        "1",
+        "2"
+      ],
+      "case_generation": [
+        "2"
+      ],
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ]
+    },
+    "C034": {
+      "static_review": [
+        "1"
+      ],
+      "case_generation": [
+        "2"
+      ]
+    },
+    "C035": {
+      "static_review": [
+        "1",
+        "2"
+      ],
+      "case_generation": [
+        "1",
+        "2"
+      ],
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ]
+    },
+    "C036": {
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ]
+    },
+    "C037": {
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ]
+    },
+    "C038": {
+      "evidence_adjudication": [
+        "1",
+        "2"
+      ]
+    },
+    "C039": {
+      "static_review": [
+        "1"
+      ]
+    },
+    "C040": {
+      "evidence_adjudication": [
+        "1"
+      ]
+    }
+  }
+}

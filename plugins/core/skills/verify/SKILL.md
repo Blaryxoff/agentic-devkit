@@ -2,7 +2,7 @@
 name: devkit-verify
 description: >-
   run the verification loop — lint, typecheck, build, test, security — after implementation changes and report
-  results. Use when asked to verify finished work or test API, worker, or backend integration behavior, and as
+  results. Use when asked to verify finished work or test API, worker, backend integration, or native runtime behavior, and as
   the closing gate of an implementation thread. Does not write the fix for what it finds.
 claudeSubagent: true
 claudeSubagentTools: Read, Glob, Grep, Bash
@@ -67,6 +67,18 @@ For an API or worker test/QA request, use the project's focused integration or E
 
 For behavior outside the browser, resolve the actual runtime and host from project manifests and enabled plugin indexes, then load their testing rules and configured device/process/package checks. Verification on another surface does not establish platform modules, permissions, privileged bridges, signing, or update behavior; report unavailable surfaces explicitly.
 
+For runtime acceptance checks, including API/worker/native integration automation, apply
+[runtime-qa-evidence.md](../../conduct/runtime-qa-evidence.md) §§1–3 before execution and through reporting. Record the
+criterion, run/method, component revisions, actor, fixture, expected/observed result, and evidence; check build/configuration
+signals before and after connected execution, between waves, and before acceptance. Reuse matching unaffected evidence
+and invalidate only impacted cases. Keep unknown identity and missing modules explicit. Attempt authorized fixture/runtime
+recovery before marking a prerequisite blocked. This contract does not apply to unrelated lint/typecheck or isolated unit tests.
+
+Load [qa-output-verification.md](../../conduct/qa-output-verification.md) only for generated artifacts, media, notifications,
+telemetry, or asynchronous outputs. Load [qa-touch-and-device.md](../../conduct/qa-touch-and-device.md) only for affected
+touch, browser-engine, device, or native-runtime assertions; use configured tools without adding runner dependencies.
+Route browser UI execution to `devkit-browser`; API/worker-only verification requires no browser.
+
 ### 5. Security spot-check
 
 Review the changes (not the full codebase) for obvious security issues:
@@ -98,6 +110,12 @@ evidence-backed Blocking-grade risks below the verification table; otherwise emi
 ```
 
 If any step failed, include the relevant error output below the table.
+
+For runtime QA, append the shared per-case ledger from [runtime-qa-evidence.md](../../conduct/runtime-qa-evidence.md) §1;
+the Test row is only a summary. Report `passed | failed | blocked` with cause and evidence, and list skipped/missing checks
+separately. Preserve expected failures as known failures, original execution provenance, reuse decisions, and unresolved
+component/device boundaries. Report the behavior actually exercised; code, screenshots, or an edited report cannot become
+a fresh runtime PASS. Include cleanup obligations and the prerequisite for each blocked case.
 
 ## Rules
 

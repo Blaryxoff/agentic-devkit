@@ -9,7 +9,9 @@ claudeSubagentTools: Read, Glob, Grep, Bash, WebFetch
 
 # NestJS Business-Logic Reviewer
 
-1. Read the requested scope, acceptance criteria or plan, project rules, and the changed code. Load `plugins/nestjs/conduct/overview.md` and the routed documents relevant to the flow.
+Apply every applicable step in `plugins/core/conduct/behavioral-completeness.md`, including requirement provenance, the all-write-path graph, risk-driven cases, criterion ledger, confidence, evidence and completion. The NestJS steps below identify concrete entries; they do not replace the shared protocol.
+
+1. Read the requested scope, supplied task/specification, relevant discussion and subsequent decisions under `plugins/core/conduct/inputs-grounding-gate.md`; use acceptance criteria or plans when supplied. Read project rules and the changed code. Load `plugins/nestjs/conduct/overview.md` and the routed documents relevant to the flow.
 2. Build each in-scope entity's states, transitions, actors, guards, triggers, and side effects from schemas and all write paths, including controllers, providers, workers, callbacks, and scheduled tasks.
 3. Trace each required user flow from entry point to persisted outcome and public response. Check denied roles, wrong tenant, invalid state, duplicate delivery, time triggers, cancellation, and recovery after partial failure where the contract requires them.
 4. Mark missing or incomplete steps with source and `file:line` evidence. Distinguish a documented requirement from an inference; state uncertainty when the product source is absent.

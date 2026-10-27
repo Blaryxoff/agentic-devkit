@@ -25,16 +25,18 @@ session. Every other rule still binds: §2 preflight, environment pin and surfac
 §6 evidence, all §9 hard rules, and §10 cleanup of whatever the pass started. Choose oracles by
 `browser-ui-oracles.md` §2, scope the probe to the changed root, measure at two viewports, exercise the changed
 interaction once for real, and check console errors. Report findings with the §7 fields and end with the skill's
-one-line spot result. A spot pass never claims acceptance and never replaces a targeted or exhaustive pass.
+one-line spot result. Keep scoped provenance under `runtime-qa-evidence.md` §1 without introducing a ledger or dispatch.
+A spot pass never claims acceptance and never replaces a targeted or exhaustive pass.
 
 1.7. **Resume and rechecks** — preserve the original ledger, evidence references and proven checks. Track functional
 outcomes and visual/runtime audit dimensions separately: a missing hover or layout check leaves that dimension
 incomplete, without erasing an evidenced functional result. The pass remains incomplete until all required dimensions
 are reconciled. A deliberately skipped planned cell remains a coverage gap with its reason, not a PASS. Follow-up briefs name exact missing, conflicting or invalidated cell/dimension IDs and only the setup
 dependencies needed to reach them; collect the missing audit while preserving completed functional results. A changed
-implementation, fixture state, origin or role invalidates only the checks it can affect; record why each check needs
-rerunning. A resume or permission/config recovery alone does not invalidate earlier application evidence. A new full
-pass requires an explicit request or a documented change affecting the whole matrix.
+implementation, fixture state, origin or role invalidates only the checks it can affect; apply `runtime-qa-evidence.md`
+§2 to reuse and revision/configuration drift, and record why each check needs rerunning. A resume or permission/config
+recovery alone does not invalidate earlier application evidence. A new full pass requires an explicit request or a
+documented change affecting the whole matrix.
 
 Before redispatching a still-blocked or unproven check, record the previous attempt's result, the exact remaining gap,
 and either a verified recovered prerequisite or a specific alternative method supported by the application/tools.
@@ -83,8 +85,9 @@ Chrome — then verify reachability (`list_pages`) and immediately take the §2.
 complete §2.9 before acting.
 
 2.2. Discover the intended environment and exact base origin from the user's scope, env, README, or project config;
-record both before browser work. Pin the repository commit and deployed application build/revision when discoverable;
-report either as unknown when it cannot be verified, and do not equate a local commit with a deployed build. For local QA,
+record both before browser work. Apply `runtime-qa-evidence.md` §§1–2 for repository and relevant component revisions,
+configuration, entry-point readiness and drift checks before/after connected lanes, between waves and before acceptance.
+Record unknown identity at its component boundary; do not equate a local commit with a deployed build. For local QA,
 probe that configured origin first and use its existing env and database.
 Do not start an alternate server, switch databases, or override session configuration just for browser QA. If the
 configured origin is not up, start only the minimal required local server(s) using existing project/dev-runtime
@@ -243,7 +246,9 @@ Discover everything below from the codebase before testing or planning.
 
 4.4. **Forms, fields, validation rules** per entity.
 
-4.5. **Permission matrix**: each role × each entity/resource type.
+4.5. **Permission matrix**: applicable actor × operation × resource/state, including ownership and tenant boundaries.
+Map distinct read/write paths under `behavioral-completeness.md` → **Risk-driven case generation**; avoid a blanket
+Cartesian product of unrelated combinations.
 
 4.6. **Viewport breakpoints** — from project CSS/Tailwind config or `visual/config.json`; fall back to
 `plugins/frontend/conduct/visual-implementation.md` defaults (mobile 390×844, tablet 768×1024, desktop 1440×1200).
@@ -260,21 +265,32 @@ viewport, and responsive variants. Mark any reference with no resolvable live ta
 after important actions, reload/re-entry behaviour, and distinct rendered implementations of the same flow (for
 example tenant themes or legacy/new variants). Exercise one representative per distinct implementation; record
 unavailable variants instead of inferring coverage from a shared feature name.
+Apply `behavioral-completeness.md` → **Risk-driven case generation** to derive applicable ownership, history,
+reservation, pre-acceptance rejection, aggregate membership, round-trip invariant, operation-permission and analytics cases.
 
 4.10. **Existing regression suites** — inspect supplied or repository browser suites for their real environment,
 fixtures, assertions and side effects. Map their cases to ledger cells before running them; add browser cells for gaps.
 
-4.11. **Expectation provenance** — for each planned cell, record the source of its expected result (the user's request,
-dated requirement or acceptance criterion when available, project/business rule, design reference, or canonical
-UI/layout oracle), plus the role and fixture state it applies to. Source inspection can identify routes and implementation
-variants, but observed implementation alone does not establish a business expectation. If no source establishes the
+4.11. **Expectation provenance** — reconcile supplied requirements and authorized amendments under `inputs-grounding-gate.md`.
+Bind each case to its criterion/source, expected visible/persisted/side-effect result, actor, fixture state, implementation
+variant and evidence method using `runtime-qa-evidence.md` §1; share matching pins by reference. Sources include the user's
+request, dated requirement, project/business rule, design reference and canonical UI/layout oracle. Source inspection
+can identify routes and implementation variants, but observed implementation alone does not establish a business expectation. If no source establishes the
 expected outcome, mark the cell blocked with the missing contract named; do not invent an assertion or count it as passed.
+
+4.12. **Challenge coverage before dispatch** — the planning owner compares the proposed ledger against original
+requirements and applicable risks from §4.9, adds omitted cases, or records material coverage gaps. The coverage reviewer
+checks for missing applicable scenarios as well as results for submitted rows; keep the existing reviewer, not another layer.
+Preserve the scope selected in §1: targeted omissions stay explicit, and spot checks retain §1.6 without a ledger.
+Load `qa-output-verification.md` only for generated files, exports, media, notifications or activity telemetry; load
+`qa-touch-and-device.md` only for affected touch/mobile, engine-specific or native behavior. Assign relevant evidence to
+the cases without expanding unrelated scope.
 
 ## 5. Scenario matrix
 
 Exhaustive coverage requires all dimensions below; neither skill may skip a dimension to save time. A targeted pass executes the cells selected under §1.4–§1.5 and reports the remaining dimensions as untested.
 
-5.1. **Unauthed protected routes** — `navigate_page`; assert redirect/403.
+5.1. **Unauthed protected routes** — `navigate_page`; assert the sourced route/API denial contract and no protected data.
 
 5.2. **Unauthed public routes** — load anonymously; probe IDOR, exposed data, missing auth on actions/links, reflected input.
 
@@ -286,6 +302,7 @@ layout. Run existing Playwright Test visual assertions when the project provides
 5.5. **Entity lifecycle** — create/read/update/delete + state transitions (`fill_form`, `click`, `handle_dialog`).
 For each stateful core flow, verify the intermediate state, then reload or leave and return; resume from the same
 persisted state without silently replaying, losing or changing an accepted action.
+Exercise applicable relationship/history and invariant cases selected under §4.9 with their distinct fixture states.
 
 5.6. **Field/validation** — invalid and boundary values; assert inline errors and blocked submits.
 
@@ -297,7 +314,9 @@ its workflow passed.
 5.8. **Cross-role access propagation** — grant then revoke access per controllable section/feature/instance; re-login as affected user; verify UI visibility and route-level block in both directions. Reuse a previously issued direct link
 after revocation and test a fresh browser context when links or sessions carry access state.
 
-5.9. **Permission matrix** — each role × each resource: access granted/denied correctly.
+5.9. **Permission matrix** — exercise the applicable actor × operation × resource/state cases from §4.5, including allowed
+and denied paths, alternate write routes and ownership mismatch. Verify the sourced response and absence of disallowed
+data or side effects on denial; correct denial alone does not prove an authorized actor can complete the operation.
 
 5.10. **Regression** — re-test adjacent happy paths discovered in §4.7.
 
@@ -334,6 +353,9 @@ failure suggests a narrower boundary, at 320–375 px; 390 px alone does not pro
 emulated `clientWidth`, the actionable control's full bounds and hit target, and the scroll path needed to reach it.
 Measure scrollable children and clipped content even when the document has no horizontal overflow. Use populated and
 long-label fixtures for lists/tables, then compare duplicate facts and user-facing terms across related pages and roles.
+Apply `qa-touch-and-device.md` for actual touch actions and affected orientation/keyboard/overlay cases; geometry or a
+programmatic click alone cannot establish touch usability. Route native behavior to project-configured runtime checks
+through `devkit-verify`, carrying `runtime-qa-evidence.md` pins; preserve unavailable engine/device checks as coverage gaps.
 
 ## 6. Browser session
 
@@ -408,6 +430,9 @@ assertion/diff → cropped visual inspection. Escalate upward only when the chea
 severity · reproduction steps (browser actions) · expected · actual · evidence. Evidence names the strongest applicable proof: snapshot identity, selector and
 geometry/computed style, console/network entry, Playwright assertion/diff path, or saved screenshot crop. For design deltas,
 also cite the design reference/frame and expected versus actual measurement or appearance.
+Carry the case/run, source, method, revision and evidence references from `runtime-qa-evidence.md` §§1, 3 into findings
+and the completion report. Report per-case `passed | failed | blocked` and skipped/missing coverage; distinguish fresh
+execution from inherited or inspection-only evidence and retain individual suite outcomes.
 
 7.2. Assign severity from demonstrated user impact, not agent count or confidence:
 
@@ -554,7 +579,10 @@ tell the user to reconnect via `/mcp`. Resume on the selected surface after reco
 ## 12. Lane briefs
 
 12.1. Create each brief from its own target and resolve its lane ID, account, project and expectations independently.
-Reuse canonical references while grounding every target-specific field afresh.
+Carry `runtime-qa-evidence.md` §§1–3 case records, shared pins and reuse/invalidation reasons through the handoff.
+Reuse canonical references while grounding every target-specific field afresh; inherited results without matching source,
+method, revision, actor/fixture and scope evidence cannot close acceptance. Include the §4.12 coverage challenge and
+only applicable output/device references. These evidence rules grant no additional mutation or browser authorization.
 
 12.2. Before dispatch, verify three facts: the lane ID is unused by any existing brief, report or log; the account is
 the one whose fixture owns the route (demo and QA-fixture accounts often use different credentials); and the fixture

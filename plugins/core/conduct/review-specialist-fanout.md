@@ -53,10 +53,15 @@ does not authorize running them or writing replacements.
 Prompt the specialist to check:
 
 - changed behaviour and required scenarios map to real assertions;
+- applicable ownership, history, reservation, pre-acceptance, invariant, operation-permission and analytics cases from `behavioral-completeness.md` are mapped or explicitly uncovered; challenge omitted cases against original requirements before accepting the submitted coverage ledger;
 - success, failure, boundary, permission, and integration paths required by the scope are covered;
 - tests verify behaviour rather than mocks or implementation details;
 - assertions can fail when production behaviour is wrong; no conditional, hardcoded, skipped, or commented-out fake pass;
 - setup, teardown, shared state, time, network, and ordering do not make tests coupled or flaky.
+
+Distinguish source-present tests, executed cases, skipped/expected failures and inherited results. A report edit or green
+suite summary does not establish a fresh successful check of every criterion. Select the lowest useful level for a
+missing contract; do not duplicate coverage without a distinct boundary risk or execute tests under this read-only role.
 
 ## Documentation specialist
 

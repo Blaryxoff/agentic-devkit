@@ -24,6 +24,7 @@ SCRIPTS=(
   peer-cli-gate.sh
   project-manager.sh
   resolve.sh
+  review-qa.sh
   skill-eval.sh
   sprint-skill.sh
   stack-plugins.sh

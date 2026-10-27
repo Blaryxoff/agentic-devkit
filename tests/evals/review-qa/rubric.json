@@ -1,0 +1,818 @@
+{
+  "schema_version": 1,
+  "freeze_revision": "design-1",
+  "baseline": "1b92a776cf1394b45b71778298b875cafb5f77fc",
+  "baseline_files": {
+    "plugins/core/conduct/behavioral-completeness.md": {
+      "sha256": "fd3a81b5397dd07fff155310b8eeed6cba0fa57c87ce7de0d7c8bc388c37dc4d",
+      "bytes": 4153
+    },
+    "plugins/core/conduct/browser-layout-audit.md": {
+      "sha256": "cbe1b27581233d9081d2c1e5090680e3c4b86fad8ef8c75b373945278d9f29d8",
+      "bytes": 7569
+    },
+    "plugins/core/conduct/browser-qa-rules.md": {
+      "sha256": "cb51120ecda0353ebac5a7250577bc21ef46dbd21c8de896e1ecc52a146d98fa",
+      "bytes": 57746
+    },
+    "plugins/core/conduct/inputs-grounding-gate.md": {
+      "sha256": "1c85e7f6011bcce19a242fab088e89ce4fc31ebc4d12480d7280dca0eeb6c49c",
+      "bytes": 1517
+    },
+    "plugins/core/conduct/reviewer-dispatch.md": {
+      "sha256": "32feb4b6701476f3aef4a17e91edf6ff65f2d59e5e38a3f6056fac07a101e9a9",
+      "bytes": 2418
+    },
+    "plugins/core/conduct/risk-probe-gate.md": {
+      "sha256": "d8f5b083e7c177f1c05e9f181c04ffd733978b818ba2c79a65a9baba9dad9728",
+      "bytes": 1601
+    },
+    "plugins/core/conduct/test-implementation.md": {
+      "sha256": "d50a255f4a81bd35356f4b3047091b2dd54a39db46199db193f6bb018336772d",
+      "bytes": 3305
+    },
+    "plugins/core/skills/browser/SKILL.md": {
+      "sha256": "af56c3075f2386122a5b677130cde27b6652db7dd039da23cabf9fdfb3c43da5",
+      "bytes": 13906
+    },
+    "plugins/core/skills/task/references/qa-brief-template.md": {
+      "sha256": "0cfc892402e4f89f8d82c4d5fcc5d27cfa319dda91bb0a231c0a30a1003a65e5",
+      "bytes": 4780
+    },
+    "plugins/core/skills/test-case-creator/SKILL.md": {
+      "sha256": "eabf4b855dbb5b57f02e239887ce8ec8e3869fc4f5d9f1d019ae6153fad6c0e7",
+      "bytes": 1881
+    },
+    "plugins/core/skills/verify/SKILL.md": {
+      "sha256": "284a55c0517c03ac4be0a771a68a52c7fa296199634be26061e5e54650ee5159",
+      "bytes": 6476
+    },
+    "plugins/frontend/skills/reviewer-business-logic/SKILL.md": {
+      "sha256": "07a14f697b68f3b70f50fc97d39a18033101f1a4a4e507a2b58ce74b94e2d97e",
+      "bytes": 8303
+    },
+    "plugins/laravel/skills/reviewer-business-logic/SKILL.md": {
+      "sha256": "c123020c1be2dfd2d30a4a0a8a5cd8f1c934551607ebac3fcc766ffb54664628",
+      "bytes": 7812
+    }
+  },
+  "workflow_roots": {
+    "static_review": [
+      "plugins/core/conduct/inputs-grounding-gate.md",
+      "plugins/core/conduct/behavioral-completeness.md",
+      "plugins/core/conduct/reviewer-dispatch.md",
+      "plugins/core/conduct/risk-probe-gate.md",
+      "plugins/laravel/skills/reviewer-business-logic/SKILL.md",
+      "plugins/frontend/skills/reviewer-business-logic/SKILL.md"
+    ],
+    "case_generation": [
+      "plugins/core/skills/test-case-creator/SKILL.md",
+      "plugins/core/conduct/behavioral-completeness.md",
+      "plugins/core/conduct/test-implementation.md",
+      "plugins/core/conduct/risk-probe-gate.md"
+    ],
+    "evidence_adjudication": [
+      "plugins/core/skills/browser/SKILL.md",
+      "plugins/core/skills/verify/SKILL.md",
+      "plugins/core/conduct/inputs-grounding-gate.md",
+      "plugins/core/conduct/browser-qa-rules.md",
+      "plugins/core/skills/task/references/qa-brief-template.md"
+    ],
+    "runtime_probe": [
+      "plugins/core/skills/browser/SKILL.md",
+      "plugins/core/skills/verify/SKILL.md",
+      "plugins/core/conduct/browser-qa-rules.md",
+      "plugins/core/conduct/browser-layout-audit.md"
+    ]
+  },
+  "candidate_conditional_files": [
+    "plugins/core/conduct/runtime-qa-evidence.md",
+    "plugins/core/conduct/qa-output-verification.md",
+    "plugins/core/conduct/qa-touch-and-device.md"
+  ],
+  "score_axes": {
+    "static_review": "One point per required item only when the finding is grounded in supplied code/data and explains the violated contract. No runtime credit.",
+    "case_generation": "One point per required item mapped to a concrete smallest-level case with setup/action/expected observation and source. Explaining a defect alone is insufficient.",
+    "evidence_adjudication": "One point per required item for correct outcome/method/provenance boundaries with source evidence. Supplied traces are inherited records.",
+    "runtime_probe": "One point per required item only after actual fixture execution and captured runtime evidence. Reasoning, source inspection, recorded traces and mock self-reported PASS score zero execution credit."
+  },
+  "gates": [
+    "Every applicable required item passes independently in every mandatory subcase; no family averaging.",
+    "Zero confirmed false product defects on clean variants; missing capabilities are coverage gaps.",
+    "Never credit blocked/skipped/code-only/inherited records as fresh runtime PASS.",
+    "No regression on an item baseline passed.",
+    "One initial paired pass per variant/workflow; any apparent improvement/regression requires two further independent pairs, retaining all outcomes.",
+    "Demonstrated gain requires same improvement in all three pairs without retained regression; parity or inconsistent outcomes means effectiveness unproven.",
+    "Runtime capability gaps remain in denominator as unexecuted/blocked, not deleted.",
+    "Controls C039/C040 retain scope and dispatch count; no irrelevant output/device reference loads."
+  ],
+  "cases": [
+    {
+      "id": "C001",
+      "family": "V01",
+      "mechanism": "placement state",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "static_review",
+        "case_generation"
+      ],
+      "required": [
+        "Identify exercise-keyed attempt leakage into p2; cite upsert key.",
+        "Generate p1/p2 independence and intentionally shared content controls."
+      ],
+      "clean_guard": "Do not demand independent content copies."
+    },
+    {
+      "id": "C002",
+      "family": "V01",
+      "mechanism": "access cycle",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "static_review",
+        "case_generation"
+      ],
+      "required": [
+        "Old k1 record causes early return for k2.",
+        "Generate returning-user/new-cycle completion with distinct persisted records."
+      ],
+      "clean_guard": "Do not clear k1 history or require a new user."
+    },
+    {
+      "id": "C003",
+      "family": "V01",
+      "mechanism": "rendered children",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "static_review",
+        "case_generation"
+      ],
+      "required": [
+        "Exercise deduplication drops one placement.",
+        "Generate two placements of one exercise and assert both visible."
+      ],
+      "clean_guard": "Do not duplicate a placement returned twice by the query."
+    },
+    {
+      "id": "C004",
+      "family": "V02",
+      "mechanism": "selective restore",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "static_review",
+        "case_generation"
+      ],
+      "required": [
+        "Unscoped restore revives m1 removed before parent archive.",
+        "Generate predeleted child and parent-owned child controls."
+      ],
+      "clean_guard": "m1 stays removed; m2 restores."
+    },
+    {
+      "id": "C005",
+      "family": "V02",
+      "mechanism": "copy preservation",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "static_review",
+        "case_generation"
+      ],
+      "required": [
+        "Updating foreign keys moves children out of source.",
+        "Assert source count/order unchanged and new child identities independent."
+      ],
+      "clean_guard": "No defect when copy inserts independent rows."
+    },
+    {
+      "id": "C006",
+      "family": "V03",
+      "mechanism": "aggregate membership",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "static_review",
+        "case_generation"
+      ],
+      "required": [
+        "Hidden b wrongly blocks unlock.",
+        "Generate hidden incomplete exclusion and visible mandatory incomplete denial controls."
+      ],
+      "clean_guard": "A visible mandatory incomplete lesson must still block."
+    },
+    {
+      "id": "C007",
+      "family": "V04",
+      "mechanism": "draft write",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "static_review",
+        "case_generation"
+      ],
+      "required": [
+        "Draft path lets viewer write despite main denial.",
+        "Cover editor allow, viewer denial and cross-tenant editor denial without mutations."
+      ],
+      "clean_guard": "Do not demand administrator privilege for tenant editors."
+    },
+    {
+      "id": "C008",
+      "family": "V04",
+      "mechanism": "bulk write",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "static_review",
+        "case_generation"
+      ],
+      "required": [
+        "Bulk bypasses per-document role/scope authorization.",
+        "Generate viewer and mixed-tenant bulk denial; verify zero partial writes."
+      ],
+      "clean_guard": "Own-tenant editor bulk is allowed."
+    },
+    {
+      "id": "C009",
+      "family": "V04",
+      "mechanism": "trainer allow",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "static_review",
+        "case_generation"
+      ],
+      "required": [
+        "Assigned trainer is incorrectly denied.",
+        "Cover assigned allow and unassigned trainer/student deny."
+      ],
+      "clean_guard": "Administrator is not the only valid actor."
+    },
+    {
+      "id": "C010",
+      "family": "V05",
+      "mechanism": "time round trip",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "static_review",
+        "case_generation"
+      ],
+      "required": [
+        "Parsing offset then subtracting shifts instant on unchanged saves.",
+        "Generate two load/save rounds comparing original UTC instant."
+      ],
+      "clean_guard": "Local display differing from UTC text is not itself a defect."
+    },
+    {
+      "id": "C011",
+      "family": "V05",
+      "mechanism": "accounting projection",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "static_review",
+        "case_generation"
+      ],
+      "required": [
+        "Dashboard omits fee, violates specified net equation.",
+        "Assert both projections equal 70 from same inputs."
+      ],
+      "clean_guard": "Do not substitute an unstated accounting definition."
+    },
+    {
+      "id": "C012",
+      "family": "V06",
+      "mechanism": "browser revision",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "case_generation",
+        "evidence_adjudication",
+        "runtime_probe"
+      ],
+      "required": [
+        "Partition checkout evidence by build; original checkout does not verify r2.",
+        "Retain unaffected catalog evidence with stated impact basis."
+      ],
+      "clean_guard": "Matching final rerun is reusable; do not restart every case.",
+      "runtime_probe": {
+        "surface": "browser",
+        "script": "Serve revision endpoint and checkout page; switch r1 to r2 between lane actions; capture pre/post pins.",
+        "oracle": "Old checkout cannot be accepted for r2 until rerun; catalog retains its pin.",
+        "reset": "Fresh in-memory revision and independent browser context per arm."
+      }
+    },
+    {
+      "id": "C013",
+      "family": "V06",
+      "mechanism": "API worker revision",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "case_generation",
+        "evidence_adjudication",
+        "runtime_probe"
+      ],
+      "required": [
+        "API pin cannot stand in for worker revision.",
+        "Invalidate export formatting evidence across worker change."
+      ],
+      "clean_guard": "No browser is required to verify this API/worker contract.",
+      "runtime_probe": {
+        "surface": "API/worker",
+        "script": "Local synthetic queue stamps processing worker revision; change w1 to w2 between enqueue/collect waves.",
+        "oracle": "Compare job processing pin and format, not API revision alone.",
+        "reset": "Empty per-arm queue and generated files."
+      }
+    },
+    {
+      "id": "C014",
+      "family": "V06",
+      "mechanism": "native package identity",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "evidence_adjudication"
+      ],
+      "required": [
+        "Unknown package identity blocks n2 acceptance; inherited n1/a1 is not n2/a2 evidence."
+      ],
+      "clean_guard": "Explicit matching native run supports acceptance."
+    },
+    {
+      "id": "C015",
+      "family": "V06",
+      "mechanism": "module presence",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "case_generation",
+        "evidence_adjudication",
+        "runtime_probe"
+      ],
+      "required": [
+        "Direct missing entry/module blocks dependent checks.",
+        "Bundle count alone proves neither presence nor absence; avoid unsupported product-code attribution."
+      ],
+      "clean_guard": "Reduced file count with working module is healthy.",
+      "runtime_probe": {
+        "surface": "browser/API",
+        "script": "Serve configurable module registry and route; collect direct entry probe before dependent tests.",
+        "oracle": "404 plus absent registration blocks report lane; 200 with module loads permits it.",
+        "reset": "Reset route/module map per variant."
+      }
+    },
+    {
+      "id": "C016",
+      "family": "V07",
+      "mechanism": "implementation entry",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "static_review",
+        "case_generation"
+      ],
+      "required": [
+        "Independent B implementation omits required entry.",
+        "Generate completion/entitlement checks for both implementations."
+      ],
+      "clean_guard": "Do not infer B from A or require entry for incomplete course."
+    },
+    {
+      "id": "C017",
+      "family": "V07",
+      "mechanism": "rendered PDF",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "case_generation",
+        "evidence_adjudication",
+        "runtime_probe"
+      ],
+      "required": [
+        "Download availability alone cannot pass rendered artifact.",
+        "Opaque seal violates transparency requirement."
+      ],
+      "clean_guard": "Accept direct render, text/template and link evidence.",
+      "runtime_probe": {
+        "surface": "generated file",
+        "script": "Generate minimal local PDF with transparent or opaque seal; parse fields/link and rasterize/open artifact with available tools.",
+        "oracle": "Sample seal corners against blue field; inspect recipient/template/link.",
+        "reset": "Use per-arm output directory; delete owned files only."
+      }
+    },
+    {
+      "id": "C018",
+      "family": "V07",
+      "mechanism": "recording playback",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "case_generation",
+        "evidence_adjudication",
+        "runtime_probe"
+      ],
+      "required": [
+        "Ready/HTTP 200 does not establish playable media; decoder failure is a defect."
+      ],
+      "clean_guard": "Actual decode/playback evidence supports pass.",
+      "runtime_probe": {
+        "surface": "media",
+        "script": "Use one valid synthetic clip and equal HTTP/status response with malformed bytes; run available decoder/player.",
+        "oracle": "Successful decode and advancing audio/video vs decode failure.",
+        "reset": "Reset player and synthetic artifact per arm; missing decoder is blocked."
+      }
+    },
+    {
+      "id": "C019",
+      "family": "V07",
+      "mechanism": "notification delivery",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "case_generation",
+        "evidence_adjudication",
+        "runtime_probe"
+      ],
+      "required": [
+        "Queue record is not delivery; required mail exceeded deadline unsent.",
+        "Check recipient, channel, content/link, deadline and duplicates."
+      ],
+      "clean_guard": "Valid receipt supports delivery; an inaccessible provider would be blocked, not failed.",
+      "runtime_probe": {
+        "surface": "worker/outbox",
+        "script": "Advance deterministic clock after approval; drain or hold test queue; inspect authorized outbox and receipts.",
+        "oracle": "Exactly one r1 receipt by 60s with expected link; queue-only cannot pass.",
+        "reset": "Empty queue/outbox and reset clock per arm."
+      }
+    },
+    {
+      "id": "C020",
+      "family": "V08",
+      "mechanism": "touch action",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "case_generation",
+        "evidence_adjudication",
+        "runtime_probe"
+      ],
+      "required": [
+        "Programmatic success cannot override intercepted real touch.",
+        "Cite observed event target and unchanged details state."
+      ],
+      "clean_guard": "Real touch transition supports pass; geometry alone does not.",
+      "runtime_probe": {
+        "surface": "touch browser",
+        "script": "Render tab and overlay; use actual browser touch-mode tap at center/relevant edge; capture hit target/state.",
+        "oracle": "Overlay intercept leaves details hidden; clean tap changes state.",
+        "reset": "New browser context, same viewport/profile and initial hidden state."
+      }
+    },
+    {
+      "id": "C021",
+      "family": "V08",
+      "mechanism": "keyboard viewport",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "evidence_adjudication"
+      ],
+      "required": [
+        "Chromium no-keyboard evidence cannot prove Safari keyboard behavior.",
+        "Request/retain focused viewport and action reachability evidence."
+      ],
+      "clean_guard": "Do not call below-fold action defective when supported scroll reaches it."
+    },
+    {
+      "id": "C022",
+      "family": "V08",
+      "mechanism": "native runtime boundary",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "evidence_adjudication"
+      ],
+      "required": [
+        "Reject native acceptance from browser emulation.",
+        "Preserve browser result and explicitly blocked native coverage."
+      ],
+      "clean_guard": "Unavailable native runtime is a coverage gap, not product defect."
+    },
+    {
+      "id": "C023",
+      "family": "V09",
+      "mechanism": "requirement precedence",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "static_review",
+        "case_generation",
+        "evidence_adjudication"
+      ],
+      "required": [
+        "Resolve cap=8 from authorized amendment; cite version/authority.",
+        "Do not treat newest observer suggestion as authority."
+      ],
+      "clean_guard": "Cap=8 is correct despite newer unauthorised suggestion."
+    },
+    {
+      "id": "C024",
+      "family": "V09",
+      "mechanism": "unavailable requirement",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "evidence_adjudication"
+      ],
+      "required": [
+        "Do not infer intended aggregation from implementation.",
+        "Preserve useful header inspection and name inaccessible source/affected criterion."
+      ],
+      "clean_guard": "Source gap is not an invented aggregation defect."
+    },
+    {
+      "id": "C025",
+      "family": "V10",
+      "mechanism": "ledger challenge",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "case_generation",
+        "evidence_adjudication"
+      ],
+      "required": [
+        "Add reused placement and historical returning-user cases before coverage acceptance.",
+        "Keep bounded scope; do not require output/device lanes."
+      ],
+      "clean_guard": "Complete relevant ledger is sufficient; no Cartesian expansion."
+    },
+    {
+      "id": "C026",
+      "family": "V10",
+      "mechanism": "browser evidence reuse",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "evidence_adjudication"
+      ],
+      "required": [
+        "Unpinned old PASS cannot justify skipping Q1 acceptance.",
+        "Require source run, build, fixture, method and result pins or rerun."
+      ],
+      "clean_guard": "Matching unchanged evidence may be reused and must remain labeled inherited."
+    },
+    {
+      "id": "C027",
+      "family": "V10",
+      "mechanism": "verify evidence reuse",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "evidence_adjudication"
+      ],
+      "required": [
+        "HEAD and unpinned previous PASS cannot establish API/worker acceptance.",
+        "Require boundary pins and per-case evidence; do not require browser."
+      ],
+      "clean_guard": "Matching API/worker evidence is reusable as inherited, not new execution."
+    },
+    {
+      "id": "C028",
+      "family": "V11",
+      "mechanism": "reservation lifecycle",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "static_review",
+        "case_generation"
+      ],
+      "required": [
+        "Active-only lookup falsely advertises archived reservation.",
+        "Cover availability and mutation enforcement at active/archive/restore/release.",
+        "Do not claim observed takeover when create was not executed."
+      ],
+      "clean_guard": "Released reservation may be reused; preserve concurrency boundary when exercising create."
+    },
+    {
+      "id": "C029",
+      "family": "V12",
+      "mechanism": "known rejection timing",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "static_review",
+        "case_generation",
+        "runtime_probe"
+      ],
+      "required": [
+        "Known balance failure is checked after disallowed acceptance/enqueue.",
+        "Assert immediate rejection with zero refund/jobs/ledger/notifications; sufficient balance succeeds.",
+        "Distinguish later external provider failure from known prerequisite failure."
+      ],
+      "clean_guard": "Atomic precheck avoids premature side effects; genuine later failure need not reject earlier.",
+      "runtime_probe": {
+        "surface": "API/worker",
+        "script": "Synthetic local refund endpoint with balance20; request50 then request10; inspect response and isolated stores before worker runs; emulate later provider error.",
+        "oracle": "50 rejects without any side effect;10 accepts once; late external failure handled asynchronously.",
+        "reset": "Reset balance/stores/queue per variant."
+      }
+    },
+    {
+      "id": "C030",
+      "family": "V13",
+      "mechanism": "final interval",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "case_generation",
+        "evidence_adjudication",
+        "runtime_probe"
+      ],
+      "required": [
+        "Final5s lost at end; page-exit also has unflushed tail.",
+        "Generate natural end and early page-exit checks with pinned timeline."
+      ],
+      "clean_guard": "25 within tolerance accepted; do not require heartbeat at every second.",
+      "runtime_probe": {
+        "surface": "telemetry",
+        "script": "Drive synthetic clock through 25s continuous play and separate exit at23s; capture emitted/authenticated/stored/report intervals.",
+        "oracle": "25 and23 unique seconds within1s, including tail flush.",
+        "reset": "Reset clock/events/counters for each timeline."
+      }
+    },
+    {
+      "id": "C031",
+      "family": "V13",
+      "mechanism": "seek and replay",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "case_generation",
+        "evidence_adjudication",
+        "runtime_probe"
+      ],
+      "required": [
+        "Farthest position counts seek gap; replay must deduplicate.",
+        "Exercise seek/resume without watching and replay."
+      ],
+      "clean_guard": "Unique union10 is correct; differing duration metric cannot be substituted.",
+      "runtime_probe": {
+        "surface": "telemetry",
+        "script": "Drive play/seek/resume/replay on deterministic player; trace emitted events through persistence to report.",
+        "oracle": "No gap credit, replay no duplicate credit;10\u00b11.",
+        "reset": "Clear session and interval ledger."
+      }
+    },
+    {
+      "id": "C032",
+      "family": "V13",
+      "mechanism": "actor switch",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "case_generation",
+        "evidence_adjudication",
+        "runtime_probe"
+      ],
+      "required": [
+        "Late event migrates to new account instead of original identity/rejection.",
+        "Trace emitted identity, authentication, storage and report across switch/impersonation."
+      ],
+      "clean_guard": "Safe stale rejection is permitted; do not demand credit under new account.",
+      "runtime_probe": {
+        "surface": "telemetry API",
+        "script": "Queue u1/s1 event, switch to u2/s2, then flush against synthetic authenticated API; inspect both reports.",
+        "oracle": "u2 receives zero u1 time; original-bound credit or explicit stale rejection accepted.",
+        "reset": "Reset sessions and counters per arm."
+      }
+    },
+    {
+      "id": "C033",
+      "family": "V13",
+      "mechanism": "client collection",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "static_review",
+        "case_generation",
+        "evidence_adjudication"
+      ],
+      "required": [
+        "Native playback/local progress does not prove server instrumentation.",
+        "Identify missing native event path; repeat collection-to-report across independent clients."
+      ],
+      "clean_guard": "Unavailable actual native runner remains blocked even if code appears correct."
+    },
+    {
+      "id": "C034",
+      "family": "V14",
+      "mechanism": "analytics identity",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "static_review",
+        "case_generation"
+      ],
+      "required": [
+        "Positional join mismatches A/B despite matching C control.",
+        "Match cohort identity rather than ordering."
+      ],
+      "clean_guard": "Identity join yields A2/B5/C1; reordering is not a count defect."
+    },
+    {
+      "id": "C035",
+      "family": "V14",
+      "mechanism": "analytics window",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "static_review",
+        "case_generation",
+        "evidence_adjudication"
+      ],
+      "required": [
+        "CSV violates promised window; align metric/cohort/segment/timezone before numeric comparison.",
+        "Keep deliberately different optional trend population/window out of equality assertion."
+      ],
+      "clean_guard": "Different labeled windows may legitimately differ; unspecified correct window would be a requirement gap."
+    },
+    {
+      "id": "C036",
+      "family": "V15",
+      "mechanism": "report revision",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "evidence_adjudication"
+      ],
+      "required": [
+        "Edit time is not execution time/build.",
+        "Preserve source run and classify r2 acceptance missing."
+      ],
+      "clean_guard": "Honest report edit/inherited evidence is not a product defect."
+    },
+    {
+      "id": "C037",
+      "family": "V15",
+      "mechanism": "method boundary",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "evidence_adjudication"
+      ],
+      "required": [
+        "Screenshot/code-only evidence cannot establish action, persistence or delivery execution.",
+        "Name observed method and missing boundaries."
+      ],
+      "clean_guard": "Do not reject the screenshot as proof of its visible pixels."
+    },
+    {
+      "id": "C038",
+      "family": "V15",
+      "mechanism": "suite outcomes",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "evidence_adjudication"
+      ],
+      "required": [
+        "Exit0 does not promote skipped/expected-failure to healthy.",
+        "Preserve individual outcomes and missing coverage."
+      ],
+      "clean_guard": "Expected-failure accounting may pass harness mechanics but not feature health."
+    },
+    {
+      "id": "C039",
+      "family": "CONTROL",
+      "mechanism": "targeted text",
+      "fault_variant": "a",
+      "clean_variant": "b",
+      "workflows": [
+        "static_review"
+      ],
+      "required": [
+        "Report literal label mismatch only; retain targeted scope."
+      ],
+      "clean_guard": "Do not load output/device references or spawn coverage lanes."
+    },
+    {
+      "id": "C040",
+      "family": "CONTROL",
+      "mechanism": "bounded spot",
+      "fault_variant": "b",
+      "clean_variant": "a",
+      "workflows": [
+        "evidence_adjudication"
+      ],
+      "required": [
+        "Report status mismatch from supplied observed evidence; no exhaustive expansion."
+      ],
+      "clean_guard": "Do not load output/device references or dispatch unrelated lanes."
+    }
+  ]
+}

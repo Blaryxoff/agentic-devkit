@@ -23,6 +23,12 @@ When user-facing behaviour changed, inspect it as a first-time user. Look for mi
 guidance, error recovery, or next-step actions. Report only an unsupported assumption that creates a concrete usability
 failure.
 
+### D. Ownership and history
+
+For reused data, renewed access, aggregates, reservations or reversible operations, apply the relevant challenges in
+`behavioral-completeness.md` → **Risk-driven case generation**. Identify the authoritative identity, prior state and
+invariant that a concrete sequence could violate. Reuse the review's case ledger; report only newly supported risks.
+
 ## Reporting
 
 - Fold each newly discovered, evidence-backed risk into the normal findings format.
