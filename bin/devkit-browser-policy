@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import re
+import subprocess
+import sys
+
+
+SOURCES = {
+    "plugins/core/conduct/browser-qa-rules.md": ("5", "6", "7", "9"),
+    "plugins/core/conduct/runtime-qa-evidence.md": None,
+    "plugins/core/conduct/browser-ui-oracles.md": ("1", "2", "3", "4", "5"),
+    "plugins/core/conduct/browser-layout-audit.md": None,
+    "plugins/core/skills/browser/scripts/ui-oracles.js": None,
+}
+
+
+def git(root, *args):
+    return subprocess.check_output(["git", "-C", str(root), *args], stderr=subprocess.PIPE)
+
+
+def select_sections(content, required):
+    matches = list(re.finditer(r"^## (\d+)\. .+$", content, re.MULTILINE))
+    sections = {match[1]: content[match.start():matches[index + 1].start()
+                                if index + 1 < len(matches) else len(content)].strip()
+                for index, match in enumerate(matches)}
+    missing = set(required) - sections.keys()
+    if missing:
+        raise ValueError(f"Missing canonical browser sections: {', '.join(sorted(missing))}")
+    return "\n\n".join(sections[number] for number in required)
+
+
+def snapshot(root):
+    revision = git(root, "rev-parse", "HEAD").decode().strip()
+    blocks = []
+    hashes = {}
+    for path, sections in SOURCES.items():
+        raw = git(root, "show", f"{revision}:{path}")
+        hashes[path] = hashlib.sha256(raw).hexdigest()
+        content = raw.decode()
+        if sections:
+            content = select_sections(content, sections)
+        if path.endswith(".js"):
+            content = f"```javascript\n{content.rstrip()}\n```"
+        blocks.append(f"# Canonical source: {path}\n\n{content.strip()}")
+    boundary = (
+        "You execute one assigned browser QA lane, not the planner or deployment operator. "
+        "Apply the canonical rules below within the assigned scenario, role, origins, viewport and tool allowlist. "
+        "Project isolation, synthetic identities, mutation limits and fixture guards remain mandatory. "
+        "Use only tools exposed by this MCP binding; inspect their schema before first use and pass actual page IDs. "
+        "A compact DOM inspection may supply the DOM snapshot when take_snapshot is not exposed. "
+        "Never invent a snapshot UID or enable tools, shell commands, file access, uploads or external origins. "
+        "Use the supplied probe expressions directly with evaluate_script; confirm candidates before reporting defects. "
+        "Shared evidence may cover matching unchanged states; record any required unobserved dimension as unverified. "
+        "Keep the assigned runner JSON schema. Do not claim the whole project passed from one lane. "
+        "Return setup or tool limitations as blocked/unverified without treating them as product defects."
+    )
+    content = f"# Browser worker policy\n\nDevkit revision: {revision}\n\n{boundary}\n\n" + "\n\n".join(blocks) + "\n"
+    manifest = {"revision": revision, "sources": hashes,
+                "policy_sha256": hashlib.sha256(content.encode()).hexdigest()}
+    return content, manifest
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Render committed canonical rules for a browser QA executor")
+    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
+    parser.add_argument("--output-dir", type=Path)
+    args = parser.parse_args()
+    content, manifest = snapshot(args.root)
+    if args.output_dir:
+        if not args.output_dir.is_dir():
+            raise ValueError("Policy output directory must already exist")
+        for name, value in (("qa-policy.md", content),
+                            ("qa-policy.json", json.dumps(manifest, indent=2) + "\n")):
+            path = args.output_dir / name
+            with path.open("x") as output:
+                path.chmod(0o600)
+                output.write(value)
+    sys.stdout.write(content)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (OSError, UnicodeError, ValueError, subprocess.CalledProcessError) as error:
+        sys.exit(f"Browser QA policy unavailable: {error}")
