@@ -48,15 +48,17 @@ Report existing work; do not implement fixes, run a new QA pass, or deploy while
    through actual discussion mentions, tracker user records, or supported user lookup. Do not derive handles from email
    addresses or copy a fixed recipient list from an example. Ask about an unresolved necessary recipient rather than
    tagging a guessed person; do not notify every watcher by default.
-6. **Compose the continuation.** Apply [Comment style](#comment-style). Describe the concrete fixes or other completed
-   task work from this session. Keep a limitation only when needed to describe the scope of that completed work
+6. **Compose the continuation.** Apply [Comment style](#comment-style) and the project's task-comment policy.
+   Describe the concrete fixes or other completed task work from this session. Keep a limitation only when needed
+   to describe the scope of that completed work
    accurately. Omit task-wide status reports, outstanding QA acknowledgments, open-issue lists, recommendations,
    and instructions about testing, releasing, or closing the task. Include a question only when the user explicitly
    asks for one. If no concrete new work can be established, explain the evidence gap to the user and do not post a
    generic status update or invent completed work.
 7. **Check and deliver.** Confirm every claim is supported, every issue name is understandable without hidden IDs,
    mentions resolve to the intended people, and each item describes completed work rather than a task status or
-   instruction to the team. Verify that branch names and inferred server availability are absent. Refresh the latest
+   instruction to the team. Verify that branch names and inferred server availability are absent; preserve exact
+   artifact/version identifiers required by the project even when they contain a branch-like prefix. Refresh the latest
    discussion before posting to catch intervening replies or duplicate updates. Reconcile any relevant changes before
    sending. Submit one comment with the tracker's native formatting and mention support. Use an idempotency/request key
    when supported; after a timeout or uncertain result, read the discussion to establish whether it posted before
@@ -86,6 +88,9 @@ Report existing work; do not implement fixes, run a new QA pass, or deploy while
   and generic uncertainty paragraphs; report the completed fix without implying it is already on a server.
 - Describe corrected behavior in language the task's readers understand. Keep internal verification tools and process
   out of the comment: omit LunaQA, PHPUnit, Vitest, CI jobs, routine test results/counts, commit hashes, and logs.
+  When project instructions require deployment details, include the verified fix revisions, deployed build and artifact
+  identifiers, and provenance metadata in the requested format. Distinguish source fixes from deployed artifacts;
+  use existing deployment/runtime evidence and report missing evidence to the user without inventing identifiers.
   Include a checked scenario only when it clarifies the resulting behavior; describe it without naming the tools.
 - End after reporting the completed work. Omit "Перед закрытием задачи нужно…", retest/release requests, closing
   checklists, advice, and reminders of the team's responsibilities. Do not add a missing QA confirmation as a caveat
