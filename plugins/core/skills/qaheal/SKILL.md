@@ -69,8 +69,9 @@ fallback instructions when a connector is unavailable; keep credentials out of o
    to post one concise continuation per affected task, describing only verified, unreported fixes when the user
    requested comments or explicitly invoked this workflow. For an
    ordinary repair request without posting authorization, prepare a draft instead. Mention the reporters it addresses
-   using supported native mention identities. Pass the project's task-comment policy and verified deployment/runtime
-   identifiers to `devkit-comment` so it includes any required deployment details. Describe corrected behavior in
+   using supported native mention identities. Pass the project's task-comment policy, verified deployment/runtime
+   identifiers and rollout times, and remote-check scenarios/results/roles to `devkit-comment` for any required details.
+   Describe corrected behavior in
    language the reporters understand; keep tool names, test frameworks, CI job details, and routine verification
    results in the user conversation, not the
    tracker comment. Then read the comment back and verify its content and mentions. Never infer

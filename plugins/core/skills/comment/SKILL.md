@@ -88,9 +88,10 @@ Report existing work; do not implement fixes, run a new QA pass, or deploy while
   and generic uncertainty paragraphs; report the completed fix without implying it is already on a server.
 - Describe corrected behavior in language the task's readers understand. Keep internal verification tools and process
   out of the comment: omit LunaQA, PHPUnit, Vitest, CI jobs, routine test results/counts, commit hashes, and logs.
-  When project instructions require deployment details, include the verified fix revisions, deployed build and artifact
-  identifiers, and provenance metadata in the requested format. Distinguish source fixes from deployed artifacts;
-  use existing deployment/runtime evidence and report missing evidence to the user without inventing identifiers.
+  When project instructions require deployment or verification details, include the required fields in their requested
+  format using existing deployment/runtime evidence, including checked scenarios, observed results and actual roles
+  when requested. Distinguish source fixes from deployed artifacts; report missing evidence to the user without
+  inventing identifiers, deployment times or checks.
   Include a checked scenario only when it clarifies the resulting behavior; describe it without naming the tools.
 - End after reporting the completed work. Omit "Перед закрытием задачи нужно…", retest/release requests, closing
   checklists, advice, and reminders of the team's responsibilities. Do not add a missing QA confirmation as a caveat
