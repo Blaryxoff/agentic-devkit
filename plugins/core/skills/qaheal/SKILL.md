@@ -71,6 +71,8 @@ fallback instructions when a connector is unavailable; keep credentials out of o
    ordinary repair request without posting authorization, prepare a draft instead. Mention the reporters it addresses
    using supported native mention identities. Pass the project's task-comment policy, verified deployment/runtime
    identifiers and rollout times, and remote-check scenarios/results/roles to `devkit-comment` for any required details.
+   When the claimed fixes are confirmed deployed to production, require the draft or posted comment to say so explicitly.
+   Identify the production environment by its established name or URL when useful; staging evidence alone does not qualify.
    Describe corrected behavior in
    language the reporters understand; keep tool names, test frameworks, CI job details, and routine verification
    results in the user conversation, not the

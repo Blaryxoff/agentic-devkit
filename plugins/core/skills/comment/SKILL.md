@@ -86,6 +86,8 @@ Report existing work; do not implement fixes, run a new QA pass, or deploy while
   servers, using their established names or URLs when useful. Never mention git branches, including `master`, `main`,
   or `dev`, and never translate a branch name into a server name. If deployment is unverified, omit availability claims
   and generic uncertainty paragraphs; report the completed fix without implying it is already on a server.
+  For updates from `devkit-qaheal`, explicitly state that the reported fixes were deployed to production when the supplied
+  evidence confirms production deployment; staging deployment alone does not support that statement.
 - Describe corrected behavior in language the task's readers understand. Keep internal verification tools and process
   out of the comment: omit LunaQA, PHPUnit, Vitest, CI jobs, routine test results/counts, commit hashes, and logs.
   When project instructions require deployment or verification details, include the required fields in their requested
