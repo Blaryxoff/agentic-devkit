@@ -2,8 +2,9 @@
 name: devkit-docker-deploy
 description: >-
   bootstrap or audit a project's Docker / docker-compose production deployment against the org's deployment
-  conduct. Use when starting a new dockerized service, hardening an existing one, or reviewing the docker setup
-  of an existing project. Covers the default single-node prod+test shape and opt-in multi-node fleets.
+  conduct and the project's release contract. Use when starting a new dockerized service, hardening an existing
+  one, or reviewing its builds, deployment, migration, health and rollback flow. Covers Laravel and Node.js,
+  immutable registry images or verified release bundles, single-node prod+test, and opt-in fleet/candidate cutovers.
 ---
 
 # Docker Deployment — Setup & Audit
@@ -14,6 +15,8 @@ Use [`plugins/core/conduct/docker-deployment.md`](../../conduct/docker-deploymen
 progressively by section; do not read the 1,000-line document wholesale.
 
 Default to one app node per environment; prod and test may use the same host or separate hosts. Use the multi-node appendix only when one environment actually has multiple app nodes behind a load balancer.
+This workflow targets server deployments. Preserve the user's Herd/DBngin local setup; a deployment audit does not
+authorize replacing it with local Docker services.
 
 ## Mode
 
@@ -33,18 +36,20 @@ If the mode is unclear, ask once.
    - `docker/INFRASTRUCTURE.md` or `INFRASTRUCTURE.md`;
    - backup scheduling/configuration and environment examples.
 2. Determine the topology of each environment: prod + test on one host, separate single-node hosts, or a real multi-node fleet.
-3. Determine the stack and container set: Laravel, Node.js API + web, or another shape.
+3. Map the release path before proposing changes: build host, required tests and promotion, registry or bundle
+   transport, immutable service image identities, source/config revision, migration role, runtime roles, and current/
+   previous release state. Distinguish Compose-owned stateful services from shared or managed dependencies.
 4. Read conduct §13 for Laravel or §13A for a Node.js API + web stack. For another shape, derive a checklist from its project contract and the applicable stack-neutral sections below. Open only source sections needed by observed files or risks:
 
 | Concern | Conduct section |
 |---|---|
-| Image build, runtime users, tags, build memory | §1 (apply only matching stack guidance) |
+| Image build, artifact identity/transport, runtime users, build resources | §1 (apply only matching stack guidance) |
 | Volumes and asset shadowing | §2 |
 | Shared logs and rotation | §3 |
 | Ports, external networks, IMDS | §4 |
 | Environment and secret distribution | §5 |
-| Healthchecks and startup ordering | §6 |
-| Deploy script, Makefile, workflows, rollback | §7 |
+| Health, readiness, external dependency preflight | §6 |
+| Deploy entry point, migrations, release state, rollback/cutover | §7 |
 | TLS termination | §8 |
 | Restarts, limits, read-only filesystems, docker.sock | §9 |
 | Backup and restore | §10 |
@@ -54,10 +59,12 @@ If the mode is unclear, ask once.
 
 Resolve material ambiguity through `plugins/core/conduct/clarification-protocol.md` in one concise round.
 
-## Mandatory live check
+## Build-host verification
 
-When the serving host also runs `docker build` or `buildx build`, verify memory and swap live with
-`ssh <build-host> 'swapon --show; free -h'` per §1.8. Empty swap on a memory-oversubscribed build host is critical.
+Prefer CI or a dedicated builder. When a serving host also runs `docker build` or `buildx build`, verify memory,
+swap, disk and builder-cache headroom live per §1.8. Empty swap on a memory-oversubscribed build host is critical.
+If authorized host access is unavailable, report that check as unverified; do not infer capacity from repository
+configuration or change the host during an audit. A documented fallback builder must preserve tests and artifact identity.
 
 ## Setup
 
@@ -67,9 +74,10 @@ Work one conduct section at a time so only the current rules stay in context. Ge
 2. Entrypoint role dispatcher.
 3. Backend image and optional frontend image (§1).
 4. Compose services, leaf volumes, shared logs, healthchecks, port bindings, restart policy, and log caps (§§2–6, 9).
-5. The single deploy script and `.deploy/compose.env` contract (§7.1–§7.4).
-6. Canonical Makefile commands (§7.5).
-7. Thin deployment/build workflows (§7.6–§7.7).
+5. The deploy entry point, tested immutable release, migrations, health gates, rollback and release-state contract
+   (§1.9, §7.1–§7.4). Preserve an existing coherent contract instead of replacing it with sample names.
+6. Documented operator commands, using the §7.5 baseline or the project's coherent equivalents.
+7. Thin deployment/build wrappers around the chosen entry point (§7.6–§7.7); preserve equivalent release orchestration.
 8. `docker/INFRASTRUCTURE.md` (§11).
 9. Host bootstrap checklist: operator/deploy accounts, directories, environment file, TLS proxy, DNS, registry secrets,
    first image build, and test deploy.
@@ -91,7 +99,11 @@ next.
    - fragmented logs (§3);
    - build-on-serving hosts without swap (§1.8).
 5. For Node.js, also check build/release artifact compatibility, migration ordering and role, worker readiness, and rollback across schema versions (§13A).
-6. Group findings by severity, then conduct section. Use
+6. For every stack, trace one release from required tests through promotion/transport, migration, runtime cutover,
+   external smoke checks and success markers. Verify immutable images belong to the intended source/config revision;
+   a mutable tag, green CI job or healthy container alone does not establish the serving release.
+   Keep last-successful state separate from a failed/in-progress attempt and runtime observations after failed cutover.
+7. Group findings by severity, then conduct section. Use
    `plugins/core/conduct/review-findings-format.md` and end with at most three highest-leverage actions.
 
 ## Harden
@@ -117,6 +129,8 @@ For production-affecting operations, provide the exact sequence and obtain confi
 ## Boundaries
 
 - Recommend §14 fleet machinery only when the project uses multiple nodes.
+- Use candidate/blue-green cutover only when ingress and the project contract support it; keep the previous route
+  recoverable until candidate health and external smoke checks pass (§7.9).
 - Respect a coherent non-canonical deployment instead of rewriting it solely to match the default.
 - Never run destructive Docker operations such as volume removal or `docker compose down -v` without explicit
   per-command confirmation.

@@ -13,6 +13,12 @@ that shape; a single-node setup uses the simpler baseline.
 Skill `devkit-docker-deploy` enforces this document when bootstrapping a new
 stack or auditing an existing one.
 
+Start from the project's runtime and release contract. PHP/FPM, Artisan,
+Laravel paths and the sample Makefile apply to the matching stack only.
+Preserve coherent equivalent entry points and topology; apply the release,
+data-safety, health and verification obligations below to every stack.
+Local development continues to use the user's Herd/DBngin setup.
+
 ---
 
 ## 1. Image build
@@ -79,13 +85,21 @@ hashed Vite files in production.
 
 - Immutable: `${env}-${sha}` (e.g. `prod-abc1234`). Preserve each tag as the
   rollback target.
-- Rolling: `${env}-latest` — what `deploy.sh` pulls.
-- On-disk markers: `/var/www/<app>/.deploy/<image>.digest` record the local
-  image ID after a successful deploy. Next deploy compares against these and
-  **exits 0 with "nothing to do"** when nothing moved.
+- Rolling: `${env}-latest` — a convenience pointer promoted only after the
+  built artifact passes required tests. Feature builds do not advance shared
+  environment aliases without an explicit project policy.
+- Resolve all component images once per release to immutable registry
+  digests or verified archive identities (§1.9). Deployment uses those pinned
+  references, so queued jobs and same-commit rebuilds cannot mix artifacts.
+- Release state records the deployed source/config revision, per-service
+  image identities and previous release after all health/activation gates
+  pass. `.deploy/*.digest` and `.deploy/compose.env` are baseline paths;
+  an atomic release-state file is an equivalent contract. An unchanged
+  artifact/config with no forced refresh exits 0 with "nothing to do".
 
-Three images per project (Laravel + Nuxt + nginx): backend / frontend /
-nginx. Each gets its own digest marker.
+For Laravel + Nuxt + nginx, track backend / frontend / nginx together.
+Other stacks declare their actual roles and image set; several roles may
+share one image.
 
 ### 1.6 Registry namespace must be lowercase, hardcoded
 
@@ -122,6 +136,11 @@ lower it without first confirming the bundle shrank; raising it only helps if
 the build is GC-thrashing near the ceiling (measure peak heap first:
 `/usr/bin/time -v` → "Maximum resident set size").
 
+**Prefer CI or a dedicated builder** so builds do not compete with serving
+traffic. Record builder provenance with the release. A fallback builder is
+an explicit infrastructure-outage path; it still runs required tests and
+must not turn a code/test failure into a promotable release.
+
 **Where the build runs matters.** If `deploy.sh` builds the image **on the
 serving node** (common on single-node test envs), the build's multi-GB heap
 lands on top of the running container set. On a memory-**oversubscribed** box
@@ -137,8 +156,10 @@ mitigations, in order:
    to a non-hibernating server. Make it persistent (`/swapfile` in `/etc/fstab`)
    and lower `vm.swappiness` to 10 via `/etc/sysctl.d/`. Swap turns a freeze
    into a slowdown; it does **not** replace the heap flag (different layer).
-2. **Better: build off the serving node** (CI runner or a dedicated builder), so
-   the heap spike never touches the box serving traffic. Prefer this when tight.
+2. **Move the build off the serving node** when capacity cannot be bounded.
+   Before a serving-host build, also verify live free disk, temporary/layer
+   space and bounded builder-cache retention, and coordinate its lock with
+   deployment. A cache is disposable; release/rollback images are not.
 
 **Trim build peak RSS on test.** On test images, JS/CSS minification buys
 nothing (unminified assets are harmless in a test env) but costs CPU and
@@ -170,6 +191,23 @@ is consistent: prefer `node:<latest-LTS>-slim` for the **build** stage (keep the
 **runtime** stage alpine for size). Verify the built `manifest.json` / asset
 hashes are unchanged after the bump — esbuild/lightningcss are lockfile-pinned,
 so only the JS engine differs and output should be byte-identical.
+
+### 1.9 Release artifact contract and transport
+
+Define one release record: source SHA, target environment, per-service image
+identities, platform/architecture, builder/run provenance, and the config
+revision or safe fingerprint of build-time public settings. Never put secret
+values into a release manifest. Keep image-baked public settings consistent
+with the target environment; changing runtime env does not rebuild them.
+
+Prefer immutable registry references. When registry access is constrained,
+a project may ship a `docker save` bundle with a manifest and checksum.
+Before loading it, verify the requested environment, SHA, service set,
+architecture, builder evidence and archive checksum. After loading, inspect
+the expected image/config or layer identities and labels before activation.
+Keep the previous verified artifact available for rollback. Registry,
+package-manager cache and application-data storage have separate retention
+and recovery responsibilities.
 
 ---
 
@@ -455,8 +493,21 @@ the dependency at boot. One-shot migrations:
 Laravel ships `/up` since 11.x. Define `/healthz` as a peer that returns
 200 unconditionally (used by the nginx-container healthcheck) and, when
 the project has a real readiness contract, `/healthz/ready` that verifies
-DB + Redis reachability. The latter only matters on multi-node setups
-(LB drains the unready node — see §14); on single-node, `/up` is enough.
+the dependencies needed to serve traffic. Distinguish liveness from readiness
+on single-node deployments too; choose probes from the application contract.
+A TCP/DB connection or live worker PID does not prove its processing loop
+can progress. State the limits of any weaker probe.
+
+### 6.5 External dependencies and deploy-time smoke checks
+
+For shared or managed services outside Compose, preflight their required
+network and a non-mutating authenticated health/read probe before migrations or cutover;
+`depends_on` cannot gate them. Record their health and backup owner (§10.5).
+After rollout and required data activation/worker refresh, probe each externally
+meaningful API/web/admin endpoint through its serving ingress, as well as
+container health. Validate/reload proxy
+configuration when changed. Explicit media/UDP services need their own port,
+firewall and transport checks; an HTTP proxy check cannot certify them.
 
 ---
 
@@ -483,10 +534,13 @@ Makefile wraps it via `gh workflow run` (or via direct SSH as a fallback).
 Keep deploy logic in the host script. The workflow YAML and Makefile remain
 **thin wrappers** that pass env vars and call the script.
 
-The script + `docker/compose.yml` are scp'd to the host by the workflow on
-every run (via `install -m 755 /dev/stdin /var/www/<app>/bin/deploy.sh` to
-get a clean ownership rewrite). So the SSH-fallback path stays usable as
-long as at least one CI deploy ever ran.
+Deliver the script and Compose/config revision from the exact release being
+deployed: install the release files, or sync the host checkout to that commit.
+Serialize file delivery with activation and verify the installed revision
+before running it. `install -m` establishes ownership/mode; atomic replacement
+requires a staged file/release and rename. Do not use whichever revision
+happens to be on the host. The SSH fallback verifies the same artifact/config
+identities and has all prerequisites needed to use the same entry point.
 
 ### 7.2 Two-account model on the host
 
@@ -502,45 +556,65 @@ the group `<app>` write into it, and the deploy account is in that group.
 
 ```
 1. flock -n /var/lock/<app>-deploy-${DEPLOY_ENV}.lock  → concurrent deploys fail fast
-2. docker pull every image; resolve new local image IDs
-3. Compare against /var/www/<app>/.deploy/<image>.digest
-   → if nothing moved and FORCE_RECREATE unset, exit 0 "nothing to do"
-4. set -a; source $ENV_FILE; set +a   (§5.2)
-5. compose up -d --pull never mysql redis   → wait for healthy (180s max)
-6. If backend image moved (or FORCE_RECREATE): docker run --rm migrate
-   one-shot against the NEW image — failure aborts WITHOUT touching live
-   containers
-7. compose up -d --pull never --remove-orphans [--force-recreate]
-8. Wait for backend/frontend/nginx to report healthy; dump last 120 log
-   lines per container into storage/logs/container/ on failure
-9. Write new image IDs to .deploy/*.digest
-10. Write .deploy/compose.env with the resolved image refs + hosts so
-    the Makefile's compose_body sees the same substitution scope
-11. If backend image moved: docker exec backend php artisan queue:restart
-    (nudge long-running workers to pick up new code)
+2. Validate the tested release record; pull its pinned images or verify/load
+   its bundle, and sync the matching deploy script + Compose/config revision
+3. Compare artifact/config identities with the successful release state
+   → if unchanged and FORCE_RECREATE unset, exit 0 "nothing to do"
+4. Source the protected deployment/app env before Compose substitution (§5.2)
+5. Start only Compose-owned dependencies and wait for healthy; preflight
+   required external networks/services separately (§6.5)
+6. Run a required migration once from the NEW release image with the
+   intended migration role; failure aborts before replacing serving apps
+7. Recreate the declared API/web/worker or Laravel roles using pinned images;
+   a partial rollout requires an explicit compatibility contract
+8. Wait for initial role readiness; capture container logs on failure and
+   follow the documented recovery path
+9. Complete any release-owned data activation and runtime/worker refresh
+   required by this stack, then verify final role readiness and external
+   smoke checks; failure must not publish success markers
+10. Atomically publish current/previous release state and Compose image/env
+    references only after all gates succeed
 ```
 
-Idempotent end-to-end: re-running with no image changes exits at step 3.
+Idempotent end-to-end: re-running with no release/config changes exits at step 3.
+For Laravel, role refresh may include `php artisan queue:restart`. Node roles
+use their own commands, health contracts and least-scope credentials; they
+may share an image without sharing a runtime role or migration DB identity.
 
-### 7.4 No first-class rollback on single-node, but the recipe is documented
+Keep old and new applications compatible with the migrated schema during
+rollout. If release-owned reference/catalog data is outside migrations,
+define an ordered, idempotent activation step and its rollback compatibility;
+do not introduce blanket production seeding.
 
-```bash
-# pick the previous immutable sha from GHCR
-docker pull ghcr.io/<owner>/<app>-backend:<env>-<prev-sha>
-docker tag  ghcr.io/<owner>/<app>-backend:<env>-<prev-sha> \
-            ghcr.io/<owner>/<app>-backend:<env>-latest
-# (repeat for frontend / nginx if they moved)
-sudo rm /var/www/<app>/.deploy/*.digest
-FORCE_RECREATE=true /var/www/<app>/bin/deploy.sh
-```
+Track the deployment attempt and phase separately from the last successful
+release. After failed cutover, follow the project's recovery policy and
+verify any rollback. If recovery fails or the serving state is uncertain,
+retain an operator-visible failed/degraded state with attempted image
+identities and observed runtime health. The prior success marker is history,
+not proof that the prior release is still serving. Clear the attempt state
+only when the resulting serving release has been verified.
 
-If the rollback needs a schema down-migration, run that manually first —
-`entrypoint.sh migrate` only runs `migrate --force --isolated`.
+### 7.4 Rollback preserves release identity and data safety
+
+Keep the previous successful release record and its verified artifacts.
+Use the same deploy entry point to restore that pinned image/config set;
+do not move a shared alias or delete state to guess the previous release.
+Preserve the project's explicit or automatic rollback contract and exercise
+failed-release recovery in an isolated environment, including rollback
+against a database already migrated by the newer release.
+
+Image rollback does not reverse schema or reference-data changes. Prefer
+expand/contract migrations that preserve compatibility. A down-migration or
+data restore requires its own reviewed runbook and explicit approval; never
+run it automatically because a container or smoke check failed.
 
 ### 7.5 Canonical operator commands
 
-Every project ships **this** Makefile + workflow shape. The commands and
-their semantics are the contract; the implementation may differ slightly.
+These are the default Laravel baseline commands. Preserve a project's
+documented equivalent operator interface and release trigger policy; do not
+require PHP/Artisan commands for Node or rename coherent existing targets
+solely to match this catalogue. Required operations still need a documented
+entry point and consistent environment/credential scope.
 
 #### Deploy (GitHub Actions primary, SSH fallback)
 
@@ -624,16 +698,16 @@ Conventions:
 
 ### 7.6 Workflow shape — thin SSH orchestrators
 
-`deploy-test.yml` and `deploy-prod.yml` do **only** four things:
+The baseline `deploy-test.yml` and `deploy-prod.yml` remain thin orchestrators:
 
-1. `actions/checkout@v4` (`ref: master` for prod; `ref: ${{ inputs.ref || 'dev' }}` for test).
+1. Check out the intended release commit; enforce its protected production ref/environment policy.
 2. Set up an SSH key from `secrets.DEPLOY_<ENV>_SSH_PRIVATE_KEY`,
    `ssh-keyscan` the host into `known_hosts`.
-3. `ssh "$REMOTE" 'install -m 755 /dev/stdin /var/www/<app>/bin/deploy.sh' < bin/deploy.sh`
-   (and same for `docker/compose.yml`). `install` rewrites ownership and
-   mode atomically, regardless of any prior file owner.
+3. Install matching deploy files with the intended ownership/mode, or sync
+   the host checkout to that exact commit; serialize delivery with activation
+   and verify the installed revision (§7.1).
 4. Pass env vars (`DEPLOY_ENV`, `REGISTRY`, `API_HOST`, `FRONTEND_HOST`,
-   `HTTP_PORT`, `FORCE_RECREATE`) over SSH and run
+   `HTTP_PORT`, `FORCE_RECREATE`) plus the pinned release/image identities over SSH and run
    `/var/www/<app>/bin/deploy.sh`.
 
 Required secrets per env:
@@ -666,7 +740,8 @@ REGISTRY="ghcr.io/$(printf '%s' "$OWNER_RAW" | tr '[:upper:]' '[:lower:]')"
 
 ### 7.7 `build-images.yml` shape
 
-Builds + pushes `<app>-backend`, `<app>-frontend`, `<app>-nginx` to GHCR.
+Builds the project's declared runtime images; Laravel + Nuxt commonly uses
+`<app>-backend`, `<app>-frontend`, `<app>-nginx` in GHCR.
 
 - Use `dorny/paths-filter@v3` to skip rebuilds when nothing image-relevant
   changed (`app/**`, `composer.*`, `resources/**`, `docker/Dockerfile`,
@@ -674,9 +749,13 @@ Builds + pushes `<app>-backend`, `<app>-frontend`, `<app>-nginx` to GHCR.
   overrides.
 - **Nginx must rebuild whenever backend rebuilds** (§1.4): wire the path
   filter accordingly.
-- Two tags per image: `${env}-${sha}` (immutable, used for rollback) +
-  `${env}-latest` (rolling, what deploy pulls).
-- `env` is `prod` on `master` pushes, `test` on `dev` pushes.
+- Publish immutable SHA-tagged images, test the built artifact, then promote
+  `${env}-latest` or another environment alias only in a dependent successful
+  promotion step. Deployment pins the tested component digests (§1.5).
+- Derive `env` from the project's protected release/test refs. Feature-branch
+  builds must not advance production or shared test aliases accidentally.
+- Record builder provenance and any allowed infrastructure-outage fallback;
+  fallback must preserve required tests and release verification (§1.8–§1.9).
 - `cache-to: type=registry,mode=max` so every layer is cached across
   runs/branches. **Caveat**: `mode=max` exports all intermediate image
   *layers*, but **not** the contents of `RUN --mount=type=cache` dirs (the
@@ -702,6 +781,17 @@ Builds + pushes `<app>-backend`, `<app>-frontend`, `<app>-nginx` to GHCR.
 It does not reload `env_file:` (§5.1), it does not pull new images, and it
 recreates nothing. Operators reach for it because it sounds right; the
 Makefile shape (`reload-env`, `deploy-…`) is the only sanctioned way.
+
+### 7.9 Candidate or blue-green cutover (opt-in)
+
+Use this only when the project has a separate candidate runtime and
+switchable ingress. Under the deploy lock, preserve the previous upstream,
+start the pinned candidate, and verify its application readiness before
+switching routes. Validate proxy configuration, run external smoke checks
+after the switch, and restore the previous route on failure before retiring
+the old runtime. Keep persistent data and migrations compatible with both
+versions. A single-node deployment does not imply zero downtime; record
+which topology and recovery path were actually verified.
 
 ---
 
@@ -814,6 +904,14 @@ app boots with the expected last-write. An untested backup is not a backup.
 `backup:monitor` failing) — a backup that silently breaks 3 weeks ago is
 the standard incident.
 
+### 10.5 Shared and managed state ownership
+
+For each stateful dependency, document whether this project, a shared-host
+operator or a provider owns its credentials, health, backups, retention,
+restore procedure and recovery evidence. Verify that responsibility rather
+than adding a duplicate local database/backup service. Application data,
+registry artifacts and disposable build caches need separate policies.
+
 ---
 
 ## 11. INFRASTRUCTURE.md — the operator map
@@ -830,17 +928,24 @@ Every project ships `docker/INFRASTRUCTURE.md` covering, at minimum:
    (`/var/www/<app>/{.env,.env.frontend,docker/compose.yml,bin/deploy.sh,.deploy/}`),
    named volumes, ports + bind addresses.
 5. **Containers** — table: name, role, healthcheck, restart policy.
-6. **Deploy flow** — the §7.3 algorithm, project-specific.
-7. **Rollback** — the §7.4 recipe.
+6. **Deploy flow** — the §7.3 algorithm, project-specific; builder location,
+   required tests/promotion, artifact transport and verification (§1.9).
+7. **Rollback** — previous release state, pinned images/config, schema/data
+   compatibility and the exercised recovery path (§7.4).
 8. **Env-only changes** — `reload-env` recipe with the §5.1 reminder.
 9. **TLS** — Caddy config or certbot inventory.
-10. **Backups** — destination, schedule, retention, restore drill.
+10. **Backups** — ownership per dependency, destination, schedule, retention,
+    restore drill and recovery evidence.
 11. **Day-to-day commands** — the §7.5 catalogue.
 12. **Debug checklist** — 5–10 commands from "is the container up" to
     "is the app's DB reachable from inside the container".
 13. **Common failure modes** — symptom → fix recipe, grown over time.
 14. **Operational notes** — "never commit X", "image rebuild triggers Y",
     "compose restart does not Z".
+15. **Release evidence** — source/config revision, per-service image
+    identities, environment/build settings, health/smoke results and when
+    current/previous state was committed. Separate image tags from the
+    artifact observed serving traffic.
 
 Without this document, only the person who wrote the deploy can operate
 it. With it, anyone with SSH can.
@@ -893,13 +998,20 @@ Each item maps to a source section above.
 - [ ] `public/build/` baked into the nginx image (not shared via a
       volume); backend changes trigger nginx rebuild in the workflow. (§1.4)
 - [ ] Image tags: `${env}-${sha}` immutable + `${env}-latest` rolling;
-      digest markers under `/var/www/<app>/.deploy/`; registry hardcoded
-      lowercase in workflow. (§1.5, §1.6)
+      aliases promoted only after required artifact tests; deployment pins
+      component digests and records current/previous image and config
+      identities; registry hardcoded lowercase in workflow. (§1.5, §1.6)
+- [ ] Release manifest matches source SHA, environment, service set,
+      architecture, builder provenance and build-time public configuration.
+      If using an image bundle, verify its checksum/manifest before loading
+      and inspect the imported image identities before activation. (§1.9)
 - [ ] Runtime image excludes dev-only files and secrets; base images are version-pinned. (§1.7,
       §9.4)
 - [ ] Asset stage sets `--max-old-space-size`; if it builds on the serving
       node, that box has persistent swap (sized to overcommit gap + build
-      heap); test builds disable minify via build-arg; `reportCompressedSize:
+      heap), live RAM/disk/cache headroom and coordinated build/deploy locks;
+      prefer CI/dedicated builds and retain tests on fallback builders.
+      Test builds disable minify via build-arg; `reportCompressedSize:
       false`; build stage uses `node:<LTS>-slim`. (§1.8)
 - [ ] Every volume mount is a **leaf** path. (§2.1)
 - [ ] nginx mounts public uploaded storage read-only; production has no
@@ -928,31 +1040,42 @@ Each item maps to a source section above.
       `apk add fcgi`; `/up` (and `/healthz` if used) wired. (§6)
 - [ ] Boot dependencies use `condition: service_healthy`; one-shot migration
       dependencies use `service_completed_successfully`. (§6.3)
+- [ ] Required shared/managed dependencies are preflighted separately;
+      container readiness and external ingress smoke checks both pass
+      before recording a successful release. (§6.4–§6.5)
 - [ ] `bin/deploy.sh` is the single source of truth; Makefile + workflows
       are thin wrappers. (§7.1)
 - [ ] Two-account host model (`user` for ops, `deploy` for CI). (§7.2)
 - [ ] Deploy script: flock, idempotent digest markers, source env, pre-
       flight migrate one-shot, force-recreate flag, post-deploy
-      `queue:restart`. (§7.3)
-- [ ] Rollback from the previous immutable image tag is documented and
-      operator-tested. (§7.4)
-- [ ] Makefile commands match §7.5 catalogue (deploy-test/prod,
+      `queue:restart`; any release-owned data activation is idempotent and
+      rollback-compatible; success state is published atomically last. (§7.3)
+- [ ] Rollback restores the previous pinned image/config set and is tested
+      against the migrated database; destructive schema/data reversal has a
+      separate approved runbook. (§7.4)
+- [ ] Baseline Makefile or documented equivalent operator commands cover
+      §7.5 operations (deploy-test/prod,
       reload-env, sync-env, render-compose, smoke-test/prod, ps, logs,
       per-service logs, shell, tinker, artisan, migrate, queue-restart,
       db-shell, redis-shell, wait-healthy).
-- [ ] Environment-bound Make targets use only `-test` / `-prod` suffixes
+- [ ] Baseline environment-bound Make targets use `-test` / `-prod` suffixes
       and their matching `APP_TEST_HOST` / `APP_PROD_HOST`; SSH uses the
       project key, interactive/streaming commands use the required TTY
       flags, and `compose_body` sources both deploy and app env files. (§7.5)
 - [ ] Workflow shape per §7.6: `workflow_dispatch`, `concurrency.group =
       deploy-<env>` with `cancel-in-progress: false`, `environment: <env>`,
-      `install -m … /dev/stdin` for atomic file rewrite.
+      exact release commit and matching deploy files installed or synced
+      under deployment serialization, with their revision verified.
 - [ ] Deploy workflows declare `DEPLOY_<ENV>_SSH_PRIVATE_KEY`, `_SSH_USER`,
       `_HOST`, `_API_HOST`, `_FRONTEND_HOST`, optional `_HTTP_PORT`, and
       registry credentials; permissions are `contents: read` and
       `packages: read`; each deploy job has a 20–30 minute timeout. (§7.6)
 - [ ] `build-images.yml` uses paths-filter; backend change triggers nginx
-      rebuild; two tags per image; registry-mode cache. (§7.7)
+      rebuild; immutable build → test → promote ordering; pinned deployment
+      identities; registry-mode cache. (§7.7)
+- [ ] If candidate/blue-green cutover is used, ingress validation, candidate
+      readiness, external smoke and previous-route recovery are exercised
+      before retiring the old runtime. (§7.9)
 - [ ] TLS terminated on the host (Caddy preferred). (§8)
 - [ ] `restart: unless-stopped`; resource limits set; base images pinned;
       no docker.sock exposure. (§9)
@@ -960,6 +1083,9 @@ Each item maps to a source section above.
       service permits them. (§9.3)
 - [ ] Backups to off-host S3, gated to `APP_ENV=production`, retention +
       cap, restore drill scheduled, and backup failure alerts wired. (§10)
+- [ ] Shared/managed state has explicit health, credential, backup and
+      restore ownership; registry/cache retention is separate from app data.
+      (§10.5)
 - [ ] `docker/INFRASTRUCTURE.md` exists and covers all §11 sections.
 
 ---
@@ -970,11 +1096,17 @@ Use this for a Node.js API with a web process and optional worker, such as NestJ
 
 - [ ] The image uses a pinned supported Node version, installs from the committed lockfile, builds all required workspace packages, and runs the built API/web/worker entrypoints as an unprivileged user. Keep secrets and source-only files out of the runtime where the project's build permits it. (§1, §9)
 - [ ] Images have immutable release identifiers. The deploy procedure records the current and previous release and can restore the previous image without relying on a mutable tag. (§1.5–§1.6, §7)
+- [ ] CI/dedicated builds are preferred; serving-host builds have live RAM/swap/disk/cache checks and lock coordination. Promotion follows required tests; infrastructure fallback preserves the same gates. (§1.8, §7.7)
+- [ ] Source/config revision, environment, component image identities, architecture, builder evidence and build-time public settings match one release. For bundle transport, verify manifest/checksum before loading and inspect imported identities before activation. (§1.9)
 - [ ] The database is not publicly exposed. Published API/web ports bind only to the intended interface; the TLS proxy and trusted-origin settings match the application. Secrets come from protected environment or secret files, not images or git. (§4, §5, §8)
 - [ ] If migrations exist, they run once with the intended migration role before new API/worker processes serve traffic. Test schema compatibility with both old and new images before claiming rollback works. (§6, §7; active database conduct)
+- [ ] API/web/worker roles declare their own commands, config and credentials even when sharing an image. Partial rollout is allowed only with verified artifact/schema compatibility. (§7.3)
 - [ ] API, web, database, and worker each have a meaningful health or readiness check with a startup grace period. A worker check proves its processing loop can make progress, not merely that PostgreSQL accepts a connection. Startup dependencies wait for the required health or one-shot completion condition. (§6)
+- [ ] Required external services pass preflight; external API/web/admin smoke probes and changed proxy configuration are checked before atomically publishing success state. Media/UDP services have protocol-specific checks. (§6.5, §7.3)
 - [ ] Stateful services use restart policies, bounded logs, and measured memory limits. There are no source-code bind mounts or Docker socket mounts in production; persistent mounts are limited to the data each service needs. (§2, §3, §9)
 - [ ] Deployment is serialized and fails on an unhealthy release. Rollback, backup, restore, and operator commands are documented and exercised in the project's actual environment. (§7, §10, §11)
+- [ ] Rollback restores the previous pinned image/config set against the migrated database; schema/data reversal needs a separate approved runbook. Candidate cutover, when supported, retains a recoverable previous ingress route. (§7.4, §7.9)
+- [ ] Compose-owned versus shared/managed state has explicit backup/restore and health ownership. Registry artifacts and disposable package/build caches are not treated as application-data backups. (§10.5)
 - [ ] Project-specific database isolation, queue delivery, session/cookie, and external integration requirements are checked against the active stack conduct and project instructions, rather than inferred from the Laravel checklist.
 
 ---
