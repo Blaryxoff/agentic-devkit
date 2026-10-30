@@ -34,8 +34,10 @@ Match requests such as “show screenshots of the fixes”, «покажи ис�
   only if needed. Check the actual saved pixels for compositor artifacts.
 - Inspect every saved image at useful resolution. Retake clipped controls, transient overlays, accidental scroll
   positions and layout artifacts. Do not hide a genuine defect by changing CSS, DOM or screenshot pixels.
-- Use real captures only. Never generate or reconstruct UI evidence. Keep working files outside Downloads; place
-  only the finished shareable HTML there unless the user requests another location.
+- Use real captures only. Never generate or reconstruct UI evidence.
+- Create one owned directory under the system temporary directory (for example, `mktemp -d "${TMPDIR:-/tmp}/devkit-demo.XXXXXX"`).
+  Keep screenshots, the manifest and the finished HTML there. Use Downloads or a repository directory only when the
+  user explicitly requests that destination.
 
 ## 3. Build the gallery
 
@@ -92,5 +94,7 @@ python3 <skill-directory>/scripts/render.py <work-directory>/manifest.json --out
    is available. Never create another agterm session or cover the conversation merely to display the report.
 
 Close only browser processes/tabs created by this workflow after verification, excluding the final report shown to
-the user. Remove only owned temporary data. Finish with the visible location and the finished HTML link; distinguish
-evidence shown from checks actually performed.
+the user. Keep its temporary directory while the report is open. On a later interaction, remove that owned directory
+once the report is closed or superseded; when replacing a report, verify the replacement loaded before deleting the
+previous directory. Never delete unrelated temporary files or a report still in use. Finish with the visible location
+and the temporary HTML link; distinguish evidence shown from checks actually performed.
