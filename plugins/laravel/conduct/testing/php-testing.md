@@ -89,6 +89,16 @@ public static function invalidEmails(): array
 - integration tests should be in `tests/Feature` and structured by feature/flow
 - for Inertia responses, assert component names and required props
 
+### Parallel database lifecycle
+
+- Apply [Data ownership and cleanup](../../../core/conduct/test-implementation.md#data-ownership-and-cleanup) before creating worker databases and through teardown. Verify the resolved test server/schema; `APP_ENV=testing` alone does not establish isolation or ownership.
+- Treat `--drop-databases` and `--recreate-databases` as destructive options, not safety mechanisms. Laravel reuses existing `{base}_test_{token}` databases; these options can delete them without checking creation ownership or environment. Do not append either flag to an ad hoc test command.
+- Permit these options only through an existing guarded project runner that verifies the actual non-production connection, isolates a unique per-run base and exact worker targets, proves newly created targets or an exclusive disposal lease, restricts DB permissions to that owned scope, and records the ownership manifest. Require connection/ownership revalidation immediately before teardown; never apply this to shared baselines or production.
+- Retain and report exact resources for owner-guided cleanup when that runner or proof is missing. Do not substitute a prefix/age sweep, invent a cleanup runner during verification, or use `--without-databases` as an isolation workaround; it disables Laravel's database setup and switching as well as cleanup.
+- Verify owned worker databases were removed after a guarded run. Custom scratch databases and hard-interrupted runs still require manifest-based reconciliation; preserve unmatched resources and report cleanup failures.
+
+Sources: [Laravel parallel database persistence](https://laravel.com/docs/12.x/testing#parallel-testing-and-databases), [Laravel setup, teardown and generated worker names](https://github.com/laravel/framework/blob/v12.69.1/src/Illuminate/Testing/Concerns/TestDatabases.php). Inspect the installed framework and runner before enabling destructive options.
+
 ### Integration test example (HTTP + DB)
 
 ```php

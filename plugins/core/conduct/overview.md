@@ -25,7 +25,7 @@ Start with `conduct-loading.md`, then open only the documents routed by the acti
 | Browser QA | [browser-qa-rules.md](./browser-qa-rules.md) |
 | Browser, API, worker or native runtime evidence and handoffs | [runtime-qa-evidence.md](./runtime-qa-evidence.md) |
 | Generated files, media, notifications or activity telemetry | [qa-output-verification.md](./qa-output-verification.md) |
-| Touch actions, keyboard/orientation or device-specific verification | [qa-touch-and-device.md](./qa-touch-and-device.md) |
+| Touch actions, keyboard/orientation, device-specific verification or simulator/emulator lifecycle | [qa-touch-and-device.md](./qa-touch-and-device.md) |
 | Browser layout audit | [browser-layout-audit.md](./browser-layout-audit.md) |
 | Browser UI oracles (states, rhythm, boundaries, hierarchy, navigation) | [browser-ui-oracles.md](./browser-ui-oracles.md) |
 | Docker deployment | [docker-deployment.md](./docker-deployment.md) |

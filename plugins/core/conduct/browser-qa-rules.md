@@ -225,6 +225,8 @@ application state in the ledger. Recover a failed setup check before repeating d
 
 3.3. **Forbidden** against the real DB: `migrate:fresh`, `migrate:refresh`, `migrate:reset`, `db:wipe`, `RefreshDatabase`, truncate, drop.
 
+Apply [test-implementation.md](./test-implementation.md#data-ownership-and-cleanup) → **Data ownership and cleanup** before fixture provisioning. Pin the actual database connection independently of the browser origin; register exact run ownership and disposal scope. Production/unknown connections permit no automatic setup or cleanup; §9.5 remains in force.
+
 3.4. For **existing/real accounts**, discover credentials from seeders or env examples — never invent or reset their secrets. For records you create **solely for testing**, you may set a known password (seed one, or register through the UI with a password you choose) so you can log in — mark them clearly as test-only and keep seeding append-only.
 
 3.5. Prefer realistic fixtures over toy placeholders: enough roles, statuses, dates, permissions, files, and related entities to make the UI stateful and clickable.
@@ -531,7 +533,7 @@ under this skill. If a click's effects are uncertain, treat it as a mutation and
 
 10.1. Stop only the dev-server processes/sessions this pass started (§2.2). Leave an already-running environment up.
 
-10.2. Leave seeded append-only records in place unless the project ships an explicit safe cleanup command.
+10.2. Apply [test-implementation.md](./test-implementation.md#data-ownership-and-cleanup) → **Data ownership and cleanup** after every outcome. Dispose of exact run-owned dedicated non-production databases only through their authorised lifecycle; leave seeded append-only records in shared databases unless the project ships an explicit safe cleanup command scoped to the recorded IDs. Revalidate connection/environment immediately before teardown. Report retained IDs, failed cleanup and orphaned manifests; never sweep databases by prefix or age.
 
 10.3. Close this pass's isolated chrome-devtools Chrome as the final action for that surface. chrome-devtools MCP has no browser-close tool (`close_page` refuses the last page) and the Chrome subprocess is reaped only when its MCP server exits, so a pass that skips this leaves a Chrome instance running for the rest of the session. Signal exactly one process: the Chrome **browser** process owning this pass's profile. Its helpers exit with it, and the MCP server is untouched.
 

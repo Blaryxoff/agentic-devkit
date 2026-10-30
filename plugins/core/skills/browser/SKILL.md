@@ -63,7 +63,7 @@ original exhaustive ledger and retain its declared pass mode through completion.
 5. **Adjudicate.** The invoking agent applies the evidence gate above and decides disputed cells: confirmed finding, false positive, needs one named follow-up cell, or genuinely blocked with the missing prerequisite.
    Apply `browser-qa-rules.md` §7.2–§7.4 for issue eligibility, severity and confirmation, then §7.5 for failure classification; give the reviewer
    the canonical rules and expectation sources. Visual candidates also require `browser-ui-oracles.md` §3.4.
-6. **Cleanup audit.** Verify every executor reported exact Chrome and dedicated MCP/watchdog cleanup per §10 and no completed lane owns a live process tree. For Codex browser-client, verify that every pre-existing tab remained inspection-only unless the user explicitly authorised a named tab, and that no unrelated tab was closed, navigated, signed out, or cleared. Verify that only servers started by this QA pass were stopped. Never glob-kill Chrome or MCP; follow §11 when ownership is ambiguous.
+6. **Cleanup audit.** Verify every executor reported exact Chrome and dedicated MCP/watchdog cleanup per §10 and no completed lane owns a live process tree. Reconcile the fixture ownership manifest and database/resource disposition under §10.2 after every outcome; preserve production, unknown connections and unowned/shared data. For Codex browser-client, verify that every pre-existing tab remained inspection-only unless the user explicitly authorised a named tab, and that no unrelated tab was closed, navigated, signed out, or cleared. Verify that only servers started by this QA pass were stopped. Never glob-kill Chrome or MCP; follow §11 when ownership is ambiguous.
 7. **Report in chat.** Reconcile component revision/configuration signals before acceptance under `runtime-qa-evidence.md` §2; partition changed-build results and leave affected unknowns unverified. Emit every confirmed finding inline per `browser-qa-rules.md` §7, followed by the completion block below and the per-case results or evidence references required by `runtime-qa-evidence.md` §3. Keep reports in chat. Store dispatched executor results only in a pass-owned temporary directory outside the repository, which you ingest and delete (`browser-qa-rules.md` §12.6).
 
 ## Output
@@ -102,7 +102,7 @@ Targeted and exhaustive passes end with this block in the agent response (findin
 | Implementation variants | <distinct paths exercised / omitted> |
 | Supplied regression suites | <command/run and individual outcomes including skips/expected failures, or not supplied; integration coverage limits> |
 | Test records seeded | <setup command/API/UI path + fixture IDs/states; or verified existing fixtures / data-independent scope / explicit data-read-only restriction> |
-| Test data disposition | <created IDs retained; or project-supported cleanup path and authoritative verification; unresolved cleanup failures/IDs> |
+| Test data disposition | <verified connection/environment; owned manifest IDs; disposed/retained resources and project-supported cleanup path with authoritative verification; unresolved cleanup failures/IDs> |
 | Test logins used | <identifier + password per role, test-only; ladder rung per §3.7> |
 | Findings | blocking / major / minor / cosmetic counts |
 | Design references checked | <references/frames × viewports, or "not provided"> |

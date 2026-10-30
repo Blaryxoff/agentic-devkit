@@ -25,6 +25,7 @@
 - Verify required runtime entry points/modules and implementation variants exist before expensive dependent execution. Treat file/chunk counts as diagnostic clues; establish availability from the relevant runtime surface.
 - Use project-authorized test fixtures and configured runtimes. Before declaring a recoverable prerequisite blocked, attempt the available authorized fixture, login, configuration, or service recovery and record its result.
 - Preserve execution boundaries: use [browser-qa-rules.md](./browser-qa-rules.md) for browser authentication, fixture isolation, process ownership, and cleanup; use the project's equivalent rules for other runtimes. Additional coverage grants no authority to alter real credentials, production data, or shared processes.
+- Apply [test-implementation.md](./test-implementation.md#data-ownership-and-cleanup) → **Data ownership and cleanup** before provisioning database fixtures and through teardown on every runtime; record verified connection identity, exact owned resources, disposal scope and remaining obligations.
 - Load [qa-output-verification.md](./qa-output-verification.md) only for generated artifacts, media, notifications, telemetry, or asynchronous-output assertions.
 - Load [qa-touch-and-device.md](./qa-touch-and-device.md) only for affected touch, browser-engine, device, or native-runtime assertions.
 
