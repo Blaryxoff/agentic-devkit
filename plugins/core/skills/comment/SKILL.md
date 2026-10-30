@@ -33,8 +33,10 @@ Report existing work; do not implement fixes, run a new QA pass, or deploy while
    a progress update; keep draft output limited to the comment itself.
    Keep only work tied to this task and session. Ask for the session when the match is ambiguous; never replace a
    missing session with an arbitrary git date range or all historical work.
-4. **Match fixes to remarks.** Privately match each completed session fix to the reported symptom, the expected
-   behavior established by the discussion, and evidence of the resulting behavior. Use session results and focused
+4. **Match completed work to its source.** Use existing QA remarks when present. If the complete discussion contains no
+   QA remarks, treat the task description and acceptance criteria as the report to address, applying later scope decisions.
+   Resolved or already answered QA remarks do not trigger this fallback. Privately match each completed session fix or
+   requirement to its source, the expected behavior, and evidence of the resulting behavior. Use session results and focused
    diffs or checks when needed. Include a fix to an old QA report if the fix happened this session. Exclude plans,
    attempted or reverted fixes, other people's work, earlier fixes merely rechecked this session, and the same
    resolution already reported in the discussion. Include a new session fix after a bug was reopened; describe the
@@ -49,9 +51,10 @@ Report existing work; do not implement fixes, run a new QA pass, or deploy while
    addresses or copy a fixed recipient list from an example. Ask about an unresolved necessary recipient rather than
    tagging a guessed person; do not notify every watcher by default.
 6. **Compose the continuation.** Apply [Comment style](#comment-style) and the project's task-comment policy.
-   Describe the concrete fixes or other completed task work from this session. Keep a limitation only when needed
-   to describe the scope of that completed work
-   accurately. Omit task-wide status reports, outstanding QA acknowledgments, open-issue lists, recommendations,
+   Use the same format for replies to QA remarks and reports on description requirements: a bold descriptive name and
+   the concrete completed behavior for each item. Describe the concrete fixes or other completed task work from this session.
+   Keep a limitation only when needed to describe the scope of that completed work accurately.
+   Omit task-wide status reports, outstanding QA acknowledgments, open-issue lists, recommendations,
    and instructions about testing, releasing, or closing the task. Include a question only when the user explicitly
    asks for one. If no concrete new work can be established, explain the evidence gap to the user and do not post a
    generic status update or invent completed work.
@@ -86,7 +89,7 @@ Report existing work; do not implement fixes, run a new QA pass, or deploy while
   servers, using their established names or URLs when useful. Never mention git branches, including `master`, `main`,
   or `dev`, and never translate a branch name into a server name. If deployment is unverified, omit availability claims
   and generic uncertainty paragraphs; report the completed fix without implying it is already on a server.
-  For updates from `devkit-qaheal`, explicitly state that the reported fixes were deployed to production when the supplied
+  For updates from `devkit-followup`, explicitly state that the reported fixes were deployed to production when the supplied
   evidence confirms production deployment; staging deployment alone does not support that statement.
 - Describe corrected behavior in language the task's readers understand. Keep internal verification tools and process
   out of the comment: omit LunaQA, PHPUnit, Vitest, CI jobs, routine test results/counts, commit hashes, and logs.
