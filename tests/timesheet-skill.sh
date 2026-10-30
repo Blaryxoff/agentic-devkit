@@ -31,7 +31,7 @@ _, front, body = text.split("---\n", 2)
 meta = yaml.safe_load(front)
 assert meta["name"] == "devkit-timesheet"
 desc = " ".join(meta["description"].lower().split())
-for needle in ("отчёт по затраченному времени", "timesheet", "devkit-estimate", "devkit-sprint", "pdf"):
+for needle in ("отчёт по затраченному времени", "timesheet", "devkit-estimate", "pdf"):
     assert needle in desc, needle
 body = " ".join(body.lower().split())
 for rule in ("count only the person's own time", "parallel sessions count once", "never invent a number",

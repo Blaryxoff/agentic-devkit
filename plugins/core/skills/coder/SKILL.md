@@ -38,6 +38,10 @@ Resolve the active plugins, identify which layers the target actually touches, t
 
 1. Read `.devkit/toolkit.json` to get `enabled` plugins. Add their transitive `dependencies` (from each `plugins/<p>/plugin.json`) and always include `devkit-core`.
 2. Map the changed paths and symbols to touched layers. Ignore enabled plugins that the change does not touch.
+   For actual web CSS, layout, theme, or presentation-motion work when `devkit-css` is resolved, use `css-expert` as the
+   entry unless a matching CSS specialist is already selected. Reuse an already loaded entry and let it select only
+   the needed specialist resource. Skip CSS skills
+   for behavior-only JavaScript/TypeScript, API, or data changes; a frontend file extension alone is not a CSS task.
 3. Read `overview.md` for each touched non-core plugin when it exists, then add only the risk-specific documents needed:
    - new/moved files, cross-layer flow, or changed responsibility → `architecture.md`, `anti_patterns.md`, and layering documents such as `thin_controller_model.md`;
    - PHP/public APIs/comments → `php.md`, `documentation.md`;

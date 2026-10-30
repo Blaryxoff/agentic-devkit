@@ -213,8 +213,11 @@ output is identical regardless of where the project lives on disk. Disabled plug
 
 `devkit-install` keeps only `devkit-core` skills globally for Codex and Cursor and removes stale global non-core links.
 Cursor skill links use each `SKILL.md` frontmatter `name`, because Cursor requires that name to match the folder.
-Their project adapters link only resolved non-core skills, including transitive dependencies; plugins such as
-`devkit-css` stay absent unless explicitly enabled. Generated `AGENTS.md` / `.mdc` rules point to one conduct index per
+Their project adapters link only resolved non-core skills, including transitive dependencies. `devkit-frontend` brings
+`devkit-css` into frontend projects; backend-only projects omit CSS unless explicitly enabled. `css-expert` is the
+automatic CSS entry; specialist commands remain explicit-only through native invocation policy. It loads only the
+task-matched specialist body and references when needed. Behavior-only frontend work does not load CSS skills.
+Generated `AGENTS.md` / `.mdc` rules point to one conduct index per
 plugin and require scope-driven loading instead of listing the full conduct corpus. Re-run the adapter after changing
 `.devkit/toolkit.json` or after a toolkit update changes generated policy/conduct routing, then start a new agent session
 to refresh its skill catalog. Run `bin/devkit-install` again to refresh copied global Claude guidance; its installed shell

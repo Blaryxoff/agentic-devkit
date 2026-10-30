@@ -134,7 +134,7 @@ for entry in "$CODEX_SKILLS_DEST"/devkit-*--*; do
   case "$entry_name" in
     devkit-core--*)
       skill_name="${entry_name#devkit-core--}"
-      [ -d "$core_skills_src/$skill_name" ] || rm -f "$entry"
+      [ -f "$core_skills_src/$skill_name/SKILL.md" ] || rm -f "$entry"
       ;;
     *) rm -f "$entry" ;;
   esac
@@ -144,7 +144,7 @@ codex_skill_count=0
 skill_kept=""
 codex_skill_kept=""
 for d in "$core_skills_src"/*/; do
-  [ -d "$d" ] || continue
+  [ -f "$d/SKILL.md" ] || continue
   n=$(basename "$d")
   abs="$(cd "$d" && pwd)"
   claude_skill_dest="$SKILLS_DEST/devkit-core--$n"
@@ -198,7 +198,7 @@ done
 cursor_skill_count=0
 cursor_skill_kept=""
 for d in "$core_skills_src"/*/; do
-  [ -d "$d" ] || continue
+  [ -f "$d/SKILL.md" ] || continue
   abs="$(cd "$d" && pwd)"
   n=$(devkit_frontmatter "$d/SKILL.md" | LC_ALL=C sed -n 's/^name:[[:space:]]*//p' | head -1)
   [ -n "$n" ] || { echo "ERROR: missing skill name in $d/SKILL.md" >&2; exit 1; }

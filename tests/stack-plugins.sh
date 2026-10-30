@@ -17,10 +17,10 @@ cp "$ROOT/examples/express-native-desktop.json" "$PROJECT/.devkit/toolkit.json"
 bash "$ROOT/bin/devkit-resolve" --validate --project="$PROJECT" > "$TMP_DIR/validate.log" 2>&1 \
   || fail "stack schema validation failed: $(tail -3 "$TMP_DIR/validate.log")"
 resolved=$(bash "$ROOT/bin/devkit-resolve" --project="$PROJECT")
-for plugin in core frontend react drizzle express nextjs react-native electron tailwind; do
+for plugin in core frontend react drizzle express nextjs react-native electron tailwind css; do
   printf '%s\n' "$resolved" | grep -qx "devkit-$plugin" || fail "missing resolved $plugin"
 done
-[ "$(printf '%s\n' "$resolved" | wc -l | tr -d ' ')" = 9 ] || fail "unexpected resolved plugin set: $resolved"
+[ "$(printf '%s\n' "$resolved" | wc -l | tr -d ' ')" = 10 ] || fail "unexpected resolved plugin set: $resolved"
 
 generate() {
   DEVKIT_PROJECT_ROOT="$PROJECT" bash "$ROOT/adapters/$1/generate" > "$TMP_DIR/$1.log" 2>&1 \

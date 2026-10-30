@@ -6,7 +6,6 @@
 
 | Скил | Когда срабатывает |
 |---|---|
-| `devkit-git-review` | «review my changes», «git review» — интерактивное ревью: правишь аннотации прямо в diff в `$EDITOR`, агент чинит код в цикле. |
 | `devkit-dialectic` | «prove/disprove», «stress-test this claim» — два встречных анализа (за/против) параллельно + синтез, сверенный с кодом. |
 | `devkit-root-cause` | ошибки, падения тестов/билда, «it's not working» — 5-Why до корневой причины; только расследование, не фикс. |
 | `devkit-wrong` | «this isn't working», «wrong approach», «start over» — сброс и 2–3 свежих подхода вместо латания тупика. |
@@ -38,7 +37,3 @@
 - `paths.hooks` для core **намеренно не задан** — иначе per-project claude-адаптер смержил бы хук второй раз, и он сработал бы дважды.
 - После обновления политики запусти `bin/devkit-install` повторно для глобального Claude guidance и перегенерируй
   Codex/Cursor adapter в существующих проектах: авто-апдейт обновляет clone, но не переписывает `AGENTS.md`/`.mdc`.
-
-## Требования git-review
-
-`python3`, один из tmux/kitty/wezterm (оверлей редактора), `$EDITOR` (по умолчанию `micro`), git. Встроенные тесты: `python3 plugins/core/skills/git-review/scripts/git-review.py --test`.

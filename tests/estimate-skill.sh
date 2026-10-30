@@ -24,7 +24,6 @@ for trigger in (
     "vibe-coding",
     "agent-led development elapsed time",
     "direct paste",
-    "devkit-sprint",
 ):
     assert trigger in description, trigger
 

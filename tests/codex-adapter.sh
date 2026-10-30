@@ -295,6 +295,7 @@ printf '%s\n' 'project-local-entry' > "$project/.gitignore"
 printf '%s\n' '{"version":1,"enabled":["devkit-laravel","devkit-vue","devkit-inertia","devkit-tailwind"]}' \
   > "$project/.devkit/toolkit.json"
 ln -s "$ROOT/plugins/css/skills/css-a11y" "$project/.codex/skills/devkit-css--css-a11y"
+ln -s "$ROOT/plugins/express/skills/architect" "$project/.codex/skills/devkit-express--architect"
 
 DEVKIT_PROJECT_ROOT="$project" bash "$ROOT/adapters/codex/generate" >/dev/null
 
@@ -309,7 +310,8 @@ assert_contains "$project/.gitignore" 'project-local-entry'
 assert_absent "$project/.codex/skills/devkit-core--coder"
 assert_link "$project/.codex/skills/devkit-frontend--pixel-build" "$ROOT/plugins/frontend/skills/pixel-build"
 assert_link "$project/.codex/skills/devkit-laravel--architect" "$ROOT/plugins/laravel/skills/architect"
-assert_absent "$project/.codex/skills/devkit-css--css-a11y"
+assert_link "$project/.codex/skills/devkit-css--css-a11y" "$ROOT/plugins/css/skills/css-a11y"
+assert_absent "$project/.codex/skills/devkit-express--architect"
 [ -d "$project/.codex/skills/custom-skill" ] || fail "custom skill directory was removed"
 assert_contains "$project/AGENTS.md" '### devkit-core'
 assert_contains "$project/AGENTS.md" '### devkit-frontend'
@@ -317,7 +319,7 @@ assert_contains "$project/AGENTS.md" '### devkit-vue'
 assert_contains "$project/AGENTS.md" '### devkit-inertia'
 assert_contains "$project/AGENTS.md" '### devkit-laravel'
 assert_contains "$project/AGENTS.md" '### devkit-tailwind'
-assert_not_contains "$project/AGENTS.md" '### devkit-css'
+assert_contains "$project/AGENTS.md" '### devkit-css'
 assert_contains "$project/AGENTS.md" 'plugins/core/conduct/overview.md'
 assert_contains "$project/AGENTS.md" '~/.claude/agentic-devkit/plugins/core/conduct/learning-capture-gate.md'
 assert_contains "$project/AGENTS.md" 'Cursor invokes `/devkit-learn`'

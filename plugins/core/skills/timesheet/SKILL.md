@@ -4,8 +4,7 @@ description: >-
   reconstruct a person's actual working hours for a period from AI-agent logs (Claude Code, Codex, Cursor, Telegram
   bots), prompt history, commits, browser history, trackers and calls, and deliver a per-project / per-task report
   with norm vs overtime as text and PDF. Use for "отчёт по затраченному времени", "сколько часов на каждый проект",
-  "timesheet", "часы из нейронки". Does not estimate future work (devkit-estimate) or plan
-  capacity (devkit-sprint).
+  "timesheet", "часы из нейронки". Does not estimate future work (devkit-estimate) or plan capacity.
 ---
 
 # Timesheet

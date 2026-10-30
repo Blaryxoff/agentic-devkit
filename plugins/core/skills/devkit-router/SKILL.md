@@ -37,12 +37,17 @@ directory (`~/.claude/skills/`, `~/.cursor/skills/`, or `~/.codex/skills/`) to f
 
    The output is the ordered, de-duplicated, dependency-resolved list of **absolute** plugin directories.
 
-3. **Build the dispatch menu.** For each enabled **non-core** plugin dir that has a `skills/` subdir, read every
-   `skills/*/SKILL.md` frontmatter (`name` + `description`). This is the candidate set — the stack equivalent of native
-   native skill menu.
+3. **Build the dispatch menu.** For enabled **non-core** plugins, inspect skill frontmatter names and invocation flags,
+   plus native invocation policy from `agents/openai.yaml` when present.
+   Use only automatically invocable skills' descriptions for ordinary matching. Exclude `disable-model-invocation: true`
+   skills (and Codex `policy.allow_implicit_invocation: false`) unless the user explicitly names that skill. For CSS,
+   use `css-expert` as the automatic entry instead of reading all specialist descriptions. A selected entry skill may
+   load its task-matched child body as an on-demand resource when its workflow instructs it to do so.
 
 4. **Match the request** against those descriptions. Pick the best-fitting child skill. If several fit, prefer the most
-   specific; if none fit, fall back to handling the request directly with the active plugins' conduct.
+   specific; if none fit, fall back to handling the request directly with the active plugins' conduct. Do not select
+   CSS for backend or behavior-only frontend work. An explicit specialist request selects only that specialist;
+   do not also load its general entry skill.
 
 5. **Load and apply the child.** Read the matched child skill's full `SKILL.md` body and follow it. Apply
    `plugins/core/conduct/conduct-loading.md`: load only conduct cited by the child or required by a concrete touched

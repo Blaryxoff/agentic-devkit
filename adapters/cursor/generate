@@ -172,7 +172,7 @@ declare_globs() {
     devkit-vue)       echo '**/*.vue,**/*.ts,components/**,composables/**' ;;
     devkit-inertia)   echo '**/*.vue,**/*.ts,**/*.php,resources/**' ;;
     devkit-tailwind)  echo '**/*.vue,**/*.tsx,**/*.jsx,**/*.css,**/*.scss,**/*.html' ;;
-    devkit-css)       echo '**/*.css,**/*.scss,**/*.vue,**/*.html' ;;
+    devkit-css)       echo '**/*.css,**/*.scss,**/*.sass,**/*.less,**/*.vue,**/*.tsx,**/*.jsx,**/*.html' ;;
     *)              echo '**/*' ;;
   esac
 }

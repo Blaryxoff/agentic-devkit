@@ -3,7 +3,7 @@ name: devkit-estimate
 description: >-
   estimate agent-led development elapsed time through handoff for testing, ready for direct paste. Use for "estimate this
   task", "how long will development take", agent-first, agent-only or vibe-coding estimates. Separate attended developer
-  hours when requested. Sprint workbook edits belong to devkit-sprint.
+  hours when requested. Does not manage sprint workbooks or capacity allocation.
 ---
 
 # Agent-Led Development Estimator
@@ -17,7 +17,7 @@ deployment, approvals, and waiting for another party are separate work unless th
 ## Boundaries
 
 1. Stay read-only unless the user asks for a report file or tracker/workbook update.
-2. Use devkit-sprint for sprint workbooks, capacity, executor assignment, or numeric task cells.
+2. Keep sprint workbooks, capacity allocation, executor assignment, and numeric task-cell edits outside this workflow.
 3. Inspect each repository affected by the requested contract and apply its own instructions.
 4. Estimate the literal requested scope. A planned prerequisite owned by another task is a dependency, not hours in this
    estimate. State it briefly when it affects whether development can start.

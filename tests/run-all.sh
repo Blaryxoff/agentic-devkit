@@ -12,6 +12,7 @@ SCRIPTS=(
   codex-adapter.sh
   comment-gate.sh
   context-efficiency.sh
+  css-routing.sh
   cursor-adapter.sh
   devkit-update.sh
   doc-canaries.sh
@@ -27,7 +28,6 @@ SCRIPTS=(
   resolve.sh
   review-qa.sh
   skill-eval.sh
-  sprint-skill.sh
   stack-plugins.sh
   timesheet-skill.sh
 )
