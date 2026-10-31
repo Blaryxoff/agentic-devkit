@@ -89,7 +89,8 @@ See [Cursor's acknowledged print-mode issue](https://forum.cursor.com/t/cursor-c
 |----------|---------|
 | `merge_plugin_hooks` | Merged JSON of all hooks from resolved plugins (Claude Code format) |
 | `translate_hooks_to_cursor` | Hooks translated from Claude Code event names to Cursor event names |
-| `inject_cursor_edit_gates` | Adds devkit coder-gate and comment-gate to Cursor `preToolUse` hooks JSON |
+| `inject_cursor_edit_gates` | Adds coder, comment and canonical dev-server gates to Cursor `preToolUse` hooks JSON |
+| `dev_server_gate_command` | Shell command for the canonical dev-server guard, pinning an explicit/shared config's real path |
 | `flatten_hooks_for_text` | Pipe-delimited lines (`event|matcher|command`) for text-based adapters |
 
 ### DRY hook adapter pattern
@@ -107,7 +108,7 @@ Event name mapping:
 | `Notification` | _(no equivalent)_ | instruction-based |
 | `SubagentStop` | _(no equivalent)_ | _(no equivalent)_ |
 
-Codex supports native `PreToolUse` hooks: `bin/devkit-install` writes the coder and comment gates into
+Codex supports native `PreToolUse` hooks: `bin/devkit-install` writes the coder, comment and canonical dev-server gates into
 `~/.codex/config.toml` as part of the global install. Everything else the Codex adapter still embeds as instructions in
 the project's `AGENTS.md`.
 

@@ -64,6 +64,7 @@ Resolve the active plugins, identify which layers the target actually touches, t
 ## Step 4 — Quality bar before finishing
 
 - For a multi-step change, pair each implementation step with its smallest relevant verification. Run focused checks first; expand only when risk or failures justify it.
+- Before starting or reusing an application server, apply [runtime-configuration.md](../../conduct/runtime-configuration.md#canonical-local-servers) → **Canonical local servers** for registered checkout/profile, startup and teardown.
 - For a visual behavior change, verify the affected route at the relevant viewport. During iteration, run only the targeted route/viewport/regression cells needed by the change; reserve one exhaustive `devkit-browser` pass for the stable, final implementation. Load `browser-qa-rules.md` only when browser authentication or QA mechanics are actually needed.
 - Before compaction or moving unfinished work to a fresh session, save the handoff and consequential decision rationale required by [`context-management.md` §Session boundaries](../../conduct/context-management.md#session-boundaries).
 - Before handing a long implementation thread to exhaustive browser QA, extend that handoff with routes, roles, and seed/login paths so QA can start in a fresh session without rediscovering implementation history. Keep small related fixes in the current thread.

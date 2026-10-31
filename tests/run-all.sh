@@ -14,6 +14,7 @@ SCRIPTS=(
   context-efficiency.sh
   css-routing.sh
   cursor-adapter.sh
+  dev-server-gate.sh
   devkit-update.sh
   doc-canaries.sh
   estimate-skill.sh

@@ -56,24 +56,26 @@ run_adapter cursor > "$out" 2>&1 || fail "cursor adapter exited non-zero: $(tail
 
 hooks="$PROJECT/.cursor/hooks.json"
 [ -f "$hooks" ] || fail "no .cursor/hooks.json was written"
-jq -e '.version == 1 and (.hooks.preToolUse | length) == 3 and all(.hooks.preToolUse[]; has("command") and (has("hooks") | not))' "$hooks" >/dev/null \
+jq -e '.version == 1 and (.hooks.preToolUse | length) == 4 and all(.hooks.preToolUse[]; has("command") and (has("hooks") | not))' "$hooks" >/dev/null \
   || fail "Cursor hooks are not in native version 1 format"
+jq -e '.hooks.preToolUse | any((.command | contains("dev-server-gate.sh")) and (.matcher | contains("Shell")))' "$hooks" >/dev/null \
+  || fail "Cursor canonical dev-server gate does not match Shell"
 source "$CLONE/adapters/_lib/hooks.sh"
 translated=$(translate_hooks_to_cursor '{"PostToolUse":[{"matcher":"Write|Edit|MultiEdit","hooks":[{"type":"command","command":"pnpm lint","timeout":30000}]}]}')
 printf '%s\n' "$translated" | jq -e '.postToolUse | any(.command == "pnpm lint" and .timeout == 30 and .matcher == "Write|Edit|MultiEdit")' >/dev/null \
   || fail "Claude PostToolUse hook was not translated to native Cursor postToolUse"
 commands=$(jq -r '[.. | objects | select(has("command")) | .command] | join("\n")' "$hooks")
 [ -n "$commands" ] || fail "no hook commands in hooks.json"
-printf '%s\n' "$commands" | grep -q "$CLONE/bin/devkit-update" \
+[[ "$commands" == *"$CLONE/bin/devkit-update"* ]] \
   || fail "the auto-update hook does not point at the clone that generated it: $commands"
-for gate in coder-gate.sh comment-gate.sh; do
-  printf '%s\n' "$commands" | grep -q "$CLONE/plugins/core/hooks/$gate" \
+for gate in coder-gate.sh comment-gate.sh dev-server-gate.sh; do
+  [[ "$commands" == *"$CLONE/plugins/core/hooks/$gate"* ]] \
     || fail "$gate does not point at the clone that generated it: $commands"
 done
-printf '%s\n' "$commands" | grep -q "$HOME_DIR/.claude/agentic-devkit" \
+[[ "$commands" == *"$HOME_DIR/.claude/agentic-devkit"* ]] \
   && fail "a hook command still uses the hardcoded default clone location"
 while IFS= read -r cmd; do
-  script=$(printf '%s\n' "$cmd" | sed "s/^sh '//; s/'$//; s/ --if-stale$//")
+  script=$(python3 -c 'import shlex,sys; a=shlex.split(sys.argv[1]); print(a[1] if a[0] == "sh" else a[0])' "$cmd")
   [ -e "$script" ] || fail "hook command target does not exist: $script"
 done <<< "$commands"
 
@@ -157,5 +159,19 @@ run_adapter codex > "$TMP_DIR/codex.out" 2>&1 || fail "codex adapter exited non-
   && fail "codex linked a directory without SKILL.md"
 [ -e "$PROJECT/.codex/skills/devkit-css--not-a-skill" ] \
   && fail "codex linked a directory without SKILL.md"
+
+canonical_config="$TMP_DIR/canonical-projects.json"
+printf '%s\n' '{"canonical_dev_servers":true}' > "$canonical_config"
+DEVKIT_PROJECTS_CONFIG="$canonical_config" run_adapter cursor > "$out" 2>&1 || fail "Cursor opt-in refresh failed"
+jq -e '.hooks.preToolUse | any((.command | contains("dev-server-gate.sh")) and (.command | contains("--require-config")))' "$hooks" >/dev/null \
+  || fail "Cursor did not remember canonical opt-in"
+printf '%s\n' '{"canonical_dev_servers":"true"}' > "$canonical_config"
+DEVKIT_PROJECTS_CONFIG="$canonical_config" run_adapter cursor > "$out" 2>&1 || fail "Cursor broken registry refresh failed"
+jq -e '.hooks.preToolUse | any((.command | contains("dev-server-gate.sh")) and (.command | contains("--require-config")))' "$hooks" >/dev/null \
+  || fail "Cursor lost remembered opt-in on invalid registry"
+printf '%s\n' '{"canonical_dev_servers":false}' > "$canonical_config"
+DEVKIT_PROJECTS_CONFIG="$canonical_config" run_adapter cursor > "$out" 2>&1 || fail "Cursor opt-out refresh failed"
+jq -e '.hooks.preToolUse | any((.command | contains("dev-server-gate.sh")) and ((.command | contains("--require-config")) | not))' "$hooks" >/dev/null \
+  || fail "Cursor did not clear remembered opt-in"
 
 echo "cursor adapter tests passed"

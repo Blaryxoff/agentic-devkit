@@ -437,6 +437,22 @@ updated=$(jq --arg cmd "$peercli_cmd" --arg script "peer-cli-gate.sh" '
 write_json "$SETTINGS" "$updated" || exit 1
 echo "    Hook:    ~/.claude/settings.json (PreToolUse peer-cli-gate)"
 
+previous_servergate_cmds=$(jq '[.hooks.PreToolUse[]?.hooks[]?.command | select(type == "string" and contains("plugins/core/hooks/dev-server-gate.sh"))]' "$SETTINGS")
+servergate_cmd=$(dev_server_gate_command "$DEVKIT_HOME" "$previous_servergate_cmds")
+updated=$(jq --arg cmd "$servergate_cmd" --arg script "dev-server-gate.sh" '
+  .hooks //= {} |
+  .hooks.PreToolUse = (
+    ((.hooks.PreToolUse // []) | map(
+      .hooks = ((.hooks // []) | map(select(
+        (.command // "") | contains("plugins/core/hooks/" + $script) | not
+      )))
+    ) | map(select((.hooks | length) > 0)))
+    + [{matcher: "Bash", hooks: [{type: "command", command: $cmd}]}]
+  )
+' "$SETTINGS")
+write_json "$SETTINGS" "$updated" || exit 1
+echo "    Hook:    ~/.claude/settings.json (PreToolUse canonical dev-server gate)"
+
 # --- Global Cursor hooks ---
 CURSOR_HOOKS_FILE="$CURSOR_DIR/hooks.json"
 CURSOR_LEGACY_HOOKS_FILE="$CURSOR_DIR/hooks/hooks.json"
@@ -457,7 +473,7 @@ if [ -f "$CURSOR_HOOKS_FILE" ]; then
   existing_hooks=$(normalize_cursor_hooks "$existing_hooks") || exit 1
   cursor_hooks=$(merge_cursor_hooks_preserving_existing "$cursor_hooks" "$existing_hooks") || exit 1
 fi
-cursor_hooks=$(inject_cursor_edit_gates "$cursor_hooks" "$codergate_cmd" "$commentgate_cmd")
+cursor_hooks=$(inject_cursor_edit_gates "$cursor_hooks" "$codergate_cmd" "$commentgate_cmd" "$servergate_cmd")
 cursor_hooks=$(echo "$cursor_hooks" | jq --arg cmd "$feedback_cmd" --arg script "jev-feedback.py" '
   .beforeSubmitPrompt = (
     [(.beforeSubmitPrompt // [])[] | select((.command // "" | contains($script)) | not)]
@@ -482,6 +498,7 @@ CODEX_CONFIG_FILE="$CODEX_CONFIG" \
 CODEX_LEGACY_HOOKS_FILE="$CODEX_LEGACY_HOOKS" \
 CODEX_CODER_GATE_CMD="$codergate_cmd" \
 CODEX_COMMENT_GATE_CMD="$commentgate_cmd" \
+CODEX_SERVER_GATE_CMD="$servergate_cmd" \
 CODEX_FEEDBACK_CMD="$feedback_cmd" \
 CODEX_DEVKIT_HOME="$DEVKIT_HOME" \
 python3 - <<'PY'
@@ -497,7 +514,7 @@ config_path = Path(os.environ["CODEX_CONFIG_FILE"])
 legacy_path = Path(os.environ["CODEX_LEGACY_HOOKS_FILE"])
 managed_start = "# devkit-hooks:start"
 managed_end = "# devkit-hooks:end"
-managed_scripts = ("coder-gate.sh", "comment-gate.sh", "jev-feedback.py")
+managed_scripts = ("coder-gate.sh", "comment-gate.sh", "dev-server-gate.sh", "jev-feedback.py")
 
 
 def toml_value(value):
@@ -643,7 +660,15 @@ matcher = "apply_patch|Edit|Write"
 [[hooks.PreToolUse.hooks]]
 type = "command"
 command = {toml_value(os.environ["CODEX_COMMENT_GATE_CMD"])}
-statusMessage = "Checking comment rules"'''
+statusMessage = "Checking comment rules"
+
+[[hooks.PreToolUse]]
+matcher = "Bash|exec_command|shell_command"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = {toml_value(os.environ["CODEX_SERVER_GATE_CMD"])}
+statusMessage = "Checking canonical dev-server startup"'''
 env_body = f'''
 
 [shell_environment_policy.set]

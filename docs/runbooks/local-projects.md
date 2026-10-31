@@ -4,6 +4,12 @@
 
 The dashboard and MCP server reread `projects.json` and discover Git worktrees on each request. Refreshing the dashboard shows new worktrees without restarting it.
 
+On a Mac explicitly using this manager as the canonical local setup, add top-level `"canonical_dev_servers": true` to the ignored config. `bin/devkit-install` registers a PreToolUse guard for Claude, Codex and Cursor; the Cursor project adapter also installs it. The installer always pins `DEVKIT_PROJECTS_CONFIG` when provided, otherwise clone-root `projects.json`, resolving symlinks to one shared file. Valid explicit opt-in adds `--require-config`. When that registry is missing, corrupt or invalid, global install preserves the prior Claude gate's requirement; the project Cursor adapter preserves its current project Cursor gate's requirement. A different registry never inherits it. Without remembered opt-in, config errors allow normal project commands. Valid `false` or an absent setting disables the guard and clears the remembered requirement on reinstall. Rerun the installer after changing `canonical_dev_servers`, both enabling and disabling. Without opt-in, other machines are unaffected. Do not copy competing registries between clones: point each CLI/MCP/hook at the same file.
+
+The guard rejects exact package script names `dev`, `start`, `serve` and `preview`, direct Next/Nuxt/Vite servers (including Vite's optional root), PHP `-S`, and Artisan `serve`, `octane:start` and `reverb:start`, directing agents to manager startup. Custom script names such as `dev:types` or `start:worker` are outside detection. Codex's canonical `Bash` event carries `tool_input.command`, including nested shell calls inside code mode. It is a command check, not an OS sandbox: manual terminals and arbitrary custom scripts are not comprehensively intercepted. Follow [Canonical local servers](../../plugins/core/conduct/runtime-configuration.md#canonical-local-servers) for exact checkout/API identity, device bridges and temporary runtime ownership. A managed worktree server still needs a task owner and verified stop at task end, or an explicit retention decision.
+
+In Codex, review and trust the new hook with `/hooks`; [untrusted hooks are skipped](https://learn.chatgpt.com/docs/hooks). Reload existing clients if they have not picked up the configuration change.
+
 ```bash
 ~/.claude/agentic-devkit/bin/devkit-projects status
 ~/.claude/agentic-devkit/bin/devkit-projects start my-app

@@ -67,7 +67,7 @@ When mutation testing is requested or required by project policy, follow [test-i
 
 For an API or worker test/QA request, use the project's focused integration or E2E command when available. Use a dedicated test environment and probe the running endpoint or worker behavior only when the requested behavior cannot be established by that command. Browser QA is for UI behavior.
 
-For behavior outside the browser, resolve the actual runtime and host from project manifests and enabled plugin indexes, then load their testing rules and configured device/process/package checks. Verification on another surface does not establish platform modules, permissions, privileged bridges, signing, or update behavior; report unavailable surfaces explicitly.
+For behavior outside the browser, resolve the actual runtime and host from project manifests and enabled plugin indexes, then load their testing rules and configured device/process/package checks. Before application-server startup/reuse, apply [runtime-configuration.md](../../conduct/runtime-configuration.md#canonical-local-servers) → **Canonical local servers**. Verification on another surface does not establish platform modules, permissions, privileged bridges, signing, or update behavior; report unavailable surfaces explicitly.
 
 For runtime acceptance checks, including API/worker/native integration automation, apply
 [runtime-qa-evidence.md](../../conduct/runtime-qa-evidence.md) §§1–3 before execution and through reporting. Record the

@@ -90,8 +90,9 @@ configuration, entry-point readiness and drift checks before/after connected lan
 Record unknown identity at its component boundary; do not equate a local commit with a deployed build. For local QA,
 probe that configured origin first and use its existing env and database.
 Do not start an alternate server, switch databases, or override session configuration just for browser QA. If the
-configured origin is not up, start only the minimal required local server(s) using existing project/dev-runtime
-commands, wait for a real HTTP readiness signal, and record exactly what this QA pass started. During cleanup, stop
+configured origin is not up, apply [runtime-configuration.md](./runtime-configuration.md#canonical-local-servers) →
+**Canonical local servers** before startup; use the registered manager when explicitly canonical. Otherwise use existing
+project/dev-runtime commands. Wait for a real HTTP readiness signal and record exactly what this QA pass started. During cleanup, stop
 only those recorded processes/sessions; if the environment was already running (for example on the user's Mac), leave
 it running.
 

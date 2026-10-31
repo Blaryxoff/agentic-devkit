@@ -160,19 +160,65 @@ inject_cursor_edit_gates() {
   local hooks_json="$1"
   local coder_cmd="$2"
   local comment_cmd="$3"
+  local server_cmd="$4"
 
-  echo "$hooks_json" | jq --arg coder "$coder_cmd" --arg comment "$comment_cmd" '
+  echo "$hooks_json" | jq --arg coder "$coder_cmd" --arg comment "$comment_cmd" --arg server "$server_cmd" '
     .preToolUse = (
       [(.preToolUse // [])[] |
         select((.command // "" | contains("plugins/core/hooks/coder-gate.sh")) | not) |
-        select((.command // "" | contains("plugins/core/hooks/comment-gate.sh")) | not)
+        select((.command // "" | contains("plugins/core/hooks/comment-gate.sh")) | not) |
+        select((.command // "" | contains("plugins/core/hooks/dev-server-gate.sh")) | not)
       ] + [
         {command: $coder, matcher: "Read|ReadFile", timeout: 60},
         {command: $coder, matcher: "Write|StrReplace|Edit|MultiEdit|Delete|EditNotebook|apply_patch", timeout: 60},
-        {command: $comment, matcher: "Write|StrReplace|Edit|MultiEdit|Delete|EditNotebook|apply_patch", timeout: 60}
+        {command: $comment, matcher: "Write|StrReplace|Edit|MultiEdit|Delete|EditNotebook|apply_patch", timeout: 60},
+        {command: $server, matcher: "Shell|Bash|exec_command|shell_command", timeout: 60}
       ]
     )
   '
+}
+
+dev_server_gate_command() {
+  python3 - "$1" "${2:-[]}" <<'PY'
+import json
+import os
+import shlex
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1]).absolute()
+config = os.environ.get("DEVKIT_PROJECTS_CONFIG")
+selected = Path(config).expanduser().resolve() if config else (root / "projects.json").resolve()
+command = ["sh", str(root / "plugins/core/hooks/dev-server-gate.sh"), "--config", str(selected)]
+
+
+def previous_requirement(value):
+    if not isinstance(value, str):
+        return False
+    try:
+        parts = shlex.split(value)
+        if len(parts) < 2 or Path(parts[0]).name != "sh" or Path(parts[1]).parts[-4:] != ("plugins", "core", "hooks", "dev-server-gate.sh"):
+            return False
+        prior_path = Path(parts[parts.index("--config") + 1]).expanduser().resolve()
+        return "--require-config" in parts and prior_path == selected
+    except (ValueError, IndexError, OSError):
+        return False
+
+
+try:
+    required = json.loads(selected.read_text()).get("canonical_dev_servers", False)
+    if type(required) is not bool:
+        raise ValueError("canonical_dev_servers must be boolean")
+except (OSError, ValueError, AttributeError):
+    try:
+        previous = json.loads(sys.argv[2])
+    except ValueError:
+        previous = []
+    required = isinstance(previous, list) and any(previous_requirement(value) for value in previous)
+if required:
+    command.append("--require-config")
+print(" ".join(shlex.quote(part) for part in command))
+PY
 }
 
 # Flatten hooks into a simple list of {event, matcher, command} for text-based adapters (Codex AGENTS.md).

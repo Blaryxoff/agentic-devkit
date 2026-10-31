@@ -117,6 +117,10 @@ assert_contains "$codex_home/config.toml" 'command = "agterm-status pre-tool-use
 assert_contains "$codex_home/config.toml" 'command = "plannotator"'
 assert_contains "$codex_home/config.toml" 'coder-gate.sh'
 assert_contains "$codex_home/config.toml" 'comment-gate.sh'
+assert_contains "$codex_home/config.toml" 'dev-server-gate.sh'
+assert_contains "$codex_home/config.toml" 'matcher = "Bash|exec_command|shell_command"'
+jq -e '[.hooks.PreToolUse[] | select(.matcher == "Bash") | .hooks[] | select(.command | contains("dev-server-gate.sh"))] | length == 1' "$claude_home/settings.json" >/dev/null \
+  || fail "expected one Claude canonical dev-server gate on Bash"
 assert_contains "$codex_home/config.toml" 'jev-feedback.py'
 [ "$(grep -Fc 'jev-feedback.py' "$codex_home/config.toml")" = "1" ] || fail "expected only the Codex feedback prompt hook"
 assert_contains "$codex_home/config.toml" 'args = ["chrome-devtools-mcp@latest", "--custom-flag", "--headless", "--pageIdRouting", "--isolated"]'
@@ -124,6 +128,7 @@ assert_not_contains "$codex_home/config.toml" '--experimentalPageIdRouting'
 assert_not_contains "$codex_home/config.toml" '--headless=false'
 [ "$(grep -Fc 'coder-gate.sh' "$codex_home/config.toml")" = "1" ] || fail "expected one Codex coder gate"
 [ "$(grep -Fc 'comment-gate.sh' "$codex_home/config.toml")" = "1" ] || fail "expected one Codex comment gate"
+[ "$(grep -Fc 'dev-server-gate.sh' "$codex_home/config.toml")" = "1" ] || fail "expected one Codex dev-server gate"
 python3 -c 'import sys, tomllib; tomllib.load(open(sys.argv[1], "rb"))' "$codex_home/config.toml"
 [ "$(python3 -c 'import sys, tomllib; print(tomllib.load(open(sys.argv[1], "rb"))["shell_environment_policy"]["set"]["DEVKIT_HOME"])' "$codex_home/config.toml")" = "$ROOT" ] \
   || fail "Codex shell environment does not export DEVKIT_HOME"
@@ -265,7 +270,7 @@ HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home" DEVKIT_HOME_DIR
 # Three installs have now run against this home. inject_cursor_edit_gates and the
 # Claude hook injectors are all re-entrant by construction; assert that, or a
 # regression duplicating an entry on every install goes unnoticed.
-for cmd in coder-gate.sh comment-gate.sh jev-feedback.py; do
+for cmd in coder-gate.sh comment-gate.sh dev-server-gate.sh jev-feedback.py; do
   n=$(jq --arg c "$cmd" '
     [(.hooks.preToolUse[]?), (.hooks.beforeSubmitPrompt[]?)]
     | map(select(.command | contains($c)))
@@ -274,6 +279,7 @@ for cmd in coder-gate.sh comment-gate.sh jev-feedback.py; do
   case "$cmd" in
     coder-gate.sh) want=2 ;;   # one Read|ReadFile gate, one edit gate
     comment-gate.sh) want=1 ;;
+    dev-server-gate.sh) want=1 ;;
     jev-feedback.py) want=1 ;;
   esac
   [ "$n" = "$want" ] || fail "expected $want $cmd entries in Cursor hooks after three installs, found $n"
@@ -403,5 +409,43 @@ python3 -c 'import sys, tomllib; tomllib.load(open(sys.argv[1], "rb"))' "$own_en
   || fail "installer broke a Codex config that owns shell_environment_policy.set"
 assert_contains "$own_env_home/.codex/config.toml" 'set = { EDITOR = "vim" }'
 [[ "$own_env_output" == *"add DEVKIT_HOME"* ]] || fail "installer did not report the skipped Codex DEVKIT_HOME"
+
+canonical_config="$TMP_DIR/canonical-projects.json"
+printf '%s\n' '{"canonical_dev_servers":true}' > "$canonical_config"
+for stage in opted-in missing opted-out; do
+  case "$stage" in
+    missing) rm "$canonical_config" ;;
+    opted-out) printf '%s\n' '{"canonical_dev_servers":false}' > "$canonical_config" ;;
+  esac
+  HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home" DEVKIT_HOME_DIR="$ROOT" DEVKIT_PROJECTS_CONFIG="$canonical_config" \
+    bash "$ROOT/bin/devkit-install" > "$TMP_DIR/canonical-install.out" 2>&1 \
+    || fail "canonical global reinstall failed at $stage"
+  required=$(jq -r '[.hooks.PreToolUse[]?.hooks[]? | select(.command | contains("dev-server-gate.sh")) | .command | contains("--require-config")] | any' "$claude_home/settings.json")
+  if [ "$stage" = opted-out ]; then
+    [ "$required" = false ] || fail "global installer did not clear opt-out"
+    python3 - "$codex_home/config.toml" "$cursor_home/hooks.json" <<'PY'
+import json
+import shlex
+import sys
+import tomllib
+from pathlib import Path
+
+codex = tomllib.loads(Path(sys.argv[1]).read_text())
+cursor = json.loads(Path(sys.argv[2]).read_text())
+commands = {
+    "Codex": [hook["command"] for group in codex["hooks"]["PreToolUse"] for hook in group["hooks"]],
+    "Cursor": [hook["command"] for hook in cursor["hooks"]["preToolUse"]],
+}
+for harness, values in commands.items():
+    gates = [parts for value in values if len(parts := shlex.split(value)) > 1 and Path(parts[1]).name == "dev-server-gate.sh"]
+    assert len(gates) == 1, f"expected one {harness} dev-server gate"
+    assert "--require-config" not in gates[0], f"{harness} retained opt-in after opt-out"
+PY
+  else
+    [ "$required" = true ] || fail "global installer lost opt-in at $stage"
+    assert_contains "$codex_home/config.toml" '--require-config'
+    assert_contains "$cursor_home/hooks.json" '--require-config'
+  fi
+done
 
 echo "codex adapter tests passed"
