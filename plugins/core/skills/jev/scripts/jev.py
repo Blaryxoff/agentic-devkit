@@ -222,26 +222,38 @@ def cmd_locate(args: argparse.Namespace) -> int:
         print(f"jev locate: {args.file} is empty", file=sys.stderr)
         return 0
     spans = blocks(lines)
+    block_texts = ["\n".join(lines[first:last]) for first, last in spans]
+    costs = [min(args.block_chars, len(text) + 1) + 80 for text in block_texts]
+    complete = all(len(text) <= args.block_chars for text in block_texts) and sum(costs) <= args.chunk_chars
+    check_exists = complete and os.environ.get("JEV_MODEL", DEFAULT_MODEL) == DEFAULT_MODEL
     scores: dict[int, float] = {}
+    exists_probability: float | None = None
     tokens = 0
     seconds = 0.0
     group: list[int] = []
     size = 0
 
     def score(members: list[int]) -> None:
-        nonlocal tokens, seconds
+        nonlocal tokens, seconds, exists_probability
         state = {"task": args.task, "file": args.file,
                  "blocks": {f"b{k}": f"lines {spans[k][0] + 1}-{spans[k][1]}:\n"
-                            + "\n".join(lines[spans[k][0]:spans[k][1]])[: args.block_chars] for k in members}}
-        questions = {f"b{k}": {"type": "noul", "instructions": f"Does block b{k} contain the code or text that answers the task?"}
-                     for k in members}
+                            + block_texts[k][: args.block_chars] for k in members}}
+        block_questions = {f"b{k}": {"type": "noul", "instructions": f"Does block b{k} contain the code or text that answers the task?"}
+                           for k in members}
+        questions = block_questions.copy()
+        if check_exists:
+            questions["exists"] = {"type": "noul", "instructions": "Do the supplied source blocks contain the implementation requested by the task? Judge only implementation in these blocks. Related functionality, a negative answer that the feature is missing, or a call to an unseen implementation is not the requested implementation."}
         answers, used, took = run({"state": state, "questions": questions})
         tokens += used
         seconds += took
-        scores.update(noul_scores(answers, questions))
+        scores.update(noul_scores(answers, block_questions))
+        answer = answers.get("exists")
+        if check_exists and isinstance(answer, dict) and answer.get("type") == "noul":
+            value = answer.get("noul")
+            if not isinstance(value, bool) and isinstance(value, (int, float)) and 0 <= value <= 1:
+                exists_probability = float(value)
 
-    for k, (first, last) in enumerate(spans):
-        cost = min(args.block_chars, sum(len(line) + 1 for line in lines[first:last])) + 80
+    for k, cost in enumerate(costs):
         if group and size + cost > args.chunk_chars:
             score(group)
             group, size = [], 0
@@ -250,10 +262,13 @@ def cmd_locate(args: argparse.Namespace) -> int:
     score(group)
     ranked = sorted(scores, key=lambda k: -scores[k])
     kept = [k for k in ranked if scores[k] >= args.threshold][: args.top]
+    if check_exists and exists_probability is not None and exists_probability <= 0.05:
+        kept = []
     for k in kept:
         first, last = spans[k]
         print(f"{args.file}:{first + 1}-{last}\t{scores[k]:.2f}\t{lines[first].strip()[:100]}")
-    print(f"jev locate: {len(kept)}/{len(spans)} blocks (best score {scores[ranked[0]]:.2f}), "
+    existence = f", complete-file answer probability {exists_probability:.3f}" if exists_probability is not None else ""
+    print(f"jev locate: {len(kept)}/{len(spans)} blocks (best score {scores[ranked[0]]:.2f}{existence}), "
           f"{tokens} input tokens, {round(seconds * 1000)} ms", file=sys.stderr)
     return 0
 

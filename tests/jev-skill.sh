@@ -52,7 +52,16 @@ class Handler(BaseHTTPRequestHandler):
         assert self.headers["Authorization"] == "Bearer test-key"
         items = payload["state"].get("items") or payload["state"]["blocks"]
         answers = {name: {"type": "noul", "noul": 0.9 if "needle" in items[name] else 0.1}
-                   for name in payload["questions"] if "dropped" not in items[name]}
+                   for name in payload["questions"] if name != "exists" and "dropped" not in items[name]}
+        task = payload["state"]["task"]
+        if task in ("truncated file", "chunked file", "alternate model"):
+            assert "exists" not in payload["questions"], task
+        if "exists" in payload["questions"] and task != "exists-missing":
+            value = {"absent implementation": 0.01, "absence boundary": 0.05, "uncertain absence": 0.051,
+                     "exists-null": None, "exists-text": "0.01", "exists-bool": False,
+                     "exists-negative": -1, "exists-above-one": 2}.get(task, 0.9)
+            kind = "choice" if task == "exists-wrong-type" else "noul"
+            answers["exists"] = {"type": kind, "noul": value}
         body = json.dumps({"model": payload["model"], "answers": answers,
                            "usage": {"input_tokens": 100}}).encode()
         self.send_response(200)
@@ -93,6 +102,31 @@ out=$("$JEV" locate "$TMP/big.py" --task "find the needle" 2>"$TMP/stderr")
 printf '%s\n' "$out" | grep -q "big.py:.*0.90" || fail "locate did not rank the needle block: $out"
 [ "$(printf '%s\n' "$out" | wc -l | tr -d ' ')" = "1" ] || fail "locate kept blocks below the threshold: $out"
 grep -q 'best score 0.90' "$TMP/stderr" || fail "locate summary missing: $(cat "$TMP/stderr")"
+
+printf 'needle plus context\n' > "$TMP/short.py"
+for task in 'absent implementation' 'absence boundary'; do
+  out=$("$JEV" locate "$TMP/short.py" --task "$task" 2>"$TMP/stderr")
+  [ -z "$out" ] || fail "complete-file absence did not suppress a misleading block: $out"
+  grep -q 'complete-file answer probability' "$TMP/stderr" || fail "absence result does not explain the file-level signal"
+done
+
+for task in 'uncertain absence' exists-missing exists-null exists-text exists-bool exists-negative exists-above-one exists-wrong-type; do
+  out=$("$JEV" locate "$TMP/short.py" --task "$task" 2>"$TMP/stderr")
+  printf '%s\n' "$out" | grep -q 'short.py:.*0.90' || fail "uncertain or invalid existence answer hid a useful block: $task"
+done
+
+out=$("$JEV" locate "$TMP/short.py" --task 'truncated file' --block-chars 6 2>"$TMP/stderr")
+printf '%s\n' "$out" | grep -q 'short.py:.*0.90' || fail "truncated input lost its matching block"
+out=$("$JEV" locate "$TMP/big.py" --task 'chunked file' --chunk-chars 100 2>"$TMP/stderr")
+printf '%s\n' "$out" | grep -q 'big.py:.*0.90' || fail "chunked input lost its matching block"
+out=$(JEV_MODEL=jev-1.14.0 "$JEV" locate "$TMP/short.py" --task 'alternate model' 2>"$TMP/stderr")
+printf '%s\n' "$out" | grep -q 'short.py:.*0.90' || fail "model override lost ordinary block ranking"
+
+printf 'needle dropped answer\n' > "$TMP/missing.py"
+if "$JEV" locate "$TMP/missing.py" --task 'absent implementation' >/dev/null 2>"$TMP/stderr"; then
+  fail "file-level absence masked a missing block answer"
+fi
+grep -q 'response has no noul answer for b0' "$TMP/stderr" || fail "missing block answer not reported"
 
 calls=$("$JEV" usage | python3 -c 'import json,sys; print(json.load(sys.stdin)["calls"])')
 [ "$calls" -gt 3 ] || fail "usage log did not record the calls: $calls"

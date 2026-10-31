@@ -32,7 +32,7 @@ AI ускоряет поставку фич только при дисципли
 - [[Когда НЕ использовать AI]]
 
 ### Прочее
-- [[Импорт скилов umputun]]
+- [[umputun-workflows]]
 - [[modular-plugin-ownership-plan]] — на английском
 - [[project-test-rules]] — на английском
 
