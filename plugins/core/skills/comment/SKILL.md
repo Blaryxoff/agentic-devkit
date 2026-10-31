@@ -11,6 +11,10 @@ Continue a task discussion with a brief Russian update about fixes completed in 
 Use the task's language when the user requests it. Read history to understand the conversation and avoid repetition.
 Report only concrete work completed in the selected session; do not recap earlier fixes or reconfirmations.
 Report existing work; do not implement fixes, run a new QA pass, or deploy while composing the update.
+Write only to the tasks the user named or unambiguously selected from the current task context. Keep unrelated CI,
+deployment and investigation diagnostics in the user conversation. Reading linked tasks or resolving feature owners
+does not expand posting authorization. Generic requests to hand off blockers do not authorize tracker comments,
+new tickets or mentions; require a separate tracker request naming the destination and intended content.
 
 ## Workflow
 
@@ -49,7 +53,8 @@ Report existing work; do not implement fixes, run a new QA pass, or deploy while
    decision maker only when they need the update or must answer a question. Resolve native mention syntax and identities
    through actual discussion mentions, tracker user records, or supported user lookup. Do not derive handles from email
    addresses or copy a fixed recipient list from an example. Ask about an unresolved necessary recipient rather than
-   tagging a guessed person; do not notify every watcher by default.
+   tagging a guessed person; do not notify every watcher by default. Do not tag the requesting user merely because
+   they are the task's assignee, or use mentions to relay unrelated technical blockers.
 6. **Compose the continuation.** Apply [Comment style](#comment-style) and the project's task-comment policy.
    Use the same format for replies to QA remarks and reports on description requirements: a bold descriptive name and
    the concrete completed behavior for each item. Describe the concrete fixes or other completed task work from this session.
@@ -60,8 +65,10 @@ Report existing work; do not implement fixes, run a new QA pass, or deploy while
    generic status update or invent completed work.
 7. **Check and deliver.** Confirm every claim is supported, every issue name is understandable without hidden IDs,
    mentions resolve to the intended people, and each item describes completed work rather than a task status or
-   instruction to the team. Verify that branch names and inferred server availability are absent; preserve exact
-   artifact/version identifiers required by the project even when they contain a branch-like prefix. Refresh the latest
+   instruction to the team. Verify that the destination is in the authorized task set and every paragraph addresses
+   that task's selected report or its required deployment evidence. Verify that branch names and inferred server
+   availability are absent; preserve exact artifact/version identifiers required by the project even when they contain
+   a branch-like prefix. Refresh the latest
    discussion before posting to catch intervening replies or duplicate updates. Reconcile any relevant changes before
    sending. Submit one comment with the tracker's native formatting and mention support. Use an idempotency/request key
    when supported; after a timeout or uncertain result, read the discussion to establish whether it posted before

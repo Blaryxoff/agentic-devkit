@@ -20,6 +20,8 @@ fallback instructions when a connector is unavailable; keep credentials out of o
    task key, search by the exact key, select the exact matching key, then use the internal ID returned by search for every
    read or write. Preserve its native type; never derive internal IDs from visible keys. Read the complete discussion,
    following all pages and text chunks; if completeness cannot be verified, say so and do not assume omitted comments are absent.
+   Fix the tracker write scope to the tasks explicitly named by the user or unambiguously selected from the current
+   task context. Reading linked tasks or finding owners during investigation does not authorize writing to those tasks.
 2. **Select the report source.** Follow the newest comments and status changes. When QA remarks exist, work on actionable
    findings that remain open or were reopened. Treat older fixed notes as context, not new work. When the complete
    discussion contains no QA remarks, use the task description and its acceptance criteria as the report to address;
@@ -57,7 +59,8 @@ fallback instructions when a connector is unavailable; keep credentials out of o
    fix, but must not be presented as full task acceptance.
 6. **Confirm deployment and fast-test the target.** Before drafting or posting a ready comment, identify the remote
    environment where the reporters can check the result and verify that its deployment containing every fix claimed
-   in the reply has succeeded. Match the deployed revision to the fixes through deployment records, then run a focused
+   in the reply has succeeded. Use the requested environment: a staging request needs verified staging deployment and
+   checks, not an additional production release. Match the deployed revision to the fixes through deployment records, then run a focused
    smoke check of each claimed fix on that deployed remote
    target. Use the affected UI flow or API/runtime behavior and confirm the expected outcome; server availability or
    HTTP 200 alone is insufficient. Record the target, deployed revision, checks, and results in the user conversation.
@@ -70,8 +73,9 @@ fallback instructions when a connector is unavailable; keep credentials out of o
    a request for comments alone is not a waiver. Honor an explicit exception without adding "Deploy is pending",
    equivalent caveats, or unsupported deployment or verification claims.
 7. **Update the tracker.** After the deployment and remote-check gate or its explicit exception, use `devkit-comment`
-   to post one concise continuation per affected task, describing only verified, unreported fixes or completed requirements.
-   A request to run this workflow authorizes the ticket comment; honor an explicit draft-only request instead.
+   to post one concise continuation per requested task, describing only verified, unreported fixes or completed requirements
+   that directly address that task's selected report. A request to run this workflow authorizes those comments only;
+   honor an explicit draft-only request instead.
    Use the same comment format for QA replies and description-based reports. Mention the reporters it addresses
    using supported native mention identities; when the source is the description, resolve recipients under `devkit-comment`
    without inventing a QA reporter. Pass the project's task-comment policy, verified deployment/runtime
@@ -97,10 +101,15 @@ fallback instructions when a connector is unavailable; keep credentials out of o
   Keep that reconciliation in this workflow; invoke `devkit-comment` alone for a comment-only request. Invoke `devkit-task` for a full specification-
   to-pushed-branch pipeline.
 - Follow the current task discussion over stale task descriptions and earlier QA remarks.
+- Keep unrelated CI failures, baseline test failures, deployment diagnostics and investigation notes in the user
+  conversation. Do not post them to the requested task or to other feature tasks, create tickets for them, or tag owners
+  as an ancillary action of this workflow. A generic request to "hand off blockers" is not authorization for tracker
+  writes or mentions; a separate tracker request must identify its destination and intended content.
 - Use the task description as the report source only after confirming that the complete discussion contains no QA remarks.
 - Draft or post ready comments only after deployment is green and focused checks of the claimed fixes pass on the
   deployed remote target, unless the user explicitly waives the missing gate. Local checks alone are insufficient.
-  Keep deployment blockers and pending-deployment wording out of tracker comments.
+  Keep deployment blockers and pending-deployment wording out of tracker comments. When this gate blocks a comment,
+  report in chat and withhold the tracker write; do not redirect it to another task or reclassify it as a diagnostic handoff.
 - Do not post a comment when the user asked only for a draft or when no unreported verified completed work can be established.
 - Do not move tasks to “Testing” merely because code or tests are complete; require explicit user authorization.
 - Do not deploy or change production data as part of this workflow. Establish server availability through deployment
