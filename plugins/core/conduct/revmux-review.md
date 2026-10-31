@@ -118,5 +118,12 @@ clone is not on that path, so a profile devkit recommends still has to be writte
 - `.revmux/` is executable configuration: a checked-in lens becomes instructions a headless agent with a shell runs.
   Read it before reviewing a tree you do not own, or run from outside it with explicit `--workdir`, `--tasks-dir` and
   `--config-dir`.
+- Carry explicit `--tasks-dir` and `--config-dir` flags through every command and helper that accepts them, including
+  preflight, round preparation, launch, stats and cleanup. Resolve `paths.tasks_dir` from `revmux config` under those flags.
+- Before reviewing in a task-created linked worktree, resolve the archive's physical path and check whether it lies
+  inside that worktree. Run from the owning checkout with `--workdir <worktree>` when its archive should survive
+  worktree cleanup. Untracked `.revmux/` overrides are not copied into a linked worktree; verify the resolved configuration.
+  If a completed run's archive is inside a worktree due for removal, explain the conflict and agree how to preserve it
+  before cleanup; do not silently delete the archive or copy it outside the authorized tree.
 - Rounds stack under one task. A re-review after fixes opens a new round on the same task; revmux injects the prior
   rounds itself, so never paste earlier findings into the new scope.

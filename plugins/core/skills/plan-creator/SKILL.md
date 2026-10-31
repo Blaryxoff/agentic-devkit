@@ -183,6 +183,16 @@ from concerns already written into the draft.
 
 ---
 
+## Review handoff
+
+- After writing the confirmed plans, give their paths and name `devkit-plan-reviewer` as the next step for the dev plan.
+- When the request already includes plan review, activate that existing reviewer with the written plan path before
+  handing off to implementation. Otherwise give the explicit review invocation without adding a confirmation question.
+- Report whether independent review ran. A saved plan is not evidence that review passed.
+- Keep review read-only until the user authorizes applying its findings; follow the reviewer's existing repair boundary.
+
+---
+
 ## Rules
 
 - Use this skill to produce plans; implement code in the implementation workflow.
