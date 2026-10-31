@@ -40,6 +40,11 @@ Core workflows cover implementation, code and business-logic review, browser QA,
 commit/push wrapup. Stack plugins add framework-specific conventions without putting every stack's rules into an
 agent's context. See [Available Plugins](#available-plugins) and [How It Works](#how-it-works).
 
+Use `/quota` in Claude Code or `$devkit-quota` in Codex to choose when to use a manual Codex reset. The
+[quota workflow](plugins/core/skills/quota/SKILL.md) refreshes account limits, credits, up to 180 days of public reset
+history and recent usage patterns. It compares changing reset frequency with long-term baselines, then gives probability
+scenarios and a dated recommendation without redeeming anything.
+
 Use `/demo` in Claude Code or `$devkit-demo` in Codex to present completed work as a portable HTML gallery
 of real screenshots. The [demo workflow](plugins/core/skills/demo/SKILL.md) opens the report in a sibling
 agterm panel in the same session, keeping the conversation visible; outside agterm it uses a browser.
