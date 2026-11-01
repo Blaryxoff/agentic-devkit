@@ -277,8 +277,7 @@ button:disabled { opacity: .46; cursor: default; box-shadow: none; }
 .worktree-info strong { font-size: 12px; }
 .worktree-info small { margin-top: 3px; color: #8b9990; font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
 .worktree-date { color: #8b9990; font-size: 10px; white-space: nowrap; }
-.worktree-sources, .worktree-empty { margin: 11px 0 0; color: #829087; font-size: 11px; line-height: 1.5; }
-.worktree-empty { padding: 11px 12px; border: 1px solid #e8eee8; border-radius: 9px; }
+.worktree-sources { margin: 11px 0 0; color: #829087; font-size: 11px; line-height: 1.5; }
 .worktree-row .state { padding: 5px 8px; font-size: 10px; }
 .worktree-row button, .worktree-row a.button { min-height: 31px; padding: 5px 9px; font-size: 11px; white-space: nowrap; }
 .worktree-message { margin: 0; padding: 0 12px 11px; color: #a74336; font-size: 11px; }
@@ -443,7 +442,7 @@ function card(project,children){
   logPanel.classList.toggle('expanded',openLogs.has(project.id));logPanel.inert=!openLogs.has(project.id);
   if(openLogs.has(project.id))loadLog();
   let worktreePanel=null;let worktreeToggle=null;
-  if(children.length||project.worktree_sources?.length){
+  if(children.length){
     const active=children.filter(child=>child.services.some(service=>service.pid)).length;
     worktreeToggle=el('button','worktree-toggle',(openWorktrees.has(project.id)?'▾':'▸')+' Worktrees');worktreeToggle.setAttribute('aria-expanded',String(openWorktrees.has(project.id)));
     worktreeToggle.append(el('span','worktree-count',String(children.length)));if(active)worktreeToggle.append(el('span','worktree-count',active+' активн.'));
@@ -452,7 +451,7 @@ function card(project,children){
     worktreePanel=el('div','expander-panel');const worktreeInner=el('div','expander-inner');if(project.worktree_sources?.length)worktreeInner.append(el('p','worktree-sources',project.worktree_sources.map(source=>source.name+' · '+displayPath(source.root)).join('  /  ')));const worktreeList=el('div','worktree-list');const bulk=el('div','worktree-bulk');const allLabel=el('label');const all=el('input','worktree-checkbox');all.type='checkbox';all.setAttribute('aria-label','Выбрать все доступные worktrees '+project.name);allLabel.append(all,el('span','','Выбрать доступные'));const deleteButton=el('button','danger');deleteButton.onclick=()=>deleteSelectedWorktrees(children);bulk.append(allLabel,deleteButton);worktreeList.append(bulk);
     function updateSelection(){const available=children.filter(canDeleteWorktree);const selected=available.filter(child=>selectedWorktrees.has(child.id));all.checked=available.length>0&&selected.length===available.length;all.indeterminate=selected.length>0&&selected.length<available.length;all.disabled=bulkDeleting||!available.length;deleteButton.disabled=bulkDeleting||!selected.length;deleteButton.textContent=bulkDeleting?'Удаление…':'Удалить выбранные'+(selected.length?' · '+selected.length:'')}
     all.onchange=()=>{for(const child of children)if(canDeleteWorktree(child)){if(all.checked)selectedWorktrees.add(child.id);else selectedWorktrees.delete(child.id)}for(const checkbox of worktreeList.querySelectorAll('.worktree-row .worktree-checkbox'))checkbox.checked=selectedWorktrees.has(checkbox.dataset.id);updateSelection()};
-    if(children.length){worktreeList.append(...children.map(child=>{const row=worktreeRow(child,updateSelection);row.querySelector('.worktree-checkbox').dataset.id=child.id;return row}));updateSelection();worktreeInner.append(worktreeList)}else worktreeInner.append(el('p','worktree-empty','Дополнительных worktrees пока нет.'));worktreePanel.append(worktreeInner);worktreePanel.classList.toggle('expanded',openWorktrees.has(project.id));worktreePanel.inert=!openWorktrees.has(project.id);
+    worktreeList.append(...children.map(child=>{const row=worktreeRow(child,updateSelection);row.querySelector('.worktree-checkbox').dataset.id=child.id;return row}));updateSelection();worktreeInner.append(worktreeList);worktreePanel.append(worktreeInner);worktreePanel.classList.toggle('expanded',openWorktrees.has(project.id));worktreePanel.inert=!openWorktrees.has(project.id);
   }
   toggle.onclick=()=>{const open=!openLogs.has(project.id);if(open)openLogs.add(project.id);else openLogs.delete(project.id);if(open)openWorktrees.delete(project.id);setExpanded(toggle,logPanel,open,'Журнал запуска');if(open&&worktreePanel)setExpanded(worktreeToggle,worktreePanel,false,'Worktrees');if(open)loadLog()};
   const error=el('div','error',errors.get(project.id)||'');body.append(expanders,logPanel,error);if(worktreePanel)body.append(worktreePanel);article.append(body);
