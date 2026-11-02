@@ -1,20 +1,51 @@
 ---
 name: devkit-followup
 description: >-
-  post ticket comments after QA repair or reconciliation. Use when asked "fix QA issues in these tasks" or
-  "исправь замечания QA". Comment-only: devkit-comment; full pipeline: devkit-task.
+  update task estimates or repair and report QA issues. Use for "followup estimate", "переоцени задачу", or
+  "исправь замечания QA". Fix comments: devkit-comment; full pipeline: devkit-task.
 ---
 
 # Followup
 
-Post a ticket comment reporting verified work on each named tracker task, resolving any remaining implementation gaps first.
-Answer existing QA remarks; when no QA remarks exist, treat the task description as the report to address in the same format.
+Complete the requested follow-up on each named tracker task and verify its saved tracker updates.
+For estimation requests, gather the task context and publish the resulting estimate using **Estimation follow-up** below.
+For implementation reports, resolve remaining implementation gaps and post verified work answering the QA remarks;
+when none exist, use the task description as the report source.
 Keep tracker state and environment deployment separate from implementation and local verification.
 Prefer tracker MCP tools, authenticated APIs, and repository/runtime CLIs over browser interaction. Use a browser for
 visual behavior and flows whose evidence cannot be obtained through those interfaces. Follow project-specific tracker
 fallback instructions when a connector is unavailable; keep credentials out of output and skill files.
 
-## Workflow
+## Estimation follow-up
+
+Select this path when the user requests an estimate or re-estimate, including obvious misspellings such as `estimage`
+and `reestimage`, or asks to answer an estimation request in the linked discussion. Complete the tracker interactions
+even when the calculation is performed as a separate part of the request.
+
+1. **Read the current task.** Apply workflow step 1 to resolve the exact task and complete discussion. Read linked
+   specifications, attachments, the current estimate field, and later scope decisions. For a comment anchor, read that
+   comment in the full discussion. Identify what changed since the latest scoped estimate.
+2. **Prepare the estimation context.** Make the current scope, earlier estimate, and new evidence available for the
+   calculation. Use the resulting estimate with its metric and exclusions; distinguish total implementation time from
+   remaining work. Continue with publication once the estimation data is ready.
+   Estimation alone requires no implementation, deployment, or remote smoke checks; the QA reporting gates below
+   apply to claims of completed fixes. Do not use `devkit-comment`'s verified-fix format for an estimation reply.
+3. **Publish the result.** Running this workflow for estimation authorizes one estimate comment and an estimate-field
+   update on each named task, unless the user requests draft-only, comment-only, or another explicit restriction.
+   Discover the tracker's actual estimate field, unit, and total-versus-remaining meaning through tool schemas,
+   metadata, and project policy. Select the single figure matching that field and the confirmed scope; do not sum
+   mutually exclusive options or put remaining time into a total estimate field. If scope or field semantics leave
+   multiple materially different values, ask only about that ambiguity before the affected write. Keep a supported
+   comment update independent of an unavailable or ambiguous estimate field and report any incomplete field update.
+   Post a concise estimate with its scope and material prerequisites; for re-estimation, explain the change from the
+   previous figure. Skip an equivalent comment already posted for the same scope and evidence. Update only the
+   estimate field, preserving status, assignees, spent time, and unrelated fields. Honor project mention policy.
+4. **Read back both updates.** Verify the saved comment and numeric estimate with its unit against the intended result.
+   If a write has an uncertain result, inspect the task before retrying to avoid duplicate comments. Report the task
+   link, estimate, and verified comment/field outcome in chat, including any blocker. A chat-only estimate does not
+   complete this path unless the user requested draft-only output. Stop here; skip the implementation workflow below.
+
+## Implementation workflow
 
 1. **Resolve each task.** Discover the available tracker MCP or CLI tools and inspect their schemas. For a human-facing
    task key, search by the exact key, select the exact matching key, then use the internal ID returned by search for every
@@ -98,19 +129,22 @@ fallback instructions when a connector is unavailable; keep credentials out of o
 
 - Invoke this skill for multi-task tracker QA repair requests such as “fix QA issues in these tasks” and “исправь
   замечания QA”, including reconciliation after fixes are already complete and tasks with no QA remarks.
-  Keep that reconciliation in this workflow; invoke `devkit-comment` alone for a comment-only request. Invoke `devkit-task` for a full specification-
-  to-pushed-branch pipeline.
+  Keep that reconciliation in this workflow; invoke `devkit-comment` alone for a fix-report-only request. Invoke
+  `devkit-task` for a full specification-to-pushed-branch pipeline.
+- Route estimate and re-estimate follow-ups through **Estimation follow-up**. Preparing an estimate does not complete
+  the requested tracker interactions.
 - Follow the current task discussion over stale task descriptions and earlier QA remarks.
 - Keep unrelated CI failures, baseline test failures, deployment diagnostics and investigation notes in the user
   conversation. Do not post them to the requested task or to other feature tasks, create tickets for them, or tag owners
   as an ancillary action of this workflow. A generic request to "hand off blockers" is not authorization for tracker
   writes or mentions; a separate tracker request must identify its destination and intended content.
 - Use the task description as the report source only after confirming that the complete discussion contains no QA remarks.
-- Draft or post ready comments only after deployment is green and focused checks of the claimed fixes pass on the
-  deployed remote target, unless the user explicitly waives the missing gate. Local checks alone are insufficient.
+- Draft or post implementation-ready comments only after deployment is green and focused checks of the claimed fixes
+  pass on the deployed remote target, unless the user explicitly waives the missing gate. Local checks alone are insufficient.
   Keep deployment blockers and pending-deployment wording out of tracker comments. When this gate blocks a comment,
   report in chat and withhold the tracker write; do not redirect it to another task or reclassify it as a diagnostic handoff.
-- Do not post a comment when the user asked only for a draft or when no unreported verified completed work can be established.
+- Do not post a comment when the user asked only for a draft. For implementation reports, require unreported verified
+  completed work.
 - Do not move tasks to “Testing” merely because code or tests are complete; require explicit user authorization.
 - Do not deploy or change production data as part of this workflow. Establish server availability through deployment
   and environment evidence before claiming it.

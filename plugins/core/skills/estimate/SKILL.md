@@ -99,9 +99,10 @@ comparable measured agent-run anchor.
 
 ## Chat-ready output
 
-Return only a self-contained message in the user's language, ready to paste to its intended audience. Assume the
-recipient has not seen this conversation. Do not start with "I revised the estimate", refer to an earlier answer, or
-explain the estimation method unless the user explicitly asks for that context.
+Prepare a self-contained estimation result in the user's language, ready to paste to its intended audience.
+Preparing this result completes the estimation portion of a combined request; preserve any other requested actions.
+Assume the recipient has not seen this conversation. Do not start with "I revised the estimate", refer to an
+earlier answer, or explain the estimation method unless the user explicitly asks for that context.
 
 Default shape:
 

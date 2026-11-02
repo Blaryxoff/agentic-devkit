@@ -49,7 +49,7 @@ for rule in (
     "default to one likely elapsed-hour figure",
     "attended developer hours separately when requested",
     "recalculate when a user challenges the figure",
-    "return only a self-contained message",
+    "prepare a self-contained estimation result",
     "assume the recipient has not seen this conversation",
     "до передачи на тестирование",
     "do not add calendar days, deployment, qa cycles",
