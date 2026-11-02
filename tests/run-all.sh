@@ -23,6 +23,7 @@ SCRIPTS=(
   no-clobber.sh
   nontech.sh
   output-style.sh
+  plan-format.sh
   peer-chat.sh
   peer-cli-gate.sh
   project-manager.sh

@@ -51,24 +51,9 @@ Do not turn the completed task's debugging residue into project instructions. Re
 When a candidate matches both an accept and a reject bullet, reject it. Labelling a tooling failure a "workflow" does
 not make it one.
 
-Split each candidate to a single claim before testing it. Test a bundled defect and its surrounding observation
-separately.
-
-Apply all of these tests to each candidate:
-
-1. **Different-task test** — would this guide work beyond repeating or revisiting the issue just solved?
-2. **Project-contract test** — does it describe an intentional, durable project decision or invariant rather than a
-   low-level technical lesson?
-3. **Established-evidence test** — is it supported beyond one failure path by multiple project locations, an existing
-   workflow, or a confirmed team decision? Repeat sightings of one failure, and agreement between reviewers or models,
-   are confidence in the observation, not evidence of intent.
-4. **Fresh-reader test** — is it actionable without the current session's incident history?
-5. **Placement test** — is a project instruction file the best enforcement point, rather than code, tests, types, or
-   canonical technical documentation — including documentation the project should have and has not written yet?
-6. **Survives-its-own-fix test** — does it stay true after the project acts on it? If acting on the finding makes it
-   false, it is work, not memory.
-
-If any answer is no, do not propose the candidate. Recurrence prevention alone is insufficient.
+Split each candidate to a single claim and test it against conditions 1–5 and 7 of the candidate gate in
+`plugins/core/conduct/learning-capture-gate.md`; the terminal path has already applied them. Deduplication below
+replaces condition 6. If any condition fails, do not propose the candidate. Recurrence prevention alone is insufficient.
 
 ## Destinations
 

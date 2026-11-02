@@ -108,6 +108,10 @@ Load the reference for every plan being reviewed:
 
 When reviewing a paired product + dev plan, load both references.
 
+For a dev plan, resolve `scripts/check-dev-plan.py` relative to this skill directory and run `python3 <checker-path> <plan.md>`
+once from the target project's directory before reading for content. Each `path:line: rule: message` line is a `RALPHEX FORMAT` finding
+candidate, subject to an accepted repository convention (Step 4, rule 6). Exit 0 settles syntax; keep judging content.
+
 ---
 
 ## Step 3.5 — Cross-check against current project stack and rules

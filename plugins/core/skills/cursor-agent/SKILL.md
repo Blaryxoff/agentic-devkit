@@ -3,9 +3,8 @@ name: devkit-cursor-agent
 description: >-
   delegate a task to the Cursor CLI (`cursor-agent`) as a working agent that edits the repo, or consult it
   read-only. Invoke whenever the user names Cursor — "run cursor on X", "ask cursor", "cursor-agent", "запусти
-  курсор", "спроси курсор", "поревьюй курсором". Naming Cursor authorizes the delegation; never ask permission
-  to hand the task over, and let the user's verb pick write mode or read-only. Never self-invoke: an explicit
-  mention is the only trigger. No-op when the harness is already Cursor.
+  курсор", "поревьюй курсором". Naming Cursor authorizes the delegation. Never self-invoke: an explicit mention is
+  the only trigger. No-op when the harness is already Cursor.
 ---
 
 # Cursor Agent

@@ -14,7 +14,7 @@ You are dispatching a behavioural-completeness review across whatever stacks the
 
 This is **complementary** to `devkit-reviewer-deep` and `devkit-reviewer-fast`. Those cover code quality. This one covers entity-lifecycle and user-flow completeness.
 
-When the user named revmux as the review engine, this skill does not run unless they asked for both passes: routing hands that pass to the upstream revmux skill, which replaces this fan-out rather than adding to it (`plugins/core/conduct/revmux-review.md`).
+When the user named revmux as the review engine, revmux replaces this fan-out; run this skill only when they asked for both passes (`plugins/core/conduct/revmux-review.md`).
 
 Return review findings and the pass outcome; leave fixes to a separate implementation request under `devkit-coder`.
 
@@ -29,7 +29,7 @@ Return review findings and the pass outcome; leave fixes to a separate implement
    `review-specialist-fanout.md`. When paired with deep review for a full review, register them with the shared top-level
    fan-out and do not dispatch them independently.
 4. Present each resolved stack/responsibility report, generic fallback, and opened specialist under its own named heading. Keep quality and behavioral axes separate; omit unopened gates and unused fallbacks.
-5. **Cross-check in Codex.** Once the variant reports are assembled, run the cross-agent cross-check per `plugins/core/conduct/cross-agent-review.md`, using Codex skill slug `devkit-core--reviewer-business-logic`. Merge kept findings into the matching stack section, tagged `(via Codex)`. **This step is mandatory when the gate holds** — the gate requires Claude Code or Cursor Agent, so when this skill runs inside Codex it is closed and you review natively without a cross-check. Otherwise run `command -v codex`, do not treat it as optional or proportional, and state the gate outcome explicitly. Skip only when a gating condition genuinely fails, naming which.
+5. **Cross-check in Codex.** Once the variant reports are assembled, run the cross-agent cross-check per `plugins/core/conduct/cross-agent-review.md`, using Codex skill slug `devkit-core--reviewer-business-logic`. Merge kept findings into the matching stack section, tagged `(via Codex)`. This step is mandatory when the gate holds; state the gate outcome, naming any failed condition.
 6. Apply the review completion gate in `plugins/core/conduct/review-findings-format.md` after all requested review skills finish. When paired with deep review, wait for both reports before deciding the combined pass outcome.
 7. Stop only when no stack variant, generic implementation fallback, or visual-reference specialist applies. Report
    unavailable stack coverage separately from the review outcome.

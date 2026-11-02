@@ -1,14 +1,11 @@
 # Code architecture rules
 
-> **Project layout note**: This project uses a conventional Laravel structure (`app/Http/`, `app/Services/`,
-`app/Models/`, etc.) inherited from Laravel 10 and intentionally kept as-is. The `app/Domain/`, `app/Application/`,
-`app/Infrastructure/` folder examples below are **aspirational targets** for new complex modules — not a requirement to
-> restructure existing code. Always follow the existing layout in sibling files first; introduce deeper layering only
-> when complexity clearly justifies it.
+> **Project layout note**: Follow the project's existing layout in sibling files first. The `app/Domain/`,
+> `app/Application/`, `app/Infrastructure/` folder examples below are targets for new complex modules — not a
+> requirement to restructure existing code. Introduce deeper layering only when complexity clearly justifies it.
 
-Code must be scalable, maintainable and performant. It should be easy to test, extend, support and easy to onboard a new
-developer.
-Following architecture/design patterns are used:
+Write code that is scalable, maintainable, performant, easy to test and extend, and easy for a new developer to learn.
+Use these architecture/design patterns:
 
 - layered + hexagonal boundaries - REQUIRED (contracts & implementations)
 - ddd - REQUIRED (domain driven design, simplified)
@@ -28,9 +25,12 @@ repositories in the future. So design in the way to make the split easy, fast an
   adapters (concrete classes).
 - Adapters can import from core/application, core never imports from adapters (instead it uses contracts/interfaces).
   Adapters don't import adapters for orchestration.
-- Try to create small, specific interfaces and avoid general-purpose one.
+- Create small, specific interfaces instead of general-purpose ones.
 - For web runtime boundary, treat Nginx/PHP-FPM as transport infrastructure: application/domain rules must not depend on
   web server implementation details.
+- Back these import rules with an architecture check once the project approves the dependency: PHPat rules run inside
+  the existing PHPStan `make lint`. Encode "core never imports adapters" and the contracts rule from the DDD section;
+  baseline existing violations instead of skipping a rule ([quality-gates.md](../../core/conduct/quality-gates.md)).
 
 ### Port interface example
 
@@ -152,7 +152,7 @@ final class UserMapper
 ## CQRS pattern key points
 
 - split your system into two paths: one for writing (Commands), one for reading (Queries). Never mix them.
-- A command is an intent to change something. It should be named in the imperative. Command Rules
+- A command is an intent to change something. Name it in the imperative. Command Rules
     - Return void or just a new resource ID
     - One handler per command
     - Validate inputs via Form Request before reaching the handler
@@ -168,13 +168,13 @@ final class UserMapper
 
 ## Variables naming convention
 
-- variable names should be self-describing
+- give variables self-describing names
 - only use short variable names in local and simple operations
 
 ## Files and folders structuring
 
-- try to keep files less than 500 lines, if bigger - consider to split onto files
-- try to keep less than 10 files by folder, if bigger - consider to split into subfolders
+- Target files under 500 lines and folders under 10 files; review larger ones for cohesive splits.
+- Preserve existing layout unless a split helps the requested work.
 
 ### File naming rules
 

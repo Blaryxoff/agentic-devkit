@@ -3,8 +3,7 @@ name: devkit-docker-deploy
 description: >-
   bootstrap or audit a project's Docker / docker-compose production deployment against the org's deployment
   conduct and the project's release contract. Use when starting a new dockerized service, hardening an existing
-  one, or reviewing its builds, deployment, migration, health and rollback flow. Covers Laravel and Node.js,
-  immutable registry images or verified release bundles, single-node prod+test, and opt-in fleet/candidate cutovers.
+  one, or reviewing its builds, deployment, migration, health and rollback flow. Covers Laravel and Node.js.
 ---
 
 # Docker Deployment — Setup & Audit

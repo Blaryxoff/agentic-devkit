@@ -2,41 +2,39 @@
 
 ## Basic
 
-### Every module that needs configuration should have a dedicated config entry in `config/*.php`
+### Give every module that needs configuration a dedicated entry in `config/*.php`
 
-### Config files should aggregate child module configs
+### Aggregate child module configs in their parent config file
 
-Core/domain-facing settings should be separated from infrastructure/runtime settings (e.g. `config/app_modules.php` with `core` and `infrastructure` sections).
+Separate core/domain-facing settings from infrastructure/runtime settings (e.g. `config/app_modules.php` with `core` and `infrastructure` sections).
 
 ### Environment variables
 
-- `.env.example` should be created with examples of used variables (sensitive variables should always be empty or placeholder)
-- `.env` should be added to `.gitignore`
+- Create `.env.example` with every variable the app reads; leave sensitive values empty or as placeholders.
+- Add `.env` to `.gitignore`.
 
 Group `.env.example` variables with header comments by concern (`# ── Application`, `# ── Database`, `# ── Queue / Cache`, etc.). Use empty values for secrets.
 
 ## Populating config values
 
-There are two ways to populate config values:
+Populate config values in one of two ways:
 
-- Laravel config files with environment variables (recommended)
-- environment variables only (for very small/simple scripts only)
+- Laravel config files with environment variables (default)
+- environment variables only (very small bootstrap scripts only)
 
-### Laravel config files with environment variables (recommended)
+### Laravel config files with environment variables (default)
 
 - use `config/*.php` as the only source of config mapping
-- values with sensitive data (secrets, passwords etc.) should be passed using environment variables
+- pass sensitive values (secrets, passwords etc.) through environment variables
 - use defaults only for non-sensitive and safe fallback values
 - cast env values explicitly in config files: `(bool) env('APP_DEBUG', false)`, `(int) env('TIMEOUT', 10)`
-- after loading, critical config should be validated early (startup checks / health checks)
+- validate critical config right after loading (startup checks / health checks)
 
 ### Environment variables only
 
-- for framework code, avoid reading `$_ENV` / `getenv()` / `env()` directly outside config files
+- in framework code, never read `$_ENV` / `getenv()` / `env()` outside config files
 - if a small bootstrap script must use env-only values, map them once into typed variables and validate immediately
-- application code should still consume values through `config(...)` abstraction
-
-In the normal Laravel flow, the same value should be consumed as `config('app.url')`.
+- consume values in application code through `config(...)`, e.g. `config('app.url')`
 
 ## Config validation
 
@@ -47,12 +45,12 @@ Validate critical config immediately after loading. Create a validator class per
 - **Local/dev**: use `.env` file (never committed) or environment variables
 - **Production**: use a secrets manager (Vault, AWS Secrets Manager, Kubernetes Secrets, etc.) — secrets are injected as environment variables at runtime
 - never hardcode secrets in config files or source code
-- sensitive fields in config files should read from `env(...)`, actual values come from environment
+- read sensitive config fields from `env(...)`; actual values come from the environment
 - `.env.example` contains all required variables with empty/placeholder values for secrets — this serves as documentation
 
 ## Nginx runtime config notes
 
-- Nginx config (`nginx/*.conf`) should control transport/runtime behavior (gzip, caching headers, request limits), while application behavior stays in Laravel config
+- Keep transport/runtime behavior (gzip, caching headers, request limits) in Nginx config (`nginx/*.conf`) and application behavior in Laravel config
 
 ## DO / DO NOT
 

@@ -1,9 +1,8 @@
 ---
 name: devkit-pair
 description: >-
-  converse with the other agent in this agterm split (Claude Code or Cursor ↔ Codex) through peer-chat.py; its
-  reply lands in your pane on its own. The pane the user asked is sole writer, the peer reviews
-  read-only and argues. Manual trigger ONLY: "pair", "парой", "work with codex", an explicit request to talk to Claude/Cursor, or
+  converse with the other agent in this agterm split (Claude Code or Cursor ↔ Codex). The pane the user asked
+  is sole writer, the peer reviews read-only and argues. Manual trigger ONLY: "pair", "парой", "work with codex", an explicit request to talk to Claude/Cursor, or
   a prompt opening "Chat from <peer>:". Both agents must already be running in one split. Not devkit-task's
   pipeline, nor devkit-crosscheck's one-shot subprocess peer.
 ---
