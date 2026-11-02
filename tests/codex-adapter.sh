@@ -327,6 +327,7 @@ assert_contains "$project/AGENTS.md" '### devkit-laravel'
 assert_contains "$project/AGENTS.md" '### devkit-tailwind'
 assert_contains "$project/AGENTS.md" '### devkit-css'
 assert_contains "$project/AGENTS.md" 'plugins/core/conduct/overview.md'
+# shellcheck disable=SC2088
 assert_contains "$project/AGENTS.md" '~/.claude/agentic-devkit/plugins/core/conduct/learning-capture-gate.md'
 assert_contains "$project/AGENTS.md" 'Cursor invokes `/devkit-learn`'
 assert_not_contains "$project/AGENTS.md" '{{DEVKIT_HOME}}'
@@ -345,6 +346,7 @@ for link in "$project"/.cursor/skills/*; do
 done
 [ -d "$project/.cursor/skills/custom-skill" ] || fail "custom Cursor skill directory was removed"
 assert_contains "$project/.cursor/rules/devkit-core.mdc" 'plugins/core/conduct/overview.md'
+# shellcheck disable=SC2088
 assert_contains "$project/.cursor/rules/devkit-core.mdc" '~/.claude/agentic-devkit/plugins/core/conduct/learning-capture-gate.md'
 assert_contains "$project/.cursor/rules/devkit-core.mdc" 'Cursor invokes `/devkit-learn`'
 assert_not_contains "$project/.cursor/rules/devkit-core.mdc" '{{DEVKIT_HOME}}'

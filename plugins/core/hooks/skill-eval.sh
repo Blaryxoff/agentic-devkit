@@ -6,8 +6,8 @@
 # Debounced per session_id: skipped inside the stale window, refired once stale.
 # Adapted from umputun/cc-thingz (MIT). Instruction only — no permissions; the only write is the per-session debounce marker under TMPDIR.
 
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-DEVKIT_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../../.." && pwd)
+SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+DEVKIT_ROOT=$(CDPATH='' cd -- "$SCRIPT_DIR/../../.." && pwd)
 STALE_SECONDS=1200
 
 gate() {

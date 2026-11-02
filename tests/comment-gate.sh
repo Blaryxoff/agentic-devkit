@@ -122,6 +122,7 @@ expect 0 "malformed input fails open" '{"tool_name":"Edit"}'
 
 gate_stderr() {
   set +e
+  # shellcheck disable=SC2069
   printf '%s' "$1" | TMPDIR="$TMP_DIR" sh "$ROOT/plugins/core/hooks/comment-gate.sh" 2>&1 1>/dev/null
   set -e
 }

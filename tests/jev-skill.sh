@@ -79,7 +79,8 @@ PY
 python3 "$TMP/server.py" > "$TMP/port" &
 SERVER_PID=$!
 for _ in $(seq 50); do [ -s "$TMP/port" ] && break; sleep 0.1; done
-export JEV_BASE_URL="http://127.0.0.1:$(cat "$TMP/port")"
+JEV_BASE_URL="http://127.0.0.1:$(cat "$TMP/port")"
+export JEV_BASE_URL
 
 out=$(printf 'alpha\nthe needle line\nbeta\n' | "$JEV" filter --task "find the needle" 2>"$TMP/stderr")
 [ "$out" = "the needle line" ] || fail "filter kept the wrong lines: $out"

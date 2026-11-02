@@ -28,6 +28,7 @@ SCRIPTS=(
   project-manager.sh
   resolve.sh
   review-qa.sh
+  shellcheck.sh
   skill-eval.sh
   stack-plugins.sh
   timesheet-skill.sh
