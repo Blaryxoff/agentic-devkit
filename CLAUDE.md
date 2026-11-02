@@ -197,6 +197,8 @@ The audience is an LLM. Optimise for signal density — every line spends contex
 
 - A new rule belongs in **conduct**. Add it to the owning plugin's `overview.md` routing when agents must discover it;
   change a skill only when its workflow or routing triggers change.
+- When a rule can be enforced mechanically, back it with a hook or test (`plugins/core/hooks/`, `tests/`) instead of
+  more prose. A rule only in prose is advice.
 - Before adding a new section, grep for the topic — extend the existing section instead of opening a parallel one.
 
 ## Common Commands

@@ -15,6 +15,7 @@ Start with `conduct-loading.md`, then open only the documents routed by the acti
 | Entity, flow, view, or store completeness | [behavioral-completeness.md](./behavioral-completeness.md) |
 | Stack tester traceability, isolation, selective mutation testing, or implementation boundaries | [test-implementation.md](./test-implementation.md) |
 | Implementation completion and verification | [review-gate.md](./review-gate.md), [verification-loop.md](./verification-loop.md), [agent-test-restraint.md](./agent-test-restraint.md) |
+| Adding or changing lint, type, security or CI checks | [quality-gates.md](./quality-gates.md) |
 | Review routing, capability discovery, specialist fan-out, finding format, cross-checking, or peer-CLI invocation | [review-routing.md](./review-routing.md), [reviewer-dispatch.md](./reviewer-dispatch.md), [review-specialist-fanout.md](./review-specialist-fanout.md), [review-findings-format.md](./review-findings-format.md), [cross-agent-review.md](./cross-agent-review.md) |
 | Supervised multi-agent review delegated to revmux | [revmux-review.md](./revmux-review.md) |
 | Git, commit workflow, or deferred-work backlog | [git-commit-workflow.md](./git-commit-workflow.md), [deferred-work-backlog.md](./deferred-work-backlog.md) |

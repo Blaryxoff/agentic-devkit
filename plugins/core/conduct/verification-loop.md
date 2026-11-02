@@ -55,6 +55,8 @@ The repeated-failure trigger is informed by [ub-mode](https://github.com/unclebo
 - If any step fails, fix the issue before proceeding to the next task.
 - Resolve failures before moving to the next task so each task leaves the codebase in a passing state.
 - Record pre-existing failures unrelated to the current change explicitly before continuing.
+- Fix what a failing check reports; never weaken the check to pass it. Disabling a rule, lowering a threshold, widening an exclusion or adding a suppression directive that hides an unresolved defect is not a fix.
+- Scope a justified exception to one path and one rule, state the reason, and follow the project's approval rules. Give a suppression that hides a security or risk finding a review date.
 
 ## Stack-specific commands
 
