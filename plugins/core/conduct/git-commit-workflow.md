@@ -41,6 +41,13 @@ Avoid `git commit --amend`. Use `--amend` only when ALL of these hold:
 - After any hook runs, inspect `git show --name-status --format= HEAD` and `git status --short`. Hooks can modify or stage files; never discard, unstage, or absorb unexpected paths without inspecting them.
 - Limit commit-phase commands to git commands and use their output for inspection; conduct code exploration before the commit phase.
 - Do not push to the remote unless the user explicitly asks.
+- After the session's own required local checks pass, discover and contact same-host sessions preparing an authorized
+  delivery to the same repository and target under the same publishing account. Include any number of sessions whose
+  tasks are implemented, locally verified, and explicitly confirmed ready; leave all other sessions out of the group.
+  Agree one push owner and verify the combined candidate within the authorized branch flow, preserving each session's commit ownership.
+- A ready session proceeds independently if no matching peer promptly confirms readiness, including peers still
+  implementing or running their feature's local checks. The current session's required checks and verification of any
+  combined candidate remain mandatory. Participants confirm their commits were included instead of pushing duplicates.
 - Pass every commit message via a HEREDOC to preserve formatting:
 
 ```bash
