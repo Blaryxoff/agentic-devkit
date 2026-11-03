@@ -24,6 +24,7 @@ AI ускоряет поставку фич только при дисципли
 
 ### Инструменты
 - [[Claude Code]]
+- [Claude privacy launcher](./claude-privacy-launcher.md) — локальная настройка Mac, обновления и ограничения риска; на английском
 - [[Cursor]]
 - [[CLAUDE.md конвенции]]
 
