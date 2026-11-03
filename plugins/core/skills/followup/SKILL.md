@@ -91,16 +91,29 @@ even when the calculation is performed as a separate part of the request.
 6. **Confirm deployment and fast-test the target.** Before drafting or posting a ready comment, identify the remote
    environment where the reporters can check the result and verify that its deployment containing every fix claimed
    in the reply has succeeded. Use the requested environment: a staging request needs verified staging deployment and
-   checks, not an additional production release. Match the deployed revision to the fixes through deployment records, then run a focused
-   smoke check of each claimed fix on that deployed remote
-   target. Use the affected UI flow or API/runtime behavior and confirm the expected outcome; server availability or
-   HTTP 200 alone is insufficient. Record the target, deployed revision, checks, and results in the user conversation.
+   checks, not an additional production release. Match the deployed revision to the fixes through deployment records.
+   Treat core versions, active themes, artifact readiness, and health/readiness endpoints as rollout evidence only;
+   they do not establish that the feature is available or works for its users.
+   By default, map every proposed completion claim to a task-specific scenario on that deployed target: record the tenant or
+   application variant, actual role, prerequisites, action, expected outcome, and observed result. Check required
+   feature settings and permissions, then exercise the affected UI flow or API/runtime behavior and inspect its
+   functional result; an HTTP 200 or a page loading does not establish that result. For authenticated features,
+   sign in through the project's authorized test login path; guest probes do not cover authenticated behavior.
+   For a feature rollout, cover its main user journey across the applicable deployed components, including the
+   backend and active frontend/theme. Claim only the scope supported by these checks; a narrow smoke check cannot
+   support a statement that the full task functionality is available. Record the target, deployed revisions,
+   scenarios, and results in the user conversation.
    Local verification, green test jobs, a push, or an older successful deployment do not satisfy this gate. Apply it to
    existing fixes too; reuse remote results only when they cover the claimed fixes on the confirmed deployed revision.
    Monitor an in-progress deployment through available CI/deployment tools; keep progress in the user conversation.
-   If deployment fails, is unavailable, or cannot be verified, or a remote check fails or is blocked, withhold ready
-   drafts and tracker replies and report the blocker to the user. Deployment itself still requires separate
-   authorization. Waive deployment confirmation or remote checks only when the user explicitly requests that exception;
+   If a scenario cannot be exercised because the feature is hidden, disabled, or requires unavailable access or
+   setup, explain what was confirmed and what remains untested, then ask the user for a test path or permission
+   to report the confirmed deployment without that functional check. Keep the reply pending until they answer;
+   do not enable features or change production settings without authorization. An approved exception permits
+   reporting the supported deployment scope, but does not establish user availability or a functional pass.
+   If deployment fails, is unavailable, or cannot be verified, or a remote check fails, withhold ready drafts and
+   tracker replies and report the blocker to the user. Deployment itself still requires separate authorization.
+   Waive deployment confirmation or remote checks only when the user explicitly requests or approves that exception;
    a request for comments alone is not a waiver. Honor an explicit exception without adding "Deploy is pending",
    equivalent caveats, or unsupported deployment or verification claims.
 7. **Update the tracker.** After the deployment and remote-check gate or its explicit exception, use `devkit-comment`
@@ -141,6 +154,7 @@ even when the calculation is performed as a separate part of the request.
 - Use the task description as the report source only after confirming that the complete discussion contains no QA remarks.
 - Draft or post implementation-ready comments only after deployment is green and focused checks of the claimed fixes
   pass on the deployed remote target, unless the user explicitly waives the missing gate. Local checks alone are insufficient.
+  For hidden or disabled features and unavailable test prerequisites, use step 6's user fallback before stopping.
   Keep deployment blockers and pending-deployment wording out of tracker comments. When this gate blocks a comment,
   report in chat and withhold the tracker write; do not redirect it to another task or reclassify it as a diagnostic handoff.
 - Do not post a comment when the user asked only for a draft. For implementation reports, require unreported verified
