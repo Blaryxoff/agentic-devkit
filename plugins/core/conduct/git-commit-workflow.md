@@ -41,13 +41,26 @@ Avoid `git commit --amend`. Use `--amend` only when ALL of these hold:
 - After any hook runs, inspect `git show --name-status --format= HEAD` and `git status --short`. Hooks can modify or stage files; never discard, unstage, or absorb unexpected paths without inspecting them.
 - Limit commit-phase commands to git commands and use their output for inspection; conduct code exploration before the commit phase.
 - Do not push to the remote unless the user explicitly asks.
-- After the session's own required local checks pass, discover and contact same-host sessions preparing an authorized
-  delivery to the same repository and target under the same publishing account. Include any number of sessions whose
-  tasks are implemented, locally verified, and explicitly confirmed ready; leave all other sessions out of the group.
-  Agree one push owner and verify the combined candidate within the authorized branch flow, preserving each session's commit ownership.
-- A ready session proceeds independently if no matching peer promptly confirms readiness, including peers still
-  implementing or running their feature's local checks. The current session's required checks and verification of any
-  combined candidate remain mandatory. Participants confirm their commits were included instead of pushing duplicates.
+- After the session's own required local checks pass and its delivery is authorized, discover possible same-host peers
+  through read-only session inventory and recent task output. Before sending any message, verify that each recipient is
+  currently preparing an authorized delivery to the same repository and target under the same publishing account, with
+  implementation complete and required local checks passed.
+- Exclude idle sessions, completed tasks, sessions awaiting user input, read-only tasks, and peers still implementing
+  or running local checks. Treat missing, stale, or ambiguous activity or delivery evidence as ineligible. A shared cwd,
+  session title, running agent process, or UI selection (`active`) does not establish delivery readiness.
+- Contact only eligible peers individually to confirm readiness. Never broadcast readiness probes, type into idle
+  composers, or submit queued text to discover whether a session wants to participate. Recheck eligibility before sending
+  a follow-up or Enter; a previous probe does not authorize waking an excluded session.
+- Use an existing verified sender when it supports the exact target agent and pane. For an authorized manual agterm
+  send, pin the session and pane, confirm an empty composer, type a short single-line body without a trailing newline,
+  and wait until read-back shows the complete intended body. Recheck that the composer contains only this message, then
+  send Return (`\r`) in a separate call. Verify a new conversation entry or explicit queued-message state in that pane;
+  a successful typing call or text visible in the composer is not proof of submission. On an ambiguous result, inspect
+  before retrying; never blindly resend the body or press Enter again, and never submit someone else's composer text.
+- Include only peers that explicitly confirm readiness; agree one push owner and verify the combined candidate within
+  the authorized branch flow, preserving each session's commit ownership. Proceed independently when no eligible peer
+  is evident or promptly confirms; do not poll or remind excluded peers. The current session's required checks and
+  verification of any combined candidate remain mandatory. Participants confirm inclusion instead of pushing duplicates.
 - Pass every commit message via a HEREDOC to preserve formatting:
 
 ```bash
