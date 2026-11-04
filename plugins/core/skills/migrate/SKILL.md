@@ -17,6 +17,8 @@ Execute this order: **repo/code/env → bulk S3 and DB copies → S3 catch-up an
 - Reuse prepared infrastructure and yesterday's evidence; recheck only expired or changed facts needed for the next action.
 - Record source and target, code/image revision, env source, storage mapping, DB engine/version, traffic route,
   worker/scheduler owner, and required availability in one short stage ledger.
+- Define availability through normal signed-in reads, login and required writes. A public page or branded login HTML
+  returning 200 does not establish working service when course access, purchases or progress updates are disabled.
 - Preserve existing keys, file paths, bucket privacy, application identity, branding and integration behavior.
 - Distinguish a host/provider move from application consolidation, schema conversion or a bucket redesign. If required,
   name the exact compatibility work and its time cost before proceeding; keep optional redesign outside the migration.
@@ -47,6 +49,11 @@ Execute this order: **repo/code/env → bulk S3 and DB copies → S3 catch-up an
   transfers concurrently only when source/target capacity permits; perform transfers server-to-server.
 - Use existing copy tools and durable jobs with progress logs. Record checkpoint, bytes/objects, failures and throughput;
   estimate remaining time from observed progress instead of repeatedly restarting copies or listing whole stores.
+- Assemble the runnable fence → final capture → apply → activate → route → reopen command while the bulk copy runs.
+  Prove its source-DB read path works independently of source web/workers with a bounded read-only probe, not another
+  capture. Reuse the existing operator path; do not start building a new carrier after the initial copy passes.
+- Call the switch ready only when that command is runnable. If command assembly still blocks it, name the missing
+  executable step and resolve only that step; do not call another capture or readiness audit “the remaining step”.
 - Preserve S3 object keys, metadata, content types and private/public access behavior. Keep source data intact; obtain
   explicit authorization for destructive mirroring or target replacement.
 - Restore the DB into the isolated target; keep its previous recoverable state. Prefer the engine's existing hot-backup,
@@ -93,6 +100,13 @@ Execute this order: **repo/code/env → bulk S3 and DB copies → S3 catch-up an
   after target writes reopen; their failure is not an automatic reason to restore source authority.
 - Capture another final delta only if source writes actually resumed or the prior capture failed or became unusable.
   Record that cause instead of repeating catch-up merely because time passed or another check was added.
+- Reuse the committed consolidation import and its mappings/checksums; mutate only changed/new rows and supported
+  deletions during catch-up. Rewriting unchanged rows and fully reconciling the entire graph is a replay, not a small
+  delta. If that is the only implemented path, state its measured outage cost before fencing; keep the source live
+  while preparing the minimal delta path or obtaining the owner's acceptance of that maintenance window.
+- Apply business-critical changes and referenced records before enabling target writers/workers. Backfill optional
+  history/media and run full audits afterward; reconcile late source data against new target writes without overwriting
+  them or duplicating payments, orders or access grants.
 - Define the last-write boundary, measured final-delta duration, maximum request wait, abort condition and recovery
   action before the switch. Complete bulk transfer, restore and broad validation before entering this boundary.
 - Separate cutover-critical dependencies from optional diagnostics before fencing writers. Probe the critical paths
