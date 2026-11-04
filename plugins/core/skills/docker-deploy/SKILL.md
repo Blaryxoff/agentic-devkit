@@ -10,6 +10,9 @@ description: >-
 
 > Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
 
+Use `devkit-migrate` for moving live production between prepared hosts/providers: storage, DB, then traffic cutover.
+Use this skill for infrastructure setup, hardening or deployment audits needed by that move.
+
 Use [`plugins/core/conduct/docker-deployment.md`](../../conduct/docker-deployment.md) as the source of truth. Load it
 progressively by section; do not read the 1,000-line document wholesale.
 
