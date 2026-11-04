@@ -86,8 +86,21 @@ Execute this order: **repo/code/env → bulk S3 and DB copies → S3 catch-up an
 - Bring the target DB close to current through the prepared catch-up path: native replication/incrementals for compatible
   databases, or the proven scoped importer/change log for consolidation. Keep schema and app revision compatible;
   a host migration does not authorize unrelated application migrations.
+- **Take the final delta once, switch immediately, then verify.** Treat “Свежую дельту можно снимать бесконечно.
+  Один раз переключи, потом хоть обсверяйся” as the execution rule: fence source writers, capture/apply the final
+  committed delta, then promote the target and repoint connections in the same bounded handoff. Do not insert another
+  snapshot, freshness refresh, broad comparison or optional probe between that delta and the switch. Run those checks
+  after target writes reopen; their failure is not an automatic reason to restore source authority.
+- Capture another final delta only if source writes actually resumed or the prior capture failed or became unusable.
+  Record that cause instead of repeating catch-up merely because time passed or another check was added.
 - Define the last-write boundary, measured final-delta duration, maximum request wait, abort condition and recovery
   action before the switch. Complete bulk transfer, restore and broad validation before entering this boundary.
+- Separate cutover-critical dependencies from optional diagnostics before fencing writers. Probe the critical paths
+  before the hold; defer auxiliary read-only accounts, analytics and backfill unless the release contract requires them.
+- Track the write-pause start and budget explicitly. While writes are paused, prioritize final reconciliation and
+  reopening the authoritative target; defer checks that can safely follow activation. If the budget expires before
+  target live writes, take the established abort path. After target live writes, preserve target authority and recover
+  forward rather than reopening a stale source. Report a prolonged pause immediately with the failing step and recovery.
 - Preserve one authoritative writable DB. Drain/fence every source writer, including workers, scheduler, webhooks and
   long-lived connections; apply the final committed changes and verify the native position/checkpoint is caught up.
 - Keep HTTP ingress available. Use an existing bounded request hold/drain only if it fits the authorized availability
