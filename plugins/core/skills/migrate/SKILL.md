@@ -109,12 +109,31 @@ Execute this order: **repo/code/env → bulk S3 and DB copies → S3 catch-up an
   them or duplicating payments, orders or access grants.
 - Define the last-write boundary, measured final-delta duration, maximum request wait, abort condition and recovery
   action before the switch. Complete bulk transfer, restore and broad validation before entering this boundary.
+- Use the owner's functional-interruption budget for the entire handoff. Treat “a couple of seconds” as a maximum
+  of five seconds unless the owner specifies another limit; a minutes-long gate or a finalizer-only timeout does not
+  satisfy it. If the measured path cannot fit, keep the source live while shortening it or obtaining an explicit
+  maintenance-window decision. Never infer acceptance from an agent's estimate or another agent's agreement.
+- Start one immutable clock at the first gate, drain or stop that impairs normal access on any node; stop it only when
+  normal access and required writes reopen on the authoritative runtime. Include drain, capture, apply, activation,
+  routing and recovery. Persist the original start/deadline across processes and retries; never reset the clock,
+  replace remaining time with a fresh allowance, bypass a timeout or report only the last resumed segment.
+- Require the existing switch controller to enforce that deadline and the verified pre-promotion recovery path before
+  gating users. A warning, raised exception or paused shell awaiting manual repair is not timeout recovery. Reserve
+  time for restoring service; do not spend the full budget before starting the abort.
 - Separate cutover-critical dependencies from optional diagnostics before fencing writers. Probe the critical paths
   before the hold; defer auxiliary read-only accounts, analytics and backfill unless the release contract requires them.
-- Track the write-pause start and budget explicitly. While writes are paused, prioritize final reconciliation and
-  reopening the authoritative target; defer checks that can safely follow activation. If the budget expires before
-  target live writes, take the established abort path. After target live writes, preserve target authority and recover
-  forward rather than reopening a stale source. Report a prolonged pause immediately with the failing step and recovery.
+- Abort an over-budget pre-promotion attempt instead of continuing “because the source is already fenced.” Confirm
+  owned remote mutators have stopped and activation did not commit, then restore the source through the prepared
+  recovery path. Resolve unknown authority immediately without enabling a second writer. After promotion commits,
+  preserve target authority and restore its access forward; never resume a stale source.
+- Restore service before repairing a failed prerequisite, changing code/config/proof bindings, or preparing another
+  attempt. While access is gated, perform only the prepared handoff or recovery; defer optional checks, cosmetic
+  branding and unrelated task orchestration. Validate release/config/proof compatibility while the source is live.
+- If prepared recovery itself fails, make only the smallest recovery repair needed to restore the established
+  authority's service. Keep the original clock running and report the recovery failure; this exception permits no
+  renewed migration preparation, promotion attempt or timeout extension.
+- Report any overrun immediately with its failing phase, actual authority and recovery action. Keep the full original
+  gate-to-restored-access duration in the final report, including failures and manual continuation.
 - Preserve one authoritative writable DB. Drain/fence every source writer, including workers, scheduler, webhooks and
   long-lived connections; apply the final committed changes and verify the native position/checkpoint is caught up.
 - Keep HTTP ingress available. Use an existing bounded request hold/drain only if it fits the authorized availability
@@ -127,10 +146,11 @@ Execute this order: **repo/code/env → bulk S3 and DB copies → S3 catch-up an
   independently. Never run duplicate consumers against independent databases.
 - Verify one representative read and one authorized reversible write through each serving ingress, plus the active
   worker owner. Use designated test data; do not alter customer records for a probe.
-- Treat the first authoritative live application write after target promotion as the rollback boundary. Restore,
-  replication and isolated probe writes do not cross it. Before it, source can resume after the target is fenced;
-  afterward, preserve target authority and repair forward or reconcile changes before any DB failback. Never resume a
-  stale source DB or overwrite a target that has accepted live writes.
+- Treat committed target promotion or the first authoritative live target write, whichever happens first, as the
+  abort boundary. Isolated restore, replication and probe writes before promotion do not cross it. Source can resume
+  through the prepared abort only after fencing target mutators and proving neither promotion nor live writes
+  committed. After that boundary, preserve target authority and repair forward; any later failback needs its own
+  reconciled recovery procedure. Never resume a stale source DB or overwrite a target that has accepted live writes.
 
 ## 6. Switch domains last and retain old ingress
 
@@ -149,8 +169,10 @@ Execute this order: **repo/code/env → bulk S3 and DB copies → S3 catch-up an
 - Attach each check to a stage exit criterion, a command and a pass/fail consequence. Once it passes, advance.
 - Reuse unchanged results. Repeat a check only after its inputs changed, a failure, or expiry relevant to the switch.
 - Check transfer progress from its existing job at a cadence justified by its ETA; stay available for user input.
-- After 10 minutes of preparation/checking without a stage advance or measurable transfer progress, state the exact
-  blocker, time spent and next action. Continue safe independent stages while an external approval is pending.
+- After 10 minutes of preparation/checking while normal service remains live, without a stage advance or measurable
+  transfer progress, state the exact blocker, time spent and next action. This is a reporting interval, never a pause
+  allowance; gated service follows the shorter end-to-end deadline above. Continue safe independent stages while an
+  external approval is pending.
 - Prefer existing operational commands. Add only missing migration-critical glue; keep the switch sequence short and
   reviewable instead of building a general migration framework during the move.
 - Delegate only independent bounded work with a clear output and available executor. If an agent has not started,
