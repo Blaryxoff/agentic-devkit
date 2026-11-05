@@ -8,18 +8,24 @@
   `tail_minutes` (default 15) after it. This counts writing the next prompt and reading the answer, and stops
   counting when the person walked away while the agent ran.
 - Browser visits use a stricter rule (≤ 10 min gap, else 5 min) — a page load says less than a prompt.
-- Before `transcript_cutoff` (the date from which transcripts are continuous) add low-confidence anchors from commit
-  times and exec-session starts even on days that have some human anchors; one surviving prompt must not suppress
+- Before `transcript_cutoff` (the verified date from which human-source coverage is continuous) add low-confidence anchors from own commit
+  times even on days that have some human anchors; one surviving prompt must not suppress
   a day of commits. After the cutoff they fill only days with no human anchor in that repo (a day of commits from a
   bot or another machine). Commits are the person's own (`--author`), never teammates'.
+- Establish the cutoff after reconciling rollout files with input history and the thread index. The first surviving
+  transcript alone does not establish continuous coverage. Prefer recovered human messages over commit fallback.
+- Merge each session's sources before creating intervals. Match stable event IDs or one-to-one identical text within
+  60 seconds across sources; retain repeated text at different timestamps within the same source. Normalize human
+  structured question replies before matching. Never merge different sessions or infer activity from metadata dates.
 - Calls cover their measured minutes and override everything else in those minutes.
 
 ## One timeline
 
 - Build a single minute timeline across **all** repos and sources. Each minute holds the set of labels active in it.
-- `union`: a minute with any target label counts fully for the target and splits only among target labels
-  (other clients in parallel are ignored). `split`: the minute also splits with other clients' labels. The choice is
-  the user's (see below); per-project shares barely change between them, absolute totals do.
+- Set `parallel_other_clients` to `union`: a minute with any target label counts fully for the target and splits only
+  among target labels. Unrelated labels never enter the denominator. This is fixed; do not offer `split` or show an
+  alternative total based on unrelated activity.
+- Keep other clients invisible in every user-facing surface, including clarification questions and progress updates.
 - Sum per label, per month, per day. Days are the local calendar date.
 
 ## Classification
@@ -36,6 +42,8 @@ label, else the common/core bucket:
 | task keyword whose task names a project, when the prompt names no project | +6 |
 
 - A prompt labelled DevOps only by weak words labels itself but does not recolour the rest of the session.
+- Explicit human project clues take precedence over agent-action keyword noise. Cap agent votes to three hits per
+  project per interval. Optional `repo_project_rules: [[regex, project]]` pins ownership for dedicated repositories.
 - Prompts in another repo count for the target only if they name it and the repo is a known infra repo
   (`outside_repo_rx`); they go to DevOps.
 - `reroute` moves matching prompts to another project/task or drops them (non-billable, personal). Use it when the
@@ -68,13 +76,22 @@ counting pauses up to 45 min instead of 30 adds roughly 15%.
 
 ## Decisions the user owns
 
-Ask each with numbers for every option; never decide silently:
+Reuse choices already confirmed in the conversation; do not ask for them again. Explain the method directly using
+the documented intervals, timeline, factor and allocation rules. Do not refer the user to a previous report or make
+finding its artifact a prerequisite. Record each choice and its provenance in the scratch config.
 
-1. **Parallel other-client work**: `union` (all time while working on the target) vs `split`.
+Ask only unresolved questions, in plain language, with numbers for every option. If a choice changes the base used by
+another question, state that dependency and update the resulting totals:
+
+1. **Gap/tail intervals**: show the sensitivity totals and ask which intervals to use.
 2. **Calls**: which rooms/dates are the target (show the context evidence); unknown Telegram/phone calls → user figure.
+   First inspect the available browser history and its date coverage. Ask which browser was used only if the source
+   cannot be identified or coverage is incomplete. Offer leaving calls unmeasured with no added hours.
 3. **Overhead factor** for unmeasured work (Telegram, reading specs before the first prompt, reviewing results,
    deploys, pauses > gap). Apply proportionally to every project and task, and state it in the method line.
-4. **Exclusions**: personal, other clients, non-billable infra; and whether the report-writing session itself counts.
+   Include ×1.00 with zero added hours; apply only the uplift explicitly chosen for the current report.
+4. **Exclusions**: personal activity, non-billable infra; and whether the report-writing session itself counts.
+   Filter unrelated clients internally without mentioning them or asking whether to include them.
 
 ## Allocation and rounding
 

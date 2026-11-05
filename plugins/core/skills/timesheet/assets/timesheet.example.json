@@ -19,14 +19,14 @@
   "target_mention_rx": "acme|alpha|beta|acme-stage\\.example",
   "other_client_rx": "otherclient|second-client",
   "outside_task": "DevOps from the infra repo",
+  "repo_project_rules": [],
   "hermes_cwd": "hermes",
 
   "auto_prefixes": ["<command-", "<task-notification", "Chat from", "[Artifact comment", "<local-command", "# AGENTS.md",
     "<environment_context", "<user_instructions", "<system-reminder", "Caveat:", "<<autonomous", "<turn_aborted", ">>REQ",
     "<<RPY", "<recommended_plugins>", "<timestamp>", "<system_notification>", "[IMPORTANT", "[Cron delivery",
-    "[CONTEXT COMPACTION"],
-  "exec_skip_prefixes": ["<user_action>", "Review the code changes for", "You are one reviewer"],
-
+    "[CONTEXT COMPACTION", "<codex_internal_context", "↻ Automatic capacity retry",
+    "This session is being continued from a previous conversation"],
   "common_project": "Core (all brands)",
   "devops_project": "DevOps",
   "calls_project": "Calls and team syncs",
@@ -76,5 +76,7 @@
     "Calls and team syncs": [["Team syncs", ["ghostflow:1", "ghostflow:2"]], ["Brand calls", ["telemost:1234567890"]]]
   },
   "labels": {},
+  "coverage_title": "Неполные источники",
+  "coverage_text": "",
   "method_text": "Time reconstructed from AI-agent logs, prompt history, commits, browser history and calls. Parallel work counted once. Project hours are measured; task hours distribute each project's time."
 }

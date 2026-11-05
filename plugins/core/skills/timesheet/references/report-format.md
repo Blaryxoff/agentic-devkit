@@ -8,9 +8,14 @@
    day and hours above the norm, extra days (weekends, vacation days) and their hours.
 3. **Часы по проектам** — rows per project with one column per month, total, share; an «Итого» row. Order by size,
    keep «Общее ядро», «DevOps и инфраструктура», «Созвоны…» as their own rows. The whole table stays on one page.
-4. **Задачи по проектам** — starts on a new page. Per project: header with total and month split, then one-line
+4. **Неполные источники** — when sources are missing, add a separate section before the task pages via config
+   `coverage_title` / `coverage_text`. State the missing dates and affected work, such as calls, browser work and
+   manual browser testing. These hours were not separately reconstructed and may need adding from evidence or the
+   person's estimate, excluding overlaps with time already counted. Keep the measured total unchanged until then.
+   Describe verified retention facts; call it a cleanup only when its cause/date is established or user-confirmed.
+5. **Задачи по проектам** — starts on a new page. Per project: header with total and month split, then one-line
    bullets with whole hours. Tracker keys in parentheses when the bullet is a tracked task.
-5. **Как считал** — one paragraph: sources, "parallel work counted once", the overhead factor if any, period end,
+6. **Как считал** — one paragraph: sources, "parallel work counted once", the overhead factor if any, period end,
    "project hours are measured; task hours distribute the project's time".
 
 ## Wording

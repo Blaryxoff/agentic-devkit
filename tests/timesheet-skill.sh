@@ -7,6 +7,8 @@ DIR="$ROOT/plugins/core/skills/timesheet"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
+python3 "$ROOT/tests/timesheet-extraction.py"
+
 fail() {
   echo "FAIL: $*" >&2
   exit 1
@@ -47,6 +49,7 @@ cfg["period"] = {"from": "2026-09-01", "to": "2026-09-02"}
 cfg["transcript_cutoff"] = "2026-09-01"
 cfg["tz_offset_hours"] = 0
 cfg["vacation"] = []
+cfg["parallel_other_clients"] = "split"
 json.dump(cfg, open(f"{tmp}/cfg.json", "w"))
 s = lambda sid, cwd, prompts: {"tool": "t", "id": sid, "cwd": cwd, "entry": "human", "branches": [], "bhits": [], "prompts": prompts}
 rows = [
@@ -54,7 +57,7 @@ rows = [
     s("a", "/u/www/acme-platform", [["2026-09-01T10:00:00Z", "fix alpha redesign"], ["2026-09-01T10:20:00Z", "continue alpha redesign"], ["2026-09-01T10:40:00Z", "alpha redesign done"]]),
     s("b", "/u/www/acme-platform", [["2026-09-01T10:10:00Z", "beta renewal"], ["2026-09-01T10:30:00Z", "beta renewal again"]]),
     # another client in parallel never adds target time
-    s("c", "/u/www/otherclient", [["2026-09-01T11:30:00Z", "other client work"]]),
+    s("c", "/u/www/otherclient", [["2026-09-01T10:15:00Z", "other client work"]]),
     # machine-injected text is not a prompt
     s("d", "/u/www/acme-platform", [["2026-09-02T09:00:00Z", "<task-notification> done"]]),
     # bot dumps carry a slash-free cwd and still attribute by content
@@ -88,6 +91,49 @@ assert sum(p["total"] for p in report["projects"]) == report["total"]
 assert report["calendar"]["worked_days"] == 1, report["calendar"]
 md = open(f"{out}/report.md").read()
 assert "otherclient" not in md.lower()
+PY
+
+python3 - "$TMP/same-minute.jsonl" <<'PY'
+import json, sys
+s = {"tool": "t", "id": "ordered", "cwd": "/u/www/acme-platform", "entry": "human",
+     "branches": [], "bhits": [], "prompts": [
+         ["2026-09-01T10:00:01Z", "zzz alpha"],
+         ["2026-09-01T10:00:50Z", "aaa beta"],
+         ["2026-09-01T10:20:00Z", "beta done"],
+     ]}
+open(sys.argv[1], "w").write(json.dumps(s) + "\n")
+PY
+python3 "$S/timeline.py" --config "$TMP/cfg.json" --sessions "$TMP/same-minute.jsonl" --out "$TMP/ordered" >/dev/null
+python3 - "$TMP/ordered/hours.json" <<'PY'
+import json, sys
+hours = json.load(open(sys.argv[1]))
+assert set(hours) == {"Beta"}, hours
+assert abs(sum(hours["Beta"].values()) - 35 / 60) < 0.001, hours
+PY
+
+python3 - "$TMP" <<'PY'
+import json, sys
+from pathlib import Path
+tmp = Path(sys.argv[1])
+cfg = json.loads((tmp / "cfg.json").read_text())
+cfg["coverage_title"] = "Пробелы источников"
+cfg["coverage_text"] = "История недоступна: <browser & calls>. Часы не добавлены."
+(tmp / "cfg-coverage.json").write_text(json.dumps(cfg))
+PY
+python3 "$S/render.py" --config "$TMP/cfg-coverage.json" --report "$TMP/out/report.json" \
+  --out "$TMP/coverage" >/dev/null
+python3 - "$TMP" <<'PY'
+import json, sys
+from pathlib import Path
+tmp = Path(sys.argv[1])
+cfg = json.loads((tmp / "cfg-coverage.json").read_text())
+md = (tmp / "coverage/report.md").read_text()
+html = (tmp / "coverage/report.html").read_text()
+assert cfg["coverage_title"] in md and cfg["coverage_text"] in md
+assert "&lt;browser &amp; calls&gt;" in html
+assert "<browser & calls>" not in html
+assert md.index(cfg["coverage_title"]) < md.index("Alpha —")
+assert "class=coverage" not in (tmp / "out/report.html").read_text()
 PY
 
 python3 - "$TMP" <<'PY'

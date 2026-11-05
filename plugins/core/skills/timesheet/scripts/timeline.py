@@ -4,10 +4,9 @@
 Model (see references/method.md):
 - anchors are the person's own prompts/messages; a prompt covers the time until the next prompt of the same session
   when the gap is <= gap_minutes, otherwise tail_minutes;
-- before transcript_cutoff (transcripts expired) commit times and exec-session starts are added as low-confidence anchors;
+- before transcript_cutoff (verified retention gap) own commit times are added as low-confidence anchors;
 - browser visits to work sites are anchors with a stricter gap/tail; calls override the whole minute;
-- one global minute timeline: parallel sessions never add wall-clock time; a minute is split between the labels
-  active in it ('union' ignores other clients, 'split' shares the minute with them).
+- one global minute timeline: parallel sessions never add wall-clock time; a minute is shared only among target labels.
 
 Usage:
   timeline.py --config timesheet.json --sessions sessions.jsonl --out out/ \
@@ -34,7 +33,7 @@ TZ = dt.timedelta(hours=cfg.get('tz_offset_hours', 0))
 CUTOFF = dt.date.fromisoformat(cfg['transcript_cutoff']) if cfg.get('transcript_cutoff') else dt.date.min
 W0 = dt.datetime.fromisoformat(cfg['period']['from'])
 W1 = dt.datetime.fromisoformat(cfg['period']['to']) + dt.timedelta(days=1)
-MODE = cfg.get('parallel_other_clients', 'union')
+MODE = 'union'
 COMMON, DEVOPS = cfg['common_project'], cfg.get('devops_project')
 CALL = cfg.get('calls_project', 'Calls')
 rx = lambda s: re.compile(s, re.I) if s else None
@@ -45,12 +44,12 @@ OTHER_CLIENT = rx(cfg.get('other_client_rx'))
 DEVOPS_WEAK = rx(cfg.get('devops_weak_rx'))
 PROMPT_RX = {k: rx(v['prompt']) for k, v in cfg['projects'].items() if v.get('prompt')}
 PATH_RX = {k: rx(v['path']) for k, v in cfg['projects'].items() if v.get('path')}
+REPO_RULES = [(rx(pattern), project) for pattern, project in cfg.get('repo_project_rules', [])]
 AGENT_W = {k: v.get('agent_weight', 1) for k, v in cfg['projects'].items()}
 TASKS = [(rx(t['re']), t.get('project'), t['name']) for t in cfg.get('tasks', [])]
 GENERIC = set(cfg.get('generic_tasks', []))
 REROUTE = [(rx(r['re']), r.get('project'), r.get('task'), r.get('drop', False)) for r in cfg.get('reroute', [])]
 SKIP_PREFIX = tuple(cfg.get('auto_prefixes', []))
-EXEC_SKIP = tuple(cfg.get('exec_skip_prefixes', []))
 
 
 def minute(ts):
@@ -102,13 +101,14 @@ for i, s in enumerate(sessions):
     hint_str = (s.get('cwd') or '') + ' ' + ' '.join(s.get('branches', []))
     hint = collections.Counter({k: 3 for k, r in PATH_RX.items() if r.search(hint_str)})
     bh = [(minute(t), h) for t, h in s.get('bhits', [])]
-    prompts = sorted((minute(t), txt) for t, txt in s['prompts'] if not txt.lstrip().startswith(SKIP_PREFIX))
+    ordered = sorted(s['prompts'], key=lambda x: dt.datetime.fromisoformat(x[0].replace('Z', '+00:00')))
+    prompts = [(minute(t), txt) for t, txt in ordered if not txt.lstrip().startswith(SKIP_PREFIX)]
     sess = collections.Counter(hint)
     for _, txt in prompts:
         score(txt, 5, sess)
     for _, h in bh:
         for k, n in h.items():
-            sess[k] += n * AGENT_W.get(k, 1)
+            sess[k] += min(n, 3) * AGENT_W.get(k, 1)
     last = last_task = None
     for j, (t, txt) in enumerate(prompts):
         nxt = prompts[j + 1][0] if j + 1 < len(prompts) else t + dt.timedelta(hours=6)
@@ -122,10 +122,15 @@ for i, s in enumerate(sessions):
             sc[task[0]] += 6
         for k, n in hint.items():
             sc[k] += n
+        agent_hits = collections.Counter()
         for tm, h in bh:
             if t <= tm < nxt:
-                for k, n in h.items():
-                    sc[k] += n * AGENT_W.get(k, 1)
+                agent_hits.update(h)
+        for k, n in agent_hits.items():
+            sc[k] += min(n, 3) * AGENT_W.get(k, 1)
+        explicit = score(txt, 5)
+        if explicit:
+            sc = explicit
         if sc and max(sc.values()) >= 2:
             lab = sc.most_common(1)[0][0]
         elif last:
@@ -134,6 +139,7 @@ for i, s in enumerate(sessions):
             lab = sess.most_common(1)[0][0]
         else:
             lab = COMMON
+        lab = next((project for pattern, project in REPO_RULES if pattern.search(s.get('cwd') or '')), lab)
         weak_devops = lab == DEVOPS and not (PROMPT_RX.get(DEVOPS) and PROMPT_RX[DEVOPS].search(txt))
         if not weak_devops:
             last = lab
@@ -186,20 +192,6 @@ for kind, c in {c['sha']: (k, c) for k, c in fallback}.values():
         fb.append((t, 'fb:' + kind, ('target', lab), 'low', c['subj'], tk[1] if tk else '—'))
     else:
         fb.append((t, 'fb:' + kind, (kind, kind), 'low', c['subj'], '—'))
-for i, s in enumerate(sessions):
-    if s['entry'] != 'exec':
-        continue
-    real = [x for x in s['prompts'] if not x[1].lstrip().startswith(EXEC_SKIP + SKIP_PREFIX)]
-    if not real:
-        continue
-    kind = repo_kind(s.get('cwd'))
-    t = minute(real[0][0])
-    if covered_days.get((t.date(), kind)) and t.date() >= CUTOFF:
-        continue
-    tk = find_task(real[0][1][:400] + ' ' + (s.get('cwd') or '')) if kind == 'target' else None
-    lab = ('target', tk[0] if tk and tk[0] else COMMON) if kind == 'target' else (kind, kind)
-    fb.append((t, 'fb:' + kind, lab, 'low', real[0][1][:200], tk[1] if tk else '—'))
-
 timeline = collections.defaultdict(list)
 
 
@@ -253,7 +245,7 @@ for m, labs in timeline.items():
     tgt = [l for l in uniq if l[0] == 'target']
     if not tgt:
         continue
-    share = 1 / (len(tgt) if MODE == 'union' else len(uniq)) / 60
+    share = 1 / len(tgt) / 60
     days[str(m.date())] += share * len(tgt)
     for lab in tgt:
         mon = m.strftime('%Y-%m')

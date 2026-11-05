@@ -19,7 +19,7 @@ MONTHS_RU = {'01': 'Январь', '02': 'Февраль', '03': 'Март', '04
 L = dict(title='Отчёт по затраченному времени', norm='Норма и переработка', days='Дни', hours='Часы',
          col_norm='Норма', col_fact='Факт', col_over='Переработка', projects='Часы по проектам', project='Проект',
          total='Всего', share='Доля', grand='Итого', tasks='Задачи по проектам', method_title='Как считал.',
-         h='ч', method=cfg.get('method_text', ''))
+         h='ч', method=cfg.get('method_text', ''), coverage_title=cfg.get('coverage_title', 'Неполные источники'))
 L.update(cfg.get('labels', {}))
 e = html.escape
 c = r['calendar']
@@ -37,7 +37,7 @@ notes = [
     f"Норма: по производственному календарю — {c['calendar_days']} рабочих дней ({c['calendar_days'] * c['hours_per_day']} {L['h']})"
     + (f", минус отпуск ({c['vacation_days']} рабочих дней)" if c['vacation_days'] else '')
     + f" = {c['norm_days']} дней × {c['hours_per_day']} {L['h']} = {norm} {L['h']}",
-    f"Отработано {c['worked_norm_days']} из {c['norm_days']} рабочих дней, в среднем ~{avg} {L['h']} в день — это ~{c['norm_day_hours'] - norm} {L['h']} сверх нормы",
+    f"В рабочие дни восстановлено ~{c['norm_day_hours']} {L['h']}; активность в {c['worked_norm_days']} из {c['norm_days']} дней, в среднем ~{avg} {L['h']} в день",
 ]
 if c['extra_days']:
     parts = [f"{c['extra_weekend']} выходных"] + ([f"{c['extra_vacation']} дня отпуска"] if c['extra_vacation'] else [])
@@ -54,6 +54,9 @@ sections = ''.join(
     f"<span class=tot>{fmt_h(x['total'])}</span></h3><table class=tasks>"
     + ''.join(f"<tr><td>{e(t)}</td><td class=n>{fmt_h(h)}</td></tr>" for t, h in x['bullets']) + '</table></section>'
     for x in r['projects'])
+coverage_text = (cfg.get('coverage_text') or '').strip()
+coverage = (f"<section class=coverage><h2>{e(L['coverage_title'])}</h2><p>{e(coverage_text)}</p></section>"
+            if coverage_text else '')
 css = """@page { size: A4; margin: 16mm 15mm; }
 body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; color:#1d1d1f; font-size:10.5pt; line-height:1.4; }
 h1 { font-size:18pt; margin:0 0 2mm; } .meta { color:#666; margin-bottom:6mm; }
@@ -78,6 +81,7 @@ doc = f"""<!doctype html><html lang=ru><head><meta charset=utf-8><title>{e(L['ti
 <h2>{L['projects']}</h2>
 <table class=projects><thead><tr><th>{L['project']}</th>{''.join(f'<th class=n>{m}</th>' for m in mon)}<th class=n>{L['total']}</th><th class=n>{L['share']}</th></tr></thead>
 <tbody>{rows}<tr class=total><td>{L['grand']}</td>{''.join(f"<td class=n>{r['month_totals'][m]}</td>" for m in r['months'])}<td class=n>{tot}</td><td class=n>100%</td></tr></tbody></table>
+{coverage}
 <h2 class=newpage>{L['tasks']}</h2>{sections}
 <div class=method><b>{L['method_title']}</b> {e(L['method'])}</div></body></html>"""
 os.makedirs(a.out, exist_ok=True)
@@ -88,6 +92,8 @@ md = [f"{L['title']}, {period} ({r['person']})", '', f"{L['norm']}:",
       f"• {L['hours']}: {L['col_norm'].lower()} {norm}, {L['col_fact'].lower()} ~{tot}, {L['col_over'].lower()} {over:+d} ({pct_over})"]
 md += [f'• {n}' for n in notes]
 md += ['', f"{L['grand']}: ~{tot} {L['h']} (" + ', '.join(f"{m.lower()} {r['month_totals'][k]} {L['h']}" for m, k in zip(mon, r['months'])) + ')']
+if coverage_text:
+    md += ['', L['coverage_title'], coverage_text]
 for x in r['projects']:
     md += ['', f"{x['title']} — {x['total'] if x['total'] else '<1'} {L['h']} ({month_line(x)})"]
     md += [f"• {t} — {h if h >= 1 else '<1'} {L['h']}" for t, h in x['bullets']]
