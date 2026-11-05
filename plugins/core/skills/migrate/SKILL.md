@@ -8,8 +8,11 @@ description: >-
 
 # Production Migration
 
-Execute this order: **repo/code/env → bulk S3 and DB copies → S3 catch-up and switch → DB catch-up and switch
-→ domains → retire the old runtime after propagation**. Continue from the last proven stage.
+Execute this order: **repo/code/env → bulk copies → switch S3, copy its leftovers → switch DB with its small
+required handoff, finish remaining supported catch-up → domains → retire the old runtime after propagation**.
+Continue from the last proven stage. The default for each store is **copy → switch → copy leftovers** using existing
+tools. Build no new fallback layer, dual-write system, migration framework or general verification pipeline. Repair
+only an observed blocker to the requested move; do not turn optional resilience features into prerequisites.
 
 ## 1. Establish the migration boundary once
 
@@ -65,26 +68,26 @@ Execute this order: **repo/code/env → bulk S3 and DB copies → S3 catch-up an
   preserve unrelated tenants and keep callbacks on a compatible route throughout the switch.
 - Copy required local uploads, sessions, queues or Redis state using the project's semantics. Identify authoritative
   durable data separately from rebuildable caches; avoid a blind Redis replacement or replaying jobs twice.
-- Retry failed items from their manifest. Keep historical recovery/backfill running independently when live requests
-  do not depend on it; report the incomplete range and fallback rather than gating the whole move on optional recovery.
+- Retry failed items from the copy job's manifest. Use its existing success/error receipts; do not add separate full
+  inventories or repeated parity scans before switching unless an observed failure requires them. Keep optional
+  historical recovery/backfill off the critical path and report the remaining items and retry action.
 - If a restore fails, inspect its concrete error and resource usage before retrying. After two failures on the same
   assumption, change the method or report the specific blocker; stop repeating full imports with speculative tuning.
 
-## 4. Catch up S3 and switch storage first
+## 4. Switch S3 first, then copy leftovers
 
-- Run an incremental copy while the source remains active; include changed objects and reconcile deletions under the
-  agreed retention policy. Keep the initial-copy manifest as the baseline.
-- Establish one storage write destination across web, workers, scheduler and background jobs. Use an existing upload
-  fence, dual-write/catch-up protocol, or drain old-config writers before the final pass. A scan of a changing bucket is
-  not a final checkpoint.
-- Account for issued presigned uploads and in-progress multipart uploads when the app uses them. Drain/reconcile their
-  completions or retain catch-up and read fallback through their expiry; switching server env does not stop client writes.
-- Apply the remaining delta and switch all serving runtimes to target storage through the existing graceful reload path.
-  Keep old storage readable or use an existing fallback until outstanding old-source objects are reconciled.
-- Prevent a stale copy from overwriting newer target objects; account for in-flight overwrites and deletes explicitly.
-- Verify the final manifest has no unexplained misses, one existing public/private read behaves correctly, and a
-  disposable upload reaches target storage. Remove only the probe object created by this run.
-- Record storage as switched and advance to DB. Reopen storage checks only for a new failure or changed dependency.
+- Finish the bulk copy, then change the existing storage configuration across web, workers, scheduler and background
+  jobs using the existing graceful reload path. Preserve keys, metadata and access privacy; retain original objects.
+- Once those runtimes write to the target, run the existing incremental copy again to collect late source uploads and
+  failures. Include old-config writers, issued presigned uploads and multipart completions in the remaining-item pass.
+  Preserve newer target versions and target-side deletes/renames using existing copy/change receipts. Skip and report
+  ambiguous conflicts instead of overwriting new objects or recreating removed ones; do not add a tracking framework
+  or enable destructive mirroring by default.
+- Keep original buckets intact for copying and recovery. Do not implement an application read fallback, new routing
+  layer or dual-write mode for this migration. If one already exists, leave it alone rather than making its removal or
+  refinement another cutover prerequisite.
+- Run one focused existing-file read and disposable upload after switching, then advance to DB while any independent
+  file tail finishes. Copy any identified missing object from the source; repeat checks only for a concrete failure.
 
 ## 5. Catch up DB and switch connections second
 
