@@ -8,186 +8,113 @@ description: >-
 
 # Production Migration
 
-Execute this order: **repo/code/env → bulk copies → switch S3, copy its leftovers → switch DB with its small
-required handoff, finish remaining supported catch-up → domains → retire the old runtime after propagation**.
-Continue from the last proven stage. The default for each store is **copy → switch → copy leftovers** using existing
-tools. Build no new fallback layer, dual-write system, migration framework or general verification pipeline. Repair
-only an observed blocker to the requested move; do not turn optional resilience features into prerequisites.
+**Data copied → quick manual destination check → quick switch → copy leftovers and check afterward.**
+Use existing commands and configuration. Do not turn the move into a tooling or audit project.
 
-## 1. Establish the migration boundary once
+## 1. Reuse the prepared environment
 
-- Read the project's migration handoff, deployment entry point and current source/target configuration first.
-- Reuse prepared infrastructure and yesterday's evidence; recheck only expired or changed facts needed for the next action.
-- Record source and target, code/image revision, env source, storage mapping, DB engine/version, traffic route,
-  worker/scheduler owner, and required availability in one short stage ledger.
-- Define availability through normal signed-in reads, login and required writes. A public page or branded login HTML
-  returning 200 does not establish working service when course access, purchases or progress updates are disabled.
-- Preserve existing keys, file paths, bucket privacy, application identity, branding and integration behavior.
-- Distinguish a host/provider move from application consolidation, schema conversion or a bucket redesign. If required,
-  name the exact compatibility work and its time cost before proceeding; keep optional redesign outside the migration.
-- Resolve missing cutover authorization and availability requirements early. Reuse explicit authorization already given;
-  preparation alone does not authorize switching live writers or domains.
-- For unavailable sources or backups, state the last recoverable checkpoint and data-loss boundary. Obtain approval for
-  any loss before promotion; use the reachable authoritative source rather than waiting indefinitely for an old provider.
-- Load `devkit-docker-deploy` only for a concrete missing infrastructure prerequisite. Return here when it is resolved;
-  do not turn a prepared-host move into a full deployment audit.
+- Read the current handoff and identify the source, target, approved code/env, live writer and worker owner once.
+- Continue from completed work. Preserve prepared infrastructure, existing storage layout, keys, privacy and domains.
+- Preserve application identity, login/session keys and host-dependent cookie/callback settings through the existing env.
+- Install the repo/artifact and protected env through the existing deployment path if not already done. Keep target
+  workers, scheduler and other side effects off until ownership switches; keep source production serving.
+- Distinguish moving an unchanged deployment from merging a school into a shared application. Use the existing scoped
+  importer for consolidation; never restore a standalone dump over other tenants. Fix only a concrete incompatibility
+  that prevents the existing application from using the target.
+- Reuse the owner's migration authorization and availability preference. Preparation alone does not authorize live
+  cutover, data loss or destructive cleanup. Route actual missing infrastructure to devkit-docker-deploy only as needed.
 
-## 2. Install repo, code and env
+## 2. Copy while production stays live
 
-- Deploy the approved revision using existing release tooling; reuse a matching built artifact.
-- Install secrets through the project's protected env mechanism. Preserve source keys and integration credentials unless
-  the target requires an authorized replacement; never print secrets.
-- Map hostname-dependent app URLs, session/cookie settings, callbacks, realtime endpoints and health probes together.
-  Deploy the matching configuration before activating a new hostname; preserve working authentication during overlap.
-- Start target web services isolated from live writes and external side effects. Keep target workers and scheduler off.
-- Check target resources, storage quota, DB compatibility, network access from actual app containers, and required
-  integration IP allowlists once. Repair only failures that block this migration.
-- Probe dependencies from the actual target runtime over their real protocol. An HTTP egress check does not establish
-  SSH/UDP connectivity or the source IP seen by an allowlisted service; verify changed egress before removing old paths.
-- Confirm target readiness through its direct route with the production Host/TLS name. Keep source traffic running.
+- Start bulk S3 and consistent DB copies promptly using existing native tools, backup/restore commands or the project's
+  importer. Transfer server-to-server; run independent copies concurrently when resources allow.
+- Reuse the committed copy and existing job receipts. Retry failed items only; do not restart successful copies or add
+  full inventories, repeated parity scans, new schemas or application redesigns.
+- Prepare the short sequence of existing switch and recovery commands while copying. Do not wait for the copy to finish
+  before discovering how to connect to the target or switch writers.
+- Resolve the actual app/CLI config and runtime user once while live, using the existing command's read-only path.
+  Fix a concrete connection, permission or missing-class error before pausing; do not build a separate validator.
+- Keep required local uploads, sessions and durable queue state available through the project's existing mechanism.
+  Rebuild ordinary caches afterward; do not replay jobs twice or blindly replace a live shared Redis instance.
 
-## 3. Start bulk copies immediately
+## 3. One quick manual destination check, then switch
 
-- Copy S3 objects and take a consistent DB snapshot while source production continues serving traffic. Run independent
-  transfers concurrently only when source/target capacity permits; perform transfers server-to-server.
-- Use existing copy tools and durable jobs with progress logs. Record checkpoint, bytes/objects, failures and throughput;
-  estimate remaining time from observed progress instead of repeatedly restarting copies or listing whole stores.
-- Assemble the runnable fence → final capture → apply → activate → route → reopen command while the bulk copy runs.
-  Prove its source-DB read path works independently of source web/workers with a bounded read-only probe, not another
-  capture. Reuse the existing operator path; do not start building a new carrier after the initial copy passes.
-- Call the switch ready only when that command is runnable. If command assembly still blocks it, name the missing
-  executable step and resolve only that step; do not call another capture or readiness audit “the remaining step”.
-- Preserve S3 object keys, metadata, content types and private/public access behavior. Keep source data intact; obtain
-  explicit authorization for destructive mirroring or target replacement.
-- Restore the DB into the isolated target; keep its previous recoverable state. Prefer the engine's existing hot-backup,
-  replication or incremental tooling for a large live database. Use a logical restore when it fits capacity and timing.
-- Establish how post-snapshot inserts, updates and deletes reach the target before calling the base copy ready.
-  Copying rows by timestamp or maximum ID is not a general DB catch-up mechanism.
-- For tenant consolidation, use the existing scoped importer rather than restoring over a shared database. Prove tenant
-  mapping, ID/unique-key collision handling, timezone normalization, idempotency and lock scope on an isolated copy;
-  preserve unrelated tenants and keep callbacks on a compatible route throughout the switch.
-- Copy required local uploads, sessions, queues or Redis state using the project's semantics. Identify authoritative
-  durable data separately from rebuildable caches; avoid a blind Redis replacement or replaying jobs twice.
-- Retry failed items from the copy job's manifest. Use its existing success/error receipts; do not add separate full
-  inventories or repeated parity scans before switching unless an observed failure requires them. Keep optional
-  historical recovery/backfill off the critical path and report the remaining items and retry action.
-- If a restore fails, inspect its concrete error and resource usage before retrying. After two failures on the same
-  assumption, change the method or report the specific blocker; stop repeating full imports with speculative tuning.
+- Manually confirm the application can connect to the intended target and read representative copied data. Check a
+  known file through its intended access path. Reuse recent results; fix an observed failure, not hypothetical risks.
+- If a deployment lock already exists, hold it across this quick check and switch so another release cannot change
+  the runtime between them. Release it afterward; do not build a new lock or coordination system.
+- Resolve current service/container addresses through existing deployment commands. A replaced container ID or stale
+  receipt binding does not invalidate copied data. Refresh only the changed reference; do not recopy or redeploy merely
+  to satisfy custom proofs. Deploy a different revision only for an observed compatibility failure or approved release.
+- Once this check passes, switch. Do not add a rehearsal, benchmark, broad audit, independent review or another capture
+  as a new gate. Run mandatory release checks once only when actual code/config changes require them.
 
-## 4. Switch S3 first, then copy leftovers
+### S3 first
 
-- Finish the bulk copy, then change the existing storage configuration across web, workers, scheduler and background
-  jobs using the existing graceful reload path. Preserve keys, metadata and access privacy; retain original objects.
-- Once those runtimes write to the target, run the existing incremental copy again to collect late source uploads and
-  failures. Include old-config writers, issued presigned uploads and multipart completions in the remaining-item pass.
-  Preserve newer target versions and target-side deletes/renames using existing copy/change receipts. Skip and report
-  ambiguous conflicts instead of overwriting new objects or recreating removed ones; do not add a tracking framework
-  or enable destructive mirroring by default.
-- Keep original buckets intact for copying and recovery. Do not implement an application read fallback, new routing
-  layer or dual-write mode for this migration. If one already exists, leave it alone rather than making its removal or
-  refinement another cutover prerequisite.
-- Run one focused existing-file read and disposable upload after switching, then advance to DB while any independent
-  file tail finishes. Copy any identified missing object from the source; repeat checks only for a concrete failure.
+- Change the existing storage config for all serving web/worker/scheduler roles and reload through the existing path.
+  Preserve object keys, metadata and privacy. Keep original buckets intact.
+- Run the existing incremental copy after switching to collect remaining objects, late old-config uploads and in-flight
+  presigned/multipart completions. Use existing receipts to avoid overwriting newer target data or resurrecting target
+  deletes/renames; skip and report ambiguous conflicts rather than inventing a tracking system.
+- Do not build read fallbacks, dual writes, routing abstractions or new storage helpers. If already installed, leave them
+  alone; their removal or refinement is not a cutover prerequisite. Continue the independent file tail after DB cutover.
 
-## 5. Catch up DB and switch connections second
+### Database and workers second
 
-- Keep old web production serving. Prepare a private target-DB connection from every runtime that will remain live,
-  including the old host; test it before switching traffic or freezing writers.
-- Bring the target DB close to current through the prepared catch-up path: native replication/incrementals for compatible
-  databases, or the proven scoped importer/change log for consolidation. Keep schema and app revision compatible;
-  a host migration does not authorize unrelated application migrations.
-- **Take the final delta once, switch immediately, then verify.** Treat “Свежую дельту можно снимать бесконечно.
-  Один раз переключи, потом хоть обсверяйся” as the execution rule: fence source writers, capture/apply the final
-  committed delta, then promote the target and repoint connections in the same bounded handoff. Do not insert another
-  snapshot, freshness refresh, broad comparison or optional probe between that delta and the switch. Run those checks
-  after target writes reopen; their failure is not an automatic reason to restore source authority.
-- Capture another final delta only if source writes actually resumed or the prior capture failed or became unusable.
-  Record that cause instead of repeating catch-up merely because time passed or another check was added.
-- Reuse the committed consolidation import and its mappings/checksums; mutate only changed/new rows and supported
-  deletions during catch-up. Rewriting unchanged rows and fully reconciling the entire graph is a replay, not a small
-  delta. If that is the only implemented path, state its measured outage cost before fencing; keep the source live
-  while preparing the minimal delta path or obtaining the owner's acceptance of that maintenance window.
-- Apply business-critical changes and referenced records before enabling target writers/workers. Backfill optional
-  history/media and run full audits afterward; reconcile late source data against new target writes without overwriting
-  them or duplicating payments, orders or access grants.
-- Define the last-write boundary, measured final-delta duration, maximum request wait, abort condition and recovery
-  action before the switch. Complete bulk transfer, restore and broad validation before entering this boundary.
-- Use the owner's functional-interruption budget for the entire handoff. Treat “a couple of seconds” as a maximum
-  of five seconds unless the owner specifies another limit; a minutes-long gate or a finalizer-only timeout does not
-  satisfy it. If the measured path cannot fit, keep the source live while shortening it or obtaining an explicit
-  maintenance-window decision. Never infer acceptance from an agent's estimate or another agent's agreement.
-- Start one immutable clock at the first gate, drain or stop that impairs normal access on any node; stop it only when
-  normal access and required writes reopen on the authoritative runtime. Include drain, capture, apply, activation,
-  routing and recovery. Persist the original start/deadline across processes and retries; never reset the clock,
-  replace remaining time with a fresh allowance, bypass a timeout or report only the last resumed segment.
-- Require the existing switch controller to enforce that deadline and the verified pre-promotion recovery path before
-  gating users. A warning, raised exception or paused shell awaiting manual repair is not timeout recovery. Reserve
-  time for restoring service; do not spend the full budget before starting the abort.
-- Separate cutover-critical dependencies from optional diagnostics before fencing writers. Probe the critical paths
-  before the hold; defer auxiliary read-only accounts, analytics and backfill unless the release contract requires them.
-- Abort an over-budget pre-promotion attempt instead of continuing “because the source is already fenced.” Confirm
-  owned remote mutators have stopped and activation did not commit, then restore the source through the prepared
-  recovery path. Resolve unknown authority immediately without enabling a second writer. After promotion commits,
-  preserve target authority and restore its access forward; never resume a stale source.
-- Restore service before repairing a failed prerequisite, changing code/config/proof bindings, or preparing another
-  attempt. While access is gated, perform only the prepared handoff or recovery; defer optional checks, cosmetic
-  branding and unrelated task orchestration. Validate release/config/proof compatibility while the source is live.
-- If prepared recovery itself fails, make only the smallest recovery repair needed to restore the established
-  authority's service. Keep the original clock running and report the recovery failure; this exception permits no
-  renewed migration preparation, promotion attempt or timeout extension.
-- Report any overrun immediately with its failing phase, actual authority and recovery action. Keep the full original
-  gate-to-restored-access duration in the final report, including failures and manual continuation.
-- Preserve one authoritative writable DB. Drain/fence every source writer, including workers, scheduler, webhooks and
-  long-lived connections; apply the final committed changes and verify the native position/checkpoint is caught up.
-- Keep HTTP ingress available. Use an existing bounded request hold/drain only if it fits the authorized availability
-  contract; do not claim zero downtime when requests can fail or exceed their deadlines. If the available method
-  requires an unapproved outage, state the exact limitation and seek the decision before starting it.
-- Point compatible old and new app runtimes at the target DB, refresh connection pools, and reopen writes on the target.
-  For consolidation, prove old-runtime schema and tenant compatibility first; otherwise proxy old HTTP ingress to the
-  new compatible runtime. Never connect an incompatible standalone app directly to a shared tenant database.
-- Transfer worker/scheduler ownership at the DB switch and drain/disable the old owner then; keep HTTP ingress available
-  independently. Never run duplicate consumers against independent databases.
-- Verify one representative read and one authorized reversible write through each serving ingress, plus the active
-  worker owner. Use designated test data; do not alter customer records for a probe.
-- Treat committed target promotion or the first authoritative live target write, whichever happens first, as the
-  abort boundary. Isolated restore, replication and probe writes before promotion do not cross it. Source can resume
-  through the prepared abort only after fencing target mutators and proving neither promotion nor live writes
-  committed. After that boundary, preserve target authority and repair forward; any later failback needs its own
-  reconciled recovery procedure. Never resume a stale source DB or overwrite a target that has accepted live writes.
+- Let long-running scheduler/worker jobs drain while the source site stays available, using existing controls to
+  prevent new starts and preserve queued work. Do not gate users first and then wait for those jobs to finish.
+  Stop new scheduling without freezing the child jobs expected to finish; a suspended process cannot drain.
+- Keep one authoritative writer. Briefly drain/fence old writers when needed, apply the small essential last-write
+  handoff through the existing mechanism, switch connections/runtime, and enable one target worker/scheduler owner.
+- **Take the final delta once and switch immediately.** “Свежую дельту можно снимать бесконечно. Один раз переключи,
+  потом хоть обсверяйся.” Reuse the initial import; do not rewrite unchanged rows or fully reconcile the graph again.
+  A new capture is needed only if the prior one failed or source writes resumed.
+- Copy supported leftovers and run full checks after reopening. Bring required payments, orders, access grants and
+  dependencies across before serving affected writes; do not blindly apply old source rows over new target writes.
+  Use native replication/change receipts or the existing scoped importer; timestamps and maximum IDs alone miss
+  updates/deletes. If the existing path replays the whole import, keep source live and state that concrete limitation
+  before pausing. Do not disguise a full replay as a small delta or invent a new migration framework to avoid saying so.
+- Repoint the old application only if it is compatible with the target schema and tenant model. Otherwise use the
+  already prepared runtime/ingress switch; never attach an incompatible standalone app to a shared tenant database.
 
-## 6. Switch domains last and retain old ingress
+### Domains last
 
-- Change DNS/load-balancer routes only after both serving paths use target S3 and the same current target DB.
-- Use the verified service-to-domain mapping for record changes. A shared old IP alone does not establish ownership;
-  preserve unrelated services, landing pages, wildcard records and non-HTTP routes outside the authorized scope.
-- Keep the old IP serving with target dependencies or proxying to the new web runtime through DNS propagation.
-- Verify one end-to-end path through the public domain and each still-serving IP; check new errors and worker health.
-- Observe propagation against the recorded TTL and old-ingress traffic. Keep the old ingress available for clients
-  still reaching it; retire old web ingress only after the agreed drain criterion and existing authorization permit it.
-- Retain old DB/storage and recovery artifacts for the project's retention window. Request separate approval before
-  destructive cleanup; report DNS switched and old ingress retained separately from full retirement.
+- Change only the intended DNS/ingress records after target data and runtime are usable. Keep old ingress serving or
+  forwarding to the current runtime through propagation. Retain source data and recovery copies for the retention window;
+  destructive deletion requires its own authorization.
 
-## Keep execution bounded
+## Keep the cutover simple and brief
 
-- Attach each check to a stage exit criterion, a command and a pass/fail consequence. Once it passes, advance.
-- Reuse unchanged results. Repeat a check only after its inputs changed, a failure, or expiry relevant to the switch.
-- Check transfer progress from its existing job at a cadence justified by its ETA; stay available for user input.
-- After 10 minutes of preparation/checking while normal service remains live, without a stage advance or measurable
-  transfer progress, state the exact blocker, time spent and next action. This is a reporting interval, never a pause
-  allowance; gated service follows the shorter end-to-end deadline above. Continue safe independent stages while an
-  external approval is pending.
-- Prefer existing operational commands. Add only missing migration-critical glue; keep the switch sequence short and
-  reviewable instead of building a general migration framework during the move.
-- Delegate only independent bounded work with a clear output and available executor. If an agent has not started,
-  reclaim the critical-path action instead of layering more waiting agents or serial peer reviews onto it.
-- Run mandatory project release checks once for the actual code/config revision. Use focused checks for migration glue;
-  do not repeatedly rebuild, run full suites, audit unrelated subsystems or repair unrelated CI during data movement.
-- Verify config with isolated paths and the correct runtime user. A validation command that changes permissions,
-  caches, mounts or process ownership is a production mutation; inspect its effect before using it on the serving host.
+- Do not write custom controllers, carrier frameworks, sealed proof packets, timing manifests, validators or a general
+  migration system for this task. Use native/existing tools and ordinary command output. A short shell sequence is enough;
+  no new application behavior or test framework is required for an unchanged deployment move.
+- Honor an explicitly agreed interruption limit using existing operational controls. Do not invent a five-second default,
+  optimize artificial per-phase allocations, or build tooling to prove a synthetic budget. If the owner changes the
+  approach, do not keep superseded restrictions as blockers. Do not infer permission for an unbounded outage.
+- Treat an estimated pause as an estimate, not an automatic rollback deadline. Recover on an actual command failure
+  or the owner's still-current hard limit; do not restore merely because an invented phase allowance expired.
+- Count the whole interruption from first impaired access to restored normal use, including failures and recovery.
+  Report the actual duration; never restart the clock to hide an overrun. A public login page alone is not normal access.
+- If the switch fails before promotion, stop target mutators and confirm source authority before restoring source service.
+  After target promotion or live writes, keep target authoritative and recover forward; do not resume a stale source.
+- Restore access before debugging or preparing another attempt. During a pause, do only the switch or necessary recovery;
+  no optional checks, branding work, unrelated tasks or new tooling. Make only the recovery repair needed if recovery fails.
+- Keep one cutover operator. Delegate independent transfers or post-switch work, not a serial chain of readiness reviews.
+  If stopped on a real blocker, name the failing command and smallest remedy; do not keep saying “almost ready”.
+- Execute the next existing command once its prerequisites pass. After a failed attempt, repair its concrete cause
+  with access restored; repeat only the affected step. After two failures on the same assumption, change the method
+  or report the exact missing capability. Do not loop through capture → timeout → recovery with unchanged inputs.
 
-## Report progress and completion
+## Finish
 
-Keep one ledger: `stage | source/target authority | checkpoint/evidence | elapsed | next action/blocker`.
-Report transfer time, external waiting, compatibility fixes and repeated work separately; elapsed time is not active
-engineering time. At handoff include switched dependencies, serving ingress, worker owner, remaining backfill,
-rollback boundary and retained resources. Declare completion only for stages whose observable exit criteria passed.
+- After switching, confirm normal login/read/write behavior with authorized test data and the single worker owner.
+  Copy remaining files/data and do broader audits while the service works; repeat a check only for an observed failure.
+- Inspect the current page after a navigation-related browser-tool error. Confirm the actual login/course result before
+  calling authentication broken. When normal access works but a custom probe disagrees, diagnose that probe afterward;
+  do not recapture, roll back, reset customer passwords or weaken authentication to make the probe pass.
+- Finish once the target is authoritative, routes are open, normal access works and the target worker owner is active.
+  Report optional tails separately; do not keep the migration open for proof formatting, probe cleanup or broad audits.
+- When supervising, stay through that result or a genuine owner decision. A started switch, a skill deployment or
+  another agent's “ready” report does not finish supervision. Relay changed owner constraints to the cutover operator.
+- Report the active runtime/DB/storage, remaining tail, actual interruption, retained source and next action. State any
+  unavailable source or recovery gap explicitly; never claim recovered data beyond the available checkpoint.
