@@ -16,6 +16,8 @@ Use existing commands and configuration. Do not turn the move into a tooling or 
 - Read the current handoff and identify the source, target, approved code/env, live writer and worker owner once.
 - Continue from completed work. Preserve prepared infrastructure, existing storage layout, keys, privacy and domains.
 - Preserve application identity, login/session keys and host-dependent cookie/callback settings through the existing env.
+  Use the real production hostnames and legacy cookie domains, not assumptions copied from staging. If encryption keys
+  differ, use the existing protected decrypt/rewrap path for copied secrets; never replace a shared application's key.
 - Install the repo/artifact and protected env through the existing deployment path if not already done. Keep target
   workers, scheduler and other side effects off until ownership switches; keep source production serving.
 - Distinguish moving an unchanged deployment from merging a school into a shared application. Use the existing scoped
@@ -30,8 +32,14 @@ Use existing commands and configuration. Do not turn the move into a tooling or 
   importer. Transfer server-to-server; run independent copies concurrently when resources allow.
 - Reuse the committed copy and existing job receipts. Retry failed items only; do not restart successful copies or add
   full inventories, repeated parity scans, new schemas or application redesigns.
+- Prepare target serving configuration before any live storage flip. Object copy does not copy bucket CORS. Merge
+  actual serving production origins into the target's existing CORS policy without dropping other tenants' origins or
+  making private files public. Do this while the source still serves, alongside the copy.
 - Prepare the short sequence of existing switch and recovery commands while copying. Do not wait for the copy to finish
   before discovering how to connect to the target or switch writers.
+  Give each command its own input: a capture/container command must not consume the remaining outer SSH script. Use
+  noninteractive invocation or explicit input redirection where no input is needed. Match helper assumptions to the
+  actual destination tenant, including an already-active school; do not deactivate it to satisfy a staging-only check.
 - Resolve the actual app/CLI config and runtime user once while live, using the existing command's read-only path.
   Fix a concrete connection, permission or missing-class error before pausing; do not build a separate validator.
 - Keep required local uploads, sessions and durable queue state available through the project's existing mechanism.
@@ -41,6 +49,11 @@ Use existing commands and configuration. Do not turn the move into a tooling or 
 
 - Manually confirm the application can connect to the intended target and read representative copied data. Check a
   known file through its intended access path. Reuse recent results; fix an observed failure, not hypothetical risks.
+- Use a real JavaScript-enabled browser for this quick check. Open an existing destination preview/direct route and
+  confirm the application renders, using the intended public origin where existing routing supports it. Check changed
+  cross-origin theme modules/styles/fonts from the still-live production origin; another preview origin cannot prove
+  production CORS. Curl, HTML 200 and Inertia JSON do not exercise the frontend. If preview is unavailable, keep the
+  target connection/file checks and production-origin asset check; do not build a browser harness or full QA matrix.
 - If a deployment lock already exists, hold it across this quick check and switch so another release cannot change
   the runtime between them. Release it afterward; do not build a new lock or coordination system.
 - Resolve current service/container addresses through existing deployment commands. A replaced container ID or stale
@@ -53,6 +66,9 @@ Use existing commands and configuration. Do not turn the move into a tooling or 
 
 - Change the existing storage config for all serving web/worker/scheduler roles and reload through the existing path.
   Preserve object keys, metadata and privacy. Keep original buckets intact.
+- Reload the actual public-origin page in the same browser immediately after switching. Confirm the theme loads and
+  the app renders before proceeding; a readable logo or server-side file request does not establish frontend access.
+  Repair an observed serving-config failure immediately, before tails or unrelated work.
 - Run the existing incremental copy after switching to collect remaining objects, late old-config uploads and in-flight
   presigned/multipart completions. Use existing receipts to avoid overwriting newer target data or resurrecting target
   deletes/renames; skip and report ambiguous conflicts rather than inventing a tracking system.
@@ -82,6 +98,8 @@ Use existing commands and configuration. Do not turn the move into a tooling or 
 - Change only the intended DNS/ingress records after target data and runtime are usable. Keep old ingress serving or
   forwarding to the current runtime through propagation. Retain source data and recovery copies for the retention window;
   destructive deletion requires its own authorization.
+- Preserve redirect-only aliases as redirects. Keep them out of backend peer-route probes that expect an application
+  response; an intended redirect is not a failed backend. Use the existing canonical route for that probe.
 
 ## Keep the cutover simple and brief
 
@@ -94,11 +112,17 @@ Use existing commands and configuration. Do not turn the move into a tooling or 
 - Treat an estimated pause as an estimate, not an automatic rollback deadline. Recover on an actual command failure
   or the owner's still-current hard limit; do not restore merely because an invented phase allowance expired.
 - Count the whole interruption from first impaired access to restored normal use, including failures and recovery.
-  Report the actual duration; never restart the clock to hide an overrun. A public login page alone is not normal access.
+  Stop the clock only after the affected public-origin browser path works, with the frontend loaded and normal signed-in
+  access restored. Route-open time is a separate milestone, not the outage end. Report observed times and uncertainty;
+  never backdate recovery from an HTTP 200 or restart the clock to hide an overrun.
 - If the switch fails before promotion, stop target mutators and confirm source authority before restoring source service.
   After target promotion or live writes, keep target authoritative and recover forward; do not resume a stale source.
 - Restore access before debugging or preparing another attempt. During a pause, do only the switch or necessary recovery;
   no optional checks, branding work, unrelated tasks or new tooling. Make only the recovery repair needed if recovery fails.
+- Treat an owner report of unavailable access as an incident immediately, even when HTTP probes pass. Open the affected
+  URL in the browser and inspect its actual error and failed asset requests before calling it available. Prioritize the
+  existing serving-config/routing repair over optional fixes, retirement and unrelated CI; retain required release checks
+  for code repairs. After promotion, restore the target's access forward rather than waiting on unrelated deployments.
 - Keep one cutover operator. Delegate independent transfers or post-switch work, not a serial chain of readiness reviews.
   If stopped on a real blocker, name the failing command and smallest remedy; do not keep saying “almost ready”.
 - Execute the next existing command once its prerequisites pass. After a failed attempt, repair its concrete cause
@@ -107,12 +131,18 @@ Use existing commands and configuration. Do not turn the move into a tooling or 
 
 ## Finish
 
-- After switching, confirm normal login/read/write behavior with authorized test data and the single worker owner.
+- After switching, use the actual public-origin browser to sign in with authorized test data and open the expected
+  cabinet/course, then confirm the required reversible write and single worker owner. Include existing legacy-cookie
+  behavior when relevant; do not hide a returning-user failure by clearing cookies. A generic error screen is a failed
+  check even if the login POST, JSON component name and page response all passed.
+  Keep any observed broken cabinet/profile route open as an access defect even if another page works; an optional
+  widget failing the whole page is not merely a probe mismatch. Report partial access accurately and repair forward.
   Copy remaining files/data and do broader audits while the service works; repeat a check only for an observed failure.
 - Inspect the current page after a navigation-related browser-tool error. Confirm the actual login/course result before
   calling authentication broken. When normal access works but a custom probe disagrees, diagnose that probe afterward;
   do not recapture, roll back, reset customer passwords or weaken authentication to make the probe pass.
-- Finish once the target is authoritative, routes are open, normal access works and the target worker owner is active.
+- Finish once the target is authoritative, routes are open, the public-origin browser check passes and the target worker
+  owner is active. If browser access is unverified, say so; do not substitute HTTP receipts for a completion result.
   Report optional tails separately; do not keep the migration open for proof formatting, probe cleanup or broad audits.
 - When supervising, stay through that result or a genuine owner decision. A started switch, a skill deployment or
   another agent's “ready” report does not finish supervision. Relay changed owner constraints to the cutover operator.
