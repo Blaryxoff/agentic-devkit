@@ -1,7 +1,7 @@
 ---
 name: devkit-babysit
 description: >-
-  supervise running Claude Code or Codex agterm sessions: spot stalls, give technical direction and
+  supervise selected running agent sessions in agterm: spot stalls, give technical direction and
   park owner decisions. Manual trigger ONLY: "babysit these sessions", "supervise the
   sessions", "присмотри за сессиями", "poll them every 30 min". Not devkit-pair (talk inside one
   split) nor devkit-task (drive one spec).
@@ -21,17 +21,20 @@ supervised checkouts unchanged.
    (`/babysit poll <state-dir>`). A tick skips Setup and runs Poll.
 2. Run in a top-level agterm session with `agtermctl` available. Use a recurring scheduler only when the harness
    exposes one; otherwise poll during the active turn and state that supervision ends when the turn ends.
-3. Identify each explicitly supervised primary agent from the live tree. For Claude Code with a Codex peer, use the
-   split workflow below. For a Codex primary, use [references/codex.md](references/codex.md); never mistake its peer or
-   another task in the same checkout for the migration owner. Stop only the unsupported target, not the whole roster.
+3. Pin each selected primary by live session UUID, pane/pane ID and foreground command, regardless of harness or
+   model. Use [references/sessions.md](references/sessions.md) for native steering and non-Claude targets. Never
+   mistake its peer or another task in the same checkout for the owner. Stop only an unsupported delivery, not observation
+   or the whole roster.
 
 ## Setup
 
 1. `S=<scratchpad>/babysit`; `mkdir -p "$S"`.
-2. Roster: `scripts/roster.py > "$S/sessions.txt"`, one line per Claude session: `<full-id> <label> <transcript|->`. Keep only the
-   sessions the user meant; when more splits run than the user named, ask. Resolve every `-` by content: the newest
-   transcript in that project's dir whose tail matches the left pane. Never your own transcript; it shares the dir.
-   Add explicitly selected Codex primaries using the reference's manual roster; the existing helper discovers Claude only.
+2. Inventory: `scripts/roster.py > "$S/candidates.txt"`, one non-shell foreground per pane:
+   `<full-id> <label> <transcript|-> <left|right> <command>`. This is an inventory, not authority to supervise every row.
+   Copy only the user-selected endpoints into `$S/sessions.txt`; when selection is ambiguous, ask. Match each task by
+   recent pane output and pin its pane ID from the live tree. Resolve a missing transcript only with that harness's
+   parser and matching recent content; `-` is valid when the pane/native thread supplies evidence. Never use the
+   supervisor's transcript or parse another harness's records as Claude.
 3. Pin the goal and the stop condition from the request ("use the budget before the weekly reset", "until the specs
    are done"). Ask only when neither is stated.
 4. Preserve the owner's power settings. Start a bounded `caffeinate` only when unattended supervision requires it and
@@ -49,14 +52,14 @@ supervised checkouts unchanged.
 
 ## Poll
 
-1. Use the Codex reference for selected Codex primaries; use `scripts/poll.sh <claude-roster>` for Claude
-   (`LN=`/`RN=` widen the pane tails). The status line in each tail shows usage
-   windows (`5h:`, `7d:`); watch them against the goal.
+1. Use `scripts/poll.sh "$S/sessions.txt"` for selected endpoints (`LN=`/`RN=` widen the selected/peer pane tails).
+   Verify each foreground still matches the pinned endpoint. Observe the actual harness's usage indicator when the
+   goal concerns a budget; `5h:`/`7d:` are examples, not a universal status format.
 2. Classify each session: working · waiting on its peer (is the peer working?) · waiting on a background job ·
    blocked on a question or chooser · finished · limited · dead turn.
-3. For a Claude target not plainly working, read `scripts/tail.py <transcript> 3 3000` (timestamps are UTC) and its
-   peer pane; match `references/stalls.md` and act. For Codex targets use only `references/codex.md`, including its
-   draft and delivery guards; do not apply Claude chooser/peer keystrokes. Leave working sessions alone.
+3. For a target not plainly working, read its selected pane and bounded native transcript/thread evidence. Use
+   `scripts/tail.py <transcript> 3 3000` only for Claude records (timestamps are UTC). Match `references/stalls.md`
+   only where the signal fits that harness; use `references/sessions.md` for delivery. Leave working sessions alone.
 4. Report one bullet per session (see Report). With a scheduled tick, stop until the next tick. Without a scheduler,
    wait for the bounded poll interval in the active turn and repeat until the stop condition or explicit handoff.
 
@@ -73,6 +76,12 @@ supervised checkouts unchanged.
 
 ## Sending
 
+- Prefer native session/thread steering for any harness, including another session of your own. Pin the endpoint,
+  preserve owner drafts and verify acknowledgement per `references/sessions.md`.
+- For a verified Claude/Cursor/Codex UI protocol, reuse `../pair/scripts/peer-chat.py --supervisor --to <profile>
+  --session <full-id> --pane <left|right> --target-command <command> --stdin`. Supply the direction on stdin, or use
+  its private prepared-message file flow when required by the caller. This mode requires explicit endpoint selectors,
+  adds a supervisor tag and preserves the same composer/draft guards; it also supports a standalone left pane.
 - To a Claude pane: `scripts/send.sh <full-id> <transcript> "<message>"`. It checks that Claude is the pane's
   foreground and its composer box is the live bottom one, refuses on an owner draft, a chooser or a dialog, prefixes
   `[Supervisor HH:MM:SS]`, re-reads the composer before a separate CR (a trailing `\n` is Ctrl-J and never submits),
@@ -90,9 +99,9 @@ supervised checkouts unchanged.
 - A real owner draft is the owner's. Never submit, clear or append to it; report it.
 - Message shape: one paragraph — the decision and its reason, numbered next steps, guardrails (what not to touch, what
   stays with the owner). Make it self-contained; the session may have compacted.
-- An unselected Codex peer gets no text from you. The only allowed keystroke there is the single `Ctrl-C` in
-  `references/stalls.md` for a stuck half message.
-- `peer-chat.py` is not a supervisor channel: it labels every message as coming from the peer.
+- An unselected peer gets no text or keystrokes from you, regardless of harness. Report a half message or stuck
+  composer to its selected owner; do not clear or submit it.
+- Use `peer-chat.py` for supervision only with `--supervisor`; ordinary peer mode would mislabel the sender.
 
 ## Report
 

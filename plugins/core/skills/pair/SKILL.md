@@ -1,9 +1,9 @@
 ---
 name: devkit-pair
 description: >-
-  converse with the other agent in this agterm split (Claude Code or Cursor ↔ Codex). The pane the user asked
-  is sole writer, the peer reviews read-only and argues. Manual trigger ONLY: "pair", "парой", "work with codex", an explicit request to talk to Claude/Cursor, or
-  a prompt opening "Chat from <peer>:". Both agents must already be running in one split. Not devkit-task's
+  converse with a selected agent in an existing agterm split. The pane the user asked is sole writer;
+  the peer reviews read-only and argues. Manual trigger ONLY: "pair", "парой", an explicit request to talk
+  to another agent, or a prompt opening "Chat from <peer>:". Not devkit-task's
   pipeline, nor devkit-crosscheck's one-shot subprocess peer.
 ---
 
@@ -23,25 +23,32 @@ When the peer authored the changes under review, complete your own review before
 
 ## Gate
 
-1. The user named the other agent in this turn, or a prompt arrived opening `Chat from Claude:` /
-   `Chat from Cursor:` / `Chat from Codex:`. Never self-invoke.
+1. The user selected the other agent in this turn, or a prompt arrived opening `Chat from <peer>:`. Never self-invoke.
 2. The session has a split with the other agent **already running**, started by the user. This skill
    never starts an agent and never opens a pane. Missing split or wrong process → say so and stop.
 3. You are the top-level invocation, not a dispatched subagent.
 
 ## Sending
 
-**Nothing may be typed into the other pane except through the script.** Never write to it with
+**Use native thread steering or the script's verified UI protocol.** Native steering must pin the selected peer's
+session/thread, preserve its draft, and return a delivery receipt. For terminal delivery, nothing may be typed except through the script. Never write to it with
 `agtermctl` directly. Reading is not writing: `agtermctl session text` on the peer's pane is allowed and is
 how you look at a quiet exchange — the script has no read operation.
 It checks the target agent, window, composer and caret, types the body as bounded separately-observed
 events, then sends the submit key after the last one settles. A raw `session type` bypasses all of it,
 and that is how messages arrive merged, truncated, or sitting unsent in a composer.
 
-From Claude Code or Cursor (left pane), pass the message on stdin through a quoted heredoc — never as an argument:
+Resolve the live session, target pane and foreground command before sending. The target may be any agent, including
+another session of the caller's harness. Select `--to claude|cursor|codex` by the observed composer protocol, not the
+agent's model or brand; `--pane left|right` pins its location and `--target-command NAME` pins a wrapper or another
+executable using that protocol. Verify the parser matches its live UI. An unknown UI needs native thread steering or
+a tested protocol adapter; never fall back to Claude's composer. State an unsupported delivery capability for that
+peer while continuing independent work.
+
+From a caller that permits stdin messages, pass the message through a quoted heredoc — never as an argument:
 
 ```bash
-peer-chat.py --to codex --stdin <<'CHAT'
+peer-chat.py --to codex --pane right --sender-command cursor-agent --stdin <<'CHAT'
 the message goes here, as one paragraph
 CHAT
 ```
@@ -52,11 +59,12 @@ evaluate the request as a shell wrapper, so its approval rules cannot match:
 
 ```bash
 peer-chat.py --prepare-message peer-chat-codex-a91f.txt   # prints JSON with an absolute messageFile field
-peer-chat.py --to claude --message-file peer-chat-codex-a91f.txt
+peer-chat.py --to cursor --pane left --sender-command codex --message-file peer-chat-codex-a91f.txt
 ```
 
-For a Cursor left pane, use `--to cursor` instead of `--to claude`. The script identifies the left
-agent when sending to Codex and adds `Chat from Claude:` or `Chat from Cursor:` accordingly.
+Replace those example profiles, panes and sender commands with the selected live endpoints. For Codex ↔ Codex,
+use `--to codex` with the peer's actual `--pane`. The script identifies the opposite pane and adds its sender label.
+Use `--sender NAME --sender-command COMMAND` when a wrapper's name needs a human-readable label.
 
 - **The reserved name must match `peer-chat-[a-z0-9][a-z0-9-]{2,48}.txt`** — anything else exits 2 before
   the file is created. The script's own error text says `peer-chat-<sender>-<suffix>.txt`, but it never

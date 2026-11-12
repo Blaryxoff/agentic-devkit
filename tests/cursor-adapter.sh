@@ -56,7 +56,7 @@ run_adapter cursor > "$out" 2>&1 || fail "cursor adapter exited non-zero: $(tail
 
 hooks="$PROJECT/.cursor/hooks.json"
 [ -f "$hooks" ] || fail "no .cursor/hooks.json was written"
-jq -e '.version == 1 and (.hooks.preToolUse | length) == 4 and all(.hooks.preToolUse[]; has("command") and (has("hooks") | not))' "$hooks" >/dev/null \
+jq -e '.version == 1 and (.hooks.preToolUse | length) == 5 and all(.hooks.preToolUse[]; has("command") and (has("hooks") | not))' "$hooks" >/dev/null \
   || fail "Cursor hooks are not in native version 1 format"
 jq -e '.hooks.preToolUse | any((.command | contains("dev-server-gate.sh")) and (.matcher | contains("Shell")))' "$hooks" >/dev/null \
   || fail "Cursor canonical dev-server gate does not match Shell"
@@ -68,7 +68,7 @@ commands=$(jq -r '[.. | objects | select(has("command")) | .command] | join("\n"
 [ -n "$commands" ] || fail "no hook commands in hooks.json"
 [[ "$commands" == *"$CLONE/bin/devkit-update"* ]] \
   || fail "the auto-update hook does not point at the clone that generated it: $commands"
-for gate in coder-gate.sh comment-gate.sh dev-server-gate.sh; do
+for gate in coder-gate.sh comment-gate.sh dev-server-gate.sh peer-cli-gate.sh; do
   [[ "$commands" == *"$CLONE/plugins/core/hooks/$gate"* ]] \
     || fail "$gate does not point at the clone that generated it: $commands"
 done

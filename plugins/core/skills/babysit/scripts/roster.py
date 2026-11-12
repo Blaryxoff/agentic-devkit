@@ -8,6 +8,7 @@ import sys
 
 UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 HOME = os.path.expanduser("~")
+SHELLS = {"sh", "bash", "zsh", "fish", "dash", "login"}
 
 
 def resumed_id(argv):
@@ -41,12 +42,18 @@ def main():
     out = subprocess.run(["agtermctl", "tree", "--json"], capture_output=True, text=True, check=True)
     tree = json.loads(out.stdout)["result"]["tree"]
     for info in walk(tree):
-        left = info.get("foreground") or []
-        if info["id"] == own or not left or os.path.basename(left[0]) != "claude":
+        if info["id"] == own:
             continue
-        right = info.get("splitForeground") or []
-        print(f"{info['id']} {label(info)} {transcript(left)}")
-        print(f"#   cwd={info.get('cwd')} left={' '.join(left[:1])} right={' '.join(right[:1])}", file=sys.stderr)
+        for pane, field in (("left", "foreground"), ("right", "splitForeground")):
+            argv = info.get(field) or []
+            if pane == "right" and not info.get("hasSplit"):
+                continue
+            command = os.path.basename(argv[0]) if argv else ""
+            if not command or command in SHELLS or any(c.isspace() for c in command):
+                continue
+            path = transcript(argv) if command == "claude" else "-"
+            print(f"{info['id']} {label(info)} {path} {pane} {command}")
+            print(f"#   cwd={info.get('cwd')} pane={pane} command={command}", file=sys.stderr)
 
 
 if __name__ == "__main__":

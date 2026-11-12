@@ -120,6 +120,9 @@ printf 'ABCD label -\n' >"$work/sessions.txt"
 reset; echo "You've hit your limit · resets at 2am" >"$work/composer"
 out="$("$SCRIPTS/waker.sh" --dry-run 02:10 SUPERVISOR "$work/sessions.txt")"
 grep -q 'WOULD WAKE ABCD' <<<"$out" || fail "waker did not recognise a usage-limit screen"
+printf 'ABCD label - right codex\n' >"$work/sessions.txt"
+out="$("$SCRIPTS/waker.sh" --dry-run 02:10 SUPERVISOR "$work/sessions.txt")"
+! grep -q 'WOULD WAKE ABCD' <<<"$out" || fail "Claude waker targeted a selected right-pane agent's unselected left peer"
 reset; echo "The rate limiter is saturated; the bucket rate-limits requests" >"$work/composer"
 out="$("$SCRIPTS/waker.sh" --dry-run 02:10 SUPERVISOR "$work/sessions.txt")"
 ! grep -q 'WOULD WAKE' <<<"$out" || fail "waker matched ordinary rate-limit content"
@@ -140,9 +143,25 @@ cat >"$work/bin/agtermctl" <<JSON
 echo '{"result":{"tree":{"workspaces":[{"sessions":[
  {"id":"AAAA-full","hasSplit":true,"context":"spec work","foreground":["claude","--resume","$uuid"],"splitForeground":["codex"]},
  {"id":"BBBB-full","foreground":["zsh"]},
+ {"id":"CCCC-full","hasSplit":true,"context":"other work","foreground":["cursor-agent"],"splitForeground":["codex"]},
+ {"id":"DDDD-full","context":"gemini work","foreground":["gemini"]},
  {"id":"SELF-full","foreground":["claude"]}]}]}}}'
 JSON
 out="$(HOME="$work/home" AGTERM_SESSION_ID=SELF-full "$SCRIPTS/roster.py" 2>/dev/null)"
-[ "$out" = "AAAA-full spec-work $work/home/.claude/projects/-x/$uuid.jsonl" ] || fail "roster.py output: $out"
+[ "$out" = "AAAA-full spec-work $work/home/.claude/projects/-x/$uuid.jsonl left claude
+AAAA-full spec-work - right codex
+CCCC-full other-work - left cursor-agent
+CCCC-full other-work - right codex
+DDDD-full gemini-work - left gemini" ] || fail "roster.py output: $out"
+
+cat >"$work/bin/agtermctl" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$FAKE_DIR/poll-calls"
+echo 'working output'
+SH
+printf 'CCCC-full selected - right codex\n' >"$work/sessions.txt"
+out="$("$SCRIPTS/poll.sh" "$work/sessions.txt")"
+grep -q -- '-- selected right:' <<<"$out" || fail "poll did not identify the selected right pane"
+[[ "$(head -1 "$work/poll-calls")" == *'--pane right'* ]] || fail "poll read a left-pane default instead of the selected right pane"
 
 echo "babysit skill OK"

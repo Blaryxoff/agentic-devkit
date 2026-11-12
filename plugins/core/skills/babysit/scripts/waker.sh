@@ -29,7 +29,7 @@ wake() {
     status=$?
     [ "$status" -eq 3 ] || woken="$woken$sid "
     echo "$(date +%H:%M:%S) $sid send exit $status" >>"$log"
-  done < <(awk '$1 !~ /^#/ && NF {print $1, $3}' "$roster"; echo "$supervisor -")
+  done < <(awk '$1 !~ /^#/ && NF && ($4 == "" || ($4 == "left" && $5 == "claude")) {print $1, $3}' "$roster"; echo "$supervisor -")
 }
 
 if [ "$dry" -eq 1 ]; then wake; echo "dry run done"; exit 0; fi

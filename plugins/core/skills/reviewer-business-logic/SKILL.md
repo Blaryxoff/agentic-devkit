@@ -29,7 +29,7 @@ Return review findings and the pass outcome; leave fixes to a separate implement
    `review-specialist-fanout.md`. When paired with deep review for a full review, register them with the shared top-level
    fan-out and do not dispatch them independently.
 4. Present each resolved stack/responsibility report, generic fallback, and opened specialist under its own named heading. Keep quality and behavioral axes separate; omit unopened gates and unused fallbacks.
-5. **Cross-check in Codex.** Once the variant reports are assembled, run the cross-agent cross-check per `plugins/core/conduct/cross-agent-review.md`, using Codex skill slug `devkit-core--reviewer-business-logic`. Merge kept findings into the matching stack section, tagged `(via Codex)`. This step is mandatory when the gate holds; state the gate outcome, naming any failed condition.
+5. **Cross-check with the selected peer.** Once the variant reports are assembled, follow `plugins/core/conduct/cross-agent-review.md`. Resolve the review skill from the peer's catalog or supply the same self-contained brief. Merge kept findings into the matching stack section, tagged `(via <peer>)`. This step is mandatory when the gate holds; state the gate outcome, naming any failed condition.
 6. Apply the review completion gate in `plugins/core/conduct/review-findings-format.md` after all requested review skills finish. When paired with deep review, wait for both reports before deciding the combined pass outcome.
 7. Stop only when no stack variant, generic implementation fallback, or visual-reference specialist applies. Report
    unavailable stack coverage separately from the review outcome.

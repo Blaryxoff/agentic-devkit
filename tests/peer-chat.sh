@@ -111,6 +111,15 @@ with contextlib.redirect_stderr(io.StringIO()):
     else:
         raise AssertionError("Cursor must not inherit Codex's Tab queue key")
 assert chat.target_profile("codex", None, queue=True).submit == "\t"
+assert chat.target_profile("codex", None, pane="left").pane == "left"
+assert chat.parse_args(["--to", "codex", "--pane", "left", "--sender", "Gemini", "--command", "codex-wrapper", "--stdin"]).target_command == "codex-wrapper"
+with contextlib.redirect_stderr(io.StringIO()):
+    try:
+        chat.parse_args(["--to", "codex", "--supervisor", "--stdin"])
+    except SystemExit as err:
+        assert err.code == 2
+    else:
+        raise AssertionError("supervisor delivery must pin a session and pane")
 
 def cursor_screen(content, mode="Ask", busy=False):
     rows = content.splitlines() or [""]
@@ -257,9 +266,37 @@ try:
 
     fake = FakeAgterm()
     chat.ctl = fake.ctl
+    fake.node["hasSplit"] = False
+    fake.node["splitForeground"] = []
+    supervised = chat.target_profile("cursor", None, pane="left", supervisor=True)
+    assert not chat.has_target(fake.node, cursor)
+    assert chat.has_target(fake.node, supervised)
+    supervised = chat.with_sender_label(fake.sid, supervised, fake.window)
+    assert supervised.label.startswith("[Supervisor ")
+    assert chat.send(fake.sid, supervised, "continue the selected task", fake.window)
+    assert len(fake.accepted) == 1 and fake.accepted[0].startswith("[Supervisor ")
+    fake = FakeAgterm()
+    chat.ctl = fake.ctl
     for command, label in (("cursor-agent", "Cursor"), ("claude", "Claude")):
         fake.node["foreground"] = [command]
         assert chat.with_sender_label(fake.sid, codex, fake.window).label == f"Chat from {label}: "
+    for command in ("codex", "grok", "gemini", "custom-agent"):
+        fake.node["foreground"] = [command]
+        expected = "Codex" if command == "codex" else command
+        assert chat.with_sender_label(fake.sid, codex, fake.window).label == f"Chat from {expected}: "
+        assert chat.has_target(fake.node, codex)
+    fake.node["foreground"] = ["codex"]
+    fake.node["splitForeground"] = ["gemini-wrapper"]
+    left_codex = chat.target_profile("codex", None, pane="left")
+    assert chat.has_target(fake.node, left_codex)
+    assert chat.with_sender_label(fake.sid, left_codex, fake.window, "Gemini", "gemini-wrapper").label == "Chat from Gemini: "
+    try:
+        chat.with_sender_label(fake.sid, left_codex, fake.window, "Gemini", "wrong-wrapper")
+    except RuntimeError as err:
+        assert "nothing was typed" in str(err)
+    else:
+        raise AssertionError("a changed sender foreground was accepted")
+    fake.node["splitForeground"] = ["codex"]
     launched = [
         "/Users/me/.local/bin/agent",
         "--use-system-ca",
@@ -388,7 +425,7 @@ try:
             "hasSplit": True, "foreground": ["claude"],
             "splitForeground": ["cursor-agent"],
         }
-        assert not chat.has_target(wrong_peer, claude)
+        assert chat.has_target(wrong_peer, claude), "a known non-Codex peer must not invalidate the target"
     finally:
         chat.MESSAGE_SPOOL = original_spool
         chat.send_with_retry = original_send_with_retry

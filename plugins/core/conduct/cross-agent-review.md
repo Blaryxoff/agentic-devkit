@@ -2,58 +2,58 @@
 
 Two distinct protocols live here:
 
-- **Review cross-check** — for any review skill: run the review in the calling agent first, then, when the caller is Claude Code or Cursor Agent, cross-check by running the same review in Codex and merging the relevant findings. Mandatory when its gate holds; defined in [When this applies](#when-this-applies) and [Procedure](#procedure).
-- **[Peer CLI invocation](#peer-cli-invocation)** — direction-agnostic mechanics for driving the other CLI non-interactively and read-only. Shared by the review cross-check above and by the manually-triggered `devkit-crosscheck` skill, which defines its own gate and is bidirectional.
+- **Review cross-check** — complete the native review, then run the same review through the selected independent peer and merge verified findings. Mandatory when its gate holds; defined in [When this applies](#when-this-applies) and [Procedure](#procedure).
+- **[Peer CLI invocation](#peer-cli-invocation)** — shared selection, permission and result rules for a non-interactive peer. `devkit-crosscheck` defines its own manual trigger; `devkit-pair` steers an existing session instead of launching a subprocess.
 
-**The review cross-check is MANDATORY, not optional.** When the gating conditions below hold, you MUST run it. It is not a "proportional", "nice-to-have", or "use-judgement" step — there is no discretion to skip it because the change looks small, the review looks clean, or running Codex feels slow. Omitting the cross-check while the gate is open is a **protocol violation**, not a permissible shortcut. If you catch yourself reasoning "this is probably fine without Codex", stop — that reasoning is exactly what this rule forbids.
+Run the review cross-check whenever its gate holds. A small change or a clean native review does not waive it.
 
 ## When this applies
 
 Apply in any review skill (deep, fast, business-logic, logging, plan) after it has produced its own findings. The cross-check runs whenever **all** of these hold:
 
-1. You are **Claude Code or Cursor Agent** (not Codex or another agent).
-2. You are the **top-level review invocation** — the skill the user (or a non-review caller) invoked directly. Defer the cross-check when you were dispatched as a subagent/variant by a review orchestrator; return your report to the orchestrator and let it run the cross-check once.
-3. The `codex` CLI is available: `command -v codex` succeeds.
-4. The findings did not come from a revmux run that already carried Codex. A revmux report satisfies this condition —
-   and closes the gate — only when its `sources.agents` holds a `codex` executor with `degraded: false`; that peer went
-   through the same synthesis and verification, so cross-checking would re-review findings Codex helped produce. A
-   `claude-only` run, or one whose codex source degraded, still owes the cross-check. Read the report before deciding —
-   see [revmux-review.md](./revmux-review.md).
+1. You are the **top-level review invocation** — the skill the user (or a non-review caller) invoked directly. A dispatched reviewer or subprocess worker returns findings to its owner without another peer pass. `DEVKIT_FEEDBACK_WORKER=1` marks a subprocess worker.
+2. An independent peer is selected under [Peer selection](#peer-selection), its executable is available, and its review write boundary is established. The caller and peer may use the same harness or model; they must have separate conversations.
+3. The selected peer did not already contribute to these findings in a completed, non-degraded revmux pass. Check `sources.agents` against the selected executor; a configured roster entry, degraded source or different peer does not satisfy the check. See [revmux-review.md](./revmux-review.md).
 
-**Evaluate the gate explicitly — never assume it fails.** You MUST actually run `command -v codex` to settle condition 3; do not guess that Codex is absent. Skipping is permitted **only** when a condition genuinely fails, and when you skip you MUST say so and name the failing condition (e.g. `Codex cross-check: skipped — codex CLI not found`). A skip with no stated reason, or a skip while every condition holds, is a violation. Never recurse: when this same skill runs inside Codex, condition 1 is false, so Codex performs a plain native review with no further cross-check.
+Check the selected executable with `command -v`; do not infer availability from its name. If selection is missing or ambiguous, ask which peer to use while completing the native review. Report an unavailable or unresolved peer as `Peer cross-check: skipped — <reason>`; never silently substitute another agent. A worker never reopens this gate, including a Codex worker launched by Codex.
 
 ## Procedure
 
-1. **Run the native review first.** Complete your own findings in full before invoking Codex. The cross-check augments your review; it never replaces it.
-2. **Invoke Codex on the same scope, read-only.** Run the same review skill in Codex against the same change set, with no write access:
-
-   ```bash
-   DEVKIT_FEEDBACK_WORKER=1 codex exec --sandbox read-only --skip-git-repo-check \
-     "Use the <codex-skill-slug> skill to review the same scope: <scope description>. \
-      Review only — do not modify code. Output findings only, in the devkit review-findings-format \
-      (defect type, finding, evidence as file:line, suggested fix), grouped by Blocking/Significant/Minor." \
-     < /dev/null
-   ```
-
-   - `<codex-skill-slug>` is this skill's Codex symlink under `.codex/skills/` (e.g. `devkit-core--reviewer-fast`). Each skill names its own slug where it cites this protocol.
-   - `<scope description>` is the exact thing you reviewed (working-tree diff, branch diff, named files, or the plan document), so both agents review the same thing.
-   - Flags, stdin handling, and failure modes: [Peer CLI invocation](#peer-cli-invocation).
-   - If the run fails, times out, or returns nothing, note `Codex cross-check: skipped (unavailable)` and present your own findings unchanged.
-3. **Analyze Codex's findings — do not trust them blindly.** For each Codex finding, verify against the actual code before accepting it:
+1. **Run the native review first.** Complete your own findings before invoking the selected peer.
+2. **Invoke the peer on the same scope, read-only.** Follow [Peer CLI invocation](#peer-cli-invocation). Supply the exact change set, relevant review rules and output format. Resolve skill names from the peer's catalog when using a skill; otherwise provide a self-contained review brief. Require a direct answer with no edits or further delegation. A failed, timed-out or empty pass leaves the native findings intact and the cross-check incomplete.
+3. **Verify the peer's findings against the actual code:**
    - **Discard** findings that are duplicates of yours (same `file:line` + same defect), out of scope, unevidenced/speculative, or factually wrong when you check the cited code.
    - **Keep** findings that are valid, evidenced, in scope, and absent from your own list.
-4. **Merge the kept findings into your report.** Place each into the matching severity bucket (and matching stack section, for orchestrators). Tag merged findings `(via Codex)` so provenance is visible. Preserve the existing presentation structure — do not collapse separate stack sections or restate the shared format.
-5. **State the cross-check outcome** in one line: how many Codex findings were merged and how many discarded (e.g. `Codex cross-check: 2 findings merged, 3 discarded as duplicate/out-of-scope`).
+4. **Merge verified findings into your report.** Preserve severity buckets and stack sections; tag additions `(via <peer>)`.
+5. **State the outcome** in one line with the peer identity and merged/discarded counts.
 
 ## Peer CLI invocation
 
-Shared mechanics for driving the other CLI non-interactively and read-only. Applies to the review cross-check above and to `devkit-crosscheck`. Both invocations below are instances of [shell-invocation.md](./shell-invocation.md). QA worker permissions are defined separately in [browser-qa-rules.md §12.7](./browser-qa-rules.md#12-lane-briefs).
+Apply these mechanics from any caller to the selected peer, including another session of the same harness. Follow [shell-invocation.md](./shell-invocation.md). QA worker permissions are defined separately in [browser-qa-rules.md §12.7](./browser-qa-rules.md#12-lane-briefs).
 
-### Result channels (both directions)
+### Peer selection
+
+1. Use the peer explicitly requested for this task; otherwise use the consuming project's documented preference, then the user's global preference. A task-specific choice overrides an earlier default.
+2. Record the peer's identity, transport, executable or session/thread ID, working directory, output channel and write boundary. The CLI name and the model name are separate choices.
+3. Use `devkit-pair` when the user selected an already-running session. Do not replace that session with a subprocess. A CLI workflow requires an explicitly selected CLI or permission to start an independent peer conversation.
+4. Ask for the missing selection when no preference exists or several sessions match; continue independent native work while waiting. The mere presence of `claude`, `cursor-agent`, `grok`, `gemini` or `codex` is not a preference.
+5. Keep one peer conversation per task. Another Codex session is a valid peer; never resume the caller's own thread or select a different session merely because its checkout matches.
+
+Use the known command forms below only for the selected CLI. For Gemini, Grok or any other CLI, inspect its installed help and current official documentation for non-interactive input, result extraction, resume support and enforced write restrictions. Record the verified command in the task scratchpad. Do not invent shared flags or silently reuse Claude's mode.
+
+### Write boundary and invocation
+
+- Establish an enforced repository write restriction for review and analysis: a documented sandbox or tool policy that blocks both edit tools and shell writes. A prompt saying "read-only" is not an enforcement mechanism. If the selected CLI cannot provide that boundary, use an existing restricted session or report the peer stage blocked; do not launch it unrestricted.
+- Prefix every subprocess launch and resume with `DEVKIT_FEEDBACK_WORKER=1` and prohibit further delegation in the prompt.
+- Redirect stdin from `/dev/null` when the prompt is an argument. An intentional prompt pipe/heredoc may own stdin instead; never inherit the calling harness's open input stream.
+- Register additional peer executable basenames through `DEVKIT_PEER_COMMANDS` (comma-separated names, no shell syntax) when using the stdin guard with a custom CLI. This extends detection; it does not establish permission or read-only enforcement.
+- Run from the exact repository or use the selected CLI's documented workspace option. Keep scratch output outside the checkout.
+
+### Result channels
 
 - Capture stdout and stderr in separate scratchpad files; read each directly. Judge findings and clean markers only
   on the final answer, never on stderr or a merged transcript. Use `-o <file>` or final `agent_message` events for Codex;
-  use stdout for `claude -p`. Codex echoes prompts on stderr, including severity definitions that are not findings.
+  use stdout for `claude -p`, and `.result` from Cursor's JSON output. For another CLI, verify its final-answer channel before judging findings. Codex echoes prompts on stderr, including severity definitions that are not findings.
   Keep stderr for failure diagnosis.
 - Use fresh output paths for each pass and wait for completion before classifying the answer. An empty answer remains
   a failed review even when stderr has progress chatter or severity words; a timed-out/interrupted pass is incomplete.
@@ -62,42 +62,48 @@ Shared mechanics for driving the other CLI non-interactively and read-only. Appl
 
 These channel rules are adapted from [cc-thingz planning](https://github.com/umputun/cc-thingz/tree/master/plugins/planning) (MIT).
 
-### Claude Code / Cursor Agent → Codex
+### Codex peer
 
 ```bash
 DEVKIT_FEEDBACK_WORKER=1 codex exec --sandbox read-only --skip-git-repo-check "<prompt>" < /dev/null
 ```
 
-- Prefix every peer launch, including `resume`, with `DEVKIT_FEEDBACK_WORKER=1`. The Jev feedback hook skips a run that carries it; without it the worker's brief is classified as a user prompt and sent to TypeSafe.
-- Always end the invocation with `< /dev/null`. `codex exec` reads stdin to append a `<stdin>` block even when the prompt is a positional arg, so an inherited open pipe (common when launching in the background) never closes and codex blocks forever on "Reading additional input from stdin…"; `/dev/null` gives immediate EOF.
 - `--sandbox read-only` is the write boundary. Never grant `workspace-write` or `--dangerously-bypass-approvals-and-sandbox` to a peer review/cross-check run.
-- Add `-c tools.web_search=true` only when the task genuinely needs the network (reading a URL, checking upstream docs).
 - Codex prints its reasoning trace before the answer; the final message is the last block. Use `-o <file>` (`--output-last-message`) when only the answer matters.
-- If the output contains `failed to spawn code-mode host`, retry **once** with `--disable code_mode_host` added to the invocation. Codex does not exit non-zero here — it logs the error, runs with no shell access, and reports that it could not inspect the code; treat any such run as having produced nothing. Cause: the Homebrew cask ships only `bin/codex`, but the `code_mode_host` feature is `stable` and on by default in codex 0.144.x, so codex tries to spawn a host binary that was never installed. Permanent fix: install `codex-code-mode-host` alongside `codex` — it ships in the npm package `@openai/codex@<version>-<platform>` under `vendor/<target>/bin/`.
+- Treat a run without repository tools or access as failed, even when it exits zero. Resolve version-specific startup failures from installed help and current official documentation before retrying once.
 
-### Codex → Claude Code
+### Claude Code peer
 
 ```bash
 DEVKIT_FEEDBACK_WORKER=1 claude -p "<prompt>" --permission-mode plan < /dev/null
 ```
 
 - `--permission-mode plan` is the write boundary: the peer reads, greps, and runs read-only shell, but every edit tool is refused. Verified — a `-p` run under plan mode refuses to create a file and says so. Do not substitute `--allowedTools` for it; plan mode is the checked path.
-- **The command must run outside the Codex sandbox.** Observed on macOS (codex 0.146): under both `--sandbox read-only` and `--sandbox workspace-write`, `claude -p` exits 1 with `Not logged in · Please run /login`; it succeeds only when the calling Codex session runs the command unsandboxed (approve the escalation when prompted). Other platforms unverified — treat the same symptom as the same cause. The peer's own write boundary is unaffected: `--permission-mode plan` still refuses every edit.
-- Always end with `< /dev/null`, same as the Codex direction — an inherited open pipe can leave the peer waiting on stdin.
+- Diagnose login failures separately from the peer's write policy. Caller sandbox access to credentials may differ; use an already-authorized host execution path only while preserving the peer's plan-mode restrictions.
 - Side effect: a plan-mode run may persist a plan file under `~/.claude/plans/`. Harmless; ignore it.
 - `-p` prints the final answer only. Exit status is not a reliable success signal — judge the run by whether the text answers the prompt.
 
+### Cursor peer
+
+```bash
+DEVKIT_FEEDBACK_WORKER=1 cursor-agent -p --trust --mode plan --output-format json "<prompt>" < /dev/null
+```
+
+- Use `--mode ask` for answer-only questions. Preserve the selected mode's edit and shell restrictions; never add `-f` to a review launch.
+- Read `.result` from the completed JSON output and reject missing or empty results. Plan mode is a tool policy, not an OS sandbox; verify its restrictions against the installed CLI before relying on it for a new version.
+- Prefer `cursor-agent`; accept `agent` only after resolving it to the same Cursor executable. An unrelated command named `agent` is not a peer selection.
+
 ### Persistent subprocess peer sessions
 
-Applies only to **subprocess** peers — a `codex exec` or `claude -p` process this session starts. It does not apply to
+Applies only to **subprocess** peers this session starts. It does not apply to
 `devkit-pair`, which talks to an interactive session the operator already has open and forbids these commands entirely.
 
-A one-shot `codex exec` / `claude -p` starts from an empty context every time. When a workflow drives the same
+A one-shot subprocess starts from an empty context unless an explicit thread is supplied. When a workflow drives the same
 subprocess peer across several rounds, open its session once and resume it — the peer keeps what it already learned,
 and each round costs only the new prompt. The "Prompt requirements" below describe the first round; a resumed round
 carries the earlier context and need not restate it.
 
-**Claude Code / Cursor Agent → Codex.** Capture the thread id from the first line of `--json`, then resume it:
+**Codex.** Capture the `thread.started` ID from `--json`, then resume it:
 
 ```bash
 ROUNDS=$(mktemp -d)   # outside the repo — never write scratch JSONL into the checkout
@@ -118,7 +124,7 @@ DEVKIT_FEEDBACK_WORKER=1 codex exec resume "$PEER" --json --skip-git-repo-check 
   `jq -r 'select(.type=="item.completed" and .item.type=="agent_message") | .item.text'`.
 - `-m <model>` works on `resume`, so a cheap tier can answer a cheap round in the same thread.
 
-**Codex → Claude Code.** Mint the id yourself, then resume it:
+**Claude Code.** Mint the id yourself, then resume it:
 
 ```bash
 SID=$(uuidgen | tr 'A-Z' 'a-z')
@@ -126,10 +132,14 @@ DEVKIT_FEEDBACK_WORKER=1 claude -p --session-id "$SID" --permission-mode plan "<
 DEVKIT_FEEDBACK_WORKER=1 claude -p --resume  "$SID" --permission-mode plan "<next prompt>" < /dev/null
 ```
 
-**Exit status is not a success signal in either direction.** A resumed Codex round that answered correctly was observed
+**Cursor.** Take the session ID from the completed JSON output, then use `--resume <session_id>` with the same workspace, read-only mode and JSON output flags on each round. Verify the installed CLI's session-ID field rather than guessing it.
+
+**Other peers.** Resume only through their documented session mechanism; if unavailable, send a fresh self-contained brief. Never drop the write boundary to keep context.
+
+**Exit status is not a success signal.** A resumed Codex round that answered correctly was observed
 exiting 1. Judge every round by whether its text answers the prompt; treat empty output as a failed round.
 
-### Prompt requirements (both directions)
+### Prompt requirements
 
 - Self-contained: the peer starts with an empty context. State the task, the repo path, the exact scope (files, diff, question), and the required output shape.
 - Read-only intent: say "do not modify code / answer only".

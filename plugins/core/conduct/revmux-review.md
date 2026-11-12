@@ -89,10 +89,10 @@ clone is not on that path, so a profile devkit recommends still has to be writte
 
 - revmux **replaces** the devkit reviewer fan-out for that pass. It is not an extra axis stacked onto
   `devkit-reviewer-deep`. Run one or the other for a given scope unless the user asks for both.
-- **Skip the `cross-agent-review.md` Codex cross-check only when the report shows Codex actually ran.** Check
-  `sources.agents` for a `codex` executor with `degraded: false`: that peer went through the same synthesis and
-  verification, so a second Codex pass would re-review findings Codex helped produce. A `claude-only` run, or one whose
-  codex source degraded, still owes the cross-check — run it and tag the merged findings `(via Codex)`.
+- **Skip the `cross-agent-review.md` peer cross-check only when the report shows the selected peer actually ran.**
+  Match `sources.agents` to that executor with `degraded: false`: it already contributed to synthesis and verification.
+  A different executor, a configured roster entry or a degraded source does not close the gate. Otherwise run the
+  selected peer cross-check when its gate holds and tag merged findings `(via <peer>)`.
 - Without the trigger token, code review stays with `devkit-reviewer-deep` + `devkit-reviewer-business-logic` and plan
   review with `devkit-plan-reviewer` — see [review-routing.md](./review-routing.md).
 - revmux reviews any subject its round points at, a plan or design document included. That does not make it the plan

@@ -118,6 +118,8 @@ assert_contains "$codex_home/config.toml" 'command = "plannotator"'
 assert_contains "$codex_home/config.toml" 'coder-gate.sh'
 assert_contains "$codex_home/config.toml" 'comment-gate.sh'
 assert_contains "$codex_home/config.toml" 'dev-server-gate.sh'
+assert_contains "$codex_home/config.toml" 'peer-cli-gate.sh'
+assert_contains "$codex_home/config.toml" 'matcher = "Bash|Shell|exec_command|shell_command"'
 assert_contains "$codex_home/config.toml" 'matcher = "Bash|exec_command|shell_command"'
 jq -e '[.hooks.PreToolUse[] | select(.matcher == "Bash") | .hooks[] | select(.command | contains("dev-server-gate.sh"))] | length == 1' "$claude_home/settings.json" >/dev/null \
   || fail "expected one Claude canonical dev-server gate on Bash"
@@ -270,7 +272,7 @@ HOME="$home" CODEX_HOME="$codex_home" CURSOR_HOME="$cursor_home" DEVKIT_HOME_DIR
 # Three installs have now run against this home. inject_cursor_edit_gates and the
 # Claude hook injectors are all re-entrant by construction; assert that, or a
 # regression duplicating an entry on every install goes unnoticed.
-for cmd in coder-gate.sh comment-gate.sh dev-server-gate.sh jev-feedback.py; do
+for cmd in coder-gate.sh comment-gate.sh dev-server-gate.sh peer-cli-gate.sh jev-feedback.py; do
   n=$(jq --arg c "$cmd" '
     [(.hooks.preToolUse[]?), (.hooks.beforeSubmitPrompt[]?)]
     | map(select(.command | contains($c)))
@@ -280,6 +282,7 @@ for cmd in coder-gate.sh comment-gate.sh dev-server-gate.sh jev-feedback.py; do
     coder-gate.sh) want=2 ;;   # one Read|ReadFile gate, one edit gate
     comment-gate.sh) want=1 ;;
     dev-server-gate.sh) want=1 ;;
+    peer-cli-gate.sh) want=1 ;;
     jev-feedback.py) want=1 ;;
   esac
   [ "$n" = "$want" ] || fail "expected $want $cmd entries in Cursor hooks after three installs, found $n"

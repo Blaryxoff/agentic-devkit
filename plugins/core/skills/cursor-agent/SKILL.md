@@ -2,9 +2,8 @@
 name: devkit-cursor-agent
 description: >-
   delegate a task to the Cursor CLI (`cursor-agent`) as a working agent that edits the repo, or consult it
-  read-only. Invoke whenever the user names Cursor — "run cursor on X", "ask cursor", "cursor-agent", "запусти
-  курсор", "поревьюй курсором". Naming Cursor authorizes the delegation. Never self-invoke: an explicit mention is
-  the only trigger. No-op when the harness is already Cursor.
+  read-only. Use for explicit delegation: "run cursor on X", "ask cursor", "запусти курсор", or "поревьюй
+  курсором". Questions about Cursor settings do not delegate work. Existing-session chat uses devkit-pair.
 ---
 
 # Cursor Agent
@@ -14,11 +13,13 @@ description: >-
 
 ## Gate
 
-1. The user named Cursor in the current turn. That is the only trigger — never infer one from task size or difficulty.
-2. The current harness is **not** Cursor. If it is, do the work natively; delegating to yourself burns a context for nothing.
+1. The user explicitly asked Cursor to perform a task. Discussing its settings, installation or behavior does not
+   authorize a subprocess. Never infer delegation from task size or difficulty.
+2. Use the named existing session through `devkit-pair` when that is what the user selected. An explicitly requested
+   new Cursor conversation may be launched from any harness, including Cursor; never resume the caller's own session.
 3. `command -v cursor-agent` succeeds and `cursor-agent status` shows a logged-in account.
 
-**Naming Cursor is the approval to delegate.** Never ask "may I let Cursor edit files?" and never narrow the task to
+**Requesting a Cursor task is the approval to delegate that task.** Never ask "may I let Cursor edit files?" and never narrow the task to
 something safer than what was asked. Approval to delegate is not a choice of mode — pick that from the user's verb
 below, and once a verb asks for changes, run write mode without a further confirmation step.
 
@@ -36,7 +37,7 @@ directory; a repo path named only inside the prompt does not move it. Use `--wor
 edit tools gated.
 
 `-f` is not a sandbox. It grants unrestricted shell on the real working tree, so the `preToolUse` gates below constrain
-only Cursor's edit tools — a shell command writes straight past them. That is what the user authorizes by naming Cursor,
+only Cursor's edit tools — a shell command writes straight past them. That is what the user authorizes by requesting Cursor to implement a change,
 and it is why the repo state, not Cursor's report, is the source of truth after a run.
 
 ## Invocation rules
@@ -51,7 +52,8 @@ and it is why the repo state, not Cursor's report, is the source of truth after 
   two-minute default kills them mid-edit.
 - **First run in an untrusted directory exits 1** with a workspace-trust banner and does no work. `-f` or `--trust`
   clears it.
-- Invoke the exact `cursor-agent` binary; the `agent` alias is a different command.
+- Prefer `cursor-agent`. Use `agent` only after resolving both names to the same Cursor executable; the alias can
+  point elsewhere on another machine.
 
 ## The coder-gate is on Cursor's edit tools
 
@@ -114,9 +116,8 @@ force a run through.
 
 ## When not to use
 
-- The user did not name Cursor. Do the work yourself.
-- You are running inside Cursor already.
-- The task is a Claude/Cursor↔Codex second opinion — that is `devkit-crosscheck`, a different mechanism with a read-only peer.
+- The user only mentioned Cursor or asked about its configuration. Answer that request without launching a peer.
+- The task is a comparison of independent native and peer answers — that is `devkit-crosscheck` with the selected peer.
 - A review request that does **not** name Cursor — code, branch, and plan reviews route per
   `plugins/core/conduct/review-routing.md`. Naming Cursor as the reviewer overrides that routing: run the review here in
   read-only mode, then verify its findings against the cited files before reporting any of them.

@@ -46,6 +46,23 @@ probe 2 'codex head of a pipeline'      'codex exec "p" | tee /tmp/log'
 probe 2 '/dev/null inside the prompt'   'codex exec "send the log to /dev/null"'
 probe 2 'output, not stdin, to null'    'codex exec "p" > /dev/null 2>&1 &'
 probe 2 'prompt quotes the redirect'   'codex exec "always add < /dev/null"'
+probe 2 'Cursor shell payload'          'cursor-agent -p "review"' 'Shell'
+probe 2 'Cursor alias'                  'agent --print "review"' 'Shell'
+probe 2 'Gemini peer'                   'gemini -p "review"' 'exec_command'
+probe 2 'Grok peer'                     'grok --prompt "review"' 'shell_command'
+DEVKIT_PEER_COMMANDS=custom-peer probe 2 'configured peer' 'custom-peer review' 'Shell'
+probe 0 'Cursor stdin closed'           'cursor-agent -p "review" < /dev/null' 'Shell'
+probe 0 'Gemini stdin supplied'         'cat /tmp/p.md | gemini -p review' 'Shell'
+probe 0 'Cursor help'                   'cursor-agent --help' 'Shell'
+probe 0 'interactive Cursor'            'cursor-agent status' 'Shell'
+probe 0 'unconfigured executable'       'custom-peer review' 'Shell'
+
+payload='{"toolName":"Shell","toolInput":{"command":"cursor-agent -p review"}}'
+printf '%s' "$payload" | sh "$HOOK" >/dev/null 2>&1
+[ "$?" = 2 ] || fail 'camelCase Cursor payload must block inherited stdin'
+payload='{"tool_name":"exec_command","tool_input":{"cmd":"codex exec review"}}'
+printf '%s' "$payload" | sh "$HOOK" >/dev/null 2>&1
+[ "$?" = 2 ] || fail 'exec_command cmd payload must block inherited stdin'
 
 # --- launches whose stdin is accounted for ------------------------------------
 probe 0 'stdin closed'                  'codex exec -m sol "review" < /dev/null'

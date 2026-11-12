@@ -1,8 +1,8 @@
 # Pair setup — two-agent chat
 
 Vendored from the `two-agent-chat` cookbook recipe in [`umputun/agterm`](https://github.com/umputun/agterm/tree/master/cookbook/two-agent-chat), MIT.
-`scripts/peer-chat.py` is a maintained fork with Cursor support; `scripts/LICENSE-agterm.txt` is its licence.
-Merge upstream updates while preserving the Cursor profile, input parser, focus reports, sender labels and regression tests.
+`scripts/peer-chat.py` is a maintained fork with explicit pane selection; `scripts/LICENSE-agterm.txt` is its licence.
+Merge upstream updates while preserving the protocol parsers, focus reports, sender labels and regression tests.
 
 ## Requirements
 
@@ -13,10 +13,24 @@ Merge upstream updates while preserving the Cursor profile, input parser, focus 
 | Both agents already installed and running, one per pane | The recipe never starts an agent |
 | `AGTERMCTL` set to a full path | Only if `agtermctl` is not on `PATH` under that name |
 
-## Layout is fixed
+## Select the live endpoints
 
-**Claude Code or Cursor left, Codex right.** The panes are fixed in the script's profiles, so a split arranged
-the other way sends every message to the wrong pane. A session with no split is refused outright.
+Pin the selected session and target `--pane left|right`. Both panes may run the same harness. The legacy defaults
+remain Claude/Cursor left and Codex right, but workflows must pass the observed target pane explicitly. A session
+with no split or a shell in the opposite pane is refused.
+
+Choose `--to claude|cursor|codex` for the receiving UI protocol. Use `--target-command` (alias `--command`) to identify
+its actual executable or wrapper independently. For example, a renamed Codex executable uses `--to codex
+--target-command review-codex --pane left`; a second Codex on the right uses `--to codex --pane right`.
+The exact composer parser must match the live UI; a model name is not evidence of protocol compatibility.
+
+The babysit workflow may reuse delivery with `--supervisor --session ID --pane left|right`. This mode adds a
+supervisor tag, requires explicit endpoint selectors, and permits a standalone left pane. Ordinary pair mode still
+requires a split and identifies the opposite agent as the sender.
+
+Prefer a native session/thread steering API for an unfamiliar Grok, Gemini or other agent UI. Pin the chosen thread,
+preserve any draft and require delivery acknowledgement. Add a tested composer adapter before terminal automation
+when no native transport exists; do not imitate Claude keystrokes or bypass the script's guards.
 
 ## Put the script on PATH
 
@@ -39,9 +53,11 @@ send file-backed messages without a separate approval each time:
 prefix_rule(pattern=["peer-chat.py", "--prepare-message"], decision="allow")
 prefix_rule(pattern=["peer-chat.py", "--to", "claude", "--message-file"], decision="allow")
 prefix_rule(pattern=["peer-chat.py", "--to", "cursor", "--message-file"], decision="allow")
+prefix_rule(pattern=["peer-chat.py", "--to", "codex", "--message-file"], decision="allow")
 ```
 
-Keep the rule for the left agent you use, or both when you use both layouts.
+Keep only the profiles you use. A rule for a literal argv prefix must match the actual option order; add a narrow
+rule for the selected pane/command form when the CLI asks. These rules do not choose the peer.
 
 Start Codex so it can tell which pane it is in — it strips `AGTERM_SESSION_ID` from tool subprocesses,
 and nothing inside its sandbox recovers the value:
@@ -68,9 +84,10 @@ entrypoint counts as Cursor when that same argv also contains the versioned `cur
 named only `agent` does not. A wrapper's name is what agterm sees instead, so pass `--target-command <name>` (a path
 works; only the last component is compared), or set `PEER_CHAT_CLAUDE_COMMAND` / `PEER_CHAT_CURSOR_COMMAND` /
 `PEER_CHAT_CODEX_COMMAND`.
-When sending to Codex, the left peer must also be recognisable to choose its sender label; set its
-command environment variable in that pane's tool environment if it uses a wrapper. An agent whose
-launcher leaves no stable name in the pane's command line cannot be targeted at all.
+The opposite pane's foreground supplies the sender label for every profile. Known profiles retain their display
+names; another executable uses its basename. Set `--sender NAME --sender-command COMMAND` to label a wrapper and pin
+its executable. Shells and an ambiguous bare `agent` command are refused. An agent whose launcher leaves no stable
+name in the pane's command line cannot be targeted safely.
 
 ## Cursor left pane
 
@@ -78,7 +95,8 @@ Start `cursor-agent` in the same checkout as Codex. Use `--model auto` if your a
 configured named model. Core skills, including pair, are linked by `bin/devkit-install` into
 `~/.cursor/skills/<frontmatter-name>` (for example, `~/.cursor/skills/devkit-coder`).
 
-Cursor sends to Codex with `--to codex --stdin`; Codex replies with `--to cursor --message-file NAME`.
+Cursor sends to a right Codex with `--to codex --pane right --stdin`; Codex replies with
+`--to cursor --pane left --message-file NAME`. These are example endpoints, not a required pairing.
 The script recognises Cursor's boxed `→` input and model/path footer, with a mode row in Ask/Plan.
 Unknown layouts, menus and trailing dialogs block delivery. Cursor renders its caret itself and reports terminal cursor column
 zero; a stable empty placeholder and visible body checks establish input ownership.

@@ -1,10 +1,9 @@
 ---
 name: devkit-crosscheck
 description: >-
-  run one task twice — once natively in this harness, once in the peer CLI (Claude Code/Cursor ↔ Codex) — then verify
-  both answers against primary evidence and merge them. Manual trigger ONLY, never self-invoked: "crosscheck",
-  "кросс-чек", "проверь через codex/claude", "ask codex too", "ask claude too", "second opinion", "run it in
-  both". No other request matches, however uncertain or high-stakes it looks.
+  run one task natively and in a selected independent peer CLI, then verify and merge both answers. Manual
+  trigger ONLY: "crosscheck", "кросс-чек", "ask <agent> too", "second opinion", or "run it in both".
+  Not existing-session pair chat or an automatic review cross-check.
 ---
 
 # Cross-Check
@@ -16,7 +15,10 @@ that deliberately by triggering it.
 
 1. The user explicitly triggered this skill in the current turn. Never self-invoke, never chain it from another skill.
 2. You are the top-level invocation, not a dispatched subagent.
-3. The peer CLI is present: `command -v codex` (from Claude Code or Cursor) or `command -v claude` (from Codex).
+3. Resolve the requested or configured peer through `plugins/core/conduct/cross-agent-review.md` → "Peer selection".
+   Check its executable and enforced read-only mode. Any CLI can be the peer, including another Codex conversation;
+   never select Claude or Codex solely because of the caller's identity. Ask for a missing or ambiguous selection
+   while continuing the native pass.
 
 An explicit trigger outranks every "not worth it" heuristic in this file. If the user asked, run it.
 
@@ -34,14 +36,10 @@ that pre-loads your conclusion and destroys the independence the second run is p
 
 ### 2. Run both passes independently
 
-The invariant: **your own answer is complete before the peer's answer enters your context.** How you satisfy it depends
-on the direction, because only one of the two CLIs can be backgrounded safely.
-
-| Caller | Order |
-|---|---|
-| Claude Code | Launch the peer in the background, write your own answer while it runs, read its output only after yours is finished. |
-| Cursor Agent | Launch the Codex peer in the background, write your own answer while it runs, read its output only after yours is finished. |
-| Codex | Write your own answer **first**, then run the peer. `claude -p` prints into your transcript — running it first makes the invariant unenforceable. |
+The invariant: **your own answer is complete before the peer's answer enters your context.** Capture the peer's final
+answer and diagnostics in separate scratchpad files. Launch it in the background only when the calling tool can keep
+that output out of your context; otherwise finish your own answer first, then launch it. The decision follows output
+isolation, not the caller or peer's brand.
 
 Commands, flags, sandbox requirements, and failure modes: `plugins/core/conduct/cross-agent-review.md` → "Peer CLI
 invocation". Ground your own pass in real evidence before reading the peer's work.
@@ -80,15 +78,15 @@ e.g. `Cross-check (codex): 1 point merged, 2 discarded as unevidenced; no contra
 - **No recursion.** The peer prompt never names this skill and never asks for a cross-check. A peer that delegates back
   forks infinitely and burns the budget.
 - **One peer pass per task.** Not one per sub-question, not one per iteration of a fix.
-- **The peer never writes to the repo** — `--sandbox read-only` (Codex) or `--permission-mode plan` (Claude). The Claude
-  side is a tool-level refusal, not an OS sandbox: that process runs unsandboxed with network access and may persist a
-  file under `~/.claude/plans/`. It will not touch the repository; do not describe it as sandboxed.
+- **The peer never writes to the repo.** Preserve its enforced write boundary on every launch and resume under
+  `plugins/core/conduct/cross-agent-review.md` → "Write boundary and invocation". Tool policies and OS sandboxes are
+  different mechanisms; name the one actually used. Read-only prompt wording alone is insufficient.
 - **Blind own pass.** Finish your evidence-based pass before reading the peer's work; this preserves an independent comparison.
 
 ## When not to use
 
-- Code, branch, or plan review **in Claude Code or Cursor Agent** routed to `devkit-reviewer-*` / `devkit-plan-reviewer` — they already
-  run the Codex cross-check per `plugins/core/conduct/cross-agent-review.md`, so this would run it twice. In Codex that
-  gate does not fire, so an explicit cross-check of a review is correct there.
+- Code, branch, or plan review whose top-level workflow already ran the selected peer on this scope under
+  `plugins/core/conduct/cross-agent-review.md` — reuse that pass instead of paying for it twice. An explicit request
+  for a different peer or a fresh independent pass still applies.
 - Arguing both sides of a single claim inside one harness — that is `devkit-dialectic`, no second CLI involved.
 - Trivial or already-verified work. Say so if asked; run it anyway when the user insists.

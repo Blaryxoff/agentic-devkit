@@ -64,4 +64,13 @@ grep -qF "$SENTINEL" "$CMDS/root-cause.md" || fail "the reaped command was not r
 [ -e "$CMDS/wrapup.md" ] || fail "the dangling devkit symlink was not repaired"
 grep -qF "Repaired: 1 broken devkit symlink" "$out" || fail "the repair was not reported"
 
+cursor_style="$HOME_DIR/.cursor/rules/devkit-senior.mdc"
+[ -f "$cursor_style" ] || fail "Cursor Senior communication rule is missing"
+grep -qF 'alwaysApply: true' "$cursor_style" || fail "Cursor Senior rule is not always applied"
+grep -qF 'Reply in the language' "$cursor_style" || fail "Cursor Senior rule lost the language contract"
+printf 'my Cursor style\n' > "$cursor_style"
+HOME="$HOME_DIR" DEVKIT_HOME_DIR="$ROOT" bash "$ROOT/bin/devkit-install" > "$out" 2>&1 \
+  || fail "second devkit-install failed"
+[ "$(cat "$cursor_style")" = 'my Cursor style' ] || fail "Cursor user style was overwritten"
+
 echo "no-clobber tests passed"

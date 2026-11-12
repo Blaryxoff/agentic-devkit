@@ -277,9 +277,10 @@ gate_cmd() {
 }
 codergate_cmd=$(gate_cmd coder-gate.sh)
 commentgate_cmd=$(gate_cmd comment-gate.sh)
+peercli_cmd=$(gate_cmd peer-cli-gate.sh)
 previous_servergate_cmds=$(echo "$cursor_hooks" | jq '[.preToolUse[]?.command | select(type == "string" and contains("plugins/core/hooks/dev-server-gate.sh"))]')
 servergate_cmd=$(dev_server_gate_command "$(toolkit_abspath)" "$previous_servergate_cmds")
-cursor_hooks=$(inject_cursor_edit_gates "$cursor_hooks" "$codergate_cmd" "$commentgate_cmd" "$servergate_cmd")
+cursor_hooks=$(inject_cursor_edit_gates "$cursor_hooks" "$codergate_cmd" "$commentgate_cmd" "$servergate_cmd" "$peercli_cmd")
 
 cursor_config=$(jq -n --argjson hooks "$cursor_hooks" '{version: 1, hooks: $hooks}')
 write_json "$hooks_file" "$cursor_config" || exit 1

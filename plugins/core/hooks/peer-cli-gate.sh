@@ -1,5 +1,5 @@
 #!/bin/sh
-# peer-cli-gate.sh — PreToolUse hook for Claude Code Bash calls.
+# peer-cli-gate.sh — PreToolUse hook for peer CLI launches from shell tools.
 #
 # Refuses `codex exec` / `claude -p` launched without `< /dev/null`. Both read stdin
 # for extra input even when the prompt is a positional argument, and a Bash call's
@@ -32,16 +32,11 @@ command -v jq >/dev/null 2>&1 || exit 0
 # "claude". Prefilter the extracted command instead — that keeps awk off the calls
 # that cannot match, which is the expensive half.
 cmd=$(printf '%s' "$input" | jq -r '
-  if (.tool_name // .toolName) == "Bash"
-  then (.tool_input.command // .toolInput.command // "")
+  if ((.tool_name // .toolName) as $tool | ["Bash", "Shell", "exec_command", "shell_command"] | index($tool)) != null
+  then (.tool_input.command // .toolInput.command // .tool_input.cmd // .toolInput.cmd // .input.command // .input.cmd // "")
   else "" end
 ' 2>/dev/null)
 [ -n "$cmd" ] || exit 0
-
-case "$cmd" in
-  *codex* | *claude*) ;;
-  *) exit 0 ;;
-esac
 
 offender=$(printf '%s\n' "$cmd" | awk '
 function trim(s) { sub(/^[ \t\r]+/, "", s); sub(/[ \t\r]+$/, "", s); return s }
@@ -58,13 +53,22 @@ function check(t, piped,   w1, w2, base) {
     if (w2 != "exec" && w2 != "e") return       # `codex mcp get exec`, `codex help exec`
   } else if (base == "claude") {
     if (t !~ /(^|[ \t])(-p|--print)([ \t]|$)/) return
-  } else return
+  } else if (base == "cursor-agent" || base == "agent" || base == "gemini" || base == "grok") {
+    if (t !~ /(^|[ \t])(-p|--print|--prompt|--headless)([= \t]|$)/) return
+  } else if (!(base in configured)) return
   if (piped) return                             # stdin comes from the pipeline
   if (t ~ /<</) return                          # a heredoc is the prompt; /dev/null would eat it
   if (found == "") found = base
 }
 
-BEGIN { MARK = sprintf("%c", 2); hq = 0; hi = 0 }
+BEGIN {
+  MARK = sprintf("%c", 2); hq = 0; hi = 0
+  count = split(ENVIRON["DEVKIT_PEER_COMMANDS"], names, ",")
+  for (i = 1; i <= count; i++) {
+    name = trim(names[i])
+    if (name ~ /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/) configured[name] = 1
+  }
+}
 
 # Drop heredoc bodies: documentation that quotes a peer launch is not a launch.
 # Openers are read before quote masking, because the delimiter of the common
@@ -125,20 +129,17 @@ END {
 
 [ -n "$offender" ] || exit 0
 
-if [ "$offender" = claude ]; then
-  fix='claude -p "$(cat /path/to/prompt.md)" < /dev/null'
-else
-  fix='codex exec -m <model> "$(cat /path/to/prompt.md)" < /dev/null'
-fi
+case "$offender" in
+  claude) fix='claude -p "$(cat /path/to/prompt.md)" < /dev/null' ;;
+  codex) fix='codex exec -m <model> "$(cat /path/to/prompt.md)" < /dev/null' ;;
+  *) fix="$offender <existing arguments> < /dev/null" ;;
+esac
 
 cat >&2 <<EOF
 devkit: this \`$offender\` launch would inherit the harness stdin socket and hang.
 
-\`codex exec\` and \`claude -p\` read stdin for extra input even when the prompt is a
-positional argument. An agent Bash call's stdin never sends a byte and never closes,
-so the peer waits on "Reading additional input from stdin…" until the tool timeout
-detaches it — still running, still holding its slot. A hang here never means the
-prompt failed to arrive.
+Give a non-interactive peer either explicit prompt input or closed stdin. An agent
+shell tool can keep inherited stdin open after its timeout, leaving the peer waiting.
 
 Re-run with stdin closed:
 

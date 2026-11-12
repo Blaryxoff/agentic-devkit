@@ -101,6 +101,7 @@ class Profile:
     label: str
     submit: str
     empty_cursor_column: int = EMPTY_CURSOR_COLUMN
+    supervisor: bool = False
 
 
 @dataclass
@@ -118,10 +119,11 @@ class DeliveryProgress:
 
 
 PROFILES = {
-    "claude": Profile("left", "claude", "claude", "Chat from Codex: ", "\n"),
-    "codex": Profile("right", "codex", "codex", "Chat from Claude: ", "\n"),
-    "cursor": Profile("left", "cursor", "cursor-agent", "Chat from Codex: ", "\n", 0),
+    "claude": Profile("left", "claude", "claude", "Chat from peer: ", "\n"),
+    "codex": Profile("right", "codex", "codex", "Chat from peer: ", "\n"),
+    "cursor": Profile("left", "cursor", "cursor-agent", "Chat from peer: ", "\n", 0),
 }
+SHELL_COMMANDS = {"sh", "bash", "zsh", "fish", "dash", "login"}
 
 
 class PromptBlocked(RuntimeError):
@@ -259,13 +261,17 @@ def command_name(value: str) -> str:
 
 
 def target_profile(
-    target: str, explicit_command: str | None, queue: bool = False
+    target: str, explicit_command: str | None, queue: bool = False,
+    pane: str | None = None, supervisor: bool = False,
 ) -> Profile:
     profile = PROFILES[target]
     env_name = f"PEER_CHAT_{profile.agent.upper()}_COMMAND"
     configured = explicit_command or os.environ.get(env_name) or profile.command
     submit = "\t" if queue else profile.submit
-    return replace(profile, command=command_name(configured), submit=submit)
+    return replace(
+        profile, command=command_name(configured), submit=submit,
+        pane=pane or profile.pane, supervisor=supervisor,
+    )
 
 
 def runs(foreground: Any, command: str) -> bool:
@@ -282,36 +288,52 @@ def cursor_entrypoint(foreground: list) -> bool:
 
 
 def has_target(info: dict[str, Any], profile: Profile) -> bool:
-    if not info.get("hasSplit"):
+    if not info.get("hasSplit") and (not profile.supervisor or profile.pane != "left"):
         return False
     field = "foreground" if profile.pane == "left" else "splitForeground"
     if not runs(info.get(field), profile.command):
         return False
-    return profile.pane == "right" or runs(
-        info.get("splitForeground"), target_profile("codex", None).command
-    )
+    if profile.supervisor:
+        return True
+    opposite = "splitForeground" if profile.pane == "left" else "foreground"
+    sender = info.get(opposite) or []
+    return bool(sender) and command_name(str(sender[0])) not in SHELL_COMMANDS
 
 
-def with_sender_label(sid: str, profile: Profile, window: str | None = None) -> Profile:
-    if profile.agent != "codex":
-        return profile
+def with_sender_label(
+    sid: str, profile: Profile, window: str | None = None,
+    sender_name: str | None = None, sender_command: str | None = None,
+) -> Profile:
+    if profile.supervisor:
+        return replace(profile, label=f"[Supervisor {time.strftime('%H:%M:%SZ', time.gmtime())}] ")
     info = find_node(sid, window)
-    foreground = info.get("foreground")
+    opposite = "splitForeground" if profile.pane == "left" else "foreground"
+    foreground = info.get(opposite)
     if not isinstance(foreground, list):
         foreground = []
-    senders = []
-    if runs(foreground[:1], target_profile("claude", None).command):
-        senders.append("claude")
-    if runs(foreground[:1], target_profile("cursor", None).command) or cursor_entrypoint(
-        foreground
+    if not foreground or (
+        command_name(str(foreground[0])) in SHELL_COMMANDS | {"agent"}
+        and not cursor_entrypoint(foreground)
     ):
-        senders.append("cursor")
-    if len(senders) != 1:
         raise RuntimeError(
-            "Codex's left peer must be Claude Code or Cursor; for a wrapper, set "
-            "PEER_CHAT_CLAUDE_COMMAND or PEER_CHAT_CURSOR_COMMAND; nothing was typed"
+            "the opposite pane has no identifiable agent; nothing was typed"
         )
-    name = "Cursor" if senders[0] == "cursor" else "Claude"
+    if sender_command and not runs(foreground[:1], command_name(sender_command)):
+        raise RuntimeError("sender command changed; nothing was typed")
+    names = {"claude": "Claude", "cursor": "Cursor", "codex": "Codex"}
+    senders = [
+        key for key in PROFILES
+        if runs(foreground[:1], target_profile(key, None).command)
+    ]
+    if cursor_entrypoint(foreground):
+        senders = ["cursor"]
+    if len(senders) > 1:
+        raise RuntimeError("sender command matches multiple profiles; nothing was typed")
+    name = sender_name or (
+        names[senders[0]] if senders else command_name(str(foreground[0]))
+    )
+    if not re.fullmatch(r"[\w][\w .-]{0,63}", name):
+        raise ValueError("sender name must be 1–64 letters, digits, spaces, dots, underscores or hyphens")
     return replace(profile, label=f"Chat from {name}: ")
 
 
@@ -370,7 +392,7 @@ def require_target(
     sid: str, profile: Profile, window: str | None = None
 ) -> str:
     info = find_node(sid, window)
-    if not info.get("hasSplit"):
+    if not info.get("hasSplit") and (not profile.supervisor or profile.pane != "left"):
         raise RuntimeError(f"session {sid} has no split")
     if not has_target(info, profile):
         raise RuntimeError(
@@ -445,7 +467,7 @@ def resolve_target(
         raise RuntimeError(f"no such session: {session}")
     window, info = matches[0]
     sid = str(info["id"])
-    if not info.get("hasSplit"):
+    if not info.get("hasSplit") and (not profile.supervisor or profile.pane != "left"):
         raise RuntimeError(f"session {sid} has no split")
     if not has_target(info, profile):
         raise RuntimeError(
@@ -1613,6 +1635,22 @@ def read_message(use_stdin: bool, message_file: str | None) -> str:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--to", choices=PROFILES)
+    parser.add_argument(
+        "--pane", choices=("left", "right"),
+        help="target pane; defaults to the UI profile's legacy layout",
+    )
+    parser.add_argument(
+        "--sender", type=selector_argument,
+        help="sender label; foreground identity is still checked",
+    )
+    parser.add_argument(
+        "--sender-command", type=command_name,
+        help="pin the opposite pane's executable or wrapper",
+    )
+    parser.add_argument(
+        "--supervisor", action="store_true",
+        help="tag a direction to an explicitly selected session/pane",
+    )
     parser.add_argument("--session", type=selector_argument)
     parser.add_argument(
         "--window",
@@ -1620,7 +1658,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="agterm window id or prefix (defaults to AGTERM_WINDOW_ID)",
     )
     parser.add_argument(
-        "--target-command",
+        "--target-command", "--command",
         type=command_name,
         metavar="NAME",
         help="target agent executable or wrapper name",
@@ -1646,12 +1684,19 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     args = parser.parse_args(argv)
     if args.prepare_message:
-        if args.to or args.session or args.window or args.target_command or args.queue:
+        if any((
+            args.to, args.session, args.window, args.target_command, args.queue,
+            args.pane, args.sender, args.sender_command, args.supervisor,
+        )):
             parser.error("--prepare-message does not accept target options")
     elif not args.to:
         parser.error("--to is required when sending")
     elif args.queue and args.to != "codex":
         parser.error("--queue is available only with --to codex")
+    elif args.supervisor and (
+        not args.session or not args.pane or args.sender or args.sender_command
+    ):
+        parser.error("--supervisor requires --session and --pane, without sender options")
     return args
 
 
@@ -1667,9 +1712,9 @@ def run_main(progress: DeliveryProgress) -> int:
         path = prepare_message(args.prepare_message)
         print(json.dumps({"messageFile": str(path)}))
         return 0
-    profile = target_profile(args.to, args.target_command, args.queue)
+    profile = target_profile(args.to, args.target_command, args.queue, args.pane, args.supervisor)
     window, sid = resolve_target(args.session, args.window, profile)
-    profile = with_sender_label(sid, profile, window)
+    profile = with_sender_label(sid, profile, window, args.sender, args.sender_command)
     message = read_message(args.stdin, args.message_file)
     sent = send_with_retry(sid, profile, message, window, progress)
     progress.phase = "confirmed"

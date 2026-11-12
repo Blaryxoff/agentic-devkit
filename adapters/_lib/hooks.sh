@@ -161,18 +161,21 @@ inject_cursor_edit_gates() {
   local coder_cmd="$2"
   local comment_cmd="$3"
   local server_cmd="$4"
+  local peer_cmd="$5"
 
-  echo "$hooks_json" | jq --arg coder "$coder_cmd" --arg comment "$comment_cmd" --arg server "$server_cmd" '
+  echo "$hooks_json" | jq --arg coder "$coder_cmd" --arg comment "$comment_cmd" --arg server "$server_cmd" --arg peer "$peer_cmd" '
     .preToolUse = (
       [(.preToolUse // [])[] |
         select((.command // "" | contains("plugins/core/hooks/coder-gate.sh")) | not) |
         select((.command // "" | contains("plugins/core/hooks/comment-gate.sh")) | not) |
-        select((.command // "" | contains("plugins/core/hooks/dev-server-gate.sh")) | not)
+        select((.command // "" | contains("plugins/core/hooks/dev-server-gate.sh")) | not) |
+        select((.command // "" | contains("plugins/core/hooks/peer-cli-gate.sh")) | not)
       ] + [
         {command: $coder, matcher: "Read|ReadFile", timeout: 60},
         {command: $coder, matcher: "Write|StrReplace|Edit|MultiEdit|Delete|EditNotebook|apply_patch", timeout: 60},
         {command: $comment, matcher: "Write|StrReplace|Edit|MultiEdit|Delete|EditNotebook|apply_patch", timeout: 60},
-        {command: $server, matcher: "Shell|Bash|exec_command|shell_command", timeout: 60}
+        {command: $server, matcher: "Shell|Bash|exec_command|shell_command", timeout: 60},
+        {command: $peer, matcher: "Shell|Bash|exec_command|shell_command", timeout: 60}
       ]
     )
   '

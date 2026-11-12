@@ -18,9 +18,12 @@ independent, so the ordering rules below are not decoration.
 ## Gate
 
 1. The operator triggered this skill in the current turn and supplied a specification (pasted text, a file, an issue).
-2. You are Claude Code or Cursor Agent and the top-level invocation, not a dispatched subagent.
-3. The peer CLI exists: `command -v codex`. If it does not, say `Pipeline: degraded — codex CLI not found`, then run
-   the native stages alone and skip stages 2, 4 and 5.
+2. You are the top-level invocation, not a dispatched subagent, in any supported harness.
+3. Resolve the independent peer through `plugins/core/conduct/cross-agent-review.md` → "Peer selection". Any CLI,
+   including another session of the caller's harness, may own the peer stages when it has their required tools and
+   permission boundaries. Ask for a missing or ambiguous peer while freezing the spec and writing native analysis.
+   If the selected peer is unavailable, say `Pipeline: degraded — <peer and reason>`, then run the native stages alone
+   and explicitly skip peer analysis, peer review and runtime QA. Never silently replace the selected peer.
 
 Do not self-invoke, and do not load this for a one-file change, a question, or a review-only request.
 
@@ -41,7 +44,7 @@ table decides:
 | 1 | Freeze the spec | you | `TASK.md` written, both agents will read the same bytes |
 | 2 | Analysis | **both, in parallel** | your design is written before the peer's lands in your context |
 | 3 | Implementation + tests | you | project lint/typecheck/build/test green where configured or required |
-| 4 | Code review | **revmux** when authorized, else Codex review/fix loop | no critical/major finding remains; every real defect fixed or explicitly deferred |
+| 4 | Code review | **revmux** when authorized, else peer review/fix loop | no critical/major finding remains; every real defect fixed or explicitly deferred |
 | 5 | Runtime QA | **peer**, from your written brief | evidenced `passed / failed / blocked` per item; skipped/missing coverage explicit |
 | 6 | wrapup | you | branch pushed, SHAs reported |
 
@@ -73,9 +76,10 @@ Split the spec into numbered acceptance items now. Stages 4–7 all check agains
 
 ## Stage 2 — Parallel analysis
 
-The invariant: **your own design exists in writing before the peer's analysis enters your context.** Launch the peer in
-the background, write your design while it runs, read its output only afterwards. Invocation mechanics, `< /dev/null`,
-and failure modes: `plugins/core/conduct/cross-agent-review.md` → "Peer CLI invocation".
+The invariant: **your own design exists in writing before the peer's analysis enters your context.** Capture peer output
+outside the calling transcript, launch it in the background, write your design while it runs, and read its output only
+afterwards. If the calling tool cannot isolate that output, write the native design before launching the peer.
+Invocation mechanics and failure modes: `plugins/core/conduct/cross-agent-review.md` → "Peer CLI invocation".
 
 Give the peer the same `TASK.md` and ask for a design, not an implementation. When its analysis arrives, adopt only
 concrete deltas you can verify in the code, and record each adopted delta in `process-log.md` with its source. Matching
@@ -100,20 +104,20 @@ Export the diffs and untracked new files first — a peer cannot see your workin
 | Situation | Engine |
 |---|---|
 | Operator named revmux in the process hand-off | revmux, against the **final** diff — the primary gate |
-| Operator did not name revmux | Codex adversarial review/fix loop; say the revmux stage was skipped and why |
-| Implementation still churning, revmux authorized for later | one Codex loop now, revmux once against the final diff |
+| Operator did not name revmux | selected peer's adversarial review/fix loop; say the revmux stage was skipped and why |
+| Implementation still churning, revmux authorized for later | one peer loop now, revmux once against the final diff |
 
 The one thing that never changes: `plugins/core/conduct/revmux-review.md` forbids any devkit skill from reaching for
 revmux on its own judgement, and being inside this pipeline is not an exemption. If the operator did not name it, do
-not run it — fall back to the Codex loop.
+not run it — use the selected peer loop.
 
 Never run both engines against the same finished diff.
 
-### Codex review/fix loop
+### Peer review/fix loop
 
-Read `references/codex-review.md` and follow it exactly. Codex reviews read-only; you verify and fix confirmed findings,
+Read `references/codex-review.md` and follow it exactly. This contract applies to every selected peer. The selected peer reviews read-only; you verify and fix confirmed findings,
 run the plan's validation, refresh the diff, and send it back for another independent pass. Stop after a clean pass or
-after a minor-only pass whose confirmed findings you fixed. Continue while Codex reports any `CRITICAL` or `MAJOR`
+after a minor-only pass whose confirmed findings you fixed. Continue while the peer reports any `CRITICAL` or `MAJOR`
 finding, up to 10 iterations. If iteration 10 still has a blocking finding, stop the pipeline and report it; do not
 advance to runtime QA or wrapup.
 
@@ -155,7 +159,7 @@ acceptance list from stage 1 with the outcome of each item, plus everything defe
 
 - Never run a stage the table assigns to the peer.
 - Never let the peer's analysis reach your context before your own design is written.
-- One review engine per finished diff: revmux when authorized, the Codex review/fix loop otherwise, never both.
+- One review engine per finished diff: revmux when authorized, the selected peer review/fix loop otherwise, never both.
 - Never widen a guard past the scenario that motivated it without naming the flows it now blocks.
 - Never commit unrelated untracked paths that the pipeline's diff export happened to surface; `wrapup` Step 2 triages
   them.

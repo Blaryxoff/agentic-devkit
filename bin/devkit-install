@@ -473,7 +473,7 @@ if [ -f "$CURSOR_HOOKS_FILE" ]; then
   existing_hooks=$(normalize_cursor_hooks "$existing_hooks") || exit 1
   cursor_hooks=$(merge_cursor_hooks_preserving_existing "$cursor_hooks" "$existing_hooks") || exit 1
 fi
-cursor_hooks=$(inject_cursor_edit_gates "$cursor_hooks" "$codergate_cmd" "$commentgate_cmd" "$servergate_cmd")
+cursor_hooks=$(inject_cursor_edit_gates "$cursor_hooks" "$codergate_cmd" "$commentgate_cmd" "$servergate_cmd" "$peercli_cmd")
 cursor_hooks=$(echo "$cursor_hooks" | jq --arg cmd "$feedback_cmd" --arg script "jev-feedback.py" '
   .beforeSubmitPrompt = (
     [(.beforeSubmitPrompt // [])[] | select((.command // "" | contains($script)) | not)]
@@ -498,6 +498,7 @@ CODEX_CONFIG_FILE="$CODEX_CONFIG" \
 CODEX_LEGACY_HOOKS_FILE="$CODEX_LEGACY_HOOKS" \
 CODEX_CODER_GATE_CMD="$codergate_cmd" \
 CODEX_COMMENT_GATE_CMD="$commentgate_cmd" \
+CODEX_PEER_CLI_GATE_CMD="$peercli_cmd" \
 CODEX_SERVER_GATE_CMD="$servergate_cmd" \
 CODEX_FEEDBACK_CMD="$feedback_cmd" \
 CODEX_DEVKIT_HOME="$DEVKIT_HOME" \
@@ -514,7 +515,7 @@ config_path = Path(os.environ["CODEX_CONFIG_FILE"])
 legacy_path = Path(os.environ["CODEX_LEGACY_HOOKS_FILE"])
 managed_start = "# devkit-hooks:start"
 managed_end = "# devkit-hooks:end"
-managed_scripts = ("coder-gate.sh", "comment-gate.sh", "dev-server-gate.sh", "jev-feedback.py")
+managed_scripts = ("coder-gate.sh", "comment-gate.sh", "dev-server-gate.sh", "peer-cli-gate.sh", "jev-feedback.py")
 
 
 def toml_value(value):
@@ -668,7 +669,15 @@ matcher = "Bash|exec_command|shell_command"
 [[hooks.PreToolUse.hooks]]
 type = "command"
 command = {toml_value(os.environ["CODEX_SERVER_GATE_CMD"])}
-statusMessage = "Checking canonical dev-server startup"'''
+statusMessage = "Checking canonical dev-server startup"
+
+[[hooks.PreToolUse]]
+matcher = "Bash|Shell|exec_command|shell_command"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = {toml_value(os.environ["CODEX_PEER_CLI_GATE_CMD"])}
+statusMessage = "Checking peer CLI stdin"'''
 env_body = f'''
 
 [shell_environment_policy.set]
@@ -727,6 +736,19 @@ PY
 OUTPUT_STYLES_SRC="$DEVKIT_HOME/plugins/core/output-styles"
 OUTPUT_STYLES_DEST="$CLAUDE_DIR/output-styles"
 if [ -d "$OUTPUT_STYLES_SRC" ]; then
+  cursor_style="$CURSOR_RULES_DEST/devkit-senior.mdc"
+  if [ -f "$cursor_style" ] && ! grep -qF '<!-- devkit-managed: senior -->' "$cursor_style"; then
+    echo "    NOTICE: kept your own $cursor_style — devkit did not overwrite it."
+  else
+    python3 - "$OUTPUT_STYLES_SRC/senior.md" "$cursor_style" <<'PY'
+from pathlib import Path
+import sys
+
+source, target = map(Path, sys.argv[1:])
+body = source.read_text().split("---\n", 2)[2].lstrip()
+target.write_text('---\ndescription: Direct senior-peer communication\nalwaysApply: true\n---\n\n<!-- devkit-managed: senior -->\n\n' + body)
+PY
+  fi
   mkdir -p "$OUTPUT_STYLES_DEST"
   # Reap only symlinks that point back into this clone; never touch user-authored styles.
   for entry in "$OUTPUT_STYLES_DEST"/*; do

@@ -35,4 +35,4 @@ Return logging findings and the pass outcome; leave fixes to a separate implemen
 
 - Ground in real inputs (active plugin conduct, log call sites): `plugins/core/conduct/inputs-grounding-gate.md`.
 - Emit findings using `plugins/core/conduct/review-findings-format.md`.
-- After your own findings are complete, cross-check in Codex per `plugins/core/conduct/cross-agent-review.md`, using Codex skill slug `devkit-core--reviewer-logging`. Merge kept findings tagged `(via Codex)`. **This step is mandatory when the gate holds** — run `command -v codex`, do not treat it as optional or proportional, and state the gate outcome explicitly. Skip only when a gating condition genuinely fails, naming which.
+- After your own findings are complete, cross-check with the selected peer per `plugins/core/conduct/cross-agent-review.md`. Resolve its review skill from its catalog or supply the same self-contained brief. Merge kept findings tagged `(via <peer>)`. **This step is mandatory when the gate holds** — check the selected executable and state the gate outcome explicitly. Skip only when a gating condition genuinely fails, naming which.
