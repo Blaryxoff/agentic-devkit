@@ -63,9 +63,11 @@ Verify the live split's title, checkout and both agent commands, then pass its I
 
 ## Wrapper-launched agents
 
-The script reads the pane's command from agterm and looks for `claude` / `cursor-agent` / `codex`. A wrapper's name is
-what agterm sees instead, so pass `--target-command <name>` (a path works; only the last component is
-compared), or set `PEER_CHAT_CLAUDE_COMMAND` / `PEER_CHAT_CURSOR_COMMAND` / `PEER_CHAT_CODEX_COMMAND`.
+The script reads the pane's command from agterm and looks for `claude` / `cursor-agent` / `codex`. Cursor's `agent`
+entrypoint counts as Cursor when that same argv also contains the versioned `cursor-agent` script path. A process
+named only `agent` does not. A wrapper's name is what agterm sees instead, so pass `--target-command <name>` (a path
+works; only the last component is compared), or set `PEER_CHAT_CLAUDE_COMMAND` / `PEER_CHAT_CURSOR_COMMAND` /
+`PEER_CHAT_CODEX_COMMAND`.
 When sending to Codex, the left peer must also be recognisable to choose its sender label; set its
 command environment variable in that pane's tool environment if it uses a wrapper. An agent whose
 launcher leaves no stable name in the pane's command line cannot be targeted at all.

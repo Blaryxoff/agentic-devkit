@@ -260,6 +260,22 @@ try:
     for command, label in (("cursor-agent", "Cursor"), ("claude", "Claude")):
         fake.node["foreground"] = [command]
         assert chat.with_sender_label(fake.sid, codex, fake.window).label == f"Chat from {label}: "
+    launched = [
+        "/Users/me/.local/bin/agent",
+        "--use-system-ca",
+        "/Users/me/.local/share/cursor-agent/versions/2026.10.01/index.js",
+    ]
+    fake.node["foreground"] = launched
+    assert chat.with_sender_label(fake.sid, codex, fake.window).label == "Chat from Cursor: "
+    assert chat.has_target(fake.node, cursor)
+    fake.node["foreground"] = ["agent"]
+    assert not chat.has_target(fake.node, cursor)
+    try:
+        chat.with_sender_label(fake.sid, codex, fake.window)
+    except RuntimeError as err:
+        assert "nothing was typed" in str(err)
+    else:
+        raise AssertionError("a bare agent process was treated as Cursor")
     os.environ["PEER_CHAT_CURSOR_COMMAND"] = "cursor-wrapper"
     fake.node["foreground"] = ["cursor-wrapper"]
     assert chat.with_sender_label(fake.sid, codex, fake.window).label == "Chat from Cursor: "

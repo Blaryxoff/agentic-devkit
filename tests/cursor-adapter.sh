@@ -111,8 +111,15 @@ done
   || fail "Cursor subagent skill was not linked for inline use"
 agent_file="$PROJECT/.cursor/agents/devkit-fixture-audit.md"
 [ -f "$agent_file" ] || fail "Cursor stack subagent was not generated"
+grep -Eq '^description: audit fixture$' "$agent_file" || fail "Cursor subagent description was not a single line"
+grep -Fq 'description: >-' "$agent_file" && fail "Cursor CLI would read a folded description as >-"
 grep -Fq 'readonly: true' "$agent_file" || fail "read-only Cursor subagent lost its write restriction"
 grep -Fq 'audit body' "$agent_file" || fail "Cursor subagent lost its skill workflow"
+[ -f "$PROJECT/.cursor/agents/devkit-plan-reviewer.md" ] || fail "core Cursor subagent was not written into the project"
+grep -Eq '^description: review a plan' "$PROJECT/.cursor/agents/devkit-plan-reviewer.md" \
+  || fail "core Cursor subagent description is not on one line"
+grep -Fq 'readonly: true' "$PROJECT/.cursor/agents/devkit-plan-reviewer.md" \
+  || fail "core Cursor review subagent lost its write restriction"
 runner_file="$PROJECT/.cursor/agents/devkit-fixture-runner.md"
 [ -f "$runner_file" ] || fail "Cursor subagent with cursorReadonly: false was not generated"
 if grep -Eq '^(readonly|cursorReadonly):' "$runner_file"; then

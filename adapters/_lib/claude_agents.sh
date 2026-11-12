@@ -108,7 +108,8 @@ emit_subagent() {
       printf "name: %s\n", name >> out
       # A source description already written as a quoted scalar round-trips verbatim.
       # Everything else is folded, because ": " inside a plain scalar is not valid YAML.
-      if (desc ~ /^["'"'"']/) printf "description: %s\n", desc >> out
+      if (harness == "cursor" && desc != "") printf "description: %s\n", desc >> out
+      else if (desc ~ /^["'"'"']/) printf "description: %s\n", desc >> out
       else if (desc != "") printf "description: >-\n  %s\n", desc >> out
       if (harness == "cursor") {
         if (tools != "" && !cursor_writable && tools !~ /(Write|Edit|MultiEdit|Delete|Notebook)/)

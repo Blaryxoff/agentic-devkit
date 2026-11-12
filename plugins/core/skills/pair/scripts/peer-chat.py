@@ -269,10 +269,16 @@ def target_profile(
 
 
 def runs(foreground: Any, command: str) -> bool:
-    if not isinstance(foreground, list):
+    if not isinstance(foreground, list) or not command:
         return False
-    pattern = re.compile(rf"(?:^|[/\s]){re.escape(command)}(?:$|\s)")
+    pattern = re.compile(rf"(?:^|[/\s]){re.escape(command)}(?:$|[\s/])")
     return any(pattern.search(str(part)) for part in foreground)
+
+
+def cursor_entrypoint(foreground: list) -> bool:
+    if not foreground or os.path.basename(str(foreground[0])) != "agent":
+        return False
+    return runs(foreground, "cursor-agent")
 
 
 def has_target(info: dict[str, Any], profile: Profile) -> bool:
@@ -293,11 +299,13 @@ def with_sender_label(sid: str, profile: Profile, window: str | None = None) -> 
     foreground = info.get("foreground")
     if not isinstance(foreground, list):
         foreground = []
-    senders = [
-        agent
-        for agent in ("claude", "cursor")
-        if runs(foreground[:1], target_profile(agent, None).command)
-    ]
+    senders = []
+    if runs(foreground[:1], target_profile("claude", None).command):
+        senders.append("claude")
+    if runs(foreground[:1], target_profile("cursor", None).command) or cursor_entrypoint(
+        foreground
+    ):
+        senders.append("cursor")
     if len(senders) != 1:
         raise RuntimeError(
             "Codex's left peer must be Claude Code or Cursor; for a wrapper, set "

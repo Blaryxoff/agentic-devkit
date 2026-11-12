@@ -4,6 +4,7 @@ node_modules/
 .cache/
 pnpm-lock.yaml
 .revmux/tasks/
+.cursor/
 __pycache__/
 *.pyc
 projects.json

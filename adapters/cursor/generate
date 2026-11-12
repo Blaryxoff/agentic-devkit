@@ -149,9 +149,9 @@ rmdir "$skills_dir" 2>/dev/null || true
 cursor_agents=()
 while IFS= read -r agent_name; do
   [ -n "$agent_name" ] && cursor_agents+=("$agent_name")
-done < <(generate_subagents "$PROJECT_ROOT/.cursor/agents" "$plugin_index" "$resolved_non_core" cursor)
+done < <(generate_subagents "$PROJECT_ROOT/.cursor/agents" "$plugin_index" "$resolved_names" cursor)
 if [ "${#cursor_agents[@]}" -gt 0 ]; then
-  echo "    Agents:  .cursor/agents/ (${#cursor_agents[@]} resolved stack subagent(s))"
+  echo "    Agents:  .cursor/agents/ (${#cursor_agents[@]} resolved subagent(s))"
 fi
 
 # Glob patterns per plugin (used for rule activation)
