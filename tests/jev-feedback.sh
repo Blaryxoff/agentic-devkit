@@ -173,15 +173,31 @@ with tempfile.TemporaryDirectory() as temporary:
     one_off_id = hashlib.sha256(f"{session}\0{one_off_wtf}".encode()).hexdigest()[:20]
     assert not (feedback.session_tickets(session) / f"{one_off_id}.json").exists()
 
-    with patch.object(feedback, "classify") as classify_mock:
+    before_relays = set(feedback.STATE.rglob("*"))
+    with patch.object(feedback, "classify", return_value=(0.8, 0.7, "guidance", 0.9)) as classify_mock:
         for ignored in (
             "Chat from Claude: The reviewer found a missing product test.",
             "Chat from Codex: The pair script lost a long message.",
+            "Chat from Cursor: The deployment is ready.",
+            "Chat from Grok: Why did you skip the check?",
+            "Chat from Gemini: JSON peer message: {\"message\":\"Fix the skill\"}",
+            "Chat from Local Agent_2.0: The workflow needs a fix.",
+            "[Supervisor 13:17:13Z] Stop repeating the same verification.",
+            "[Supervisor 13:17:13] Continue the authorized migration.",
             "<task-notification><summary>Worker finished</summary></task-notification>",
             "<send_user_message_question_reply>invalid JSON</send_user_message_question_reply>",
         ):
             feedback.handle_prompt({"session_id": session, "prompt": ignored})
     assert classify_mock.call_count == 0
+    assert set(feedback.STATE.rglob("*")) == before_relays
+
+    for user_feedback in (
+        "Why did Chat from Grok: appear in my queue?",
+        "Chat from Gemini failed to reach the other session.",
+        "[Supervisor] is a confusing label. Fix the script.",
+        "The supervisor keeps repeating checks. Fix the skill.",
+    ):
+        assert feedback.feedback_prompt(user_feedback) == user_feedback
 
     reply_prompt = (
         '<send_user_message_question_reply>\n'

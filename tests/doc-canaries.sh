@@ -85,6 +85,8 @@ assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'low-level
 assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'framework or'
 assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'serialization behaviour'
 assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'A lesson does not qualify merely because it could prevent the same bug'
+assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'A personal user preference is not a team project contract'
+assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'A product behavior or implementation detail discovered in one task is'
 assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" '**Survives its own fix**'
 assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'it is work, not memory'
 assert_contains "$ROOT/plugins/core/conduct/learning-capture-gate.md" 'Split each candidate to a single claim'

@@ -5,6 +5,7 @@ Run independent concurrent AI tasks on the same repo in isolated git worktrees s
 ## Continue an existing branch
 
 - Apply requested fixes and follow-up work to the existing branch in its current checkout. Create or switch to another branch, worktree, or clone only when the user explicitly requests it; parallel-session isolation does not override this rule.
+- Verify any project/user requirement for an up-to-date base before editing, rather than waiting until release. Refresh only the relevant remote refs and fast-forward a clean checkout when authorized; preserve divergent or unrelated work and honor the owning-branch rule instead of resetting or silently switching.
 - Preserve unrelated changes in that checkout and edit only the requested scope. Unrelated changes alone do not justify moving the fixes elsewhere; if concurrent edits prevent safe work in place, explain the conflict and ask how to proceed.
 
 ## When to parallelize

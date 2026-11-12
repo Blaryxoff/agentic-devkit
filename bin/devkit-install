@@ -717,8 +717,10 @@ except OSError as exc:
         if original == updated:
             print("    Hooks:   ~/.codex/config.toml (PreToolUse gates; already current, file is read-only)")
         else:
-            print(f"    Hooks:   SKIPPED - {config_path} is not writable ({inner.strerror}).")
-            print("             Append the devkit-hooks block to it from the host side.")
+            raise SystemExit(
+                f"ERROR: required Codex hooks are stale in read-only {config_path}. "
+                "Update its devkit-hooks block from the owning host, then rerun devkit-install."
+            )
         raise SystemExit(0)
     tmp_path.unlink()
 if legacy_exists:

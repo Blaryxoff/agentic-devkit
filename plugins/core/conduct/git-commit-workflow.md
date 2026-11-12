@@ -73,6 +73,7 @@ EOF
 
 ## 5. Release tag safety
 
+- Before preparing a release or deployment, compare Git refs and the target's existing builds, releases and deployed revision. Reuse matching published artifacts and perform only the remaining authorized steps; a matching version label alone does not prove matching contents.
 - Publish tags or forge releases only when the user explicitly asks.
 - Abort the release workflow on any failed prerequisite or helper command. Never continue with an empty version, platform, notes value, or target revision.
 - Verify the proposed tag is absent both locally and on the remote before creating it. An existing tag on another history line is still a collision.

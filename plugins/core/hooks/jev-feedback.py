@@ -97,7 +97,7 @@ def clean_prompt(prompt: str) -> str:
 
 
 def feedback_prompt(prompt: str) -> str:
-    if re.match(r"Chat from (?:Claude|Codex|Cursor): ", prompt):
+    if re.match(r"(?:Chat from [\w][\w .-]{0,63}: |\[Supervisor \d{2}:\d{2}:\d{2}Z?\] )", prompt):
         return ""
     if prompt.startswith("<task-notification>"):
         return ""

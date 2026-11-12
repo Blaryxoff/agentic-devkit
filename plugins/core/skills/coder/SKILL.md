@@ -15,6 +15,8 @@ Read the user's target and the smallest useful source slice first: the named fil
 
 Match the conventions of the surrounding code: naming, file layout, and error handling. Existing verbose comments are not a convention to copy; apply the no-prose default in `code-comments.md`.
 
+Before branch-based edits, apply [parallel-sessions.md](../../conduct/parallel-sessions.md#continue-an-existing-branch) for checkout ownership and any required base-freshness check.
+
 When the change uses a third-party library/framework API whose current signature you are not certain of, fetch up-to-date docs first per `plugins/core/conduct/library-docs.md` (Context7 when available) and ground implementation in that documentation.
 
 Open only conduct documents that answer a concrete question raised by the target code.

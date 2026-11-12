@@ -453,4 +453,56 @@ PY
   fi
 done
 
+ROOT="$ROOT" python3 - <<'PY'
+import errno
+import io
+import os
+import tempfile
+from contextlib import redirect_stdout
+from pathlib import Path
+from unittest.mock import patch
+
+root = Path(os.environ["ROOT"])
+installer = (root / "bin/devkit-install").read_text()
+section = installer.split("# --- Codex defaults + PreToolUse hooks", 1)[1]
+source = section.split("python3 - <<'PY'\n", 1)[1].split("\nPY\n", 1)[0]
+with tempfile.TemporaryDirectory() as temporary:
+    config = Path(temporary) / "config.toml"
+    environment = {
+        "CODEX_CONFIG_FILE": str(config),
+        "CODEX_LEGACY_HOOKS_FILE": str(Path(temporary) / "hooks.json"),
+        "CODEX_DEVKIT_HOME": str(root),
+        **{f"CODEX_{name}_CMD": "test-command" for name in (
+            "CODER_GATE", "COMMENT_GATE", "PEER_CLI_GATE", "SERVER_GATE", "FEEDBACK",
+        )},
+    }
+    with patch.dict(os.environ, environment), redirect_stdout(io.StringIO()):
+        exec(source, {})
+    current = config.read_text()
+    write_text = Path.write_text
+
+    def readonly_write(path, *args, **kwargs):
+        if path == config:
+            raise OSError(errno.EROFS, "Read-only file system")
+        return write_text(path, *args, **kwargs)
+
+    for initial, expected in (("", 1), (current, 0)):
+        config.write_text(initial)
+        with patch.dict(os.environ, environment), redirect_stdout(io.StringIO()), \
+                patch.object(Path, "replace", side_effect=OSError(errno.EBUSY, "Mount target")), \
+                patch.object(Path, "write_text", readonly_write):
+            try:
+                exec(source, {})
+            except SystemExit as error:
+                code = error.code if isinstance(error.code, int) else 1
+                if expected:
+                    assert "owning host" in str(error.code), error.code
+            else:
+                code = 0
+        assert code == expected, f"readonly config: expected exit {expected}, got {code}"
+        assert config.read_text() == initial
+        assert not config.with_name("config.toml.devkit.tmp").exists()
+print("read-only Codex config checks passed")
+PY
+
 echo "codex adapter tests passed"

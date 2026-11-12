@@ -37,7 +37,7 @@ If the project defines a build command or active stack conduct requires a build,
 
 ## The loop
 
-Run these steps in order. Stop and report on first failure unless the user asks for a full report.
+Resolve these steps in order; schedule independent checks under [verification-loop.md](../../conduct/verification-loop.md#the-loop). Stop dependent work and report a failure unless the user asks for a full report; preserve results from independent checks already running.
 
 ### 1. Lint
 

@@ -32,6 +32,11 @@ serialization behaviour, temporary state, speculative conclusions, TODOs, common
 at their canonical source. A lesson does not qualify merely because it could prevent the same bug from recurring in
 another file.
 
+A personal user preference is not a team project contract; keep it in the user's supported global or personal memory
+mechanism, never in shared project instructions. A product behavior or implementation detail discovered in one task is
+not durable project guidance by itself; require an established contract that applies across a class of future work, or
+keep the detail in its task specification, code, tests, or canonical product documentation.
+
 Route actionable repository findings — dead or unreferenced code, stale configuration, cleanup, defects left unfixed —
 to a fix or to user-approved deferral under [deferred-work-backlog.md](./deferred-work-backlog.md). Never write one as
 project memory, and never file one silently.

@@ -234,6 +234,9 @@ the global layer. On the first `apply_patch` edit in a session the coder gate bl
 `devkit-coder`, which pulls in the core and active-stack conduct before the edit is retried. Review and trust the hooks
 with `/hooks` after installation or changes.
 
+A read-only bind-mounted `config.toml` is accepted when its generated configuration is already current. If it is stale,
+installation fails: update its `devkit-hooks` block from the owning host, then rerun `devkit-install`.
+
 ## Claude Code Setup
 
 Core skills and the `devkit` stack-router are installed globally by `devkit-install` (symlinked into `~/.claude/skills/`),

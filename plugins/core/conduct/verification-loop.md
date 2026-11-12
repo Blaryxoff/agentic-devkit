@@ -4,7 +4,7 @@ Defines the standard verification cycle to run after implementation changes. Sta
 
 ## The loop
 
-After completing an implementation task (or a coherent subset), run these checks in order:
+After completing an implementation task (or a coherent subset), resolve these checks in order:
 
 1. **Lint** — no new linter warnings or errors introduced by the change.
 2. **Type check** — static type analysis passes (when applicable to the stack).
@@ -14,7 +14,7 @@ After completing an implementation task (or a coherent subset), run these checks
 
 A running dev server can surface compile and bundle errors during implementation, but it does not replace a required production build.
 
-This order is the completion gate. During development, run project-permitted focused RED/GREEN checks under [agent-test-restraint.md](./agent-test-restraint.md) before production implementation or full lint/type/build checks when the test-first sequence calls for them.
+Run independent checks concurrently when they do not share mutable fixtures or generated outputs; preserve build-before-test and other actual dependencies. A failure blocks dependent checks and completion; retain results from independent checks already running. During development, run project-permitted focused RED/GREEN checks under [agent-test-restraint.md](./agent-test-restraint.md) before production implementation or full lint/type/build checks when the test-first sequence calls for them.
 
 ## Reproduce before fixing
 
@@ -49,6 +49,12 @@ The repeated-failure trigger is informed by [ub-mode](https://github.com/unclebo
 - During exploratory/research phases where code is not yet meant to work.
 - When the user explicitly asks to skip verification.
 - For documentation-only or config-only changes where build/test are irrelevant.
+
+## Expensive verification
+
+- Before a model-backed benchmark or other costly acceptance run, state the question, target revision, smallest relevant cases, expected request count or runtime, and stop condition. Honor project permissions and user budgets; apply [runtime-qa-evidence.md](./runtime-qa-evidence.md) §2 before repeating completed cases.
+- Reuse the project's benchmark harness and recorded comparison baseline when their workload, configuration and hardware remain comparable. Remeasure a baseline only to resolve a named comparability gap or an explicit requirement; report differences instead of building another harness.
+- During fix iterations, pause broad model-backed runs on a revision already known to need behavioral changes. Preserve results, fix the confirmed defect, and run focused checks before final acceptance. Continue independent diagnostic cases only when their results inform a named remaining decision or project policy explicitly requires them.
 
 ## Failure handling
 
