@@ -1,8 +1,8 @@
 ---
 name: devkit-followup
 description: >-
-  update task estimates or repair and report QA issues. Use for "followup estimate", "переоцени задачу", or
-  "исправь замечания QA". Fix comments: devkit-comment; full pipeline: devkit-task.
+  publish task estimates or implementation/bugfix follow-ups. Use for "followup estimate", "implementation follow-up",
+  "переоцени задачу", or "исправь замечания QA". Comment-only: devkit-comment; full pipeline: devkit-task.
 ---
 
 # Followup
@@ -11,6 +11,11 @@ Complete the requested follow-up on each named tracker task and verify its saved
 For estimation requests, gather the task context and publish the resulting estimate using **Estimation follow-up** below.
 For implementation reports, resolve remaining implementation gaps and post verified work answering the QA remarks;
 when none exist, use the task description as the report source.
+Finish the selected path with its required tracker writes and read-back: estimates publish through **Estimation follow-up**;
+implementation and bugfix reports publish only after step 6's deployment and remote-check gate or an explicit waiver.
+A combined request remains open until its requested tracker updates are verified. Honor draft-only restrictions and
+suppress equivalent updates already saved. If the gate blocks publication, keep the report pending and explain the
+blocker in chat; never substitute a local-progress, blocker, or evidence-gap comment to bypass the gate.
 Keep tracker state and environment deployment separate from implementation and local verification.
 Prefer tracker MCP tools, authenticated APIs, and repository/runtime CLIs over browser interaction. Use a browser for
 visual behavior and flows whose evidence cannot be obtained through those interfaces. Follow project-specific tracker
@@ -47,6 +52,14 @@ even when the calculation is performed as a separate part of the request.
 
 ## Implementation workflow
 
+Maintain a persistent finding checklist in the existing task note or session scratchpad; record its location in the
+conversation. Before the first edit, give every selected finding a source reference, expected behavior, owning
+repository/branch/worktree, implementation state, verification evidence, and next action or concrete blocker.
+Track deployment and tracker publication separately from implementation. Update the checklist after each finding
+and before a handoff; read it when resuming after an interruption, then continue the next actionable item.
+Treat a narrow correction as an update to the active follow-up unless the user explicitly cancels or replaces it.
+For an explanatory question, answer the question first; do not infer a requested edit from criticism alone.
+
 1. **Resolve each task.** Discover the available tracker MCP or CLI tools and inspect their schemas. For a human-facing
    task key, search by the exact key, select the exact matching key, then use the internal ID returned by search for every
    read or write. Preserve its native type; never derive internal IDs from visible keys. Read the complete discussion,
@@ -57,13 +70,18 @@ even when the calculation is performed as a separate part of the request.
    findings that remain open or were reopened. Treat older fixed notes as context, not new work. When the complete
    discussion contains no QA remarks, use the task description and its acceptance criteria as the report to address;
    apply later clarifications and scope decisions. Resolved or already answered QA remarks do not trigger this fallback.
-   Map every finding or requirement to its expected behavior, source evidence, and current resolution state before editing.
+   Populate the finding checklist from this selected report before editing; retain unfinished items across user corrections.
 3. **Find the owning checkout.** Inspect repository and worktree metadata, branches, and recent history to locate the
    implementation associated with the selected report. Corroborate the candidate with task references, affected paths, and
    commit/worktree evidence; a branch name or date alone is not proof. Read that checkout's `AGENTS.md`, project guidance,
    and hard Git rules before changing files. Preserve unrelated dirty changes and use the correct existing branch/worktree.
    Map each implementation variant to its owning branch; a shared backend and its client or theme may have separate
    source branches. Integrate through their contracts rather than copying whole trees or merging unrelated history.
+   Record the verified source-branch decision for each variant before changing files. Continue that existing branch;
+   create a replacement only when evidence shows why it cannot be used and record the reason and safe source.
+   Keeping the current checkout untouched or separating findings is not by itself a reason to create new branches.
+   Resolve checkout conflicts without disturbing unrelated work; ask about an unresolved ownership/access conflict
+   while continuing independent findings.
    Follow the project's operator and designer Git routes. When operators may work directly on the default branch,
    do not require a PR solely for deployment. Preserve an active checkout with a clean worktree for the authorized
    integration or release; retain any separate designer PR requirements.
@@ -88,8 +106,8 @@ even when the calculation is performed as a separate part of the request.
    login and fixture path. Record the actual checks and results; never claim a pass for an unexecuted or blocked check.
    Do not run a suite expected to take over two minutes without user confirmation. A focused check may establish a narrow
    fix, but must not be presented as full task acceptance.
-6. **Confirm deployment and fast-test the target.** Before drafting or posting a ready comment, identify the remote
-   environment where the reporters can check the result and verify that its deployment containing every fix claimed
+6. **Confirm deployment and fast-test the target.** Before drafting or posting any implementation or bugfix report,
+   identify the remote environment where the reporters can check the result and verify that its deployment containing every fix claimed
    in the reply has succeeded. Use the requested environment: a staging request needs verified staging deployment and
    checks, not an additional production release. Match the deployed revision to the fixes through deployment records.
    Treat core versions, active themes, artifact readiness, and health/readiness endpoints as rollout evidence only;
@@ -111,8 +129,8 @@ even when the calculation is performed as a separate part of the request.
    to report the confirmed deployment without that functional check. Keep the reply pending until they answer;
    do not enable features or change production settings without authorization. An approved exception permits
    reporting the supported deployment scope, but does not establish user availability or a functional pass.
-   If deployment fails, is unavailable, or cannot be verified, or a remote check fails, withhold ready drafts and
-   tracker replies and report the blocker to the user. Deployment itself still requires separate authorization.
+   If deployment fails, is unavailable, or cannot be verified, or a remote check fails, withhold implementation/bugfix
+   drafts and tracker replies and report the blocker to the user. Deployment itself still requires separate authorization.
    Waive deployment confirmation or remote checks only when the user explicitly requests or approves that exception;
    a request for comments alone is not a waiver. Honor an explicit exception without adding "Deploy is pending",
    equivalent caveats, or unsupported deployment or verification claims.
@@ -133,10 +151,18 @@ even when the calculation is performed as a separate part of the request.
    deployment from a branch or local check. Change a task to a discovered “Testing” status only when the user explicitly
    authorized that status change; resolve the exact status through tracker metadata and read back the saved status. Do not
    change assignees or other fields. If no unreported completed work can be verified, do not post a generic update.
-8. **Close out.** Summarize each finding as deployed and remotely verified, fixed and locally verified only, fixed with
+8. **Close out.** Check the entire finding checklist before ending the turn: finish every actionable implementation
+   and local-verification item, including those outside the latest correction. "Not implemented yet" is unfinished
+   work, not a blocker. Pause unfinished work only for explicit user direction or a concrete missing input,
+   authorization, access, or external dependency; record the affected item, attempted resolution, and next action.
+   Continue independent items when one is blocked. A deployment or publication gate blocks that stage, not
+   independent implementation or local checks. Report a blocked follow-up as pending, not complete.
+   Summarize each finding as deployed and remotely verified, fixed and locally verified only, fixed with
    a verification gap, still blocked, or not addressed, with concise evidence and relevant file references.
    Separate implementation, QA, task comment/status, and deployment evidence. Do not commit, push, deploy, or mutate
-   production unless separately requested.
+   production unless separately requested. Report each task's publication outcome: posted and read back, equivalent update
+   already saved and verified, draft-only, or the explicit deployment/check/write/read-back blocker. A blocked or
+   unverified publication is not a completed follow-up.
 
 ## Boundaries
 
@@ -152,7 +178,7 @@ even when the calculation is performed as a separate part of the request.
   as an ancillary action of this workflow. A generic request to "hand off blockers" is not authorization for tracker
   writes or mentions; a separate tracker request must identify its destination and intended content.
 - Use the task description as the report source only after confirming that the complete discussion contains no QA remarks.
-- Draft or post implementation-ready comments only after deployment is green and focused checks of the claimed fixes
+- Draft or post implementation and bugfix reports only after deployment is green and focused checks of the claimed fixes
   pass on the deployed remote target, unless the user explicitly waives the missing gate. Local checks alone are insufficient.
   For hidden or disabled features and unavailable test prerequisites, use step 6's user fallback before stopping.
   Keep deployment blockers and pending-deployment wording out of tracker comments. When this gate blocks a comment,
