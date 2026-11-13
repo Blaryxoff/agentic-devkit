@@ -4,7 +4,7 @@ description: >-
   converse with a selected agent in an existing agterm split. The pane the user asked is sole writer;
   the peer reviews read-only and argues. Manual trigger ONLY: "pair", "парой", an explicit request to talk
   to another agent, or a prompt opening "Chat from <peer>:". Not devkit-task's
-  pipeline, nor devkit-crosscheck's one-shot subprocess peer.
+  pipeline, nor devkit-crosscheck's one-shot subprocess peer. Not delivery coordination.
 ---
 
 # Pair
@@ -20,6 +20,10 @@ context attacks it first. What should come out is a located disagreement or a ch
 agreement. Two agents converging politely produce nothing.
 
 When the peer authored the changes under review, complete your own review before sending findings to the peer for rebuttal. Do not ask the author to review its own changes in parallel.
+
+Route publishing-owner discussions and messages beginning `Delivery coordination from ...` through
+[delivery coordination](../git/references/coordination.md). That workflow preserves independent task writers and uses
+the sender's dedicated `--coordination` mode; it does not activate this skill's manual split gate or sole-writer rule.
 
 ## Gate
 

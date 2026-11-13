@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Send one peer-chat message between Claude Code or Cursor and Codex in an agterm split."""
+"""Deliver one guarded pair or delivery-coordination message to an agterm agent."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ import tempfile
 import time
 import unicodedata
 from collections.abc import Callable, Iterator
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -97,6 +97,16 @@ MESSAGE_SPOOL = Path(tempfile.gettempdir()) / f"agterm-peer-chat-{os.getuid()}"
 
 
 @dataclass(frozen=True)
+class PaneIdentity:
+    session: str
+    window: str
+    pane: str
+    paneID: str
+    command: str
+    harness: str = ""
+
+
+@dataclass(frozen=True)
 class Profile:
     pane: str
     agent: str
@@ -106,6 +116,8 @@ class Profile:
     empty_cursor_column: int = EMPTY_CURSOR_COLUMN
     supervisor: bool = False
     delivery: str = "steer"
+    coordination_sender: PaneIdentity | None = None
+    coordination_target: PaneIdentity | None = None
 
 
 @dataclass
@@ -152,11 +164,14 @@ class DeliveryAmbiguous(RuntimeError):
 
 def ctl(*args: str, input_text: str | None = None) -> str:
     command = os.environ.get("AGTERMCTL", "agtermctl")
+    socket = os.environ.get("AGTERM_SOCKET")
+    socket_args = ("--socket", socket) if socket else ()
     result = subprocess.run(
-        [command, *args],
+        [command, *args, *socket_args],
         capture_output=True,
         check=False,
         input=input_text,
+        **({"stdin": subprocess.DEVNULL} if input_text is None else {}),
         text=True,
         timeout=30,
     )
@@ -343,6 +358,87 @@ def with_sender_label(
     return replace(profile, label=f"Chat from {name}: ")
 
 
+def observed_harness(foreground: list) -> str:
+    if cursor_entrypoint(foreground):
+        return "Cursor"
+    if not foreground or command_name(str(foreground[0])) in SHELL_COMMANDS | {"agent"}:
+        raise RuntimeError("pane has no identifiable agent; nothing was typed")
+    matches = [
+        key for key in PROFILES
+        if command_name(str(foreground[0])) == target_profile(key, None).command
+    ]
+    if len(matches) > 1:
+        raise RuntimeError("pane command matches multiple profiles; nothing was typed")
+    return matches[0].capitalize() if matches else command_name(str(foreground[0]))
+
+
+def require_identity(identity: PaneIdentity) -> list:
+    info = find_node(identity.session, identity.window)
+    if str(info.get("id", "")).lower() != identity.session.lower():
+        raise RuntimeError("pinned session changed; nothing was typed")
+    surfaces = [
+        surface for surface in info.get("surfaces", [])
+        if str(surface.get("paneID", "")).lower() == identity.paneID.lower()
+    ]
+    if len(surfaces) != 1 or surfaces[0].get("kind") != identity.pane:
+        raise RuntimeError("pinned pane identity or role changed; nothing was typed")
+    if identity.pane == "right" and not info.get("hasSplit"):
+        raise RuntimeError("pinned right pane is no longer split; nothing was typed")
+    foreground = info.get("foreground" if identity.pane == "left" else "splitForeground")
+    if not isinstance(foreground, list) or not (
+        bool(foreground) and command_name(str(foreground[0])) == identity.command
+        or identity.command == "cursor-agent" and cursor_entrypoint(foreground)
+    ):
+        raise RuntimeError("pinned foreground command changed; nothing was typed")
+    harness = observed_harness(foreground)
+    if identity.harness and harness != identity.harness:
+        raise RuntimeError("pinned agent identity changed; nothing was typed")
+    return foreground
+
+
+def require_coordination(sid: str, profile: Profile, window: str | None) -> str:
+    sender, target = profile.coordination_sender, profile.coordination_target
+    if sender is None or target is None:
+        raise RuntimeError("coordination requires both pinned identities; nothing was typed")
+    if (
+        sid.lower() != target.session.lower() or window is None
+        or window.lower() != target.window.lower() or profile.pane != target.pane
+    ):
+        raise RuntimeError("coordination target changed; nothing was typed")
+    if sender.paneID.lower() == target.paneID.lower() or (
+        sender.session.lower() == target.session.lower() and sender.pane == target.pane
+    ):
+        raise RuntimeError("coordination cannot target its sender; nothing was typed")
+    windows = {value.lower() for value in open_window_ids()}
+    if not {sender.window.lower(), target.window.lower()} <= windows:
+        raise RuntimeError("pinned window is no longer open; nothing was typed")
+    require_identity(sender)
+    require_identity(target)
+    return target.session
+
+
+def with_coordination(args: argparse.Namespace, profile: Profile) -> Profile:
+    sender = PaneIdentity(
+        args.sender_session, args.sender_window, args.sender_pane,
+        args.sender_pane_id, args.sender_command,
+    )
+    target = PaneIdentity(
+        args.session, args.window, args.pane, args.pane_id, args.target_command,
+    )
+    profile = replace(
+        profile, pane=target.pane, coordination_sender=sender, coordination_target=target,
+    )
+    require_coordination(target.session, profile, target.window)
+    sender = replace(sender, harness=observed_harness(require_identity(sender)))
+    target = replace(target, harness=observed_harness(require_identity(target)))
+    if target.harness.lower() in PROFILES and target.harness.lower() != profile.agent:
+        raise RuntimeError("target protocol differs from its observed harness; nothing was typed")
+    return replace(
+        profile, coordination_sender=sender, coordination_target=target,
+        label=f"Delivery coordination from {sender.harness} {sender.session[:8]}/{sender.pane}: ",
+    )
+
+
 def target_is_focused(sid: str, profile: Profile, window: str | None = None) -> bool:
     info = find_node(sid, window)
     if not info.get("active") or bool(info.get("splitFocused")) != (
@@ -397,6 +493,8 @@ def find_node(sid: str, window: str | None = None) -> dict[str, Any]:
 def require_target(
     sid: str, profile: Profile, window: str | None = None
 ) -> str:
+    if profile.coordination_target is not None or profile.coordination_sender is not None:
+        return require_coordination(sid, profile, window)
     info = find_node(sid, window)
     if not info.get("hasSplit") and (not profile.supervisor or profile.pane != "left"):
         raise RuntimeError(f"session {sid} has no split")
@@ -491,14 +589,19 @@ def pane_text(
     return _pane_text_unchecked(sid, profile, window)
 
 
+def pane_option(profile: Profile) -> tuple[str, str]:
+    if profile.coordination_target is not None:
+        return "--pane-id", profile.coordination_target.paneID
+    return "--pane", profile.pane
+
+
 def _pane_text_unchecked(
     sid: str, profile: Profile, window: str | None = None
 ) -> str:
     return ctl(
         "session",
         "text",
-        "--pane",
-        profile.pane,
+        *pane_option(profile),
         "--target",
         sid,
         "--lines",
@@ -523,7 +626,8 @@ def _cursor_column_unchecked(
         "surface",
         "cursor",
         "--target",
-        f"surface:{sid}:{profile.pane}",
+        sid if profile.coordination_target is not None else f"surface:{sid}:{profile.pane}",
+        *(("--pane-id", profile.coordination_target.paneID) if profile.coordination_target else ()),
         *window_option(window),
     ).strip()
     try:
@@ -540,8 +644,7 @@ def type_text(
         "session",
         "type",
         "--stdin",
-        "--pane",
-        profile.pane,
+        *pane_option(profile),
         "--target",
         sid,
         *window_option(window),
@@ -1800,6 +1903,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--supervisor", action="store_true",
         help="tag a direction to an explicitly selected session/pane",
     )
+    parser.add_argument(
+        "--coordination", action="store_true",
+        help="deliver between pinned agents under an already-authorized delivery workflow",
+    )
+    parser.add_argument("--pane-id", type=selector_argument)
+    parser.add_argument("--sender-session", type=selector_argument)
+    parser.add_argument("--sender-window", type=selector_argument)
+    parser.add_argument("--sender-pane", choices=("left", "right"))
+    parser.add_argument("--sender-pane-id", type=selector_argument)
     parser.add_argument("--session", type=selector_argument)
     parser.add_argument(
         "--window",
@@ -1841,6 +1953,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         if any((
             args.to, args.session, args.window, args.target_command, args.queue, args.steer,
             args.pane, args.sender, args.sender_command, args.supervisor,
+            args.coordination, args.pane_id, args.sender_session, args.sender_window,
+            args.sender_pane, args.sender_pane_id,
         )):
             parser.error("--prepare-message does not accept target options")
     elif not args.to:
@@ -1851,12 +1965,31 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         not args.session or not args.pane or args.sender or args.sender_command
     ):
         parser.error("--supervisor requires --session and --pane, without sender options")
+    if args.coordination:
+        if args.supervisor or args.sender:
+            parser.error("--coordination cannot use --supervisor or --sender")
+        if not all((args.session, args.window, args.pane, args.pane_id, args.target_command,
+                    args.sender_session, args.sender_window, args.sender_pane,
+                    args.sender_pane_id, args.sender_command)):
+            parser.error("--coordination requires explicit sender and target session, window, pane, pane-id and command")
+        for value in (args.session, args.window, args.pane_id, args.sender_session,
+                      args.sender_window, args.sender_pane_id):
+            if not re.fullmatch(r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", value):
+                parser.error("--coordination requires full UUIDs for session, window and pane-id")
+    elif any((args.pane_id, args.sender_session, args.sender_window, args.sender_pane, args.sender_pane_id)):
+        parser.error("pinned sender and pane-id options require --coordination")
     return args
 
 
-def report_success(sent: int, outcome: str) -> None:
+def report_success(sent: int, outcome: str, profile: Profile | None = None) -> None:
     """Emit the machine-readable receipt after delivery was confirmed."""
-    print(json.dumps({"sent": sent, "delivery": outcome}), flush=True)
+    receipt = {"sent": sent, "delivery": outcome}
+    if profile is not None and profile.coordination_sender is not None and profile.coordination_target is not None:
+        receipt.update(
+            coordination=True, sender=asdict(profile.coordination_sender),
+            target=asdict(profile.coordination_target),
+        )
+    print(json.dumps(receipt), flush=True)
 
 
 def run_main(progress: DeliveryProgress) -> int:
@@ -1867,12 +2000,16 @@ def run_main(progress: DeliveryProgress) -> int:
         print(json.dumps({"messageFile": str(path)}))
         return 0
     profile = target_profile(args.to, args.target_command, args.queue, args.pane, args.supervisor)
-    window, sid = resolve_target(args.session, args.window, profile)
-    profile = with_sender_label(sid, profile, window, args.sender, args.sender_command)
+    if args.coordination:
+        profile = with_coordination(args, profile)
+        window, sid = args.window, args.session
+    else:
+        window, sid = resolve_target(args.session, args.window, profile)
+        profile = with_sender_label(sid, profile, window, args.sender, args.sender_command)
     message = read_message(args.stdin, args.message_file)
     sent = send_with_retry(sid, profile, message, window, progress)
     progress.phase = "confirmed"
-    report_success(sent, progress.outcome)
+    report_success(sent, progress.outcome, profile)
     return 0
 
 

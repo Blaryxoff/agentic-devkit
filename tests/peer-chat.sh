@@ -21,6 +21,38 @@ spec.loader.exec_module(chat)
 claude, codex = chat.PROFILES["claude"], chat.PROFILES["codex"]
 original_clear_composer = chat.clear_composer
 
+original_run = chat.subprocess.run
+original_socket = os.environ.get("AGTERM_SOCKET")
+transport_calls = []
+def record_transport(command, **kwargs):
+    transport_calls.append((command, kwargs))
+    return chat.subprocess.CompletedProcess(command, 0, stdout="ok", stderr="")
+chat.subprocess.run = record_transport
+try:
+    for socket in ("/tmp/peer-chat-test.sock", "", None):
+        if socket is None:
+            os.environ.pop("AGTERM_SOCKET", None)
+        else:
+            os.environ["AGTERM_SOCKET"] = socket
+        for rpc, body in ((["tree", "--json"], None), (["session", "text"], None), (["session", "type", "--stdin"], "message body"), (["session", "type", "--stdin"], "")):
+            assert chat.ctl(*rpc, input_text=body) == "ok"
+            command, options = transport_calls[-1]
+            expected = [os.environ.get("AGTERMCTL", "agtermctl"), *rpc]
+            if socket:
+                expected += ["--socket", socket]
+            assert command == expected, "each RPC must use the selected agterm socket"
+            if body is None:
+                assert options.get("stdin") == chat.subprocess.DEVNULL, "read-only RPCs must not consume the message source"
+            else:
+                assert "stdin" not in options and options["input"] == body
+finally:
+    chat.subprocess.run = original_run
+    if original_socket is None:
+        os.environ.pop("AGTERM_SOCKET", None)
+    else:
+        os.environ["AGTERM_SOCKET"] = original_socket
+
+
 room = chat.CLAUDE_MAX_MESSAGE_UNITS - len(claude.label)
 assert chat.normalize(claude, "x" * room).endswith("x")
 try:
@@ -129,6 +161,51 @@ with contextlib.redirect_stderr(io.StringIO()):
         assert err.code == 2
     else:
         raise AssertionError("supervisor delivery must pin a session and pane")
+
+coordination_flags = [
+    "--coordination", "--to", "cursor", "--stdin",
+    "--session", "11111111-1111-1111-1111-111111111111",
+    "--window", "22222222-2222-2222-2222-222222222222",
+    "--pane", "left", "--pane-id", "33333333-3333-3333-3333-333333333333",
+    "--target-command", "cursor-agent",
+    "--sender-session", "44444444-4444-4444-4444-444444444444",
+    "--sender-window", "55555555-5555-5555-5555-555555555555",
+    "--sender-pane", "left", "--sender-pane-id", "66666666-6666-6666-6666-666666666666",
+    "--sender-command", "codex",
+]
+try:
+    assert chat.parse_args(coordination_flags).coordination
+except SystemExit as err:
+    raise AssertionError("explicitly pinned coordination must be accepted") from err
+for flag in ("--session", "--window", "--pane-id", "--sender-session", "--sender-window", "--sender-pane-id"):
+    shortened = coordination_flags.copy()
+    shortened[shortened.index(flag) + 1] = "11111111"
+    with contextlib.redirect_stderr(io.StringIO()):
+        try:
+            chat.parse_args(shortened)
+        except SystemExit as err:
+            assert err.code == 2
+        else:
+            raise AssertionError(f"coordination accepted an abbreviated {flag}")
+for flag in ("--session", "--window", "--pane", "--pane-id", "--target-command", "--sender-session", "--sender-window", "--sender-pane", "--sender-pane-id", "--sender-command"):
+    missing = coordination_flags.copy()
+    index = missing.index(flag)
+    del missing[index:index + 2]
+    with contextlib.redirect_stderr(io.StringIO()):
+        try:
+            chat.parse_args(missing)
+        except SystemExit as err:
+            assert err.code == 2
+        else:
+            raise AssertionError(f"coordination accepted missing {flag}")
+for extra in (["--sender", "Claude"], ["--supervisor"]):
+    with contextlib.redirect_stderr(io.StringIO()):
+        try:
+            chat.parse_args(coordination_flags + extra)
+        except SystemExit as err:
+            assert err.code == 2
+        else:
+            raise AssertionError("coordination accepted a spoofed sender mode")
 
 def cursor_screen(content, mode="Ask", busy=False):
     rows = content.splitlines() or [""]
@@ -269,6 +346,47 @@ class FakeAgterm:
             self.draft += input_text
         return "ok"
 
+class CoordinationAgterm(FakeAgterm):
+    def __init__(self, busy=False):
+        super().__init__(busy=busy)
+        self.sid = coordination_flags[coordination_flags.index("--session") + 1]
+        self.window = coordination_flags[coordination_flags.index("--window") + 1]
+        self.node.update(id=self.sid, hasSplit=False, splitForeground=[])
+        self.node["surfaces"] = [{"kind": "left", "paneID": "33333333-3333-3333-3333-333333333333"}]
+        self.sender_window = "55555555-5555-5555-5555-555555555555"
+        self.sender_node = {
+            "id": "44444444-4444-4444-4444-444444444444", "foreground": ["codex"],
+            "surfaces": [{"kind": "left", "paneID": "66666666-6666-6666-6666-666666666666"}],
+        }
+        self.after_type = None
+        self.protocol = "cursor"
+
+    def ctl(self, *args, input_text=None):
+        if args[:2] == ("tree", "--json"):
+            window = args[args.index("--window") + 1]
+            node = self.node if window == self.window else self.sender_node
+            return json.dumps({"sessions": [node]})
+        if args[:2] == ("window", "list"):
+            return json.dumps({"result": {"windows": [
+                {"id": window, "open": True} for window in (self.window, self.sender_window)
+            ]}})
+        if args[:2] in (("session", "type"), ("session", "text"), ("surface", "cursor")):
+            assert args[args.index("--pane-id") + 1] == "33333333-3333-3333-3333-333333333333"
+        if self.protocol != "cursor" and args[:2] == ("session", "type") and input_text and set(input_text) == {"\x7f"}:
+            self.events.append(input_text)
+            self.draft = self.draft[:-len(input_text)]
+            return "ok"
+        if self.protocol != "cursor" and args[:2] == ("session", "text"):
+            if self.protocol == "codex":
+                return pane("› " + (self.draft or chat.CODEX_EMPTY_PROMPT), " ", status, hints)
+            return "❯ " + self.draft
+        if self.protocol != "cursor" and args[:2] == ("surface", "cursor"):
+            return "2"
+        result = super().ctl(*args, input_text=input_text)
+        if args[:2] == ("session", "type") and self.after_type:
+            self.after_type(self)
+        return result
+
 chat.clear_composer = original_clear_composer
 chat.CHUNK_SETTLE_DELAY = 0
 chat.COMPOSER_SETTLE_DELAY = 0
@@ -278,6 +396,156 @@ saved_commands = {name: os.environ.pop(name, None) for name in (
 )}
 original_ctl = chat.ctl
 try:
+    for target in ("cursor", "codex", "claude"):
+        fake = CoordinationAgterm()
+        chat.ctl = fake.ctl
+        flags = coordination_flags.copy()
+        flags[flags.index("--to") + 1] = target
+        flags[flags.index("--target-command") + 1] = chat.PROFILES[target].command
+        fake.node["foreground"] = [chat.PROFILES[target].command]
+        for sender_command, sender_name in (("claude", "Claude"), ("codex", "Codex"), ("cursor-agent", "Cursor"), ("agent", "Cursor")):
+            flags[flags.index("--sender-command") + 1] = sender_command
+            fake.sender_node["foreground"] = [sender_command]
+            if sender_command == "agent":
+                fake.sender_node["foreground"] += ["/opt/cursor-agent/versions/current/index.js"]
+            args = chat.parse_args(flags)
+            profile = chat.with_coordination(args, chat.target_profile(target, args.target_command, pane="left"))
+            assert profile.label == f"Delivery coordination from {sender_name} 44444444/left: "
+            assert chat.require_target(fake.sid, profile, fake.window) == fake.sid
+            assert not chat.has_target(fake.node, chat.target_profile(target, args.target_command, pane="left"))
+        fake.protocol = target
+        assert chat.send(fake.sid, profile, "standalone coordination", fake.window)
+        assert len(fake.accepted) == 1
+        assert fake.accepted[0].startswith("Delivery coordination from Cursor 44444444/left: ")
+
+    fake = CoordinationAgterm()
+    chat.ctl = fake.ctl
+    wrapper_flags = coordination_flags.copy()
+    wrapper_flags[wrapper_flags.index("--target-command") + 1] = "agent"
+    fake.node["foreground"] = ["/opt/bin/agent", "/opt/cursor-agent/versions/current/index.js"]
+    assert chat.with_coordination(chat.parse_args(wrapper_flags), cursor).coordination_target.harness == "Cursor"
+    fake.node["foreground"] = ["codex"]
+    wrapper_flags[wrapper_flags.index("--target-command") + 1] = "codex"
+    try:
+        chat.with_coordination(chat.parse_args(wrapper_flags), cursor)
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("coordination accepted the wrong target protocol")
+
+    fake = CoordinationAgterm(busy=True)
+    chat.ctl = fake.ctl
+    original_argv, original_stdin = sys.argv, sys.stdin
+    try:
+        sys.argv = [sys.argv[0], *coordination_flags, "--queue"]
+        sys.stdin = io.StringIO("verify the coordinated receipt")
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            assert chat.run_main(chat.DeliveryProgress()) == 0
+        receipt = json.loads(output.getvalue())
+        assert receipt["delivery"] == "queued" and receipt["coordination"] is True
+        assert receipt["sent"] == len("verify the coordinated receipt")
+        assert receipt["sender"] == {
+            "session": fake.sender_node["id"], "window": fake.sender_window,
+            "pane": "left", "paneID": fake.sender_node["surfaces"][0]["paneID"],
+            "command": "codex", "harness": "Codex",
+        }
+        assert receipt["target"] == {
+            "session": fake.sid, "window": fake.window, "pane": "left",
+            "paneID": fake.node["surfaces"][0]["paneID"],
+            "command": "cursor-agent", "harness": "Cursor",
+        }
+    finally:
+        sys.argv, sys.stdin = original_argv, original_stdin
+
+    for which in ("sender", "target"):
+        for change in ("pane id", "pane role", "missing pane", "command", "parent directory", "missing session"):
+            fake = CoordinationAgterm()
+            chat.ctl = fake.ctl
+            args = chat.parse_args(coordination_flags)
+            profile = chat.with_coordination(args, cursor)
+            node = fake.sender_node if which == "sender" else fake.node
+            if change == "pane id":
+                node["surfaces"][0]["paneID"] = "77777777-7777-7777-7777-777777777777"
+            elif change == "pane role":
+                node["surfaces"][0]["kind"] = "right"
+            elif change == "missing pane":
+                node["surfaces"] = []
+            elif change == "command":
+                node["foreground"] = ["zsh", "codex", "cursor-agent"]
+            elif change == "parent directory":
+                expected = "codex" if which == "sender" else "cursor-agent"
+                node["foreground"] = [f"/opt/{expected}/different-agent"]
+            else:
+                node["id"] = "77777777-7777-7777-7777-777777777777"
+            try:
+                chat.send(fake.sid, profile, "must refuse stale identities", fake.window)
+            except RuntimeError:
+                pass
+            else:
+                raise AssertionError(f"coordination accepted changed {which} {change}")
+            assert not fake.events and not fake.accepted
+
+    for which in ("sender", "target"):
+        fake = CoordinationAgterm()
+        chat.ctl = fake.ctl
+        profile = chat.with_coordination(chat.parse_args(coordination_flags), cursor)
+        if which == "sender":
+            fake.sender_window = "77777777-7777-7777-7777-777777777777"
+        else:
+            fake.window = "77777777-7777-7777-7777-777777777777"
+        try:
+            chat.send(profile.coordination_target.session, profile, "must not use a closed window", profile.coordination_target.window)
+        except RuntimeError:
+            pass
+        else:
+            raise AssertionError("coordination accepted a changed owning window")
+        assert not fake.events
+
+    fake = CoordinationAgterm()
+    chat.ctl = fake.ctl
+    self_flags = coordination_flags.copy()
+    for flag, value in (("--sender-session", fake.sid), ("--sender-window", fake.window), ("--sender-pane-id", fake.node["surfaces"][0]["paneID"]), ("--sender-command", "cursor-agent")):
+        self_flags[self_flags.index(flag) + 1] = value
+    try:
+        chat.with_coordination(chat.parse_args(self_flags), cursor)
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("coordination accepted self delivery")
+    assert not fake.events
+
+    for queue in (False, True):
+        fake = CoordinationAgterm(busy=True)
+        chat.ctl = fake.ctl
+        args = chat.parse_args(coordination_flags + (["--queue"] if queue else []))
+        profile = chat.with_coordination(args, chat.target_profile("cursor", None, queue=queue))
+        progress = chat.DeliveryProgress()
+        assert chat.send(fake.sid, profile, "coordinate the authorized delivery", fake.window, delivery=progress)
+        assert progress.outcome == ("queued" if queue else "steering")
+        assert fake.accepted[0].startswith("Delivery coordination from Codex 44444444/left: ")
+
+    for changed_side, after_body in (("sender", False), ("target", False), ("sender", True), ("target", True)):
+        fake = CoordinationAgterm()
+        chat.ctl = fake.ctl
+        profile = chat.with_coordination(chat.parse_args(coordination_flags), cursor)
+        def change_after_focus(transport):
+            if after_body and not transport.draft:
+                return
+            node = transport.sender_node if changed_side == "sender" else transport.node
+            node["foreground"] = ["zsh"]
+        fake.after_type = change_after_focus
+        with contextlib.redirect_stderr(io.StringIO()):
+            try:
+                chat.send(fake.sid, profile, "must not type after identity changed", fake.window)
+            except RuntimeError:
+                pass
+            else:
+                raise AssertionError("coordination ignored an identity change during delivery")
+        assert "\n" not in fake.events and not fake.accepted
+        if not after_body:
+            assert fake.events == ["\x1b[I"]
+
     for busy in (False, True):
         fake = FakeAgterm(busy=busy)
         chat.ctl = fake.ctl

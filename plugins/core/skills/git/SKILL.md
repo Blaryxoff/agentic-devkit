@@ -21,6 +21,9 @@ If the project uses the devkit toolkit, read `.devkit/toolkit.json` to identify 
 
 When the user asks to commit, follow `plugins/core/conduct/git-commit-workflow.md` exactly — the safety protocol, amend rules, ordered commit steps, and HEREDOC message formatting live there.
 
+At its publishing gate, use [delivery coordination](references/coordination.md): executable read-only discovery,
+independently pinned cross-session messages, and a received ownership agreement. Keep manual pairing separate.
+
 ## Conventions
 
 - **Commits**: Conventional Commits (`feat:`, `fix:`, `refactor:`, etc.), imperative mood, one logical change per commit.

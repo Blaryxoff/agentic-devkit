@@ -35,6 +35,8 @@ Avoid `git commit --amend`. Use `--amend` only when ALL of these hold:
 
 ## 4. Scope discipline
 
+- Run the executable discovery and guarded cross-session transport in the owning Git skill's
+  [delivery coordination procedure](../skills/git/references/coordination.md) when its delivery gate applies.
 - Treat every path staged before the current task as foreign work unless the user explicitly includes it.
 - Pass intended paths to both `git add --` and `git commit --`. A bare `git commit` sweeps the whole index, including unrelated work staged before this task.
 - Pass file names as literal pathspecs (`:(literal)path`) when constructing commands. Reject empty path arguments; an empty pathspec can match the whole current directory.
@@ -51,12 +53,12 @@ Avoid `git commit --amend`. Use `--amend` only when ALL of these hold:
 - Contact only eligible peers individually to confirm readiness. Never broadcast readiness probes, type into idle
   composers, or submit queued text to discover whether a session wants to participate. Recheck eligibility before sending
   a follow-up or Enter; a previous probe does not authorize waking an excluded session.
-- Use an existing verified sender when it supports the exact target agent and pane. For an authorized manual agterm
-  send, pin the session and pane, confirm an empty composer, type a short single-line body without a trailing newline,
-  and wait until read-back shows the complete intended body. Recheck that the composer contains only this message, then
-  send Return (`\r`) in a separate call. Verify a new conversation entry or explicit queued-message state in that pane;
-  a successful typing call or text visible in the composer is not proof of submission. On an ambiguous result, inspect
-  before retrying; never blindly resend the body or press Enter again, and never submit someone else's composer text.
+- Treat bounded contact with verified eligible delivery peers as part of the user-invoked publishing workflow. Honor
+  explicit user restrictions; do not ask for a second messaging approval within that authorized scope. Manual pairing
+  and supervision are separate workflows and are not prerequisites for this contact.
+- Use native steering with identity and delivery receipts, or the verified sender's `--coordination` mode with both
+  sender and target endpoints pinned. Preserve drafts and queue ownership; do not improvise terminal typing. Verify a
+  received reply before treating transport delivery as an ownership agreement.
 - Include only peers that explicitly confirm readiness; agree one push owner and verify the combined candidate within
   the authorized branch flow, preserving each session's commit ownership. Proceed independently when no eligible peer
   is evident or promptly confirms; do not poll or remind excluded peers. The current session's required checks and
@@ -85,6 +87,9 @@ EOF
 
 - Apply this gate before an authorized deployment dispatch, retry, cancellation, or replacement. A commit/push request
   does not authorize deployment or peer messages about deployment.
+- Follow the [delivery coordination procedure](../skills/git/references/coordination.md) to discover candidates,
+  verify eligibility, contact independent owners and obtain their acknowledgments. The authorized deployment workflow
+  includes that bounded contact; the transport mode itself grants no deployment or supervisory authority.
 - Pin the repository, publishing account, destination environment, tenant/brand or service, and intended immutable
   revision. Different source branches or commit SHAs can still collide at that destination.
 - Inspect queued/running deployment records and recent same-host session output read-only. Match the destination,

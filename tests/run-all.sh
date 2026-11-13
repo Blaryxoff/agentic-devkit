@@ -13,6 +13,7 @@ SCRIPTS=(
   comment-gate.sh
   context-efficiency.sh
   css-routing.sh
+  delivery-peers.sh
   cursor-adapter.sh
   dev-server-gate.sh
   devkit-update.sh

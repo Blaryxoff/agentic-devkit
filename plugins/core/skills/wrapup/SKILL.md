@@ -72,6 +72,9 @@ Commit the `session` bucket plus any `related` paths the user approved. Split in
 ## Step 5 — Push
 
 - Run the delivery coordination gate in `plugins/core/conduct/git-commit-workflow.md` §4 before pushing.
+  Follow [the executable procedure](../git/references/coordination.md) for discovery, pinned cross-session contact and
+  acknowledged ownership. This user-invoked workflow authorizes bounded contact with eligible publishers; manual pair
+  selection is not required. Treat incomplete discovery or a queued proposal as unresolved, not as no peers.
 - Push the current branch. With no upstream, push with `-u` (`git push -u origin HEAD`) so the tracking ref exists; then verify `git rev-parse HEAD` equals `git rev-parse @{u}`.
 - Never open a PR/MR unless the user asked. Push to the branch directly.
 - Merge into another branch (`dev`, `master`, a downstream repo) only when the user asked or the project's documented flow requires it. Never invent a branch flow.
