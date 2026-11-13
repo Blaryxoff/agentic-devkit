@@ -97,6 +97,11 @@ configured named model. Core skills, including pair, are linked by `bin/devkit-i
 
 Cursor sends to a right Codex with `--to codex --pane right --stdin`; Codex replies with
 `--to cursor --pane left --message-file NAME`. These are example endpoints, not a required pairing.
+Add `--steer` to make the default intent explicit, or `--queue` for an informational note that can wait.
+Cursor steering requires an empty follow-up tray before typing. The script verifies its sole queued message and
+`enter steer` before promoting once, then checks the promotion UI; it never presses the interrupt-and-send action.
+An occupied queue is a pre-write refusal. An unconfirmed post-submit state returns `delivery: ambiguous` and must not
+be retried. Success receipts include `sent` and `delivery` (`submitted`, `queued`, or `steering`).
 The script recognises Cursor's boxed `→` input and model/path footer, with a mode row in Ask/Plan.
 Unknown layouts, menus and trailing dialogs block delivery. Cursor renders its caret itself and reports terminal cursor column
 zero; a stable empty placeholder and visible body checks establish input ownership.

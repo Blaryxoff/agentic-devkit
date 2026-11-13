@@ -81,10 +81,16 @@ Use `--sender NAME --sender-command COMMAND` when a wrapper's name needs a human
   before it.
 - **Never write the `Chat from …:` label yourself.** The script adds it, and that label is what makes
   the peer read the message as conversation instead of a fresh instruction from the user.
-- **A busy peer is not a reason to wait.** Return steers a running Codex or Cursor turn;
-  Claude Code manages its own busy queue. Send once; a second Return can interrupt Cursor.
-- `--queue` (Tab, to Codex only) only for an informational note that needs no action before the peer's current turn
-  ends. Answers, review results, corrections and stop signals always use the default send.
+- **Use the default send or `--steer` for answers, review results, corrections and stop signals.** Codex receives Return;
+  Cursor first queues the message, then the script promotes it once after verifying ownership and `enter steer`.
+  Claude Code manages its own busy queue and accepts neither delivery flag.
+- Use `--queue` with Codex or Cursor only for an informational note that can wait until the current turn ends.
+  Codex receives Tab; Cursor receives one Return without promotion.
+- Resolve an occupied or unreadable Cursor queue before steering. The script refuses before typing when earlier
+  follow-ups exist; it never promotes someone else's message or sends a blind second Return.
+- Read the JSON receipt's `delivery`: `queued` confirms queue submission, `steering` confirms Cursor's promotion UI,
+  and `submitted` confirms a cleared composer without proving processing. A steering receipt does not prove the model
+  has read the message. `ambiguous` exits nonzero: inspect the pane and do not resend or press Return to retry.
 - A wrapper-launched agent needs `--target-command <name>`. After a refusal, never guess a name and
   never retry with a different one until the user says which is right.
 - If `AGTERM_SESSION_ID` is stale, list open windows with `agtermctl window list --json` and read
@@ -159,7 +165,7 @@ diff; if the writer is unclear, stay read-only and require the same direct resol
 
 **Read stderr, not the exit code.** Exit 1 means refusal *or* failure, including two cases where the
 message did land: `delivery is ambiguous; do not resend` and `delivery was confirmed; do not resend`.
-Treating exit 1 as "it never arrived" is how you send it twice. Only `{"sent": N}` with exit 0 is success;
+Treating exit 1 as "it never arrived" is how you send it twice. Only `{"sent": N, "delivery": "…"}` with exit 0 is success;
 exit 130 is an interrupt.
 
 | stderr says | State | Do |

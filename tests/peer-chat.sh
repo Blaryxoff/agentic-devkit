@@ -103,14 +103,23 @@ cursor = chat.PROFILES["cursor"]
 assert cursor.pane == "left" and cursor.command == "cursor-agent"
 assert cursor.empty_cursor_column == 0
 assert chat.parse_args(["--to", "cursor", "--stdin"]).to == "cursor"
-with contextlib.redirect_stderr(io.StringIO()):
-    try:
-        chat.parse_args(["--to", "cursor", "--stdin", "--queue"])
-    except SystemExit as err:
-        assert err.code == 2
-    else:
-        raise AssertionError("Cursor must not inherit Codex's Tab queue key")
+assert chat.parse_args(["--to", "cursor", "--stdin", "--queue"]).queue
+assert chat.parse_args(["--to", "cursor", "--stdin", "--steer"]).steer
+for argv in (
+    ["--to", "cursor", "--stdin", "--steer", "--queue"],
+    ["--to", "claude", "--stdin", "--steer"],
+    ["--to", "claude", "--stdin", "--queue"],
+    ["--prepare-message", "peer-chat-codex-options.txt", "--steer"],
+):
+    with contextlib.redirect_stderr(io.StringIO()):
+        try:
+            chat.parse_args(argv)
+        except SystemExit as err:
+            assert err.code == 2
+        else:
+            raise AssertionError(f"invalid delivery options accepted: {argv}")
 assert chat.target_profile("codex", None, queue=True).submit == "\t"
+assert chat.target_profile("cursor", None, queue=True).submit == "\n"
 assert chat.target_profile("codex", None, pane="left").pane == "left"
 assert chat.parse_args(["--to", "codex", "--pane", "left", "--sender", "Gemini", "--command", "codex-wrapper", "--stdin"]).target_command == "codex-wrapper"
 with contextlib.redirect_stderr(io.StringIO()):
@@ -152,6 +161,23 @@ assert chat.live_prompt_text(cursor, idle_screen.replace("  →", "  !")) is Non
 assert chat.live_prompt_text(cursor, idle_screen.replace("  Auto · 7.5%", "  1. Allow")) is None
 assert chat.live_prompt_text(cursor, idle_screen.replace("shift+tab", "unknown+tab")) is None
 
+for mode in (None, "Ask", "Plan", "Debug"):
+    for busy in (False, True):
+        for draft in ("Add a follow-up", wrapped):
+            modern_screen = cursor_screen(draft, mode, busy).replace(
+                "  Auto · 7.5%\n  /tmp/pair-qa",
+                "  Grok 4.7 500K High  ctx 66%  weekly 88% left",
+            )
+            assert chat.live_prompt_text(cursor, modern_screen) == draft, "single-row Cursor footer rejected"
+            for tasks in ("1 task", "2 tasks"):
+                task_screen = modern_screen.replace("\n  Grok", f"\n  {tasks}\n  Grok")
+                assert chat.live_prompt_text(cursor, task_screen) == draft, "Cursor background-task status rejected"
+                assert chat.live_prompt_text(cursor, task_screen + "\n  1. Allow") is None
+            for trailing in ("\n  1. Allow\n  2. Deny", "\n  Error: model unavailable"):
+                assert chat.live_prompt_text(cursor, modern_screen + trailing) is None
+            assert chat.live_prompt_text(cursor, modern_screen.replace("  →", "  !")) is None
+            assert chat.live_prompt_text(cursor, modern_screen.replace("  Grok 4.7 500K High  ctx 66%  weekly 88% left", "  Unrecognised status")) is None
+
 plain = "Русский текст пары"
 assert chat.normalize(cursor, plain) == cursor.label + plain
 for message in ("Emoji 😊 and текст", "中文", "Cafe\u0301", chat.CURSOR_JSON_PREFIX + "literal text"):
@@ -162,6 +188,20 @@ for message in ("Emoji 😊 and текст", "中文", "Cafe\u0301", chat.CURSOR
 assert chat.normalize(claude, "Emoji 😊").endswith("Emoji 😊")
 assert not chat.composer_probe_marker("text", cursor).startswith(" ")
 assert chat.composer_probe_marker("[peer-check:0]", cursor) == "[peer-check:1]"
+
+def cursor_followups(messages, action="steer", steering=False):
+    rows = [" ┌─ follow-ups " + "─" * 58 + "┐"]
+    for message in messages:
+        words = (message + (" · steering" if steering else "")).split()
+        wrapped = [""]
+        for word in words:
+            if len(wrapped[-1]) + len(word) + 1 > 60:
+                wrapped.append("")
+            wrapped[-1] += (" " if wrapped[-1] else "") + word
+        rows.extend(" │ " + ("○ " if i == 0 else "  ") + row + " │" for i, row in enumerate(wrapped))
+    rows += [f" │ enter {action} · ↑ select/edit · esc cancel │", " └" + "─" * 72 + "┘"]
+    return "\n".join(rows) + "\n"
+
 
 class FakeAgterm:
     sid = "pair-session"
@@ -175,6 +215,12 @@ class FakeAgterm:
         self.accepted = []
         self.delayed_draft = delayed_draft
         self.reads = 0
+        self.queued = []
+        self.steering = False
+        self.action = "steer"
+        self.confirm_steer = True
+        self.after_queue_read = None
+        self.queue_reads = 0
         self.node = {
             "id": self.sid, "hasSplit": True, "active": False,
             "foreground": ["/opt/bin/cursor-agent"], "splitForeground": ["codex"],
@@ -189,9 +235,14 @@ class FakeAgterm:
             }]}})
         if args[:2] == ("session", "text"):
             self.reads += 1
+            if self.queued and not self.draft:
+                self.queue_reads += 1
+                if self.after_queue_read:
+                    self.after_queue_read(self)
             if self.reads == 2 and self.delayed_draft is not None:
                 self.draft = self.delayed_draft
-            return cursor_screen(self.draft or "Add a follow-up", mode=None, busy=self.busy and not self.draft)
+            tray = cursor_followups(self.queued, self.action, self.steering) if self.queued else ""
+            return tray + cursor_screen(self.draft or "Add a follow-up", mode=None, busy=self.busy and not self.draft)
         if args[:2] == ("surface", "cursor"):
             return "0"
         if args[:2] != ("session", "type"):
@@ -200,8 +251,15 @@ class FakeAgterm:
         if input_text in {"\x1b[I", "\x1b[O"}:
             return "ok"
         if input_text == "\n":
-            self.accepted.append(self.draft)
-            self.draft = ""
+            if self.draft:
+                self.accepted.append(self.draft)
+                if self.busy:
+                    self.queued.append(self.draft)
+                self.draft = ""
+            elif self.queued and self.confirm_steer:
+                assert self.action == "steer", "an empty Return would interrupt Cursor"
+                self.steering = True
+                self.action = "interrupt and send"
         elif input_text == "\x7f":
             self.draft = self.draft[:-1]
         elif self.truncate:
@@ -226,11 +284,90 @@ try:
         message = "transport check " + " ".join(f"item-{i}" for i in range(50))
         if busy:
             message += " 😊"
-        assert chat.send(fake.sid, cursor, message, fake.window) == len(message)
+        progress = chat.DeliveryProgress()
+        assert chat.send(fake.sid, cursor, message, fake.window, delivery=progress) == len(message)
         assert fake.accepted == [chat.normalize(cursor, message)]
-        assert fake.events.count("\n") == 1
+        assert fake.events.count("\n") == (2 if busy else 1), "busy Cursor messages must be steered out of the follow-up queue"
+        assert fake.steering == busy
+        assert progress.outcome == ("steering" if busy else "submitted")
         assert fake.events[0] == "\x1b[I" and fake.events[-1] == "\x1b[O"
         assert all(event == "\x7f" for event in fake.events if "\x7f" in event)
+
+    for action in ("steer", "interrupt and send", "send now"):
+        fake = FakeAgterm(busy=True)
+        fake.queued = ["a user's earlier follow-up"]
+        fake.action = action
+        chat.ctl = fake.ctl
+        try:
+            chat.send(fake.sid, cursor, "must not steer another message", fake.window)
+        except chat.PromptBlocked as err:
+            assert "--queue" in str(err)
+        else:
+            raise AssertionError("an occupied Cursor follow-up queue was steered")
+        assert not fake.events and fake.queued == ["a user's earlier follow-up"]
+
+        queued = chat.target_profile("cursor", None, queue=True)
+        progress = chat.DeliveryProgress()
+        assert chat.send(fake.sid, queued, "an informational note", fake.window, delivery=progress)
+        assert progress.outcome == "queued"
+        assert fake.events.count("\n") == 1 and not fake.steering
+        assert fake.queued[0] == "a user's earlier follow-up"
+
+    for failure in ("no ack", "other message", "new draft", "send now", "already steering", "consumed"):
+        fake = FakeAgterm(busy=True)
+        fake.confirm_steer = failure != "no ack"
+        def race(transport):
+            if transport.queue_reads != 4:
+                return
+            if failure == "other message":
+                transport.queued.insert(0, "an unrelated follow-up")
+            elif failure == "new draft":
+                transport.draft = "a new user draft"
+            elif failure == "send now":
+                transport.action = "send now"
+            elif failure == "already steering":
+                transport.action = "interrupt and send"
+            elif failure == "consumed":
+                transport.queued.clear()
+        fake.after_queue_read = race
+        chat.ctl = fake.ctl
+        try:
+            chat.send_with_retry(fake.sid, cursor, "one finding", fake.window)
+        except chat.DeliveryAmbiguous as err:
+            assert "do not resend" in str(err)
+        else:
+            raise AssertionError(f"unverified Cursor steering reported success: {failure}")
+        assert fake.events.count("\n") == (2 if failure == "no ack" else 1), failure
+        assert len(fake.accepted) == 1, "ambiguous delivery must not resend the message"
+        if failure == "new draft":
+            assert fake.draft == "a new user draft", "a raced user draft was changed"
+
+    long_message = ("Chat from Codex: " + "a long finding " * 30).strip()
+    preview = long_message[:100].rstrip() + "…"
+    for shown in (long_message, preview, preview + " · steering"):
+        screen = cursor_followups([shown]) + cursor_screen("Add a follow-up", busy=True)
+        state = chat.cursor_followup_state(screen)
+        assert state is not None and chat.cursor_owns_followup(state[0], long_message)
+        assert chat.cursor_followup_state(screen.replace("│ enter", "│ +12 more lines · enter")) == state
+        assert chat.cursor_followup_state(screen.split("\n", 1)[1]) is None, "clipped queues must fail closed"
+    split_word = long_message.replace("finding", "find ing", 1)
+    assert chat.cursor_owns_followup((split_word,), long_message), "terminal wrapping may split a word"
+    assert not chat.cursor_owns_followup(("Chat…",), long_message)
+    assert not chat.cursor_owns_followup((long_message, "another message"), long_message)
+    assert not chat.cursor_owns_followup(("Chat from another agent: wrong message",), long_message)
+
+    original_run_main = chat.run_main
+    try:
+        def ambiguous_main(_progress):
+            raise chat.DeliveryAmbiguous("unconfirmed steering; do not resend")
+        chat.run_main = ambiguous_main
+        output, errors = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+            assert chat.main() == 1
+        assert json.loads(output.getvalue()) == {"delivery": "ambiguous"}
+        assert "do not resend" in errors.getvalue()
+    finally:
+        chat.run_main = original_run_main
 
     for draft in ("a user draft", "Waiting for decision (y/n/p)..."):
         fake = FakeAgterm(draft=draft)
@@ -341,7 +478,7 @@ try:
         with contextlib.redirect_stdout(output):
             assert chat.run_main(chat.DeliveryProgress()) == 0
         assert observed == [(fake.sid, "Chat from Cursor: ", "reply to Cursor")]
-        assert json.loads(output.getvalue()) == {"sent": len("reply to Cursor")}
+        assert json.loads(output.getvalue()) == {"sent": len("reply to Cursor"), "delivery": "submitted"}
     finally:
         chat.send_with_retry = original_send_with_retry
         sys.argv, sys.stdin = original_argv, original_stdin

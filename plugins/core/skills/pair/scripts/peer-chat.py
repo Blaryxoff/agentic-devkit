@@ -83,6 +83,9 @@ CURSOR_PROMPT_RE = re.compile(r"^  → (.*?)\s*$")
 CURSOR_BUSY_HINT_RE = re.compile(r" {2,}ctrl\+c to stop$")
 CURSOR_MODE_RE = re.compile(r"^  (?:Agent|Plan|Ask|Debug) \(shift\+tab to cycle\)\s*$")
 CURSOR_PATH_RE = re.compile(r"^  (?:/|~/|[A-Za-z]:[\\/])\S.*$")
+CURSOR_MODEL_STATUS_RE = re.compile(
+    r"^  \S.*\bctx \d+(?:\.\d+)?% {2,}weekly \d+(?:\.\d+)?% left\s*$"
+)
 CURSOR_EMPTY_PROMPTS = {
     "Plan, search, build anything",
     "Add a follow-up",
@@ -102,6 +105,7 @@ class Profile:
     submit: str
     empty_cursor_column: int = EMPTY_CURSOR_COLUMN
     supervisor: bool = False
+    delivery: str = "steer"
 
 
 @dataclass
@@ -116,10 +120,11 @@ class DeliveryProgress:
     """Conservative delivery state shared with the outer CLI boundary."""
 
     phase: str = "not_started"
+    outcome: str = "submitted"
 
 
 PROFILES = {
-    "claude": Profile("left", "claude", "claude", "Chat from peer: ", "\n"),
+    "claude": Profile("left", "claude", "claude", "Chat from peer: ", "\n", delivery="submit"),
     "codex": Profile("right", "codex", "codex", "Chat from peer: ", "\n"),
     "cursor": Profile("left", "cursor", "cursor-agent", "Chat from peer: ", "\n", 0),
 }
@@ -267,10 +272,11 @@ def target_profile(
     profile = PROFILES[target]
     env_name = f"PEER_CHAT_{profile.agent.upper()}_COMMAND"
     configured = explicit_command or os.environ.get(env_name) or profile.command
-    submit = "\t" if queue else profile.submit
+    submit = "\t" if queue and target == "codex" else profile.submit
     return replace(
         profile, command=command_name(configured), submit=submit,
         pane=pane or profile.pane, supervisor=supervisor,
+        delivery="queue" if queue else profile.delivery,
     )
 
 
@@ -690,16 +696,24 @@ def cursor_live_prompt_text(text: str) -> str | None:
     lines = text.splitlines()[-BOX_LINES:]
     while lines and not lines[-1].strip():
         lines.pop()
-    if len(lines) < 5:
+    if len(lines) < 4:
         return None
-    footer = lines[-2:]
-    bottom = len(lines) - 3
+    model = lines[-1]
+    bottom = len(lines) - 2
+    if CURSOR_PATH_RE.fullmatch(model):
+        if len(lines) < 5:
+            return None
+        model = lines[-2]
+        bottom -= 1
+    elif not CURSOR_MODEL_STATUS_RE.fullmatch(model):
+        return None
+    if re.fullmatch(r"  \d+ tasks?\s*", lines[bottom]):
+        bottom -= 1
     if CURSOR_MODE_RE.fullmatch(lines[bottom]):
         bottom -= 1
     if (
-        not re.fullmatch(r"  \S.*", footer[0])
-        or CODEX_CHOICE_RE.match(footer[0].strip())
-        or not CURSOR_PATH_RE.fullmatch(footer[1])
+        not re.fullmatch(r"  \S.*", model)
+        or CODEX_CHOICE_RE.match(model.strip())
         or not CURSOR_BOTTOM_RULE_RE.fullmatch(lines[bottom])
     ):
         return None
@@ -1229,6 +1243,112 @@ def clear_composer(
         allowed_ends = {end for _, end in spans}
 
 
+def cursor_followup_state(text: str) -> tuple[tuple[str, ...], str] | None:
+    lines = text.splitlines()
+    composers = [i for i, row in enumerate(lines) if CURSOR_TOP_RULE_RE.fullmatch(row)]
+    if not composers or cursor_live_prompt_text(text) is None:
+        return None
+    above = lines[:composers[-1]]
+    headers = [i for i, row in enumerate(above) if re.fullmatch(r"\s*┌─ follow-ups ─+┐\s*", row)]
+    if not headers:
+        if any(re.match(r"\s*│ (?:○ |.*↑ select/edit)", row) for row in above):
+            return None
+        return (), ""
+    entries: list[str] = []
+    action = ""
+    for row in above[headers[-1] + 1:]:
+        if re.fullmatch(r"\s*└─+┘\s*", row):
+            return (tuple(entries), action) if entries else None
+        match = re.fullmatch(r"\s*│ (.*) │\s*", row)
+        if match is None:
+            return None
+        content = match[1].rstrip()
+        hint = re.fullmatch(
+            r"(?:\+\d+ more lines? · )?enter (steer|interrupt and send|send now) · ↑ select/edit · esc cancel",
+            content,
+        )
+        if hint:
+            action = hint[1]
+        elif content == "↑ to edit":
+            pass
+        elif content.startswith("○ ") and not action:
+            entries.append(content[2:])
+        elif content.startswith("  ") and entries and not action:
+            entries[-1] += " " + content.strip()
+        else:
+            return None
+    return None
+
+
+def cursor_owns_followup(entries: tuple[str, ...], typed: str) -> bool:
+    if len(entries) != 1:
+        return False
+    shown = entries[0].removesuffix(" · steering")
+    expected = "".join(typed.split())
+    if shown.endswith("…"):
+        prefix = "".join(shown[:-1].split())
+        return len(prefix) >= 32 and expected.startswith(prefix)
+    return "".join(shown.split()) == expected
+
+
+def require_cursor_queue_empty(text: str) -> None:
+    state = cursor_followup_state(text)
+    if state is None or state[0]:
+        raise PromptBlocked(
+            "Cursor follow-up queue is occupied or unreadable; steering could send "
+            "another message; use --queue for an informational note; nothing was typed"
+        )
+
+
+def finish_cursor_delivery(
+    sid: str, profile: Profile, typed: str, was_busy: bool,
+    window: str | None, delivery: DeliveryProgress,
+) -> None:
+    deadline = time.monotonic() + PROBE_TIMEOUT
+    promoted = False
+    while True:
+        pane = pane_text(sid, profile, window)
+        state = cursor_followup_state(pane)
+        content = cursor_live_prompt_text(pane)
+        empty = (
+            content is not None and composer_is_empty(profile, content)
+            and cursor_column(sid, profile, window) == profile.empty_cursor_column
+        )
+        if state is not None and empty:
+            entries, action = state
+            if not was_busy and not entries:
+                delivery.outcome = "submitted"
+                return
+            if profile.delivery == "queue" and entries and cursor_owns_followup((entries[-1],), typed):
+                delivery.outcome = "queued"
+                return
+            if profile.delivery == "steer" and cursor_owns_followup(entries, typed):
+                if promoted and action == "interrupt and send":
+                    delivery.outcome = "steering"
+                    return
+                if not promoted and action == "steer":
+                    check = pane_text(sid, profile, window)
+                    if (
+                        cursor_followup_state(check) != state
+                        or cursor_live_prompt_text(check) != content
+                        or cursor_column(sid, profile, window) != profile.empty_cursor_column
+                    ):
+                        raise DeliveryAmbiguous(
+                            "Cursor queue or draft changed before steering; delivery is ambiguous; do not resend"
+                        )
+                    promoted = True
+                    type_text(sid, profile, "\n", window)
+            elif profile.delivery == "steer" and entries:
+                raise DeliveryAmbiguous(
+                    "Cursor queue does not uniquely identify this message; delivery is ambiguous; do not resend"
+                )
+        if time.monotonic() >= deadline:
+            raise DeliveryAmbiguous(
+                "Cursor did not confirm the requested delivery state; delivery is ambiguous; do not resend"
+            )
+        time.sleep(PROBE_INTERVAL)
+
+
 def wait_for_accepted(
     sid: str,
     profile: Profile,
@@ -1325,6 +1445,8 @@ def send(
     prepared: str | None = None,
     delivery: DeliveryProgress | None = None,
 ) -> int:
+    if delivery is None:
+        delivery = DeliveryProgress()
     if prepared is None:
         try:
             typed = normalize(profile, message)
@@ -1355,6 +1477,8 @@ def send(
                 "target composer is not confirmably empty; nothing was typed"
             )
         if profile.agent == "cursor":
+            if profile.delivery == "steer":
+                require_cursor_queue_empty(pane)
             state = wait_for_composer_change(
                 sid,
                 profile,
@@ -1368,6 +1492,12 @@ def send(
                     "target composer did not remain empty; nothing was typed"
                 )
             empty_text = state[0]
+            if profile.delivery == "steer":
+                require_cursor_queue_empty(pane_text(sid, profile, window))
+        was_busy = profile.agent == "cursor" and any(
+            CURSOR_PROMPT_RE.fullmatch(row) and CURSOR_BUSY_HINT_RE.search(row)
+            for row in pane.splitlines()
+        )
     except PromptBlocked:
         raise
     except KeyboardInterrupt as err:
@@ -1413,6 +1543,21 @@ def send(
                     "target composer changed before submit; submit withheld",
                     typed,
                 )
+            if profile.agent == "cursor" and profile.delivery == "steer":
+                queue_check = pane_text(sid, profile, window)
+                try:
+                    require_cursor_queue_empty(queue_check)
+                except PromptBlocked as err:
+                    raise ComposerDirty(
+                        "Cursor follow-up queue changed before submit; submit withheld", typed
+                    ) from err
+                if (
+                    cursor_live_prompt_text(queue_check) != before_submit[0]
+                    or cursor_column(sid, profile, window) != before_submit[1]
+                ):
+                    raise ComposerDirty(
+                        "Cursor composer changed during the queue check; submit withheld", typed
+                    )
             # Enter the ambiguous phase before Return, so an interrupt at either call
             # boundary cannot be mistaken for a safe pre-submit failure.
             phase = "submit"
@@ -1424,6 +1569,10 @@ def send(
                     "target did not confirm submission; delivery is ambiguous; "
                     "do not resend"
                 )
+            if profile.agent == "cursor":
+                finish_cursor_delivery(sid, profile, typed, was_busy, window, delivery)
+            elif profile.agent == "codex" and profile.delivery == "queue":
+                delivery.outcome = "queued"
             return len(message)
         except ComposerDirty as err:
             raise_after_composer_dirty(sid, profile, initial, err, window)
@@ -1442,7 +1591,7 @@ def send(
                 detail = "submit request failed"
             else:
                 detail = "submission confirmation failed"
-            raise RuntimeError(
+            raise DeliveryAmbiguous(
                 f"{detail}; delivery is ambiguous; do not resend: {err}"
             ) from err
     except KeyboardInterrupt as err:
@@ -1663,10 +1812,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         metavar="NAME",
         help="target agent executable or wrapper name",
     )
-    parser.add_argument(
+    delivery_mode = parser.add_mutually_exclusive_group()
+    delivery_mode.add_argument(
+        "--steer", action="store_true",
+        help="steer the active Codex or Cursor turn (default); verify Cursor queue ownership",
+    )
+    delivery_mode.add_argument(
         "--queue",
         action="store_true",
-        help="queue a Codex message with Tab instead of steering with Return",
+        help="leave a Codex or Cursor message queued for the next turn",
     )
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--stdin", action="store_true")
@@ -1685,14 +1839,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     args = parser.parse_args(argv)
     if args.prepare_message:
         if any((
-            args.to, args.session, args.window, args.target_command, args.queue,
+            args.to, args.session, args.window, args.target_command, args.queue, args.steer,
             args.pane, args.sender, args.sender_command, args.supervisor,
         )):
             parser.error("--prepare-message does not accept target options")
     elif not args.to:
         parser.error("--to is required when sending")
-    elif args.queue and args.to != "codex":
-        parser.error("--queue is available only with --to codex")
+    elif (args.queue or args.steer) and args.to not in {"codex", "cursor"}:
+        parser.error("--steer and --queue are available only with --to codex|cursor")
     elif args.supervisor and (
         not args.session or not args.pane or args.sender or args.sender_command
     ):
@@ -1700,9 +1854,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return args
 
 
-def report_success(sent: int) -> None:
+def report_success(sent: int, outcome: str) -> None:
     """Emit the machine-readable receipt after delivery was confirmed."""
-    print(json.dumps({"sent": sent}), flush=True)
+    print(json.dumps({"sent": sent, "delivery": outcome}), flush=True)
 
 
 def run_main(progress: DeliveryProgress) -> int:
@@ -1718,7 +1872,7 @@ def run_main(progress: DeliveryProgress) -> int:
     message = read_message(args.stdin, args.message_file)
     sent = send_with_retry(sid, profile, message, window, progress)
     progress.phase = "confirmed"
-    report_success(sent)
+    report_success(sent, progress.outcome)
     return 0
 
 
@@ -1739,6 +1893,10 @@ def main() -> int:
         detail = f": {detail_text}" if detail_text else ""
         print(f"peer-chat: interrupted{detail}", file=sys.stderr)
         return 130
+    except DeliveryAmbiguous as err:
+        print(json.dumps({"delivery": "ambiguous"}), flush=True)
+        print(f"peer-chat: {err}", file=sys.stderr)
+        return 1
     except (OSError, subprocess.SubprocessError, ValueError, RuntimeError) as err:
         if progress.phase == "confirmed":
             print(
