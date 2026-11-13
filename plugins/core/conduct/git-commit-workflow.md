@@ -43,7 +43,7 @@ Avoid `git commit --amend`. Use `--amend` only when ALL of these hold:
 - Do not push to the remote unless the user explicitly asks.
 - After the session's own required local checks pass and its delivery is authorized, discover possible same-host peers
   through read-only session inventory and recent task output. Before sending any message, verify that each recipient is
-  currently preparing an authorized delivery to the same repository and target under the same publishing account, with
+  currently preparing an authorized push to the same repository and Git target under the same publishing account, with
   implementation complete and required local checks passed.
 - Exclude idle sessions, completed tasks, sessions awaiting user input, read-only tasks, and peers still implementing
   or running local checks. Treat missing, stale, or ambiguous activity or delivery evidence as ineligible. A shared cwd,
@@ -61,6 +61,7 @@ Avoid `git commit --amend`. Use `--amend` only when ALL of these hold:
   the authorized branch flow, preserving each session's commit ownership. Proceed independently when no eligible peer
   is evident or promptly confirms; do not poll or remind excluded peers. The current session's required checks and
   verification of any combined candidate remain mandatory. Participants confirm inclusion instead of pushing duplicates.
+- Apply §6 separately when deployment is authorized; shared deployment destinations can collide across Git targets.
 - Pass every commit message via a HEREDOC to preserve formatting:
 
 ```bash
@@ -79,3 +80,27 @@ EOF
 - Verify the proposed tag is absent both locally and on the remote before creating it. An existing tag on another history line is still a collision.
 - Preview the exact target commit SHA before confirmation. Create the tag at that reviewed commit and pass the existing tag or explicit target to the forge CLI; never rely on the forge's default-branch target.
 - Verify the final tag resolves to the intended commit before reporting the release as complete.
+
+## 6. Shared deployment destinations
+
+- Apply this gate before an authorized deployment dispatch, retry, cancellation, or replacement. A commit/push request
+  does not authorize deployment or peer messages about deployment.
+- Pin the repository, publishing account, destination environment, tenant/brand or service, and intended immutable
+  revision. Different source branches or commit SHAs can still collide at that destination.
+- Inspect queued/running deployment records and recent same-host session output read-only. Match the destination,
+  not just a branch or workflow name; independent core/theme workflows can write to the same environment. Record run
+  IDs, intended revisions, and verified live session/pane owners before acting.
+- Contact only peers whose recent output establishes an authorized delivery to that destination under the same
+  publishing account, with implementation complete and required local checks passed. Include owners already monitoring a queued or running delivery;
+  exclude idle/completed sessions, sessions awaiting input, read-only work, and peers still implementing or checking.
+  Apply §4's pinned sender, empty-composer, separate Return, submission verification, and recheck rules to every message.
+- Agree one deploy owner, exact revision or compatible artifact set, and rollout order with each confirmed participant.
+  Reuse a matching active run; serialize different candidates through the project's deployment mechanism and recheck
+  destination state before each dispatch. Never merge source branches merely to coordinate deployment.
+- Hold the affected destination when an active delivery conflicts and its owner, authorization, or intended order is
+  unresolved. Continue independent work; ask the user to settle incompatible target revisions when peers cannot.
+  Never cancel, replace, or repeatedly redispatch another session's run to make your candidate win. A cancellation or
+  replacement requires authorization covering that action and agreement with the verified active owner, or an explicit
+  user decision resolving the conflict.
+- Proceed independently when no conflicting delivery or eligible peer is evident. Report the owner/order or the
+  no-conflict evidence, then verify the final deployed revision and required remote checks before claiming delivery.

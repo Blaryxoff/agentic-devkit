@@ -106,7 +106,8 @@ For an explanatory question, answer the question first; do not infer a requested
    login and fixture path. Record the actual checks and results; never claim a pass for an unexecuted or blocked check.
    Do not run a suite expected to take over two minutes without user confirmation. A focused check may establish a narrow
    fix, but must not be presented as full task acceptance.
-6. **Confirm deployment and fast-test the target.** Before drafting or posting any implementation or bugfix report,
+6. **Confirm deployment and fast-test the target.** Apply `plugins/core/conduct/git-commit-workflow.md` §6 before
+   any separately authorized deployment action. Before drafting or posting any implementation or bugfix report,
    identify the remote environment where the reporters can check the result and verify that its deployment containing every fix claimed
    in the reply has succeeded. Use the requested environment: a staging request needs verified staging deployment and
    checks, not an additional production release. Match the deployed revision to the fixes through deployment records.

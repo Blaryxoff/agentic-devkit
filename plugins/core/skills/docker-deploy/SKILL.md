@@ -19,6 +19,8 @@ progressively by section; do not read the 1,000-line document wholesale.
 Default to one app node per environment; prod and test may use the same host or separate hosts. Use the multi-node appendix only when one environment actually has multiple app nodes behind a load balancer.
 This workflow targets server deployments. Preserve the user's Herd/DBngin local setup; a deployment audit does not
 authorize replacing it with local Docker services.
+Apply `plugins/core/conduct/git-commit-workflow.md` §6 before any authorized deployment action; setup/audit alone
+does not authorize dispatching or cancelling a release.
 
 ## Mode
 

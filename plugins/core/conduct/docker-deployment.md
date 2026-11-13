@@ -515,6 +515,9 @@ firewall and transport checks; an HTTP proxy check cannot certify them.
 
 ### 7.1 One script, called from anywhere
 
+Apply [git-commit-workflow.md §6](./git-commit-workflow.md#6-shared-deployment-destinations) before an authorized
+deployment action; serialize peer deliveries by destination even when their source refs differ.
+
 ```
 .github/workflows/deploy-<env>.yml      Makefile target            Operator SSH
               \                              |                          /

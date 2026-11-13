@@ -71,6 +71,7 @@ Commit the `session` bucket plus any `related` paths the user approved. Split in
 
 ## Step 5 — Push
 
+- Run the delivery coordination gate in `plugins/core/conduct/git-commit-workflow.md` §4 before pushing.
 - Push the current branch. With no upstream, push with `-u` (`git push -u origin HEAD`) so the tracking ref exists; then verify `git rev-parse HEAD` equals `git rev-parse @{u}`.
 - Never open a PR/MR unless the user asked. Push to the branch directly.
 - Merge into another branch (`dev`, `master`, a downstream repo) only when the user asked or the project's documented flow requires it. Never invent a branch flow.
@@ -89,6 +90,7 @@ One row per repo, every cell taken from a command:
 | `api-x` | `feature/y` | 2 | `a1b2c3d` | `a1b2c3d` ✅ | tests 42 ✅ | none |
 
 Then list: leftovers left behind and why, steps skipped, actions the user must take.
+Report the coordination result: confirmed peers and push owner, or the evidence that no eligible peer was found.
 
 Never write "pushed" without the local/remote SHA match beside it. Apply `plugins/core/conduct/readiness-gate.md` before handoff.
 
