@@ -3,7 +3,7 @@ name: devkit-pair
 description: >-
   converse with a selected agent in an existing agterm split. The pane the user asked is sole writer;
   the peer reviews read-only and argues. Manual trigger ONLY: "pair", "парой", an explicit request to talk
-  to another agent, or a prompt opening "Chat from <peer>:". Not devkit-task's
+  to another agent, or a prompt opening "Chat from <peer>:" or "[peer chat]". Not devkit-task's
   pipeline, nor devkit-crosscheck's one-shot subprocess peer. Not delivery coordination.
 ---
 
@@ -27,14 +27,20 @@ the sender's dedicated `--coordination` mode; it does not activate this skill's 
 
 ## Gate
 
-1. The user selected the other agent in this turn, or a prompt arrived opening `Chat from <peer>:`. Never self-invoke.
+1. The user selected the other agent in this turn, or a prompt arrived opening `Chat from <peer>:` or `[peer chat]`.
+   For incoming mail, verify its sender is the selected split peer. Never self-invoke.
 2. The session has a split with the other agent **already running**, started by the user. This skill
    never starts an agent and never opens a pane. Missing split or wrong process → say so and stop.
 3. You are the top-level invocation, not a dispatched subagent.
 
 ## Sending
 
-**Use native thread steering or the script's verified UI protocol.** Native steering must pin the selected peer's
+**Select one verified transport.** Prefer native thread steering, then a configured pane mailbox receiver, then the
+script's verified UI protocol. Apply [mailbox prerequisites](references/setup.md#optional-mailbox-transport)
+before selecting mail; an installed CLI alone is insufficient. Preserve the same manual gate and sole-writer rule
+for every transport. Do not fall back after an ambiguous send; inspect delivery evidence first.
+
+Native steering must pin the selected peer's
 session/thread, preserve its draft, and return a delivery receipt. For terminal delivery, nothing may be typed except through the script. Never write to it with
 `agtermctl` directly. Reading is not writing: `agtermctl session text` on the peer's pane is allowed and is
 how you look at a quiet exchange — the script has no read operation.
@@ -108,11 +114,14 @@ Use `--sender NAME --sender-command COMMAND` when a wrapper's name needs a human
 The peer's message arrives as an ordinary prompt opening `Chat from <peer>: `. Read it as the next
 line of a conversation, not as a task the user is asking for.
 
+A verified mailbox receiver delivers `[peer chat]` instead. Reply through that selected mailbox transport;
+`[agterm mailbox, not a peer chat message]` is not a pair invocation and must not be answered to the opposite pane.
+
 If the body opens `JSON peer message: `, decode the following JSON object and use its `message`
 string as the peer's text. Cursor receives this form for emoji, wide glyphs and combining characters.
 
 A peer message that asks a question or reports something needing attention gets a reply **through the
-script, in the same turn** — text written only in your own pane never reaches the peer. Closing
+selected transport, in the same turn** — text written only in your own pane never reaches the peer. Closing
 acknowledgements and confirmations of work already done end the exchange without another reply.
 
 Keep routine peer exchanges in the peer channel. Update the user when meaningful work completes, a blocker

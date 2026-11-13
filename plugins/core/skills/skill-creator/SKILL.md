@@ -104,7 +104,10 @@ Target size: enough to guide the agent, not enough to sedate it. If `SKILL.md` g
 5. **Add references/scripts only when needed.** Bundle only documentation the workflow actually consumes.
 6. **Validate locally.** Frontmatter parses, files exist, links resolve.
 7. **Regenerate adapters** in target projects when project-scoped skills or subagents change; rerun `devkit-install` for new global/core skills in Claude, Codex, or Cursor.
-8. **Test routing.** Ask the agent a realistic prompt and verify the skill is visible/selected or explicitly invokable.
+8. **Verify the effective copy.** Resolve the skill path the target harness actually loads, including project/user
+   overrides, symlinks and generated agent bodies. Compare it with the intended source; an older override can shadow
+   an update. Regenerate managed copies and preserve deliberate user overrides; report any version still shadowed.
+9. **Test routing.** Ask the agent a realistic prompt and verify the skill is visible/selected or explicitly invokable.
 
 ## Refactor workflow for existing skills
 

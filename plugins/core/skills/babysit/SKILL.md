@@ -28,6 +28,9 @@ supervised checkouts unchanged.
 
 ## Setup
 
+Apply [agterm observation](../../conduct/agterm.md#observe-workers-and-collect-decisions) for capability checks,
+bounded events/waits and owner questions. Activate the installed agterm skill for exact command flags.
+
 1. `S=<scratchpad>/babysit`; `mkdir -p "$S"`.
 2. Inventory: `scripts/roster.py > "$S/candidates.txt"`, one non-shell foreground per pane:
    `<full-id> <label> <transcript|-> <left|right> <command>`. This is an inventory, not authority to supervise every row.
@@ -53,7 +56,9 @@ supervised checkouts unchanged.
 ## Poll
 
 1. Use `scripts/poll.sh "$S/sessions.txt"` for selected endpoints (`LN=`/`RN=` widen the selected/peer pane tails).
-   Verify each foreground still matches the pinned endpoint. Observe the actual harness's usage indicator when the
+   Re-resolve each pinned pane ID to its current role/window before calling positional helpers; their roster fields
+   do not follow swaps or window moves. Verify each foreground still matches the pinned endpoint. Observe the actual
+   harness's usage indicator when the
    goal concerns a budget; `5h:`/`7d:` are examples, not a universal status format.
 2. Classify each session: working · waiting on its peer (is the peer working?) · waiting on a background job ·
    blocked on a question or chooser · finished · limited · dead turn.
@@ -62,6 +67,10 @@ supervised checkouts unchanged.
    only where the signal fits that harness; use `references/sessions.md` for delivery. Leave working sessions alone.
 4. Report one bullet per session (see Report). With a scheduled tick, stop until the next tick. Without a scheduler,
    wait for the bounded poll interval in the active turn and repeat until the stop condition or explicit handoff.
+
+Use bounded `events` subscriptions for status, session closure and tree changes to prompt an earlier targeted check.
+Events and `statusChangedAt` do not prove useful work. Use `session wait` only after verifying status hooks and the
+current run's active state; confirm completion in pane/transcript evidence. Keep periodic observations for silent stalls.
 
 ## Decision authority
 

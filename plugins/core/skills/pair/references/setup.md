@@ -4,6 +4,27 @@ Vendored from the `two-agent-chat` cookbook recipe in [`umputun/agterm`](https:/
 `scripts/peer-chat.py` is a maintained fork with explicit pane selection; `scripts/LICENSE-agterm.txt` is its licence.
 Merge upstream updates while preserving the protocol parsers, focus reports, sender labels and regression tests.
 
+## Optional mailbox transport
+
+Use [agterm communication rules](../../../conduct/agterm.md#select-communication-and-progress-tools) and the
+[upstream mailbox recipe](https://github.com/umputun/agterm/tree/v0.42.1/cookbook/two-agent-mailbox-chat) when
+both selected peers are Claude Code or Codex and receiver hooks are already configured. The recipe supports
+local split peers; it does not establish a Cursor receiver or arbitrary-session supervision delivery.
+
+1. Verify the serving app is 0.40+ and `mailbox-chat.py status` reports the intended peer's receiver. Pin both
+   live pane IDs first; a receiver of `none` means mail can queue without waking anyone.
+2. Verify the recipe's Claude hooks or Codex SessionStart/agterm message hooks. Codex must run with `--no-daemon`
+   and complete its first prompt; after `/clear`, prompt the new conversation before using mail again.
+3. Send with the configured recipe's `say --stdin` (Claude) or `say --file FILE` (Codex), following its installed
+   skill's exact file/permission contract. Keep messages addressed to the selected opposite pane.
+4. Inspect `sent`, receiver and error fields. Acceptance is not proof of processing; check delivery evidence before
+   retrying an incomplete hand-over. Mail disappears on app quit or pane restart.
+
+Configure missing hooks or launchers only as a separately authorized setup change; retain the guarded composer
+transport below for existing sessions. Do not install the upstream `mailbox-chat` skill alongside pair with
+overlapping triggers without choosing which workflow owns the exchange. Pair keeps its sole-writer and approval
+rules regardless of transport; a peer message never grants editing or publishing authority.
+
 ## Requirements
 
 | Need | Why |

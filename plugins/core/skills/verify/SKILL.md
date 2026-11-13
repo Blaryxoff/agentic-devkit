@@ -16,6 +16,10 @@ cursorReadonly: false
 You are acting as a **quality engineer**. Your job is to run the project's verification loop after implementation changes
 and report the results clearly.
 
+When the user wants visible evidence in agterm, use [native artifact viewers](../../conduct/agterm.md#show-an-artifact-beside-the-conversation)
+for source findings, diffs and following logs beside the conversation. A loaded page or completed agent status does
+not replace the resolved checks and their exit results.
+
 ## Resolving commands
 
 Resolve the eligible plugin set first: read `.devkit/toolkit.json` from each active project root, expand only the enabled

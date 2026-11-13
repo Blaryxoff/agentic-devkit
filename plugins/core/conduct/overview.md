@@ -21,6 +21,7 @@ Start with `conduct-loading.md`, then open only the documents routed by the acti
 | Git, commit workflow, or deferred-work backlog | [git-commit-workflow.md](./git-commit-workflow.md), [deferred-work-backlog.md](./deferred-work-backlog.md) |
 | Context, parallel work, token use, or MCP economy | [context-management.md](./context-management.md), [parallel-sessions.md](./parallel-sessions.md), [token-optimization.md](./token-optimization.md), [mcp-economy.md](./mcp-economy.md) |
 | Running commands, spawning CLIs, or a hung shell | [shell-invocation.md](./shell-invocation.md) |
+| agterm previews, pane communication, worker observation or restart safety | [agterm.md](./agterm.md) |
 | Model family selection and runtime version resolution | [model-routing.md](./model-routing.md) |
 | Communication style | [communication-style.md](./communication-style.md) |
 | Browser QA | [browser-qa-rules.md](./browser-qa-rules.md) |

@@ -75,7 +75,8 @@ python3 <skill-directory>/scripts/render.py <work-directory>/manifest.json --out
 
 1. Open the finished file with an available browser tool. Check title, section/issue count, image completion and
    nonzero natural dimensions. Test a thumbnail, keyboard close/focus return, narrow viewport and horizontal overflow.
-2. When running in agterm, activate its skill and inspect the live tree and installed CLI help/version. Resolve the
+2. When running in agterm, activate its skill and apply [agterm previews](../../conduct/agterm.md#show-an-artifact-beside-the-conversation).
+   Inspect the live tree and serving app version. Resolve the
    owning conversation by pane/session identity; inherited IDs can be stale. Never target an unrelated `active` session.
 3. Open the report in a safe sibling **panel in the same session**, keeping the conversation visible. Inspect the
    sibling's process and overlays before using it. For an owning conversation on the left with no existing split,
@@ -89,9 +90,10 @@ python3 <skill-directory>/scripts/render.py <work-directory>/manifest.json --out
 
 4. Verify the live tree reports the expected owning session, sibling pane, file/title and HTML overlay `state: loaded`.
    An accepted open alone does not prove rendering. Leave the report open and the conversation visible.
-5. If the sibling is occupied, preserve it. Open the report in a sibling tab of an available normal browser and explain
-   the agterm limitation. Outside agterm use the browser; a local file link is the final fallback when no display tool
-   is available. Never create another agterm session or cover the conversation merely to display the report.
+5. If the sibling is occupied, preserve it and use a dedicated named agterm preview session/tab or window according
+   to the user's layout preference. On a serving app with page rows, `--html FILE --page --js --navigation` avoids
+   an idle shell; name the returned session. Outside agterm use the browser; a local file link is the final fallback
+   when no display tool is available. Keep the conversation accessible and never cover it with a session-wide overlay.
 
 Close only browser processes/tabs created by this workflow after verification, excluding the final report shown to
 the user. Keep its temporary directory while the report is open. On a later interaction, remove that owned directory

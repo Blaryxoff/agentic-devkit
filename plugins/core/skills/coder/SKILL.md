@@ -65,6 +65,8 @@ Resolve the active plugins, identify which layers the target actually touches, t
 
 ## Step 4 — Quality bar before finishing
 
+- In agterm, use [task progress and previews](../../conduct/agterm.md) when showing an artifact, keeping a helper
+  beside the task or reporting a long phase. Resolve the live owner and serving version before using new commands.
 - For a multi-step change, pair each implementation step with its smallest relevant verification. Run focused checks first; expand only when risk or failures justify it.
 - Before starting or reusing an application server, apply [runtime-configuration.md](../../conduct/runtime-configuration.md#canonical-local-servers) → **Canonical local servers** for registered checkout/profile, startup and teardown.
 - Activate `devkit-browser` before the first browser QA tool call, including intermediate and paired implementation checks. Use its spot/targeted mode for the affected route, viewport and regression cells during iteration; reserve one exhaustive pass for the stable, final implementation. Its preflight selects the browser surface and resolves the managed runtime before navigation.
