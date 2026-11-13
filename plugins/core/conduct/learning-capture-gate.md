@@ -4,6 +4,18 @@ Run this gate in the top-level agent before the final response whenever the comp
 project contract or contributor workflow. Never run it in a dispatched subagent. Eligibility comes from forward-looking
 project guidance, not session length, tool count, files changed, or the difficulty of the bug just solved.
 
+Apply this terminal gate after the full authorized task is complete. Keep unfinished implementations and active goals
+moving after status answers, peer-review rounds, and tool notifications; those turn boundaries do not trigger learning.
+When explicitly requested learning collects candidates during unfinished work, queue them and resume the task. Review
+them at completion unless the user explicitly asks for immediate memory review. Install no learning `stop` hook and emit
+no automatic follow-up prompt.
+
+Review pending proposals from an already-authorized history collection at that completion boundary using
+`devkit-learn`'s private queue workflow. Revalidate them against current evidence and this gate before presenting them;
+an incremental processing index never authorizes an instruction-file edit. Keep personal candidates routed to the
+active harness's personal/global mechanism. History discovery stays explicitly scoped to the project; this gate does
+not authorize scanning unrelated sessions.
+
 ## Candidate gate
 
 Split each candidate to a single claim before testing it. Test a bundled defect and its surrounding observation

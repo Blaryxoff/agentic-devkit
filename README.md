@@ -40,6 +40,12 @@ Core workflows cover implementation, code and business-logic review, browser QA,
 commit/push wrapup. Stack plugins add framework-specific conventions without putting every stack's rules into an
 agent's context. See [Available Plugins](#available-plugins) and [How It Works](#how-it-works).
 
+Ask to learn from the current session or prior project sessions to use the [learning workflow](plugins/core/skills/learn/SKILL.md).
+History collection uses a read-only miner, indexes only successfully processed transcript changes, and keeps proposals
+in private local state. The parent qualifies proposals, separates personal preferences from project guidance, and asks
+for approval before saving instructions. Collection during unfinished work returns to that task; learning installs no
+automatic stop hook. See the [history workflow](plugins/core/skills/learn/references/history.md) for source selection and retry commands.
+
 Use `/quota` in Claude Code or `$devkit-quota` in Codex to choose when to use a manual Codex reset. The
 [quota workflow](plugins/core/skills/quota/SKILL.md) refreshes account limits, credits, up to 180 days of public reset
 history and recent usage patterns. It compares changing reset frequency with long-term baselines, then gives probability

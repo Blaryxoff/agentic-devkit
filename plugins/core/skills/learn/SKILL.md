@@ -1,15 +1,14 @@
 ---
 name: devkit-learn
 description: >-
-  capture strategic, reusable project knowledge from this session into the harness's native project instruction
-  file while honoring placement guidance defined at project or user scope. Use on "learn", "save knowledge", "update
-  agents.md/claude.md", "capture learnings", or when the top-level terminal learning-capture gate finds a durable
-  candidate. Never trigger merely because a session was long; never write without granular user confirmation.
+  capture approved project knowledge from sessions or history, honoring placement guidance defined at project or user scope.
+  Use for "learn", "save knowledge", "update agents.md/claude.md", or "capture learnings". Mining alone never writes memory.
 ---
 
 # Learn
 
 > Adapted from `umputun/cc-thingz` (MIT).
+> Incremental history collection adapts Cursor's `continual-learning` workflow (MIT); see [attribution](references/continual-learning-LICENSE).
 
 > Paths like `plugins/<plugin>/conduct/…` resolve under the devkit clone root (`~/.claude/agentic-devkit` — this skill's symlink target), not the project root.
 
@@ -17,12 +16,22 @@ Review the session and capture strategic, reusable project knowledge into the cu
 instruction file. This writes **team-shared project memory** committed to the repo. It is separate from harness-provided
 personal auto-memory and global cross-repository instructions, which are not the target here.
 
-The skill has two entry paths:
+The skill has three entry paths:
 
 - **Explicit** — the user asks to learn or update project memory.
-- **Terminal** — the top-level agent invokes it after candidates pass `plugins/core/conduct/learning-capture-gate.md`.
+- **Terminal** — the top-level agent invokes it after candidates pass the terminal learning-capture gate in `plugins/core/conduct/learning-capture-gate.md`.
+- **History** — the user asks to learn from prior sessions, or the parent authorizes scoped history collection after the full task is complete. Follow [incremental collection](references/history.md), then return to the qualification and approval workflow below.
 
 Terminal invocation is a candidate review, not permission to write. Keep the confirmation step below.
+
+## Task continuity
+
+- Preserve the active implementation or goal. A completed turn, peer review, tool notification, or status answer is not a completed task.
+- Collect and queue candidates when learning is requested during unfinished work; resume that work after collection. Defer proposal questions and memory edits until completion unless the user explicitly asks to review memory now.
+- Keep collection read-only in a subagent. The parent alone records processing state and owns qualification, destination selection, approval, and instruction-file edits.
+- Keep pending history proposals in private local state until reviewed. An indexed transcript is processed evidence, not an approved memory update.
+- Leave unrelated work moving when learning is unavailable. Report an explicit collection failure briefly; terminal collection failures stay local for retry.
+- Use explicit collection or a genuine task-completion boundary. Install no periodic learning loop or `stop` hook, and emit no housekeeping follow-up prompt.
 
 ## What qualifies
 
@@ -79,6 +88,11 @@ This project-memory skill never writes global instructions or personal auto-memo
 cross-repository preference, identify the active harness's native global instruction mechanism and explain that it is
 outside this skill's scope. Never write memory for the active harness into another harness's global file.
 
+Route personal candidates from history to that native personal/global mechanism. Keep them separate from project
+proposals; recurrence alone does not make a personal preference a team convention. Identify the separate mechanism and
+owner for an approved save instead of editing it through this skill. Resolve the queued item only after
+the appropriate owner saves it with approval or the user dismisses it.
+
 ## Workflow
 
 1. **Identify the active harness and enumerate placement guidance.** Inspect every project- and user-level instruction or
@@ -90,8 +104,11 @@ outside this skill's scope. Never write memory for the active harness into anoth
    of the defaults.
 2. **Read existing active-harness memory content** in those locations to avoid duplication. Do not scan or edit another
    harness's files unless the project explicitly declares them canonical for all agents.
-3. **Early exit** — if no new strategic knowledge was found, stop without asking the user. For explicit invocation,
-   report "no new strategic knowledge to capture"; for terminal invocation, exit silently.
+   For history proposals, load the private pending queue and revalidate each claim against current project evidence and
+   instruction content. Superseded preferences, stale evidence, and already-documented claims do not become new memory.
+3. **Return without proposals** — if no new strategic knowledge was found, return control to the owning task without
+   asking the user. For explicit invocation, report "no new strategic knowledge to capture"; for terminal invocation,
+   finish silently. Resume any unfinished authorized work after an explicit learning side request.
 4. **Route actionable repository findings** per `plugins/core/conduct/learning-capture-gate.md` → "Terminal action".
    That branch owns the offer and its bounds. Never write one as memory, and never file one on your own initiative.
 5. **Classify each discovery** to its destination per the rules above.
@@ -105,6 +122,10 @@ outside this skill's scope. Never write memory for the active harness into anoth
    confirmation question and wait. Offer granular selection: first option "All", last "None", and middle options for the
    2–3 most significant items, each labelled with its destination. Save only the selected items. A free-form response may
    select items, but never redirects their destinations.
+9. **Apply and verify selected edits** in the approved destinations. Preserve unrelated sections; merge overlapping entries
+   instead of growing a separate learned-memory list. Keep at most three proposals per review and leave the remainder
+   pending. For history, mark an item `saved` only after verifying its approved edit; mark it `dismissed` only after the
+   user rejects it. Leave failed or unanswered writes pending. Neither the collector nor state helper writes instructions.
 
 ## Guidelines
 

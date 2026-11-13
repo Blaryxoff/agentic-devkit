@@ -20,6 +20,7 @@ SCRIPTS=(
   estimate-skill.sh
   jev-skill.sh
   jev-feedback.sh
+  learn-skill.sh
   no-clobber.sh
   nontech.sh
   output-style.sh
