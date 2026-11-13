@@ -88,10 +88,11 @@ complete §2.9 before acting.
 record both before browser work. Apply `runtime-qa-evidence.md` §§1–2 for repository and relevant component revisions,
 configuration, entry-point readiness and drift checks before/after connected lanes, between waves and before acceptance.
 Record unknown identity at its component boundary; do not equate a local commit with a deployed build. For local QA,
-probe that configured origin first and use its existing env and database.
+apply [runtime-configuration.md](./runtime-configuration.md#canonical-local-servers) → **Canonical local servers**
+even when an origin already responds. Resolve the registered checkout through the manager before probing the origin
+in a canonical setup; then probe that configured origin first and use its existing env and database.
 Do not start an alternate server, switch databases, or override session configuration just for browser QA. If the
-configured origin is not up, apply [runtime-configuration.md](./runtime-configuration.md#canonical-local-servers) →
-**Canonical local servers** before startup; use the registered manager when explicitly canonical. Otherwise use existing
+configured origin is not up, use the registered manager when explicitly canonical. Otherwise use existing
 project/dev-runtime commands. Wait for a real HTTP readiness signal and record exactly what this QA pass started. During cleanup, stop
 only those recorded processes/sessions; if the environment was already running (for example on the user's Mac), leave
 it running.
