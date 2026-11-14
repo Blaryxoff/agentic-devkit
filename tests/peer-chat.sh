@@ -256,6 +256,7 @@ assert chat.live_prompt_text(cursor, cursor_screen(wrapped)) == wrapped
 idle_screen = cursor_screen("Add a follow-up")
 assert chat.live_prompt_text(cursor, idle_screen + "\n\n  1. Allow\n  2. Deny") is None
 assert chat.live_prompt_text(cursor, idle_screen + "\n  Error: model unavailable") is None
+assert chat.live_prompt_text(cursor, idle_screen.rsplit("\n", 2)[0] + "\n     No matches") is None
 assert chat.live_prompt_text(cursor, idle_screen.replace("  →", "  !")) is None
 assert chat.live_prompt_text(cursor, idle_screen.replace("  Auto · 7.5%", "  1. Allow")) is None
 assert chat.live_prompt_text(cursor, idle_screen.replace("shift+tab", "unknown+tab")) is None
@@ -279,11 +280,13 @@ for mode in (None, "Ask", "Plan", "Debug"):
 
 plain = "Русский текст пары"
 assert chat.normalize(cursor, plain) == cursor.label + plain
-for message in ("Emoji 😊 and текст", "中文", "Cafe\u0301", chat.CURSOR_JSON_PREFIX + "literal text"):
+for message in ("Emoji 😊 and текст", "中文", "Cafe\u0301", chat.CURSOR_JSON_PREFIX + "literal text", "Repros: /tmp/pair-review.md", "Ask @reviewer", r"Literal \u002f and /tmp/path.md", "See https://example.test/review"):
     encoded = chat.normalize(cursor, message)
     assert encoded.isascii()
     envelope = encoded.removeprefix(cursor.label + chat.CURSOR_JSON_PREFIX)
     assert json.loads(envelope)["message"] == message
+    assert "/" not in encoded and "@" not in encoded
+assert chat.normalize(codex, "Repros: /tmp/path.md @reviewer") == codex.label + "Repros: /tmp/path.md @reviewer"
 assert chat.normalize(claude, "Emoji 😊").endswith("Emoji 😊")
 assert not chat.composer_probe_marker("text", cursor).startswith(" ")
 assert chat.composer_probe_marker("[peer-check:0]", cursor) == "[peer-check:1]"
@@ -320,6 +323,7 @@ class FakeAgterm:
         self.confirm_steer = True
         self.after_queue_read = None
         self.queue_reads = 0
+        self.palette_on_triggers = False
         self.node = {
             "id": self.sid, "hasSplit": True, "active": False,
             "foreground": ["/opt/bin/cursor-agent"], "splitForeground": ["codex"],
@@ -341,7 +345,10 @@ class FakeAgterm:
             if self.reads == 2 and self.delayed_draft is not None:
                 self.draft = self.delayed_draft
             tray = cursor_followups(self.queued, self.action, self.steering) if self.queued else ""
-            return tray + cursor_screen(self.draft or "Add a follow-up", mode=None, busy=self.busy and not self.draft)
+            screen = cursor_screen(self.draft or "Add a follow-up", mode=None, busy=self.busy and not self.draft)
+            if self.palette_on_triggers and any(char in self.draft for char in "/@"):
+                screen = screen.rsplit("\n", 2)[0] + "\n     No matches"
+            return tray + screen
         if args[:2] == ("surface", "cursor"):
             return "0"
         if args[:2] != ("session", "type"):
@@ -716,6 +723,17 @@ try:
     else:
         raise AssertionError("queued user input was overwritten")
     assert not fake.events and fake.draft == "queued user keystrokes"
+
+    fake = FakeAgterm()
+    fake.palette_on_triggers = True
+    chat.ctl = fake.ctl
+    path_message = "3 scoped findings: " + "review the pending findings; " * 8 + "Repros: /tmp/pair-review.md"
+    assert chat.send(fake.sid, cursor, path_message, fake.window)
+    assert len(fake.accepted) == 1
+    envelope = fake.accepted[0].removeprefix(cursor.label + chat.CURSOR_JSON_PREFIX)
+    assert json.loads(envelope)["message"] == path_message
+    assert all("/" not in event and "@" not in event for event in fake.events)
+    assert "[peer-check:" not in fake.accepted[0]
 
     fake = FakeAgterm(truncate=True)
     chat.ctl = fake.ctl

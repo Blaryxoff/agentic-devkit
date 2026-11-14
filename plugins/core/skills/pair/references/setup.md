@@ -133,10 +133,10 @@ current agterm session/window selection and, on macOS, `/usr/bin/lsappinfo` to c
 This changes Cursor's reported focus during the send without selecting a tab or activating a window.
 Backspaces are sent as separate events because Cursor can misread batched backspaces.
 
-Messages with emoji, wide glyphs or combining characters use an ASCII JSON envelope after the sender
+Messages with paths, mentions, emoji, wide glyphs or combining characters use an ASCII JSON envelope after the sender
 label: `JSON peer message: {"message": "..."}`. The receiving skill decodes `message` before replying.
-This preserves the text while avoiding broken Unicode in Cursor's rendered input. Ordinary Latin and
-Cyrillic messages keep the plain-text form.
+The envelope escapes `/` and `@` as Unicode sequences to keep Cursor's command and mention palettes closed.
+The peer decodes the original text. Other Latin and Cyrillic messages keep the plain-text form.
 
 ## Limits worth knowing
 

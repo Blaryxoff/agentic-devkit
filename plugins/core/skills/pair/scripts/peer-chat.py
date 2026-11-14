@@ -1507,6 +1507,7 @@ def normalize(profile: Profile, message: str) -> str:
         raise ValueError("chat message is empty")
     if profile.agent == "cursor" and (
         line.startswith(CURSOR_JSON_PREFIX)
+        or any(char in line for char in "/@")
         or any(
             ord(char) > 0xFFFF
             or unicodedata.east_asian_width(char) in {"W", "F"}
@@ -1514,7 +1515,8 @@ def normalize(profile: Profile, message: str) -> str:
             for char in line
         )
     ):
-        line = CURSOR_JSON_PREFIX + json.dumps({"message": line}, ensure_ascii=True)
+        envelope = json.dumps({"message": line}, ensure_ascii=True)
+        line = CURSOR_JSON_PREFIX + envelope.replace("/", r"\u002f").replace("@", r"\u0040")
     units = len((profile.label + line).encode("utf-16-le")) // 2
     if profile.agent == "claude" and units > CLAUDE_MAX_MESSAGE_UNITS:
         raise ValueError(

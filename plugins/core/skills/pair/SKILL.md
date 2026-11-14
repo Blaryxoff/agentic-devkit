@@ -118,7 +118,7 @@ A verified mailbox receiver delivers `[peer chat]` instead. Reply through that s
 `[agterm mailbox, not a peer chat message]` is not a pair invocation and must not be answered to the opposite pane.
 
 If the body opens `JSON peer message: `, decode the following JSON object and use its `message`
-string as the peer's text. Cursor receives this form for emoji, wide glyphs and combining characters.
+string as the peer's text. Cursor receives this form for paths, mentions, emoji, wide glyphs and combining characters.
 
 A peer message that asks a question or reports something needing attention gets a reply **through the
 selected transport, in the same turn** — text written only in your own pane never reaches the peer. Closing
