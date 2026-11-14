@@ -62,13 +62,13 @@ CODEX_EMPTY_PROMPT = "Ask Codex to do anything"
 CODEX_FOOTER_RE = re.compile(r"^ {2,}\S.*$")
 CODEX_FOOTER_ROWS = 2
 CODEX_CONTEXT_STATUS_RE = re.compile(r"^ {2,}\S.*\bContext \d+(?:\.\d+)?% used(?:\s*·.*)?\s*$")
-CODEX_TOKEN_STATUS_RE = re.compile(
-    r"^ {2,}(?:·\s*)?\d+(?:\.\d+)?[KMB]? (?:used|in|out)"
-    r"(?:\s*·\s*\d+(?:\.\d+)?[KMB]? (?:used|in|out))*\s*$"
+CODEX_STATUS_FIELD_PATTERN = r"(?:\d+(?:\.\d+)?[KMB]? (?:used|in|out)|Main \[(?:default|plan)\])"
+CODEX_STATUS_CONTINUATION_RE = re.compile(
+    rf"^ {{2,}}(?:·\s*)?{CODEX_STATUS_FIELD_PATTERN}(?:\s*·\s*{CODEX_STATUS_FIELD_PATTERN})*\s*$"
 )
 CODEX_HINT_STATUS_RE = re.compile(
     r"^ {2,}(?:← for agents · \? for shortcuts(?:\s+⚠ \d+ warnings? · f2 to view)?"
-    r"|⚠ \d+ warnings? · f2 to view)\s*$"
+    r"|⚠ \d+ warnings? · f2 to view|tab to queue message)\s*$"
 )
 CLAUDE_PROMPT_RE = re.compile(r"^\s*❯[\s ]*(.*?)\s*$")
 # status-line commands can add padding beyond Claude Code's two-space indent.
@@ -746,7 +746,7 @@ def trailing_input_block(text: str) -> list[str]:
     if (
         len(footer) > CODEX_FOOTER_ROWS
         and CODEX_CONTEXT_STATUS_RE.fullmatch(footer[0])
-        and all(CODEX_TOKEN_STATUS_RE.fullmatch(row) for row in footer[1:-1])
+        and all(CODEX_STATUS_CONTINUATION_RE.fullmatch(row) for row in footer[1:-1])
         and CODEX_HINT_STATUS_RE.fullmatch(footer[-1])
     ):
         return codex_block_above(lines, len(lines) - len(footer))

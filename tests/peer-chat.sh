@@ -105,7 +105,13 @@ assert chat.codex_live_prompt_text(pane("› first half", "  second half", " ", 
 wrapped_status = "  Codex Sol high · Context 62% used · weekly 38% left · 623K used · 75.9M in"
 wrapped_tokens = "  · 165K out"
 wrapped_hints = "  ← for agents · ? for shortcuts                         ⚠ 2 warnings · f2 to view"
-for footer_hints in ("  ← for agents · ? for shortcuts", wrapped_hints, "  ⚠ 2 warnings · f2 to view"):
+mode_tokens = "  · 173K out · Main [default]"
+for footer_hints in (wrapped_hints, "  tab to queue message"):
+    assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", wrapped_status, mode_tokens, footer_hints)) == "Ask Codex to do anything", "wrapped mode field hid the Codex composer"
+    assert chat.codex_live_prompt_text(pane("› marked draft [peer-check:0]", " ", wrapped_status, mode_tokens, footer_hints)) == "marked draft [peer-check:0]"
+    assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", wrapped_status, "  · Main [default]", footer_hints)) == "Ask Codex to do anything"
+    assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", wrapped_status, "  · 173K out · Press enter to confirm", footer_hints)) is None
+for footer_hints in ("  ← for agents · ? for shortcuts", wrapped_hints, "  ⚠ 2 warnings · f2 to view", "  tab to queue message"):
     wrapped_footer = (wrapped_status, wrapped_tokens, footer_hints)
     for marker in ("›", "»"):
         assert chat.codex_live_prompt_text(pane(f"{marker} Ask Codex to do anything", " ", *wrapped_footer)) == "Ask Codex to do anything", "wrapped token counts hid the empty Codex composer"
@@ -433,9 +439,43 @@ try:
         fake.protocol = target
         if target == "codex":
             fake.codex_footer = (wrapped_status, wrapped_tokens, wrapped_hints)
+            fake.after_type = lambda pane: setattr(pane, "codex_footer", (wrapped_status, mode_tokens, "  tab to queue message")) if pane.draft else None
         assert chat.send(fake.sid, profile, "standalone coordination", fake.window)
         assert len(fake.accepted) == 1
         assert fake.accepted[0].startswith("Delivery coordination from Cursor 44444444/left: ")
+
+    fake = CoordinationAgterm()
+    fake.protocol = "codex"
+    fake.node["foreground"] = ["codex"]
+    fake.truncate = True
+    fake.codex_footer = (wrapped_status, wrapped_tokens, wrapped_hints)
+    fake.after_type = lambda pane: setattr(pane, "codex_footer", (wrapped_status, mode_tokens, "  tab to queue message")) if pane.draft else None
+    chat.ctl = fake.ctl
+    flags = coordination_flags.copy()
+    flags[flags.index("--to") + 1] = "codex"
+    flags[flags.index("--target-command") + 1] = "codex"
+    profile = chat.with_coordination(chat.parse_args(flags), chat.target_profile("codex", None, pane="left"))
+    try:
+        chat.send(fake.sid, profile, "a truncated message must be removed while Codex is busy", fake.window)
+    except chat.ComposerDirty as err:
+        assert "composer cleared" in str(err), err
+    else:
+        raise AssertionError("a truncated Codex message was submitted")
+    assert not fake.accepted and not fake.draft
+
+    fake = CoordinationAgterm()
+    fake.protocol = "codex"
+    fake.node["foreground"] = ["codex"]
+    fake.draft = "a pre-existing user draft"
+    fake.codex_footer = (wrapped_status, wrapped_tokens, "  tab to queue message")
+    chat.ctl = fake.ctl
+    try:
+        chat.send(fake.sid, profile, "must preserve an occupied busy composer", fake.window)
+    except chat.PromptBlocked:
+        pass
+    else:
+        raise AssertionError("an occupied busy Codex composer was accepted")
+    assert not fake.events and fake.draft == "a pre-existing user draft"
 
     fake = CoordinationAgterm()
     chat.ctl = fake.ctl
