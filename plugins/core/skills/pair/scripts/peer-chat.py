@@ -59,11 +59,17 @@ CODEX_CHOICE_RE = re.compile(r"^\d+\.\s")
 CODEX_PARTICLE_RE = re.compile(r"[\u2800-\u28FF]")
 CODEX_INDENT_RE = re.compile(r"^[\s\u2800-\u28FF]{0,2}")
 CODEX_EMPTY_PROMPT = "Ask Codex to do anything"
-# Codex indents footer rows by at least two spaces; a lone notice is right-aligned. A
-# configured `status_line` adds a second row above the hints; anything taller, like the
-# shortcut overlay, is indistinguishable from indented modal choices and fails closed.
 CODEX_FOOTER_RE = re.compile(r"^ {2,}\S.*$")
 CODEX_FOOTER_ROWS = 2
+CODEX_CONTEXT_STATUS_RE = re.compile(r"^ {2,}\S.*\bContext \d+(?:\.\d+)?% used(?:\s*·.*)?\s*$")
+CODEX_TOKEN_STATUS_RE = re.compile(
+    r"^ {2,}(?:·\s*)?\d+(?:\.\d+)?[KMB]? (?:used|in|out)"
+    r"(?:\s*·\s*\d+(?:\.\d+)?[KMB]? (?:used|in|out))*\s*$"
+)
+CODEX_HINT_STATUS_RE = re.compile(
+    r"^ {2,}(?:← for agents · \? for shortcuts(?:\s+⚠ \d+ warnings? · f2 to view)?"
+    r"|⚠ \d+ warnings? · f2 to view)\s*$"
+)
 CLAUDE_PROMPT_RE = re.compile(r"^\s*❯[\s ]*(.*?)\s*$")
 # status-line commands can add padding beyond Claude Code's two-space indent.
 CLAUDE_FOOTER_RE = re.compile(r"^ {2,}\S.*$")
@@ -736,6 +742,14 @@ def trailing_input_block(text: str) -> list[str]:
         block = codex_block_above(lines, end)
         if block and CODEX_PROMPT_RE.match(block[0]):
             return block
+    footer = codex_block_above(lines, len(lines))
+    if (
+        len(footer) > CODEX_FOOTER_ROWS
+        and CODEX_CONTEXT_STATUS_RE.fullmatch(footer[0])
+        and all(CODEX_TOKEN_STATUS_RE.fullmatch(row) for row in footer[1:-1])
+        and CODEX_HINT_STATUS_RE.fullmatch(footer[-1])
+    ):
+        return codex_block_above(lines, len(lines) - len(footer))
     if lines and CODEX_FOOTER_RE.match(lines[-1]):
         return codex_block_above(lines, len(lines) - 1)
     return codex_block_above(lines, len(lines))

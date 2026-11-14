@@ -102,6 +102,22 @@ def pane(*rows):
 assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", hints)) == "Ask Codex to do anything"
 assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", status, hints)) == "Ask Codex to do anything"
 assert chat.codex_live_prompt_text(pane("› first half", "  second half", " ", status, hints)) == "first half\nsecond half"
+wrapped_status = "  Codex Sol high · Context 62% used · weekly 38% left · 623K used · 75.9M in"
+wrapped_tokens = "  · 165K out"
+wrapped_hints = "  ← for agents · ? for shortcuts                         ⚠ 2 warnings · f2 to view"
+for footer_hints in ("  ← for agents · ? for shortcuts", wrapped_hints, "  ⚠ 2 warnings · f2 to view"):
+    wrapped_footer = (wrapped_status, wrapped_tokens, footer_hints)
+    for marker in ("›", "»"):
+        assert chat.codex_live_prompt_text(pane(f"{marker} Ask Codex to do anything", " ", *wrapped_footer)) == "Ask Codex to do anything", "wrapped token counts hid the empty Codex composer"
+        assert chat.codex_live_prompt_text(pane(f"{marker} first half", "  second half", " ", *wrapped_footer)) == "first half\nsecond half"
+    for trailing in ("\n  1. Allow", "\n  Press enter to confirm", "\n  Unrecognised status"):
+        assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", *wrapped_footer) + trailing) is None
+    assert chat.codex_live_prompt_text(pane("! echo unsafe", " ", *wrapped_footer)) is None
+    assert chat.codex_live_prompt_text(pane("› 1. Yes, proceed", "  2. No", " ", *wrapped_footer)) is None
+assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", wrapped_status, "  623K used · 75.9M in", wrapped_tokens, wrapped_hints)) == "Ask Codex to do anything"
+assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", wrapped_status, "  Unrecognised status", wrapped_hints)) is None
+assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", wrapped_status, wrapped_tokens, "  Press enter to confirm")) is None
+assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", "  Unrecognised status", wrapped_tokens, wrapped_hints)) is None
 typing = pane(
     "› Chat from Claude: Pair channel smoke test from the",
     "  Claude pane after fixing the two-row footer parser. No",
@@ -360,6 +376,7 @@ class CoordinationAgterm(FakeAgterm):
         }
         self.after_type = None
         self.protocol = "cursor"
+        self.codex_footer = (status, hints)
 
     def ctl(self, *args, input_text=None):
         if args[:2] == ("tree", "--json"):
@@ -378,7 +395,7 @@ class CoordinationAgterm(FakeAgterm):
             return "ok"
         if self.protocol != "cursor" and args[:2] == ("session", "text"):
             if self.protocol == "codex":
-                return pane("› " + (self.draft or chat.CODEX_EMPTY_PROMPT), " ", status, hints)
+                return pane("› " + (self.draft or chat.CODEX_EMPTY_PROMPT), " ", *self.codex_footer)
             return "❯ " + self.draft
         if self.protocol != "cursor" and args[:2] == ("surface", "cursor"):
             return "2"
@@ -414,6 +431,8 @@ try:
             assert chat.require_target(fake.sid, profile, fake.window) == fake.sid
             assert not chat.has_target(fake.node, chat.target_profile(target, args.target_command, pane="left"))
         fake.protocol = target
+        if target == "codex":
+            fake.codex_footer = (wrapped_status, wrapped_tokens, wrapped_hints)
         assert chat.send(fake.sid, profile, "standalone coordination", fake.window)
         assert len(fake.accepted) == 1
         assert fake.accepted[0].startswith("Delivery coordination from Cursor 44444444/left: ")
