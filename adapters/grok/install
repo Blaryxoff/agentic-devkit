@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ADAPTER_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$ADAPTER_DIR/../_lib/resolve.sh"
+source "$ADAPTER_DIR/../_lib/hooks.sh"
+
+GROK_DIR="${GROK_HOME:-$HOME/.grok}"
+old_commands='[]'
+hooks_file="$GROK_DIR/hooks/devkit-toolkit.json"
+if [ -f "$hooks_file" ]; then
+  old_commands=$(python3 - "$hooks_file" "$TOOLKIT_ROOT" <<'PY'
+import json
+from pathlib import Path
+import shlex
+import sys
+
+data = json.loads(Path(sys.argv[1]).read_text())
+commands = [handler.get("command", "") for group in data.get("hooks", {}).get("PreToolUse", [])
+            for handler in group.get("hooks", [])]
+previous = list(commands)
+for command in commands:
+    try:
+        parts = shlex.split(command)
+        if (any(part.endswith("/adapters/grok/hook.py") for part in parts)
+                and "--require-server-config" in parts):
+            config = parts[parts.index("--server-config") + 1]
+            gate = ["sh", str(Path(sys.argv[2]) / "plugins/core/hooks/dev-server-gate.sh"),
+                    "--config", config, "--require-config"]
+            previous.append(" ".join(shlex.quote(part) for part in gate))
+    except (ValueError, IndexError):
+        continue
+print(json.dumps(previous))
+PY
+  )
+fi
+server_command=$(dev_server_gate_command "$TOOLKIT_ROOT" "$old_commands")
+python3 "$ADAPTER_DIR/install.py" "$TOOLKIT_ROOT" "$GROK_DIR" "$server_command"

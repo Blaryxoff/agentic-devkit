@@ -153,6 +153,39 @@ assert chat.composer_has_expected_tail(
 assert chat.codex_live_prompt_text(pane("› 1. Yes, proceed", "  2. No", " ", "  Press enter to confirm", "  or esc to cancel")) is None
 assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", "  / for commands", "  ! for shell", hints)) is None
 
+grok = chat.PROFILES["grok"]
+assert grok.pane == "right" and grok.command == "grok"
+assert grok.empty_cursor_column == 6 and grok.submit == "\r"
+assert chat.parse_args(["--to", "grok", "--stdin"]).to == "grok"
+
+def grok_screen(draft="", busy=False):
+    width = 73
+    rows = draft.splitlines() or [""]
+    model = " Grok 4.7 (high)" + (" · always-approve" if busy else "") + " ─"
+    hints = "  Shift+Tab:mode  │  " + ("Ctrl+c:cancel  │  Ctrl+b:send to bg  │  " if busy else "") + "Ctrl+x:shortcuts"
+    if draft:
+        hints = "  Enter:" + ("queue" if busy else "send") + "  │  Shift+Enter/Opt+Enter:newline  │  Shift+Tab:mode"
+    body = ["  │ ❯ " + rows[0].ljust(width - 3) + "│"]
+    body += ["  │   " + row.ljust(width - 3) + "│" for row in rows[1:]]
+    return "\n".join(["  ╭" + "─" * width + "╮", *body,
+                      "  ╰" + "─" * (width - len(model)) + model + "╯", "", hints])
+
+for busy in (False, True):
+    for draft in ("", "a draft", "wrapped first\nwrapped second"):
+        assert chat.live_prompt_text(grok, grok_screen(draft, busy)) == draft
+    assert chat.composer_is_empty(grok, "")
+    assert not chat.composer_is_empty(grok, "user draft")
+for screen in (
+    grok_screen() + "\n  1. Allow\n  2. Deny",
+    grok_screen() + "\n  Error: unavailable",
+    grok_screen().replace("Shift+Tab:mode", "Press enter to confirm"),
+    grok_screen().replace("│ ❯ ", "│ ! "),
+    grok_screen().replace("╮", "┐"),
+    grok_screen().replace("Grok 4.7 (high)", "Grok 4.7 (high) extra"),
+    grok_screen("first\nsecond").replace("│   second", "│  second"),
+):
+    assert chat.live_prompt_text(grok, screen) is None, screen
+
 cursor = chat.PROFILES["cursor"]
 assert cursor.pane == "left" and cursor.command == "cursor-agent"
 assert cursor.empty_cursor_column == 0
@@ -163,6 +196,8 @@ for argv in (
     ["--to", "cursor", "--stdin", "--steer", "--queue"],
     ["--to", "claude", "--stdin", "--steer"],
     ["--to", "claude", "--stdin", "--queue"],
+    ["--to", "grok", "--stdin", "--queue"],
+    ["--to", "grok", "--stdin", "--steer"],
     ["--prepare-message", "peer-chat-codex-options.txt", "--steer"],
 ):
     with contextlib.redirect_stderr(io.StringIO()):
@@ -417,15 +452,90 @@ class CoordinationAgterm(FakeAgterm):
             self.after_type(self)
         return result
 
+class GrokAgterm(FakeAgterm):
+    def __init__(self, draft="", busy=False, truncate=False):
+        super().__init__(draft=draft, busy=busy, truncate=truncate)
+        self.node.update(foreground=["codex"], splitForeground=["grok"])
+        self.trailing = ""
+        self.ignore_submit = False
+
+    def ctl(self, *args, input_text=None):
+        if args[:2] == ("session", "text"):
+            return grok_screen(self.draft, self.busy) + self.trailing
+        if args[:2] == ("surface", "cursor"):
+            return str(6 + len(self.draft.rsplit("\n", 1)[-1]))
+        if args[:2] == ("session", "type"):
+            if input_text == "\r":
+                self.events.append(input_text)
+                if not self.ignore_submit:
+                    self.accepted.append(self.draft)
+                    self.draft = ""
+                return "ok"
+            if input_text and set(input_text) == {"\x7f"}:
+                self.events.append(input_text)
+                self.draft = self.draft[:-len(input_text)]
+                return "ok"
+        return super().ctl(*args, input_text=input_text)
+
 chat.clear_composer = original_clear_composer
 chat.CHUNK_SETTLE_DELAY = 0
 chat.COMPOSER_SETTLE_DELAY = 0
 chat.PROBE_TIMEOUT = 0.01
 saved_commands = {name: os.environ.pop(name, None) for name in (
-    "PEER_CHAT_CLAUDE_COMMAND", "PEER_CHAT_CURSOR_COMMAND", "PEER_CHAT_CODEX_COMMAND",
+    "PEER_CHAT_CLAUDE_COMMAND", "PEER_CHAT_CURSOR_COMMAND", "PEER_CHAT_CODEX_COMMAND", "PEER_CHAT_GROK_COMMAND",
 )}
 original_ctl = chat.ctl
 try:
+    fake = GrokAgterm()
+    chat.ctl = fake.ctl
+    assert chat.with_sender_label(fake.sid, grok, fake.window).label == "Chat from Codex: "
+    assert chat.observed_harness(["/opt/bin/grok"]) == "Grok"
+    fake.node["splitForeground"] = ["different-agent"]
+    try:
+        chat.send(fake.sid, grok, "wrong peer", fake.window)
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("Grok send accepted changed foreground")
+    assert not fake.events
+    for message in ("hello", "first line\nsecond line", "review /tmp/notes.md @peer 😊", "word " * 90):
+        fake = GrokAgterm()
+        chat.ctl = fake.ctl
+        assert chat.send(fake.sid, grok, message, fake.window)
+        assert fake.accepted == [chat.normalize(grok, message)]
+        assert fake.events.count("\r") == 1
+        assert not fake.draft
+    for draft, trailing, busy in (("user draft", "", False), ("", "\n  1. Allow", False), ("", "", True)):
+        fake = GrokAgterm(draft=draft, busy=busy)
+        fake.trailing = trailing
+        chat.ctl = fake.ctl
+        try:
+            chat.send(fake.sid, grok, "must not type", fake.window)
+        except chat.PromptBlocked:
+            pass
+        else:
+            raise AssertionError("unsafe Grok composer accepted")
+        assert not fake.events and not fake.accepted and fake.draft == draft
+    fake = GrokAgterm(truncate=True)
+    chat.ctl = fake.ctl
+    try:
+        chat.send(fake.sid, grok, "a truncated Grok transport message must never submit", fake.window)
+    except chat.ComposerDirty as err:
+        assert "composer cleared" in str(err), err
+    else:
+        raise AssertionError("truncated Grok message submitted")
+    assert not fake.accepted and not fake.draft and "\r" not in fake.events
+    fake = GrokAgterm()
+    fake.ignore_submit = True
+    chat.ctl = fake.ctl
+    try:
+        chat.send(fake.sid, grok, "ambiguous receipt", fake.window)
+    except chat.DeliveryAmbiguous as err:
+        assert "do not resend" in str(err)
+    else:
+        raise AssertionError("Grok submission without receipt accepted")
+    assert fake.events.count("\r") == 1
+    assert not fake.accepted and fake.draft
     for target in ("cursor", "codex", "claude"):
         fake = CoordinationAgterm()
         chat.ctl = fake.ctl
@@ -764,7 +874,7 @@ try:
         assert chat.with_sender_label(fake.sid, codex, fake.window).label == f"Chat from {label}: "
     for command in ("codex", "grok", "gemini", "custom-agent"):
         fake.node["foreground"] = [command]
-        expected = "Codex" if command == "codex" else command
+        expected = {"codex": "Codex", "grok": "Grok"}.get(command, command)
         assert chat.with_sender_label(fake.sid, codex, fake.window).label == f"Chat from {expected}: "
         assert chat.has_target(fake.node, codex)
     fake.node["foreground"] = ["codex"]

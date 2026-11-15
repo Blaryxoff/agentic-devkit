@@ -11,6 +11,7 @@
 #   devkit-resolve --adapter=claude    # Resolve + generate Claude Code config
 #   devkit-resolve --adapter=cursor    # Resolve + generate Cursor config
 #   devkit-resolve --adapter=codex     # Resolve + generate Codex config
+#   devkit-resolve --adapter=grok      # Resolve + generate Grok-compatible config
 #
 # Environment:
 #   DEVKIT_PROJECT_ROOT  Override project root (default: CWD)
@@ -36,7 +37,7 @@ Usage:
   devkit-resolve --validate          Check every toolkit.json and plugin.json against
                                    schemas/, then resolve
   devkit-resolve --adapter=<name>    Resolve + generate config for an adapter
-                                   Supported: claude, cursor, codex
+                                   Supported: claude, cursor, codex, grok
 
 Options:
   -h, --help      Show this help

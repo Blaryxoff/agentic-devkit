@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ADAPTER_DIR="$(cd "$(dirname "$0")" && pwd)"
+bash "$ADAPTER_DIR/../claude/generate"
+printf '\n%s\n' 'Grok uses the generated Claude-compatible project skills, agents, hooks, and MCP servers.'
+printf '%s\n' 'Install global Grok guidance and payload gates with bin/devkit-install --grok.'
+printf '%s\n' 'Project hooks and MCP servers remain subject to Grok folder trust.'

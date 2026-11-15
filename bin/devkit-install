@@ -8,7 +8,8 @@
 #   devkit-install --codex      Also run the per-project Codex adapter for CWD.
 #   devkit-install --claude     Also run the per-project Claude stack adapter for CWD
 #                               (stack subagents, hooks, .mcp.json — core is global).
-#   devkit-install --project=DIR Target project for --cursor/--codex/--claude (default: CWD).
+#   devkit-install --grok       Install Grok hooks and generate its Claude-compatible project stack.
+#   devkit-install --project=DIR Target project for --cursor/--codex/--claude/--grok (default: CWD).
 #
 # Global layout:
 #   $HOME/.claude/skills/devkit-core--<skill>/     symlinks to core skills for Claude
@@ -36,12 +37,14 @@ TARGET="${DEVKIT_HOME_DIR:-$HOME/.claude/agentic-devkit}"
 RUN_CURSOR=0
 RUN_CODEX=0
 RUN_CLAUDE=0
+RUN_GROK=0
 PROJECT="$(pwd)"
 for arg in "$@"; do
   case "$arg" in
     --cursor)    RUN_CURSOR=1 ;;
     --codex)     RUN_CODEX=1 ;;
     --claude)    RUN_CLAUDE=1 ;;
+    --grok)      RUN_GROK=1 ;;
     --project=*) PROJECT="${arg#--project=}" ;;
     -h|--help)
       sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
@@ -862,6 +865,10 @@ if [ "$repaired" -gt 0 ]; then
   echo "    Repaired: $repaired broken devkit symlink(s) left by a moved or re-cloned devkit."
 fi
 
+if [ "$RUN_GROK" -eq 1 ] || [ -d "$HOME/.grok" ]; then
+  bash "$DEVKIT_HOME/adapters/grok/install"
+fi
+
 # --- Optional per-project adapters ---
 if [ "$RUN_CURSOR" -eq 1 ]; then
   echo ""
@@ -874,6 +881,10 @@ fi
 if [ "$RUN_CLAUDE" -eq 1 ]; then
   echo ""
   DEVKIT_PROJECT_ROOT="$PROJECT" bash "$DEVKIT_HOME/adapters/claude/generate"
+fi
+if [ "$RUN_GROK" -eq 1 ]; then
+  echo ""
+  DEVKIT_PROJECT_ROOT="$PROJECT" bash "$DEVKIT_HOME/adapters/grok/generate"
 fi
 
 echo ""

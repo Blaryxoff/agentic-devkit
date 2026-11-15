@@ -9,6 +9,7 @@ Adapters translate the resolved plugin set into tool-specific configuration. Eac
 | `claude` | Claude Code | `.claude/agents/*.md` (stack subagents), `.claude/skills/devkit-*--*` symlinks (inline stack skills), `.claude/settings.json` (hooks only — plugin `permissions` are not merged), `.mcp.json` |
 | `cursor` | Cursor IDE and CLI | `.cursor/skills/<frontmatter-name>/`, `.cursor/agents/*.md` (stack subagents), `.cursor/rules/devkit-*.mdc`, `.cursor/mcp.json`, `.cursor/hooks.json` |
 | `codex` | OpenAI Codex | `.codex/skills/devkit-*--*/`, `AGENTS.md` section (conduct + hook instructions) |
+| `grok` | Grok Build | Claude-compatible project stack plus native global payload gates and Grok activation guidance; see [Grok adapter](grok/README.md) |
 
 The Claude adapter also removes `.claude-plugin/`, a marketplace manifest earlier versions generated.
 
@@ -22,6 +23,7 @@ gone (`MIGRATION.md`).
 ~/.claude/agentic-devkit/bin/devkit-resolve --adapter=claude
 ~/.claude/agentic-devkit/bin/devkit-resolve --adapter=cursor
 ~/.claude/agentic-devkit/bin/devkit-resolve --adapter=codex
+~/.claude/agentic-devkit/bin/devkit-resolve --adapter=grok
 ```
 
 `--project=DIR` overrides the project root and is repeatable, unioning the enabled plugins of several repos

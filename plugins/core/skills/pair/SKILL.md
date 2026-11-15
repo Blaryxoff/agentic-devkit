@@ -49,7 +49,7 @@ events, then sends the submit key after the last one settles. A raw `session typ
 and that is how messages arrive merged, truncated, or sitting unsent in a composer.
 
 Resolve the live session, target pane and foreground command before sending. The target may be any agent, including
-another session of the caller's harness. Select `--to claude|cursor|codex` by the observed composer protocol, not the
+another session of the caller's harness. Select `--to claude|cursor|codex|grok` by the observed composer protocol, not the
 agent's model or brand; `--pane left|right` pins its location and `--target-command NAME` pins a wrapper or another
 executable using that protocol. Verify the parser matches its live UI. An unknown UI needs native thread steering or
 a tested protocol adapter; never fall back to Claude's composer. State an unsupported delivery capability for that
@@ -96,6 +96,7 @@ Use `--sender NAME --sender-command COMMAND` when a wrapper's name needs a human
   Claude Code manages its own busy queue and accepts neither delivery flag.
 - Use `--queue` with Codex or Cursor only for an informational note that can wait until the current turn ends.
   Codex receives Tab; Cursor receives one Return without promotion.
+- Grok accepts an idle submission only. Wait for its current turn to finish; `--steer` and `--queue` are unsupported.
 - Resolve an occupied or unreadable Cursor queue before steering. The script refuses before typing when earlier
   follow-ups exist; it never promotes someone else's message or sends a blind second Return.
 - Read the JSON receipt's `delivery`: `queued` confirms queue submission, `steering` confirms Cursor's promotion UI,
@@ -118,7 +119,7 @@ A verified mailbox receiver delivers `[peer chat]` instead. Reply through that s
 `[agterm mailbox, not a peer chat message]` is not a pair invocation and must not be answered to the opposite pane.
 
 If the body opens `JSON peer message: `, decode the following JSON object and use its `message`
-string as the peer's text. Cursor receives this form for paths, mentions, emoji, wide glyphs and combining characters.
+string as the peer's text. Cursor and Grok receive this form for paths, mentions, emoji, wide glyphs and combining characters.
 
 A peer message that asks a question or reports something needing attention gets a reply **through the
 selected transport, in the same turn** — text written only in your own pane never reaches the peer. Closing

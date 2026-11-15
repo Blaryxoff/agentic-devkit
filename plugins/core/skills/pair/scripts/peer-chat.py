@@ -98,6 +98,13 @@ CURSOR_EMPTY_PROMPTS = {
     "Add a follow-up — /plan to review and build",
 }
 CURSOR_JSON_PREFIX = "JSON peer message: "
+GROK_TOP_RULE_RE = re.compile(r"^  ╭(─{10,})╮\s*$")
+GROK_BOTTOM_RULE_RE = re.compile(r"^  ╰(─{4,} [^╭╮╰╯│]+ ─)╯\s*$")
+GROK_HINTS_RE = re.compile(
+    r"^  (?:Shift\+Tab:mode\s+│\s+(?:Ctrl\+c:cancel\s+│\s+)?"
+    r"(?:Ctrl\+b:send to bg\s+│\s+)?Ctrl\+x:shortcuts"
+    r"|Enter:(?:send|queue)\s+│\s+Shift\+Enter/Opt\+Enter:newline\s+│\s+Shift\+Tab:mode)\s*$"
+)
 MESSAGE_NAME_RE = re.compile(r"peer-chat-[a-z0-9][a-z0-9-]{2,48}\.txt")
 MESSAGE_SPOOL = Path(tempfile.gettempdir()) / f"agterm-peer-chat-{os.getuid()}"
 
@@ -145,6 +152,7 @@ PROFILES = {
     "claude": Profile("left", "claude", "claude", "Chat from peer: ", "\n", delivery="submit"),
     "codex": Profile("right", "codex", "codex", "Chat from peer: ", "\n"),
     "cursor": Profile("left", "cursor", "cursor-agent", "Chat from peer: ", "\n", 0),
+    "grok": Profile("right", "grok", "grok", "Chat from peer: ", "\r", 6, delivery="submit"),
 }
 SHELL_COMMANDS = {"sh", "bash", "zsh", "fish", "dash", "login"}
 
@@ -347,7 +355,7 @@ def with_sender_label(
         )
     if sender_command and not runs(foreground[:1], command_name(sender_command)):
         raise RuntimeError("sender command changed; nothing was typed")
-    names = {"claude": "Claude", "cursor": "Cursor", "codex": "Codex"}
+    names = {"claude": "Claude", "cursor": "Cursor", "codex": "Codex", "grok": "Grok"}
     senders = [
         key for key in PROFILES
         if runs(foreground[:1], target_profile(key, None).command)
@@ -849,11 +857,42 @@ def cursor_live_prompt_text(text: str) -> str | None:
     return "\n".join([first, *(line[4:].rstrip() for line in body[1:])])
 
 
+def grok_live_prompt_text(text: str) -> str | None:
+    lines = text.splitlines()[-BOX_LINES:]
+    while lines and not lines[-1].strip():
+        lines.pop()
+    if not lines or not GROK_HINTS_RE.fullmatch(lines.pop()):
+        return None
+    while lines and not lines[-1].strip():
+        lines.pop()
+    if not lines:
+        return None
+    bottom = GROK_BOTTOM_RULE_RE.fullmatch(lines.pop())
+    if bottom is None:
+        return None
+    body = []
+    while lines and not GROK_TOP_RULE_RE.fullmatch(lines[-1]):
+        body.append(lines.pop())
+    if not lines or not body:
+        return None
+    top = GROK_TOP_RULE_RE.fullmatch(lines.pop())
+    if top is None or len(top.group(1)) != len(bottom.group(1)):
+        return None
+    body.reverse()
+    first = re.fullmatch(r"  │ ❯ (.*?)│\s*", body[0])
+    rest = [re.fullmatch(r"  │   (.*?)│\s*", row) for row in body[1:]]
+    if first is None or any(row is None for row in rest):
+        return None
+    return "\n".join([first.group(1).rstrip(), *(row.group(1).rstrip() for row in rest)])
+
+
 def live_prompt_text(profile: Profile, text: str) -> str | None:
     if profile.agent == "codex":
         return codex_live_prompt_text(text)
     if profile.agent == "cursor":
         return cursor_live_prompt_text(text)
+    if profile.agent == "grok":
+        return grok_live_prompt_text(text)
     return claude_live_prompt_text(text)
 
 
@@ -891,6 +930,8 @@ def composer_is_empty(profile: Profile, content: str) -> bool:
         return codex_placeholder_shown(content)
     if profile.agent == "cursor":
         return " ".join(content.splitlines()) in CURSOR_EMPTY_PROMPTS
+    if profile.agent == "grok":
+        return content == ""
     joined = " ".join(content.splitlines())
     return joined in CLAUDE_EMPTY_PROMPTS or bool(
         CLAUDE_STARTUP_HINT_RE.fullmatch(joined)
@@ -1505,7 +1546,7 @@ def normalize(profile: Profile, message: str) -> str:
         line = line[len(prefix) :].lstrip(": ").strip()
     if not line:
         raise ValueError("chat message is empty")
-    if profile.agent == "cursor" and (
+    if profile.agent in {"cursor", "grok"} and (
         line.startswith(CURSOR_JSON_PREFIX)
         or any(char in line for char in "/@")
         or any(
@@ -1584,8 +1625,13 @@ def send(
                 "input, a trailing modal or status row, or an unknown prompt glyph); "
                 "nothing was typed"
             )
+        if profile.agent == "grok" and any(
+            GROK_HINTS_RE.fullmatch(row) and any(hint in row for hint in ("Ctrl+c:cancel", "Enter:queue"))
+            for row in pane.splitlines()[-BOX_LINES:]
+        ):
+            raise PromptBlocked("Grok is busy; wait for its current turn to finish; nothing was typed")
         # Claude's free-form suggestions look like drafts in plain screen text.
-        if profile.agent in {"codex", "cursor"} and not composer_is_empty(
+        if profile.agent in {"codex", "cursor", "grok"} and not composer_is_empty(
             profile, empty_text
         ):
             raise PromptBlocked(
