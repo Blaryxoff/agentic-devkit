@@ -82,12 +82,28 @@ See the [upstream audit](../../../howto/agterm-workflows.md#second-pass--14-nove
 
 ## Observe workers and collect decisions
 
+- Choose the check from the signal: use native events or deterministic predicates for process exits, status fields,
+  service readiness and other machine-readable changes. Use model inspection for log quality, progress or stalls that
+  need judgment. A scheduled prompt consumes a model check even when it finds no change.
+- Before monitoring, record the owner, selected endpoints and watched run identities, actionable and terminal
+  conditions, cadence, expiry, maximum model checks and maximum actionable wakeups in task-owned state. Derive finite
+  bounds from the authorized window and scheduler lifetime; choose and announce conservative bounds when unspecified.
+  Count checks and wakeups against that state, stop at the first exhausted bound, and require renewal before extending it.
+  Register each started watcher's process/start time or native scheduler identity in that state immediately.
+- Emit actionable changes and terminal outcomes once per watched run and signal; record handled event keys so an
+  unchanged failure does not repeatedly wake an agent. Keep diagnostics in per-run logs instead of the event channel.
+  Preserve requested periodic reports, but avoid extra model calls or notifications for unchanged deterministic state.
 - Use bounded event subscriptions for status, lifecycle and tree changes to trigger targeted observations of the
   selected roster. Events do not stream terminal output. `statusChangedAt` measures the last status write, not
   useful work; inspect the selected pane/transcript before declaring progress, a stall or completion.
 - Use `session wait --until completed --until blocked --timeout N` only with verified status hooks. When reusing
   a session, observe the new run become active first so a previous completed state cannot satisfy the wait.
   Keep waits bounded by the harness's responsiveness rules; supervision ends with the turn unless scheduled.
+- After an authorized restart or replacement, verify and record the new process/start time or native thread/job/run ID
+  before rearming observations. Invalidate the old run's cached completion and event keys. Cancel only task-owned
+  superseded watchers after checking their recorded identity; never stop a watched job, shared server or another
+  owner's monitor merely because observation ended. An expired or terminal watcher gets a final report and cleanup,
+  not an automatic new lifetime.
 - Offer `dashboard` when the user wants a visual overview of selected workers. It resizes their PTYs and can
   cause redraws; it is not a silent monitoring API. Do not open it automatically during background supervision.
 - Prefer the harness's structured question tool for owner decisions. When unavailable, `ask --no-block` or

@@ -1,7 +1,7 @@
 # agentic-devkit
 
 A model-agnostic toolkit for AI-assisted product development. One **global clone** supplies skills, coding rules,
-hooks, and stack-specific agents to Claude Code, Cursor, and Codex. Each project selects the plugins it needs.
+hooks, and stack-specific agents to Claude Code, Cursor, Codex, and Grok. Each project selects the plugins it needs.
 The same clone also provides a local development project manager with a CLI, dashboard, and optional MCP server.
 
 ## Quick Start
@@ -28,6 +28,7 @@ cd my-project
 ~/.claude/agentic-devkit/bin/devkit-install --cursor         # .cursor/ rules + skills + agents + hooks + MCP
 ~/.claude/agentic-devkit/bin/devkit-install --codex          # .codex/ resolved skills + AGENTS.md
 ~/.claude/agentic-devkit/bin/devkit-install --claude         # .claude/ stack subagents, hooks, .mcp.json
+~/.claude/agentic-devkit/bin/devkit-install --grok           # Grok native gates + Claude-compatible project stack
 ```
 
 Cursor uses the same core skill bodies as the other agents. Its project adapter links only the selected stack skills,
@@ -61,6 +62,24 @@ the model from Codex's catalog for all workers; the invoking agent keeps its cur
 the final verdict. Releases need no skill edits. Explicit pass mode and environment
 override the defaults. The [Luna preset](plugins/core/skills/lunaqa/SKILL.md) reuses
 [devkit-browser](plugins/core/skills/browser/SKILL.md); ordinary browser QA retains its existing routing.
+
+## Catalog maintenance and session recovery
+
+Use `devkit-skill-creator` for an explicitly requested catalog audit or cleanup. Its
+[catalog audit](plugins/core/skills/skill-creator/references/catalog-audit.md) reads a saved discovery snapshot,
+reports provenance and metadata problems, and keeps usage assumptions separate from retirement decisions.
+
+Use `bin/devkit-session` to recover bounded evidence from a selected Claude, Codex, Cursor or Grok session:
+
+```bash
+~/.claude/agentic-devkit/bin/devkit-session codex list --project=/path/to/project
+~/.claude/agentic-devkit/bin/devkit-session cursor show <session-id> --project=/path/to/project
+```
+
+The helper never executes or resumes historical commands. Follow the [recovery workflow](howto/session-recovery.md)
+to reconcile its handoff with the current checkout and authorization before continuing. Existing babysit supervision
+uses [finite monitoring budgets](plugins/core/conduct/agterm.md#observe-workers-and-collect-decisions), deterministic
+checks where possible, and model inspection for signals that need judgment.
 
 ## Local Projects
 
@@ -118,7 +137,7 @@ process/worktree safeguards.
 ~/.claude/agentic-devkit/bin/devkit-resolve --adapter=...
 ```
 
-Supported adapters: `claude`, `cursor`, `codex`.
+Supported adapters: `claude`, `cursor`, `codex`, `grok`.
 
 ## Available Plugins
 

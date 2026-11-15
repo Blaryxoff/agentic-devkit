@@ -39,23 +39,29 @@ bounded events/waits and owner questions. Activate the installed agterm skill fo
    parser and matching recent content; `-` is valid when the pane/native thread supplies evidence. Never use the
    supervisor's transcript or parse another harness's records as Claude.
 3. Pin the goal and the stop condition from the request ("use the budget before the weekly reset", "until the specs
-   are done"). Ask only when neither is stated.
+   are done"). Ask only when neither is stated. Record the [monitoring contract](../../conduct/agterm.md#observe-workers-and-collect-decisions)
+   in `$S/monitoring.json`: owner and watched run identities, actionable/terminal conditions, cadence, expiry,
+   `max_model_checks`, `max_action_wakeups`, counters and handled event keys. Announce the chosen bounds.
 4. Preserve the owner's power settings. Start a bounded `caffeinate` only when unattended supervision requires it and
    the owner authorized that window; report its duration and that a closed lid still sleeps.
 5. Waker, only for Claude targets when a usage-limit reset falls inside the window: pass a Claude-only roster to
    `scripts/waker.sh --dry-run <HH:MM> <own-id> <claude-roster>`; never pass the mixed/Codex roster. The dry run
    must print no `WOULD WAKE` for a working pane (your own pane matches while a poll report quotes a limit message);
    then arm it with `nohup … & disown` without `--dry-run`. It wakes each limited Claude pane once — `continue`, or a
-   resume prompt for your own — over four passes, logs every `send.sh` exit to `$S/waker.log`, then exits.
+   resume prompt for your own — over four passes, logs every `send.sh` exit to `$S/waker.log`, then exits. Record its
+   process/start time in `$S/monitoring.json` immediately.
 6. Run Poll once now.
 7. When available, use `CronCreate`, recurring, at the user's interval (default 30 min) on minutes off :00/:30, prompt
    `/babysit poll <absolute $S>`. State the scheduler's lifetime. Without it, use active-turn polls and make no unattended
-   monitoring claim. During a production write pause, use its agreed pause budget rather than the 30-minute default.
+   monitoring claim. Record a created scheduler's ID and expiry in `$S/monitoring.json` immediately. During a production
+   write pause, use its agreed pause budget rather than the 30-minute default.
 8. `agtermctl session context 'supervising N sessions: <goal>' --target "$AGTERM_SESSION_ID"`.
 
 ## Poll
 
-1. Use `scripts/poll.sh "$S/sessions.txt"` for selected endpoints (`LN=`/`RN=` widen the selected/peer pane tails).
+1. Check expiry and remaining observation/wakeup bounds in `$S/monitoring.json` before inspecting sessions. Count this
+   scheduled or qualitative model check; an exhausted bound goes to Stop without another inspection. Use
+   `scripts/poll.sh "$S/sessions.txt"` for selected endpoints (`LN=`/`RN=` widen the selected/peer pane tails).
    Re-resolve each pinned pane ID to its current role/window before calling positional helpers; their roster fields
    do not follow swaps or window moves. Verify each foreground still matches the pinned endpoint. Observe the actual
    harness's usage indicator when the
@@ -65,7 +71,10 @@ bounded events/waits and owner questions. Activate the installed agterm skill fo
 3. For a target not plainly working, read its selected pane and bounded native transcript/thread evidence. Use
    `scripts/tail.py <transcript> 3 3000` only for Claude records (timestamps are UTC). Match `references/stalls.md`
    only where the signal fits that harness; use `references/sessions.md` for delivery. Leave working sessions alone.
-4. Report one bullet per session (see Report). With a scheduled tick, stop until the next tick. Without a scheduler,
+4. Record actionable changes by watched run and signal before sending a direction or waking an agent. Update counters;
+   suppress repeat wakeups for the same unchanged state. After an authorized restart, re-pin the run and invalidate
+   its old completion before observing it again. Report one bullet per session (see Report). With a scheduled tick,
+   stop until the next tick. Without a scheduler,
    wait for the bounded poll interval in the active turn and repeat until the stop condition or explicit handoff.
 
 Use bounded `events` subscriptions for status, session closure and tree changes to prompt an earlier targeted check.
@@ -124,11 +133,14 @@ Waiting on you: <owner-kept items, one line each, only when the list changed>
 
 ## Stop
 
-1. Stop when the goal is met (for a budget goal: the tracked window reset, visible as the `7d:` or `5h:` counter
+1. Stop at the monitoring contract's expiry or exhausted check/wakeup bound, when the goal is met (for a budget goal:
+   the tracked window reset, visible as the `7d:` or `5h:` counter
    dropping), when every session is finished or parked on owner items, or when the user says so. Ask the owner before
-   extending supervision into a new budget window.
-2. Use `CronDelete` only for a job this supervisor scheduled; `kill "$(cat "$S/waker.pid")"` if its waker is still armed. Leave an authorized `caffeinate` running so live turns finish and
-   state when it ends.
+   renewing an exhausted bound or extending supervision into a new budget window.
+2. Use `CronDelete` only for a job this supervisor scheduled. Stop its waker or other task-owned watchers only after
+   checking the recorded process/start time or native scheduler identity; a PID file alone is insufficient. Leave
+   watched jobs, shared servers and other owners' monitors running. Leave an authorized `caffeinate` running so live
+   turns finish and state when it ends.
 3. Closing report: each session's final state; decisions waiting on the owner; decisions you made on the owner's
    behalf; any failure that repeated across sessions (offer a fix or a backlog entry in one line).
 4. `agtermctl session context --clear --target "$AGTERM_SESSION_ID"`.

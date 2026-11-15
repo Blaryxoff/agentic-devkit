@@ -122,6 +122,15 @@ When improving an existing skill:
 7. Preserve useful project-specific conventions.
 8. Preserve triggers, obligations, exceptions and safety boundaries when improving wording. Lead workflow rules with a concrete action; retain explicit prohibitions where a safety boundary needs them.
 
+## Catalog maintenance
+
+For an explicit catalog audit or cleanup request, follow [catalog audit](references/catalog-audit.md).
+Start with the effective harness catalog and inspect provenance, archived sources, missing files, overrides and
+overlapping triggers. Use the read-only helper before proposing changes; it never edits configuration or retires skills.
+Keep usage evidence separate from discovery: absence from a narrow sample does not establish disuse. Apply only the
+authorized fixes at their owning source, preserve deliberate overrides, then verify the effective catalog again.
+Keep this maintenance separate from `devkit-learn`'s approved project-knowledge workflow.
+
 ## Quality checklist
 
 A good devkit skill:

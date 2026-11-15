@@ -15,6 +15,7 @@ SCRIPTS=(
   css-routing.sh
   delivery-peers.sh
   cursor-adapter.sh
+  grok-adapter.sh
   dev-server-gate.sh
   devkit-update.sh
   doc-canaries.sh
@@ -32,6 +33,8 @@ SCRIPTS=(
   resolve.sh
   review-qa.sh
   shellcheck.sh
+  session-recovery.sh
+  skill-catalog.sh
   skill-eval.sh
   stack-plugins.sh
   timesheet-skill.sh
