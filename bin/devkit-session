@@ -331,7 +331,7 @@ def main():
     parser.add_argument("--project", type=Path, default=Path.cwd())
     parser.add_argument("--source", action="append", default=[])
     parser.add_argument("--limit", type=int, default=10)
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
     try:
         project = args.project.expanduser().resolve()
         if not project.is_dir() or project == Path(project.anchor):
