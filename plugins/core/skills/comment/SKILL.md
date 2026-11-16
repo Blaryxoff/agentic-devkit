@@ -121,15 +121,11 @@ Example body after resolved mentions, assuming these fixes are verified on the t
 
 ## Session sources
 
-Prefer native session search when available. Otherwise locate candidates by repository/worktree metadata and time
-before reading their contents; do not scan unrelated transcript histories. Read the latest matching development
-session's request, completion summary, and only the tool results needed to support claims.
-
-| Harness | Default local source | Matching evidence |
-|---|---|---|
-| Claude Code | `$HOME/.claude/projects/<encoded-root>/*.jsonl` | `cwd`, timestamps, task link/key, affected behavior |
-| Codex | `${CODEX_HOME:-$HOME/.codex}/sessions/YYYY/MM/DD/*.jsonl` | session `cwd`, timestamps, task link/key, affected behavior |
-| Cursor | `${CURSOR_HOME:-$HOME/.cursor}/projects/<encoded-root>/agent-transcripts/` | project/worktree association, timestamps, task link/key, affected behavior |
+Apply [Agent session sources](../../conduct/agent-session-sources.md) to locate candidates across Claude Code, Codex,
+Cursor and Grok, regardless of the caller's harness. Honour an explicitly selected session. Prefer native session
+search; otherwise filter by repository/worktree metadata and time before reading content. Match the task link/key and
+affected behavior, then read the matching request, completion summary, and only the tool results needed to support
+claims. Report inaccessible or unsupported sources to the user when they prevent selecting or substantiating the session.
 
 Confirm the association using the task and session content, not timing alone. Use current diffs to corroborate a known
 session's work; a current diff by itself cannot prove which session made the change. Keep raw session paths and

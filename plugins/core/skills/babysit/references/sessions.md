@@ -11,6 +11,8 @@ session of the caller's harness. Keep the selected task owner as the sole produc
    processes; it does not decide which are agents or grant authority over them. Inspect unknown commands before selection.
 4. Observe `agtermctl session text --target <uuid> --pane-id <token> --lines 60`. Use a harness-specific transcript or
    native thread API only when the pane tail is insufficient; read bounded recent user/assistant records and timestamps.
+   Locate matching Claude, Codex, Cursor or Grok history via [Agent session sources](../../../conduct/agent-session-sources.md);
+   pin the exact native thread from matching content rather than selecting the newest session in a shared checkout.
 5. Recheck the selected foreground before each direction. A changed process or task invalidates the endpoint until
    it is matched again; do not redirect a message to a different pane merely because its agent name matches.
 
@@ -18,11 +20,12 @@ session of the caller's harness. Keep the selected task owner as the sole produc
 
 1. Prefer an available native thread-steering API. Resolve the exact selected thread from recent matching messages,
    send one short paragraph tagged `[Supervisor HH:MM:SSZ]`, and require a queued-message receipt or acknowledged response.
-2. For a known UI protocol, use `../pair/scripts/peer-chat.py --supervisor --to <claude|cursor|codex> --session <uuid>
+2. For a known UI protocol, use `../pair/scripts/peer-chat.py --supervisor --to <claude|cursor|codex|grok> --session <uuid>
    --pane <left|right> --target-command <command> --stdin`, or its prepared-message file flow. It pins the target,
    preserves drafts, adds the supervisor tag, verifies each body write and submits separately. Match the protocol
    against the live UI, independently of the executable's brand/model. `scripts/send.sh` remains a compatible helper
    for its Claude left-pane format only; do not route another harness through that parser.
+   Wait for Grok to become idle before submitting; its protocol does not support steering or queueing a busy turn.
 3. For another terminal UI, inspect its live foreground, overlays/dialogs, bottom composer and caret together. Verify
    the composer contains only the observed empty placeholder and no draft, chooser, trust or approval prompt. An empty
    caret position alone is insufficient. Use a verified native transport or a tested supervisor delivery adapter.

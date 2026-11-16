@@ -5,6 +5,7 @@ import datetime as dt
 import json
 import os
 from pathlib import Path
+from urllib.parse import quote
 import sqlite3
 import subprocess
 import sys
@@ -198,12 +199,12 @@ class ExtractorFixture(unittest.TestCase):
         write_jsonl(path, rows)
         return path
 
-    def run_extractor(self):
+    def run_extractor(self, *extra, env=None):
         proc = subprocess.run(
             [sys.executable, str(EXTRACTOR), "--config", str(self.config), "--out", str(self.out),
-             "--home", str(self.home), "--codex-home", str(self.codex_home)],
+             "--home", str(self.home), "--codex-home", str(self.codex_home), *extra],
             cwd=ROOT,
-            env=dict(os.environ),
+            env={**os.environ, **(env or {})},
             capture_output=True,
             text=True,
             timeout=20,
@@ -427,6 +428,116 @@ class ExtractorFixture(unittest.TestCase):
         self.assertTrue(report, "coverage sidecar must contain aggregate diagnostics")
         self.assertTrue(any(isinstance(v, (int, float)) for v in report.values()), "expected aggregate numeric counters")
         self.assertNotIn("private synthetic prompt", coverage_path.read_text())
+
+    def test_cursor_project_transcripts_merge_with_composer_and_report_untimed(self):
+        sid = "cursor-human"
+        cwd = str(self.home / "www/grow-place")
+        transcript = self.home / ".cursor/projects" / cwd.lstrip("/").replace("/", "-") / "agent-transcripts"
+        write_jsonl(transcript / sid / f"{sid}.jsonl", [
+            {"role": "user", "cwd": cwd, "timestamp": "2026-10-12T09:00:00Z",
+             "message": {"content": [{"type": "text", "text": "<user_query>Fix validation</user_query>"}]}},
+            {"role": "user", "timestamp": "2026-10-12T09:05:00Z", "turnOrigin": "peer",
+             "message": {"content": "looks human but delegated"}},
+            {"role": "user", "timestamp": "2026-09-01T09:00:00Z", "message": {"content": "outside period"}},
+            {"role": "user", "message": {"content": "undated request"}},
+        ])
+        write_jsonl(transcript / "flat.jsonl", [{
+            "role": "user", "timestamp": "2026-10-12T10:00:00Z", "message": {"content": "Flat prompt"},
+        }])
+        database = self.home / "Library/Application Support/Cursor/User/globalStorage/state.vscdb"
+        database.parent.mkdir(parents=True)
+        with sqlite3.connect(database) as db:
+            db.execute("create table cursorDiskKV (key text primary key, value text)")
+            db.executemany("insert into cursorDiskKV values (?,?)", [
+                (f"composerData:{sid}", json.dumps({"lastUpdatedAt": epoch_millis("2026-10-12T09:00:00Z"), "cwd": cwd})),
+                (f"bubbleId:{sid}:one", json.dumps({"type": 1, "createdAt": "2026-10-12T09:00:00Z", "text": "Fix validation"})),
+            ])
+        sessions = self.run_extractor()
+        found = next(s for s in sessions if s["id"] == sid)
+        self.assertEqual(found["cwd"], cwd)
+        self.assertEqual(found["prompts"], [["2026-10-12T09:00:00Z", "Fix validation"]])
+        self.assertEqual(self.prompts_for(sessions, "flat"), [["2026-10-12T10:00:00Z", "Flat prompt"]])
+        coverage = json.loads(Path(str(self.out) + ".coverage.json").read_text())
+        self.assertEqual(coverage["cursor"]["untimed_user_records"], 1)
+
+    def test_grok_chunks_provenance_replay_and_timestamp_boundaries(self):
+        sid, cwd = "grok-human", "/fixture/www/grow-place"
+        def update(text, timestamp, event, index, **metadata):
+            return {"timestamp": timestamp, "method": "_x.ai/session/update", "params": {
+                "sessionId": sid, "_meta": {"eventId": event}, "update": {
+                    "sessionUpdate": "user_message_chunk", "_meta": {"promptIndex": index, **metadata},
+                    "content": {"type": "text", "text": text}}}}
+        rows = [
+            update("Fix ", "2026-10-14T08:00:00Z", "first", 0),
+            update("validation", "2026-10-14T08:00:01Z", "second", 0),
+            update("validation", "2026-10-14T08:00:01Z", "second", 0),
+            update("hidden synthetic", "2026-10-14T08:02:00Z", "synthetic", 1, syntheticPrompt=True),
+            update("looks human peer", "2026-10-14T08:03:00Z", "peer", 2, turnOrigin="peer"),
+            update("Chat from Codex: Review this", "2026-10-14T08:04:00Z", "chat", 3),
+            update("outside period", "2026-09-01T08:00:00Z", "old", 4),
+            update("undated", None, "missing", 5),
+            update("Fix validation", "2026-10-14T08:10:00Z", "repeat", 6),
+        ]
+        write_jsonl(self.home / ".grok/sessions" / quote(cwd, safe="") / sid / "updates.jsonl", rows)
+        sessions = self.run_extractor()
+        found = next(s for s in sessions if s["id"] == sid)
+        self.assertEqual(found["cwd"], cwd)
+        self.assertEqual(found["prompts"], [["2026-10-14T08:00:00Z", "Fix validation"],
+                                             ["2026-10-14T08:10:00Z", "Fix validation"]])
+        coverage = json.loads(Path(str(self.out) + ".coverage.json").read_text())
+        self.assertEqual(coverage["grok"]["untimed_user_records"], 1)
+
+    def test_opaque_cursor_cli_and_unsupported_composer_are_coverage_gaps(self):
+        cli = self.home / ".cursor/chats/workspace/opaque"
+        cli.mkdir(parents=True)
+        (cli / "meta.json").write_text(json.dumps({"cwd": "/fixture/www/grow-place", "createdAt": epoch_millis("2026-10-10T00:00:00Z")}))
+        with sqlite3.connect(cli / "store.db"):
+            pass
+        database = self.home / "Library/Application Support/Cursor/User/globalStorage/state.vscdb"
+        database.parent.mkdir(parents=True)
+        with sqlite3.connect(database) as db:
+            db.execute("create table unsupported (id text)")
+        self.assertEqual(self.run_extractor(), [])
+        coverage = json.loads(Path(str(self.out) + ".coverage.json").read_text())
+        self.assertEqual(coverage["cursor"]["opaque_cli_stores"], 1)
+        self.assertTrue(any("Cursor" in message for message in coverage["warnings"]))
+
+    def test_grok_home_override_and_cwd_mismatch(self):
+        cwd = "/fixture/www/grow-place"
+        def row(text, **extra):
+            return {"timestamp": "2026-10-15T09:00:00Z", "method": "_x.ai/session/update", **extra,
+                    "params": {"update": {"sessionUpdate": "user_message_chunk",
+                                          "content": {"type": "text", "text": text}}}}
+        selected, ignored = self.root / "selected-grok", self.root / "ignored-grok"
+        relative = Path("sessions") / quote(cwd, safe="") / "chosen/updates.jsonl"
+        write_jsonl(selected / relative, [row("chosen prompt")])
+        write_jsonl(ignored / relative, [row("should be ignored")])
+        write_jsonl(selected / "sessions" / quote(cwd, safe="") / "mismatch/updates.jsonl", [
+            row("wrong project", cwd="/fixture/other"),
+            row("still wrong project"),
+        ])
+        self.assertEqual(self.prompts_for(self.run_extractor("--grok-home", str(selected),
+                                                           env={"GROK_HOME": str(ignored)}), "chosen"),
+                         [["2026-10-15T09:00:00Z", "chosen prompt"]])
+        report = json.loads(Path(str(self.out) + ".coverage.json").read_text())
+        self.assertEqual(report["grok"]["cwd_mismatches"], 1)
+
+    def test_cursor_subagent_transcript_cannot_reenter_from_composer(self):
+        sid = "delegated-cursor"
+        write_jsonl(self.home / f".cursor/projects/fixture/agent-transcripts/{sid}.jsonl", [
+            {"isSidechain": True, "role": "user", "timestamp": "2026-10-16T09:00:00Z",
+             "message": {"content": "Delegated request"}},
+        ])
+        database = self.home / "Library/Application Support/Cursor/User/globalStorage/state.vscdb"
+        database.parent.mkdir(parents=True)
+        with sqlite3.connect(database) as db:
+            db.execute("create table cursorDiskKV (key text primary key, value text)")
+            db.executemany("insert into cursorDiskKV values (?,?)", [
+                (f"composerData:{sid}", json.dumps({"lastUpdatedAt": epoch_millis("2026-10-16T09:00:00Z")})),
+                (f"bubbleId:{sid}:one", json.dumps({"type": 1, "createdAt": epoch_millis("2026-10-16T09:00:00Z"),
+                                                    "text": "Delegated request"})),
+            ])
+        self.assertEqual(self.run_extractor(), [])
 
 
 if __name__ == "__main__":

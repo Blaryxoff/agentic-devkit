@@ -6,15 +6,22 @@ index as history; the helper uses a new private project-scoped state and never t
 
 ## 1. Pin the sources
 
-Resolve the canonical project directory and identify only its authorized transcripts. Use the active harness's known
-session path or workspace metadata; ask for a missing source location while continuing independent work. Never sweep
-every user's session directory or assume that a similarly named workspace belongs to this project.
+Resolve the canonical project directory and identify only its authorized transcripts using
+[Agent session sources](../../../conduct/agent-session-sources.md). For project-wide history, inventory Claude Code,
+Codex, Cursor and Grok regardless of the collector's harness; honour an explicitly selected source or session. Pass
+each verified project store or exact transcript as a separate `--source`. Include Grok `updates.jsonl` and flat/nested
+Cursor project JSONL; disclose opaque CLI stores, unavailable IDE exports and other coverage gaps. Ask for a missing
+required source location while continuing independent work. Never sweep every user's session directory or assume
+that a similarly named workspace belongs to this project.
 
-| Harness | Source selection | Enforced collector boundary |
+Select the read-only collector independently of the source harness:
+
+| Collector runtime | Source selection | Enforced collector boundary |
 |---|---|---|
-| Cursor | The current workspace's `agent-transcripts` directory or selected session files | Generated `devkit-mine` native agent with `readonly: true` |
-| Claude Code | The current project's transcript directory or selected session files | Generated `devkit-mine` agent restricted to `Read, Glob, Grep` |
-| Codex | Exact rollout files identified from the current project's thread metadata | Read-only native worker, or `codex exec --sandbox read-only` |
+| Cursor | Any verified project transcripts from the four agents | Generated `devkit-mine` native agent with `readonly: true` |
+| Claude Code | Any verified project transcripts from the four agents | Generated `devkit-mine` agent restricted to `Read, Glob, Grep` |
+| Codex | Any verified project transcripts from the four agents | Read-only native worker, or `codex exec --sandbox read-only` |
+| Grok | Any verified project transcripts from the four agents | Available enforced read-only worker; otherwise return the missing capability |
 
 Dispatch the collector on the runtime-resolved economical model per `plugins/core/conduct/model-routing.md`. Preserve an
 explicit user model choice. For a Codex subprocess, pass a prompt file through a quoted positional argument, close stdin

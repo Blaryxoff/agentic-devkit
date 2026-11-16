@@ -20,6 +20,7 @@ Start with `conduct-loading.md`, then open only the documents routed by the acti
 | Supervised multi-agent review delegated to revmux | [revmux-review.md](./revmux-review.md) |
 | Git, commit workflow, or deferred-work backlog | [git-commit-workflow.md](./git-commit-workflow.md), [deferred-work-backlog.md](./deferred-work-backlog.md) |
 | Context, parallel work, token use, or MCP economy | [context-management.md](./context-management.md), [parallel-sessions.md](./parallel-sessions.md), [token-optimization.md](./token-optimization.md), [mcp-economy.md](./mcp-economy.md) |
+| Session evidence for release notes, reports, task comments or history learning | [agent-session-sources.md](./agent-session-sources.md) |
 | Running commands, spawning CLIs, or a hung shell | [shell-invocation.md](./shell-invocation.md) |
 | agterm previews, pane communication, worker observation or restart safety | [agterm.md](./agterm.md) |
 | Model family selection and runtime version resolution | [model-routing.md](./model-routing.md) |

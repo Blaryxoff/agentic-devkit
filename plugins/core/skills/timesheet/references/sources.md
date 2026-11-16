@@ -4,6 +4,10 @@ Every source: where it lives, what counts as the person's own activity, and what
 
 ## Agent logs
 
+Inventory all four agents per [Agent session sources](../../../conduct/agent-session-sources.md), independently of
+the reporting harness. Separate absent stores, unreadable stores, unsupported formats and untimestamped messages in
+coverage. A missing human timestamp cannot be replaced by file mtime or thread creation/update time.
+
 ### Claude Code
 
 - Transcripts: `~/.claude/projects/<encoded-cwd>/<session>.jsonl`, subagents under `<session>/subagents/` (skip them).
@@ -48,6 +52,10 @@ Every source: where it lives, what counts as the person's own activity, and what
 
 ### Cursor
 
+- Project transcripts: `~/.cursor/projects/<encoded-root>/agent-transcripts/<id>.jsonl` or
+  `<id>/<id>.jsonl`. Read `role: user` / `message.role: user` text with its actual record timestamp; unwrap
+  `<user_query>` when present. Use recorded `cwd` or verified project mapping: encoded directory names are lossy.
+  Report untimestamped transcripts as coverage gaps; do not turn their mtime into human activity.
 - IDE chats: `~/Library/Application Support/Cursor/User/globalStorage/state.vscdb` (Linux `~/.config/Cursor/...`),
   table `cursorDiskKV`. `composerData:<id>` = chat header (`createdAt`, `lastUpdatedAt`, name); messages are
   `bubbleId:<composerId>:<bubbleId>` with `type` 1 = user, `createdAt`, `text`.
@@ -58,8 +66,23 @@ Every source: where it lives, what counts as the person's own activity, and what
 - Subagent chats open with a machine brief (`Act as …`, `Run exhaustive …`, `Review the latest commit …`,
   `<system_notification>`): drop the whole chat when its first prompt is one.
 - CLI agent: `~/.cursor/chats/<hash>/<id>/{meta.json,store.db}`; `meta.json` has `cwd` and created/updated ms.
+  The extractor inventories these stores but does not decode opaque `store.db` messages. Report that gap and use an
+  ordered JSONL export with actual prompt timestamps when available. Metadata dates never create time.
   Chats whose cwd is a scratchpad were delegated by another agent.
+- Reconcile overlapping IDE and project-transcript events by session identity and text/time; count each prompt once.
 - `~/.cursor/ai-tracking/ai-code-tracking.db` holds commit scoring, not conversations.
+
+### Grok
+
+- Update streams: `${GROK_HOME:-$HOME/.grok}/sessions/<URL-encoded-absolute-cwd>/<id>/updates.jsonl`.
+  Decode the project root and verify any recorded `cwd`; `--grok-home` selects an explicit source root.
+- Read `_x.ai/session/update` records with `params.update.sessionUpdate: user_message_chunk`. Reassemble text chunks
+  for one prompt using its prompt identity; deduplicate replayed events. Use the actual record or event timestamp.
+  Agent chunks and tool events provide context only; they never create human time.
+- Reject synthetic/hidden prompts, compaction/meta text, peer messages, scheduled turns and delegated/subagent
+  origins. Honour machine provenance even when the text looks human. Count only the person's timestamped inputs.
+- Report missing, unreadable or untimestamped streams in coverage. A surviving session directory or its update time
+  does not establish hours; obtain timestamped exports or disclose unmeasured work.
 
 ### Telegram bots (Hermes-style)
 

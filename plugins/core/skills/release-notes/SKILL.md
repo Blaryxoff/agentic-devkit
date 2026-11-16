@@ -18,7 +18,7 @@ release work. Group by product area — not by repo, commit, or agent.
 | cutoff date | yes | ask if absent; never guess |
 | repo roots | no | cwd + every other accessible repo of the same product |
 | release branch | no | `origin/HEAD` of each root (`master` / `main` / `production`) |
-| agent sessions | no | matching local Claude, Codex, and Cursor transcript stores |
+| agent sessions | no | matching local Claude, Codex, Cursor, and Grok transcript stores |
 | scale | no | infer: few sections → `Мини-релиз`, otherwise a dated full release |
 
 Accept `DD.MM.YYYY`, `YYYY-MM-DD`, `с 10 июня`, `за последнюю неделю`. Normalise to `YYYY-MM-DD` and state the
@@ -63,19 +63,14 @@ normalised value before collecting.
     security, and build changes against their diffs and available deployment evidence. Name shipped runtime upgrades
     and security fixes explicitly in the post; a generic reliability line does not cover them. No SHAs, paths,
     ticket/session ids, prompt text, or secrets leaked; fix-flavoured sections last; Russian throughout. Outside the
-    post, state the roots/range and which of Claude, Codex, and Cursor were available.
+    post, state the roots/range and coverage or gaps for each of Claude, Codex, Cursor, and Grok.
 
 ## Agent session sources
 
-Use these defaults when readable; also accept explicit transcript roots or a harness-provided session search. Encoded
-project directories replace path separators with `-`; Claude keeps the leading separator as `-`, while Cursor drops it.
-Confirm association from transcript `cwd` metadata where present; accept the repo root and its git worktrees only.
-
-| Agent | Default store | Scope and time signal |
-|---|---|---|
-| Claude | `$HOME/.claude/projects/<encoded-root>/*.jsonl` | message `timestamp`; record `cwd` |
-| Codex | `$CODEX_HOME/sessions/YYYY/MM/DD/*.jsonl`, or `$HOME/.codex/sessions/...` when unset | `session_meta` / `turn_context` `cwd`; record `timestamp` |
-| Cursor | `$HOME/.cursor/projects/<encoded-root>/agent-transcripts/<session>/<session>.jsonl` | project directory; file mtime is only a shortlist when records lack timestamps |
+Apply [Agent session sources](../../conduct/agent-session-sources.md) to inventory Claude, Codex, Cursor, and Grok
+for every release root and its git worktrees. Check Cursor project transcripts, CLI stores and IDE chats separately;
+an unreadable or opaque store remains a reported coverage gap. Reconstruct Grok message chunks before interpreting
+requests or completion claims. Accept explicit transcript roots or a harness-provided scoped session search.
 
 - Shortlist files by cutoff before reading them, and limit inspection to relevant project stores.
 - Read top-level sessions first. Skip subagent transcripts when their parent summary already covers the work.

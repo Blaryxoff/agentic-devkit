@@ -3,6 +3,7 @@
 import argparse, collections, datetime as dt, glob, json, os, re, sqlite3
 from pathlib import Path
 from contextlib import closing
+from urllib.parse import unquote
 
 p = argparse.ArgumentParser()
 p.add_argument('--config', required=True)
@@ -10,10 +11,12 @@ p.add_argument('--out', required=True)
 p.add_argument('--hermes', action='append', default=[])
 p.add_argument('--home', default=os.path.expanduser('~'))
 p.add_argument('--codex-home')
+p.add_argument('--grok-home')
 a = p.parse_args()
 cfg = json.load(open(a.config))
 HOME = a.home
 CODEX_HOME = Path(a.codex_home or os.environ.get('CODEX_HOME', f'{HOME}/.codex'))
+GROK_HOME = Path(a.grok_home or os.environ.get('GROK_HOME', f'{HOME}/.grok')).expanduser()
 TZ = dt.timedelta(hours=cfg.get('tz_offset_hours', 0))
 UTC = dt.timezone.utc
 W0 = (dt.datetime.fromisoformat(cfg['period']['from']) - TZ).replace(tzinfo=UTC)
@@ -65,6 +68,9 @@ def text_of(content):
 
 def human_text(txt):
     text = text_of(txt).strip()
+    query = re.fullmatch(r'<user_query>(.*?)</user_query>', text, re.S)
+    if query:
+        text = query.group(1).strip()
     had_image = bool(re.search(r'<image\b|\[Image #\d+\]', text))
     text = re.sub(r'<image\b[^>]*>.*?</image>', '', text, flags=re.S)
     text = re.sub(r'\[Image #\d+\]', '', text).strip()
@@ -326,43 +332,209 @@ def codex():
             yield finish(s)
 
 
+def human_origin(*parts):
+    for part in parts:
+        if not isinstance(part, dict):
+            continue
+        meta = part.get('_meta')
+        if isinstance(meta, dict) and not human_origin(meta):
+            return False
+        if any(part.get(key) for key in ('isCompactSummary', 'isMeta', 'isSidechain', 'isSimulatedMsg',
+                                         'syntheticPrompt', 'hideFromScrollback', 'parentSessionId',
+                                         'attached_thread_parent_id', 'parent_thread_id')):
+            return False
+        if part.get('source') in ('exec', 'subagent', 'scheduled', 'sdk') or isinstance(part.get('source'), dict):
+            return False
+        if part.get('thread_source') in ('subagent', 'guardian_review', 'agent_created_thread'):
+            return False
+        if part.get('turnOrigin') in ('peer', 'scheduled', 'task_notification', 'sdk', 'auto_continuation', 'subagent'):
+            return False
+        if part.get('promptSource') in ('system', 'sdk', 'peer', 'scheduled', 'subagent'):
+            return False
+    return True
+
+
+def event_time(*parts):
+    for part in parts:
+        if not isinstance(part, dict):
+            continue
+        for key in ('timestamp', 'createdAt', 'agentTimestampMs'):
+            value = part.get(key)
+            when = instant(value, millis=isinstance(value, (int, float)) and abs(value) > 100_000_000_000)
+            if when is not None:
+                return when
+    return None
+
+
+def grok():
+    root = GROK_HOME / 'sessions'
+    paths = list(root.glob('*/*/updates.jsonl'))
+    info = coverage['grok'] = {'store_present': root.is_dir(), 'transcript_files': len(paths),
+                               'untimed_user_records': 0, 'cwd_mismatches': 0}
+    if not root.is_dir():
+        coverage['warnings'].append('Grok session store absent; human activity coverage is unavailable')
+    for path in paths:
+        cwd = unquote(path.parent.parent.name)
+        s = session('grok', path.parent.name, cwd if cwd.startswith('/') else None)
+        seen, pending, in_scope = set(), None, bool(s['cwd'])
+
+        def flush():
+            nonlocal pending
+            if pending and pending['human'] and pending['when'] is not None:
+                add_prompt(s, pending['when'], pending['text'], 'grok', pending['id'])
+            pending = None
+
+        for d in records(path):
+            if d.get('method') != '_x.ai/session/update':
+                continue
+            params = d.get('params') or {}
+            if not isinstance(params, dict):
+                continue
+            update = params.get('update') or {}
+            if not isinstance(update, dict):
+                continue
+            recorded_cwd = d.get('cwd') or params.get('cwd') or update.get('cwd')
+            if isinstance(recorded_cwd, str):
+                in_scope = bool(s['cwd']) and Path(recorded_cwd).resolve() == Path(s['cwd']).resolve()
+                if not in_scope:
+                    info['cwd_mismatches'] += 1
+            if not in_scope:
+                flush()
+                continue
+            event = update.get('sessionUpdate')
+            if event != 'user_message_chunk':
+                if event in ('agent_message_chunk', 'agent_thought_chunk', 'tool_call', 'turn_completed'):
+                    flush()
+                continue
+            meta = params.get('_meta') or {}
+            if not isinstance(meta, dict):
+                meta = {}
+            event_id = meta.get('eventId')
+            if event_id and event_id in seen:
+                continue
+            if event_id:
+                seen.add(event_id)
+            content = update.get('content') or {}
+            if not isinstance(content, dict) or content.get('type') != 'text':
+                continue
+            update_meta = update.get('_meta')
+            index = update_meta.get('promptIndex') if isinstance(update_meta, dict) else None
+            prompt_id = f'prompt:{index}' if index is not None else None
+            when = event_time(d, meta, update)
+            if when is None:
+                info['untimed_user_records'] += 1
+            if pending is not None and pending['id'] != prompt_id:
+                flush()
+            if pending is None:
+                pending = dict(id=prompt_id, when=when, text='', human=True)
+            pending['human'] = pending['human'] and human_origin(d, params, update, content) and when is not None
+            pending['text'] += text_of(content.get('text'))
+        flush()
+        if s['_inputs']:
+            yield finish(s)
+    if info['untimed_user_records']:
+        coverage['warnings'].append('Grok user records without input timestamps were excluded from hours')
+    if info['cwd_mismatches']:
+        coverage['warnings'].append('Grok records with cwd outside their project store were excluded from hours')
+
+
 def cursor():
+    root = Path(HOME) / '.cursor'
+    paths = list(root.glob('projects/*/agent-transcripts/*.jsonl'))
+    paths += list(root.glob('projects/*/agent-transcripts/*/*.jsonl'))
+    opaque = list(root.glob('chats/*/*/store.db'))
+    info = coverage['cursor'] = {'transcript_files': len(paths), 'opaque_cli_stores': len(opaque),
+                                  'untimed_user_records': 0, 'unmapped_transcripts': 0}
+    sessions, excluded = {}, set()
+    for path in paths:
+        if path.stem in excluded:
+            continue
+        s = sessions.setdefault(path.stem, session('cursor', path.stem))
+        for d in records(path):
+            if d.get('isSidechain') or d.get('parentSessionId') or d.get('thread_source') == 'subagent':
+                sessions.pop(path.stem, None)
+                excluded.add(path.stem)
+                break
+            message = d.get('message') or d
+            if not isinstance(message, dict):
+                continue
+            s['cwd'] = s['cwd'] or d.get('cwd') or message.get('cwd')
+            if message.get('role', d.get('role')) != 'user' or not human_origin(d, message):
+                continue
+            when = event_time(d, message)
+            if when is None:
+                info['untimed_user_records'] += 1
+                continue
+            add_prompt(s, when, message.get('content'), 'cursor-transcript', d.get('uuid') or d.get('id'))
+        if not s['cwd']:
+            info['unmapped_transcripts'] += 1
+            s['content_routed'] = True
+    cursor_composers(sessions, info, excluded)
+    if opaque:
+        coverage['warnings'].append('Cursor CLI SQLite stores are opaque; export timestamped conversations to recover their activity')
+    if info['untimed_user_records']:
+        coverage['warnings'].append('Cursor user records without input timestamps were excluded from hours')
+    if info['unmapped_transcripts']:
+        coverage['warnings'].append('Cursor transcript cwd unavailable; lossy project directory names require content routing')
+    for s in sessions.values():
+        if s['_inputs']:
+            first = min(s['_inputs'], key=lambda x: x[0])[1]
+            if first.startswith(('Act as ', 'Run exhaustive ', 'Review the latest commit ', 'You are one reviewer')):
+                continue
+            yield finish(s)
+
+
+def cursor_composers(sessions, info, excluded):
     path = Path(HOME) / 'Library/Application Support/Cursor/User/globalStorage/state.vscdb'
     if not path.exists():
         path = Path(HOME) / '.config/Cursor/User/globalStorage/state.vscdb'
     if not path.exists():
+        info['composer_store_present'] = False
+        if not info['transcript_files'] and not info['opaque_cli_stores']:
+            coverage['warnings'].append('Cursor conversation stores absent; human activity coverage is unavailable')
         return
-    with closing(readonly(path)) as db:
-        for key, val in db.execute("select key,value from cursorDiskKV where key>='composerData:' and key<'composerData;'"):
-            try:
-                c = json.loads(val)
-            except (TypeError, ValueError):
-                continue
-            if (c.get('lastUpdatedAt') or c.get('createdAt') or 0) < W0.timestamp() * 1000:
-                continue
-            sid = key.split(':', 1)[1]
-            s = session('cursor', sid)
-            repos = collections.Counter()
-            for _, raw in db.execute("select key,value from cursorDiskKV where key>=? and key<?",
-                                     (f'bubbleId:{sid}:', f'bubbleId:{sid};')):
-                if raw is None:
-                    continue
-                text = raw if isinstance(raw, str) else raw.decode('utf8', 'ignore')
-                repos.update(re.findall(re.escape(HOME) + r'/[^/\s"]+/([A-Za-z0-9._-]+)', text[:100000]))
+    info['composer_store_present'] = True
+    try:
+        with closing(readonly(path)) as db:
+            for key, val in db.execute("select key,value from cursorDiskKV where key>='composerData:' and key<'composerData;'"):
                 try:
-                    d = json.loads(raw)
+                    c = json.loads(val)
                 except (TypeError, ValueError):
                     continue
-                if d.get('type') != 1 or d.get('isSimulatedMsg'):
+                if (c.get('lastUpdatedAt') or c.get('createdAt') or 0) < W0.timestamp() * 1000:
                     continue
-                add_prompt(s, d.get('createdAt'), d.get('text') or text_of(d.get('images')), 'cursor')
-            if repos:
-                s['cwd'] = str(Path(HOME) / 'www' / repos.most_common(1)[0][0])
-            if s['_inputs']:
-                first = min(s['_inputs'], key=lambda x: x[0])[1]
-                if first.startswith(('Act as ', 'Run exhaustive ', 'Review the latest commit ', 'You are one reviewer')):
+                sid = key.split(':', 1)[1]
+                if sid in excluded or not human_origin(c):
+                    sessions.pop(sid, None)
                     continue
-                yield finish(s)
+                s = sessions.setdefault(sid, session('cursor', sid))
+                s['cwd'] = s['cwd'] or c.get('cwd')
+                repos = collections.Counter()
+                for _, raw in db.execute("select key,value from cursorDiskKV where key>=? and key<?",
+                                         (f'bubbleId:{sid}:', f'bubbleId:{sid};')):
+                    if raw is None:
+                        continue
+                    text = raw if isinstance(raw, str) else raw.decode('utf8', 'ignore')
+                    repos.update(re.findall(re.escape(HOME) + r'/[^/\s"]+/([A-Za-z0-9._-]+)', text[:100000]))
+                    try:
+                        d = json.loads(raw)
+                    except (TypeError, ValueError):
+                        continue
+                    if d.get('type') != 1 or not human_origin(d):
+                        continue
+                    when = event_time(d)
+                    if when is None:
+                        info['untimed_user_records'] += 1
+                    add_prompt(s, when, d.get('text') or text_of(d.get('images')), 'cursor')
+                if repos and not s['cwd']:
+                    s['cwd'] = str(Path(HOME) / 'www' / repos.most_common(1)[0][0])
+                if s['_inputs']:
+                    first = min(s['_inputs'], key=lambda x: x[0])[1]
+                    if first.startswith(('Act as ', 'Run exhaustive ', 'Review the latest commit ', 'You are one reviewer')):
+                        sessions.pop(sid, None)
+                        continue
+    except (sqlite3.Error, OSError):
+        coverage['warnings'].append('Cursor composer database unavailable or unsupported; remaining coverage may be partial')
 
 
 def hermes():
@@ -378,7 +550,7 @@ def hermes():
 
 counts = collections.Counter()
 with open(a.out, 'w') as out:
-    for gen in (claude(), codex(), cursor(), hermes()):
+    for gen in (claude(), codex(), cursor(), grok(), hermes()):
         for s in gen:
             counts[s['tool']] += len(s['prompts'])
             out.write(json.dumps(s, ensure_ascii=False) + '\n')
