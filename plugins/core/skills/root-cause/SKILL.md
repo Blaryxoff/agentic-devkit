@@ -1,90 +1,40 @@
 ---
 name: devkit-root-cause
 description: >-
-  systematic root-cause analysis for errors, bugs, and unexpected behaviour using 5-Why methodology — drill from
-  symptom to fundamental cause before proposing any fix. Use when the user reports errors, build/test failures,
-  performance degradation, integration problems, or any "it's not working" scenario. Investigation only; does
-  not write the fix.
+  diagnose errors, build/test failures, performance or integration problems, and unexpected behaviour. Use for
+  bug investigations, "it's not working", or an unexplained expectation/behaviour mismatch. Establish the cause
+  from evidence before fixing; an investigation-only request does not authorise edits.
 ---
 
 # Root Cause Investigator
 
 > Adapted from `umputun/cc-thingz` (MIT). Bundled paths resolve under the devkit clone root (`~/.claude/agentic-devkit`).
 
-Apply 5-Why analysis to find the fundamental cause of an issue instead of treating symptoms. Gather evidence at each level; resist proposing solutions until the root cause is identified.
+## Investigate
 
-## When to use
+1. Establish the expected and observed behaviour, reproduction, affected environment and recent changes. Check the
+   actual code, configuration and runtime state; treat a defect, misleading documentation and a mistaken expectation
+   as possibilities until evidence distinguishes them.
+2. Separate observations from hypotheses. Trace the failing path and test competing explanations with the smallest
+   useful log, query, source slice or reproducible probe. Check version history when it helps locate the regression.
+3. Follow the causal chain as far as the evidence supports, including contributing factors and state ownership.
+   Use successive "why" questions when useful; do not invent process or architecture causes to fill five levels.
+   After repeated failed fixes or a rejected approach, apply
+   [Reassess repeated failures](../../conduct/verification-loop.md#reassess-repeated-failures).
+4. Report the supported cause and its evidence, distinguish remaining uncertainty, and identify the smallest
+   correction or next discriminating check. For an expectation mismatch, explain the expected and actual behaviour
+   plainly with source references; do not assume user error or impose a fixed report template.
 
-- errors, bugs, or unexpected behaviour
-- build failures or test failures
-- performance issues or degradation
-- integration problems
-- any "it's not working" scenario
+## Continue within the requested scope
 
-## The 5-Why methodology
-
-Ask "why" progressively to drill from surface to root:
-
-1. **Why #1** — immediate cause (the symptom)
-2. **Why #2** — process / workflow issue
-3. **Why #3** — system-level problem
-4. **Why #4** — design / architecture issue
-5. **Why #5** — fundamental root cause
-
-## Workflow
-
-### 1. Gather context
-
-```
-## Issue Summary
-[brief description]
-
-## Initial Symptoms
-- what the user is experiencing
-- error messages / logs
-- observable behaviour
-
-## Context
-- environment, recent changes, related components, repro steps
-```
-
-### 2. Apply 5-Why
-
-```
-### Why #1: [surface cause]   — Evidence: [logs/errors]      Impact: [...]
-### Why #2: [deeper cause]    — Evidence: [code/config]      Impact: [...]
-### Why #3: [system cause]    — Evidence: [arch/deps]        Impact: [...]
-### Why #4: [design cause]    — Evidence: [patterns]         Impact: [...]
-### Why #5: [root cause]      — Evidence: [fundamental]      Impact: [...]
-```
-
-### 3. Identify root cause
-
-```
-## Root Cause Identified
-[the fundamental issue to address]
-
-## Recommended Investigation Areas
-- specific files / components / systems to examine next
-```
-
-## Principles
-
-1. Separate observations from hypotheses, and understand the issue before proposing a fix.
-2. Test each hypothesis against evidence from logs, code, configuration, or reproducible behavior.
-3. Consider multiple contributing factors.
-4. Document evidence at each level.
-5. Think systemically — broader implications.
-6. Question "it should work" assumptions.
-7. Use version control — check when the issue was introduced.
+Keep an investigation-only or explanatory request read-only. When the user already requested a fix, continue through
+`devkit-coder` after establishing the cause; preserve that authorisation without adding another approval or handoff.
+Ask only when a material decision, missing prerequisite or destructive action needs the user's input under
+[clarification-protocol.md](../../conduct/clarification-protocol.md).
 
 ## References
 
-Load on demand during investigation:
+Load only the resource needed for the current investigation:
 
-- `references/patterns.md` — common root-cause patterns by category (configuration, race conditions, resource exhaustion, integration, build/deploy).
-- `references/techniques.md` — investigation techniques with command examples (error analysis, code investigation, dependency analysis, environment).
-
-## Handoff
-
-Once the root cause is confirmed and a fix is warranted, stop and hand off to implementation. For a non-trivial fix, use the harness's native plan mode when available or present a plan in chat for approval. This skill investigates; it does not change code.
+- [patterns.md](references/patterns.md) — configuration, races, resource exhaustion, integration and build/deploy causes.
+- [techniques.md](references/techniques.md) — log analysis, code tracing, dependencies and environment probes.

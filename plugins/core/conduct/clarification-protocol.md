@@ -26,4 +26,12 @@ Apply whenever a skill cannot ground a decision in code, plan, conduct doc, or d
 - Offer concrete options when a small set of choices covers the ambiguity.
 - Resume output after the user resolves each blocking ambiguity.
 
+## Explain unexpected behaviour
+
+When the user says "I don't understand", "I expected X but got Y", or challenges an explanation, identify the
+expectation and verify the actual code, configuration and runtime state before answering. Explain the gap briefly
+with evidence; leave a real defect and a mistaken expectation open until the evidence distinguishes them. Use
+`devkit-root-cause` for an unexplained failure. An explanatory question alone does not authorise a fix; continue an
+already authorised fix when no material decision or destructive action requires input.
+
 See `plugins/core/skills/plan-reviewer/SKILL.md` (Step 6) for the full pattern.

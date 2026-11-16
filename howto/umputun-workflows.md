@@ -6,9 +6,8 @@ Selected workflows from [`umputun/cc-thingz`](https://github.com/umputun/cc-thin
 ## Core skills
 
 - `devkit-dialectic`: opposing analyses of a claim, followed by synthesis checked against the code.
-- `devkit-root-cause`: 5-Why investigation of errors and unexpected behavior; does not repair code.
-- `devkit-wrong`: reset a failing approach and propose two or three alternatives.
-- `devkit-clarify`: explain observed behavior with evidence and distinguish misunderstanding from a defect.
+- `devkit-root-cause`: evidence-led investigation of errors and unexpected behavior. Keep explanatory requests
+  read-only; continue an already authorised fix through `devkit-coder` once the cause is established.
 - `devkit-learn`: propose up to three durable project contracts for native agent instructions. Follow placement rules
   and write only after granular user confirmation. Exclude task history and technical gotchas; route actionable work
   to a fix or user-approved backlog item.
@@ -17,6 +16,11 @@ Selected workflows from [`umputun/cc-thingz`](https://github.com/umputun/cc-thin
 
 ## Shared conduct
 
+- `verification-loop.md`: reassess rejected approaches and repeated failures before another production edit;
+  replaces the standalone `devkit-wrong` skill.
+- `clarification-protocol.md`: explain expectation/behaviour gaps from evidence and ask only about material ambiguity;
+  replaces the standalone `devkit-clarify` skill. Rerunning the installer removes their devkit-owned links;
+  deliberately installed user replacements remain intact.
 - `code-comments.md`: describe current contracts rather than change history; keep required public API documentation.
 - `code-smells.md`: stack-neutral review checks, used by reviewer-deep variants.
 - `communication-style.md`: concise commit, PR and review wording.

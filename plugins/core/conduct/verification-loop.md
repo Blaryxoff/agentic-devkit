@@ -31,9 +31,9 @@ Use [test-implementation.md](./test-implementation.md#selective-mutation-testing
 
 ## Reassess repeated failures
 
-- After two fixes based on the same assumption fail the same check, pause production edits and state that assumption explicitly.
+- When the user rejects the approach, or two fixes based on the same assumption fail the same check, pause production edits and restate the actual problem and failed assumption.
 - Compare the failures with contrary evidence from the actual inputs, state ownership, call path, and environment. Distinguish a product defect from a failing fixture, tool, or setup before choosing another explanation.
-- Use `devkit-wrong` to re-evaluate the approach or `devkit-root-cause` when the cause remains unknown. Resume implementation only with an evidence-backed explanation and a check that can distinguish it from the failed assumption.
+- Choose an explanation supported by new evidence and a check that distinguishes it from the failed assumption. Use `devkit-root-cause` when the cause remains unknown; compare alternatives only when they represent materially different choices. Resume the authorised implementation without a separate approval for routine corrections.
 
 The repeated-failure trigger is informed by [ub-mode](https://github.com/unclebob/ub-mode/blob/57a8bdd28e45ed41900ace0bafa2ff76dd9ed70f/SKILL.md#attack-the-premise); no license is declared at that revision. The guidance here is independently worded.
 

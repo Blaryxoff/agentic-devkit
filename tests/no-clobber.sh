@@ -29,13 +29,28 @@ printf 'my own style\n' > "$STYLES/mystyle.md"
 printf 'my senior override\n' > "$STYLES/senior.md"
 printf 'my own command\n' > "$CMDS/mycmd.md"
 printf 'my reviewer-deep override\n' > "$CMDS/reviewer-deep.md"
+printf 'my clarification command\n' > "$CMDS/clarify.md"
 
 # 2. A symlink of the user's own, pointing outside the devkit clone.
 printf 'external\n' > "$TMP_DIR/elsewhere/external.md"
 ln -s "$TMP_DIR/elsewhere/external.md" "$CMDS/mylink.md"
 
+custom_skill="$TMP_DIR/elsewhere/custom-skill"
+mkdir -p "$custom_skill"
+printf -- '---\nname: custom-skill\ndescription: User-owned skill.\n---\n' > "$custom_skill/SKILL.md"
+for harness in claude codex cursor; do
+  skill_dir="$HOME_DIR/.$harness/skills"
+  mkdir -p "$skill_dir"
+  for slug in wrong clarify coder; do
+    skill_name="devkit-core--$slug"
+    [ "$harness" = cursor ] && skill_name="devkit-$slug"
+    ln -s "$custom_skill" "$skill_dir/$skill_name"
+  done
+done
+
 # 3. A devkit-generated file from an earlier run: must be reaped and regenerated.
 printf -- '---\ndescription: stale\n---\n\n%s\n\nstale body\n' "$SENTINEL" > "$CMDS/root-cause.md"
+printf -- '---\ndescription: retired\n---\n\n%s\n' "$SENTINEL" > "$CMDS/wrong.md"
 
 # 4. A devkit symlink left dangling by a moved or re-cloned devkit: must be repaired.
 ln -s /gone/agentic-devkit/plugins/core/commands/wrapup.md "$CMDS/wrapup.md"
@@ -49,6 +64,18 @@ HOME="$HOME_DIR" DEVKIT_HOME_DIR="$ROOT" bash "$ROOT/bin/devkit-install" > "$out
 [ "$(cat "$CMDS/mycmd.md")" = "my own command" ] || fail "hand-authored command was modified or deleted"
 [ "$(cat "$CMDS/reviewer-deep.md")" = "my reviewer-deep override" ] \
   || fail "a user file shadowing a generated command was overwritten"
+[ "$(cat "$CMDS/clarify.md")" = "my clarification command" ] \
+  || fail "a user-authored command sharing a retired skill name was overwritten"
+[ ! -e "$CMDS/wrong.md" ] || fail "a retired devkit-generated command was retained"
+for harness in claude codex cursor; do
+  for slug in wrong clarify coder; do
+    skill_name="devkit-core--$slug"
+    [ "$harness" = cursor ] && skill_name="devkit-$slug"
+    skill_link="$HOME_DIR/.$harness/skills/$skill_name"
+    [ -L "$skill_link" ] && [ "$(readlink "$skill_link")" = "$custom_skill" ] \
+      || fail "user-owned $harness skill link was removed or replaced: $slug"
+  done
+done
 [ -L "$CMDS/mylink.md" ] || fail "the user's own symlink was replaced"
 [ "$(readlink "$CMDS/mylink.md")" = "$TMP_DIR/elsewhere/external.md" ] \
   || fail "the user's own symlink was retargeted"

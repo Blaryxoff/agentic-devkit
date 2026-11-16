@@ -70,6 +70,17 @@ jq -n --arg coder "sh '$ROOT/plugins/core/hooks/coder-gate.sh'" \
   > "$codex_home/hooks.json"
 ln -s "$ROOT/plugins/css/skills/css-a11y" "$codex_home/skills/devkit-css--css-a11y"
 ln -s "$ROOT/plugins/core/skills/coder" "$codex_home/skills/devkit-core--retired"
+mkdir -p "$claude_home/skills"
+old_wrong="$TMP_DIR/old/agentic-devkit/plugins/core/skills/wrong"
+mkdir -p "$old_wrong"
+printf -- '---\nname: devkit-wrong\ndescription: Old managed skill.\n---\n' > "$old_wrong/SKILL.md"
+for retired in wrong clarify; do
+  ln -s "$ROOT/plugins/core/skills/$retired" "$claude_home/skills/devkit-core--$retired"
+  ln -s "$ROOT/plugins/core/skills/$retired" "$codex_home/skills/devkit-core--$retired"
+  cursor_retired_source="$ROOT/plugins/core/skills/$retired"
+  [ "$retired" = wrong ] && cursor_retired_source="$old_wrong"
+  ln -s "$cursor_retired_source" "$cursor_home/skills/devkit-$retired"
+done
 ln -s "$ROOT/plugins/laravel/skills/architect" "$cursor_home/skills/devkit-laravel--architect"
 ln -s "$ROOT/plugins/core/skills/coder" "$codex_home/skills/user-skill"
 ln -s "$ROOT/plugins/core/skills/coder" "$cursor_home/skills/devkit-renamed"
@@ -95,6 +106,12 @@ assert_link "$codex_home/skills/devkit-core--lunaqa" "$ROOT/plugins/core/skills/
 assert_link "$codex_home/skills/devkit-core--devkit-router" "$ROOT/plugins/core/skills/devkit-router"
 assert_absent "$codex_home/skills/devkit-css--css-a11y"
 assert_absent "$codex_home/skills/devkit-core--retired"
+for retired in wrong clarify; do
+  assert_absent "$claude_home/skills/devkit-core--$retired"
+  assert_absent "$codex_home/skills/devkit-core--$retired"
+  assert_absent "$cursor_home/skills/devkit-$retired"
+  assert_absent "$claude_home/commands/$retired.md"
+done
 assert_absent "$codex_home/skills/devkit-laravel--architect"
 assert_link "$codex_home/skills/user-skill" "$ROOT/plugins/core/skills/coder"
 assert_link "$cursor_home/skills/devkit-coder" "$ROOT/plugins/core/skills/coder"
