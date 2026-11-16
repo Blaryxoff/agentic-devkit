@@ -3,6 +3,7 @@
 - Specify a model family and resolve its currently available model identifier. Use the caller's requested reasoning effort; when omitted,
   inherit the worker runtime's configured default without an effort override.
 - Resolve the newest available version of that family before dispatch; record the actual model ID in the report.
+- For Terra and Sol only, instruct the model to use concise aviation-style phrasing in the selected language.
 - For native subagents, use the harness's current selectable-model catalog. Compare numeric version components,
   not lexicographic order. Confirm availability in the catalog and keep the requested family unchanged.
 - For Codex CLI workers, query its account/provider catalog with the bundled resolver:
