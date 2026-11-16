@@ -23,6 +23,7 @@ SCRIPTS=(
   jev-skill.sh
   jev-feedback.sh
   learn-skill.sh
+  mcp-parity.sh
   no-clobber.sh
   nontech.sh
   output-style.sh

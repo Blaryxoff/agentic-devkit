@@ -8,10 +8,42 @@ Adapters translate the resolved plugin set into tool-specific configuration. Eac
 |---------|-------------|--------|
 | `claude` | Claude Code | `.claude/agents/*.md` (stack subagents), `.claude/skills/devkit-*--*` symlinks (inline stack skills), `.claude/settings.json` (hooks only — plugin `permissions` are not merged), `.mcp.json` |
 | `cursor` | Cursor IDE and CLI | `.cursor/skills/<frontmatter-name>/`, `.cursor/agents/*.md` (stack subagents), `.cursor/rules/devkit-*.mdc`, `.cursor/mcp.json`, `.cursor/hooks.json` |
-| `codex` | OpenAI Codex | `.codex/skills/devkit-*--*/`, `AGENTS.md` section (conduct + hook instructions) |
-| `grok` | Grok Build | Claude-compatible project stack plus native global payload gates and Grok activation guidance; see [Grok adapter](grok/README.md) |
+| `codex` | OpenAI Codex | `.codex/skills/devkit-*--*/`, `AGENTS.md` section (conduct + hook instructions), `.codex/config.toml` MCP servers |
+| `grok` | Grok Build | Claude-compatible project stack, `.grok/config.toml` MCP servers, native global payload gates and Grok activation guidance; see [Grok adapter](grok/README.md) |
 
 The Claude adapter also removes `.claude-plugin/`, a marketplace manifest earlier versions generated.
+
+Every adapter synchronizes the same project MCP catalogue into `.mcp.json`, `.cursor/mcp.json`,
+`.codex/config.toml`, and `.grok/config.toml`. Project MCP generation requires Python 3.11+.
+The canonical `.mcp.json` server definition wins conflicts; Cursor-only project entries are imported, and plugin
+defaults fill missing server names. Whole server definitions win, so HTTP and stdio settings cannot mix accidentally.
+Unrelated JSON keys, native TOML settings, native-only servers, and native authentication/tool policies are preserved.
+Cursor HTTP headers stay client-local when importing servers; they are never copied into the canonical catalogue.
+For matching URLs, Cursor keeps its private headers and supplies them to the ignored native Codex/Grok files.
+Explicit canonical headers apply to every generated client, overriding matching local header names. Keep private
+credentials in client-local configuration. Changing a shared URL drops the previous endpoint's local headers and
+native HTTP authentication fields; tool policies remain intact.
+
+The shared catalogue contains enabled servers. Native project entries get `enabled = true`, including when a global
+entry with the same name is disabled. Grok's project `[compat.claude]` and `[compat.cursor]` set `mcps = false` so it
+uses its native synchronized catalogue. Client-specific disabling belongs in that client's own controls; JSON
+`disabled: true` entries are rejected rather than accidentally enabling them in another client.
+
+Supported shared transports are stdio (`command`, `args`, `env`, `cwd`) and Streamable HTTP (`type: "http"`, `url`,
+`headers`). Missing stdio `cwd` defaults to the project root. HTTP headers map to Codex `http_headers` and Grok
+`headers`; existing native auth helpers and tool restrictions remain intact. Native-only servers stay native.
+Legacy SSE and inline/dotted TOML definitions for tables being synchronized need explicit migration; generation
+fails before changing MCP files when it cannot preserve them safely. Generated native files are ignored by git.
+Add or edit shared entries in `.mcp.json`, then rerun any adapter. Standard plugin Chrome launchers get isolation
+flags; custom Chrome launchers and browser arguments are preserved.
+The Laravel Boost default is emitted only when `vendor/laravel/boost` is installed in that checkout.
+
+Legacy local Nuxt SSE runtimes can use the stdio bridge
+`node adapters/_lib/mcp-sse.mjs PROJECT_ROOT LOOPBACK_SSE_URL`. It resolves the MCP SDK from that project's
+existing `nuxt-mcp-dev` dependency, accepts only loopback endpoints, and installs no packages. Configure this command
+as a shared stdio server; the JSON catalogue still rejects direct SSE entries. To verify the bridge against a local
+mock SSE server with an existing Nuxt installation, run
+`DEVKIT_MCP_SSE_PROJECT=/path/to/nuxt-project bash tests/mcp-parity.sh`.
 
 ## Usage
 
@@ -73,7 +105,8 @@ See [Cursor's acknowledged print-mode issue](https://forum.cursor.com/t/cursor-c
 | Function | Returns |
 |----------|---------|
 | `merge_plugin_mcp_servers` | Merged JSON of `mcpServers` declared by the resolved plugins |
-| `apply_chrome_devtools_profile` | The same JSON with the chrome-devtools server pinned to a per-project profile |
+| `apply_chrome_devtools_profile` | Normalizes standard npx Chrome launcher isolation flags, preserving custom launchers and arguments |
+| `sync_project_mcp_servers` | Synchronizes plugin defaults and project servers into Claude, Cursor, Codex, and Grok project files |
 
 ### Shared library exports (`_lib/claude_agents.sh`)
 

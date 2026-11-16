@@ -25,6 +25,7 @@ set -euo pipefail
 ADAPTER_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$ADAPTER_DIR/../_lib/resolve.sh"
 source "$ADAPTER_DIR/../_lib/hooks.sh"
+source "$ADAPTER_DIR/../_lib/mcp.sh"
 
 # Conduct paths embedded in AGENTS.md use the stable global-clone reference
 # (e.g. ~/.claude/agentic-devkit) so the committed file is portable across
@@ -38,6 +39,7 @@ echo ""
 
 plugin_index=$(_build_plugin_index)
 resolved_names=$(resolve_plugins)
+sync_project_mcp_servers "$plugin_index" "$resolved_names"
 resolved_non_core=$(printf '%s\n' "$resolved_names" | grep -v '^devkit-core$' || true)
 
 ensure_gitignore_entry ".codex/"

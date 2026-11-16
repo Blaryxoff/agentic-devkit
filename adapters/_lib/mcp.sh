@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # devkit-toolkit: shared MCP server merge library
-# Sourced by adapters that emit MCP config (Claude .mcp.json, Cursor .cursor/mcp.json).
+# Sourced by adapters that emit project MCP configuration.
 #
-# Requires: jq, resolve.sh already sourced (for _build_plugin_index)
+# Requires: jq, Python 3.11+, resolve.sh already sourced
 #
 # Exports:
 #   merge_plugin_mcp_servers — merge resolved plugins' mcpServers into one JSON object
 #   apply_chrome_devtools_profile — inject per-project Chrome isolation flags
+#   sync_project_mcp_servers — synchronize project MCP catalogues for every client
 
 merge_plugin_mcp_servers() {
   local plugin_index="$1"
@@ -23,25 +24,24 @@ merge_plugin_mcp_servers() {
     mcp_path="$pdir/${mcp_rel#./}"
     [ -f "$mcp_path" ] || continue
     servers=$(jq '.mcpServers // {}' "$mcp_path")
+    if [ ! -d "$PROJECT_ROOT/vendor/laravel/boost" ]; then
+      servers=$(echo "$servers" | jq 'del(.["laravel-boost"])')
+    fi
     plugin_mcp=$(echo "$plugin_mcp" | jq --argjson s "$servers" '. * $s')
   done <<< "$resolved_names"
 
   echo "$plugin_mcp"
 }
 
-# Force chrome-devtools onto an isolated, ephemeral Chrome profile so concurrent
-# sessions (multiple terminals, worktrees, sibling repos) never contend on a
-# profile lock: --isolated gives each server instance a throwaway user-data-dir
-# that Chrome auto-cleans on exit. --headless keeps browser QA from opening a
-# foreground window. --pageIdRouting routes tool calls by page ID,
-# which upstream recommends for concurrent agent sessions.
-# $2 is accepted for call-site compatibility but intentionally unused now that the
-# profile is ephemeral rather than a fixed per-project directory.
 apply_chrome_devtools_profile() {
   local servers_json="$1"
 
   echo "$servers_json" | jq '
-    if .["chrome-devtools"] then
+    if .["chrome-devtools"].command == "npx"
+      and ((.["chrome-devtools"].args // []) | index("chrome-devtools-mcp@latest"))
+      and ((.["chrome-devtools"].args // []) | all(. == "-y" or . == "chrome-devtools-mcp@latest"
+        or . == "--headless" or . == "--pageIdRouting" or . == "--experimentalPageIdRouting" or . == "--isolated"))
+    then
       .["chrome-devtools"].args = [
         "-y",
         "chrome-devtools-mcp@latest",
@@ -53,4 +53,14 @@ apply_chrome_devtools_profile() {
       .
     end
   '
+}
+
+sync_project_mcp_servers() {
+  local plugin_mcp
+  plugin_mcp=$(merge_plugin_mcp_servers "$1" "$2")
+  plugin_mcp=$(apply_chrome_devtools_profile "$plugin_mcp")
+  python3 "$(dirname "${BASH_SOURCE[0]}")/mcp.py" "$PROJECT_ROOT" <<< "$plugin_mcp"
+  ensure_gitignore_entry ".cursor/chrome-profile/"
+  ensure_gitignore_entry ".codex/"
+  ensure_gitignore_entry ".grok/"
 }
