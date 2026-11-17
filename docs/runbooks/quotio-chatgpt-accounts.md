@@ -17,6 +17,30 @@ Last checked on **2026-10-12**. The second proxy, panel, TLS certificate, client
 
 The Nginx files are `/etc/nginx/sites-enabled/quotio.jzazik.com` and `/etc/nginx/sites-enabled/quotio.place-fit.com`. The second domain reaches only the second proxy. The older `https://quotio.jzazik.com/secondary/v1` path remains an alias for its client API. The second config has its own client key and also accepts the existing client key so the server switch can route current clients to it. The OAuth directories remain separate. Beget has an explicit A record for `quotio.place-fit.com` pointing to `95.217.0.87`; Certbot renews its certificate using `/var/www/letsencrypt` and reloads Nginx after renewal.
 
+## Codex usage errors and stale cooldown
+
+Keep this rule in **both** instances' configs. A Codex `429` containing `usage_limit_reached` must stop that request without placing the credential in proxy cooldown:
+
+```yaml
+oauth:
+  request-scoped-errors:
+    codex:
+      - status: 429
+        match:
+          - usage_limit_reached
+        action: stop
+```
+
+Without the rule, Placefit returned `429 model_cooldown` with an approximately 80-minute reset while its panel showed both quota windows at 100% remaining. Restarting cleared the in-memory cooldown and restored requests, but did not install the missing rule. The original Jzazik config already had the rule; Placefit did not. This rule leaves genuine upstream usage errors visible and does not increase quota or disable cooldown for other errors.
+
+Apply the rule through `PATCH /v8/management/config` on `127.0.0.1:8318`, authenticated with the root-only secondary management key. Send only the `oauth.request-scoped-errors.codex` mapping above, preserving any existing rules if present. Back up `/etc/cliproxyapi/secondary.yaml` with mode `0600` first. Successful v8 writes migrate legacy configuration to `config-version: 8`; client keys move to `access.api-keys`, the listener to `server`, and the auth directory and aliases to `oauth`. See the [v8 management API](https://github.com/router-for-me/cliproxyapi/blob/main/docs/management-api-v8.md). Verify these values are unchanged and read the rule back through the management API after restarting only `cliproxyapi-secondary.service`.
+
+Verify an authenticated streaming `POST https://quotio.place-fit.com/v1/responses` with `model=gpt-6.1-sol` and a short prompt. Expect HTTP `200`, the requested text, and a `response.completed` event; `/v1/models` alone does not prove inference works. A CLI already waiting on the old cooldown can retain its retry delay: interrupt that retry with `Esc` and resubmit.
+
+Applied and checked on **2026-11-17 at 16:59 MSK (13:59 UTC)**, CLIProxyAPI **8.0.27**, commit **bf934162**. The persisted rule matched Jzazik before and after restart; keys, OAuth directory, listener, and model aliases were preserved. The public streaming probe returned HTTP `200`, text `OK`, and `response.completed`. Recurrence under a fresh upstream `429` was not forced during verification. The pre-change server backup is `/etc/cliproxyapi/secondary.yaml.before-codex-quota-fix-20261117T135921Z`.
+
+To roll back this configuration change, restore that backup with mode `0600` and restart only `cliproxyapi-secondary.service`. This also removes the protection against the stale cooldown.
+
 ## Open the second management panel
 
 Visit `https://quotio.place-fit.com/management.html`. The page uses the same HTTP Basic Auth credentials as the original panel, but its CLIProxyAPI management key is separate. The key is stored on Hetzner in `/etc/cliproxyapi/secondary-management-key` (root-only). If prompted for the management key, retrieve it privately with `ssh root@quotio.jzazik.com 'cat /etc/cliproxyapi/secondary-management-key'` and enter it in the second panel. Do not paste it into chat or a repository. The panel and management API are active for the new account.
@@ -69,7 +93,7 @@ The new account is already authorized. Repeat these steps only when its OAuth cr
    config = yaml.safe_load(open('/etc/cliproxyapi/secondary.yaml'))
    request = urllib.request.Request(
        'https://quotio.place-fit.com/v1/models',
-       headers={'Authorization': 'Bearer ' + config['api-keys'][0]},
+       headers={'Authorization': 'Bearer ' + config.get('access', config)['api-keys'][0]},
    )
    with urllib.request.urlopen(request, timeout=10) as response:
        print(response.status, len(json.load(response).get('data', [])), 'models')
@@ -80,7 +104,7 @@ The new account is already authorized. Repeat these steps only when its OAuth cr
 
 ## Connect future boxes
 
-Point each new box's Codex client at `https://quotio.place-fit.com/v1` and give it the **first** `api-keys` entry from `/etc/cliproxyapi/secondary.yaml` as `OPENAI_API_KEY`. Transfer the key through a private channel or install it directly on the box; do not put it in a repository or a command argument. Do not copy either server's OAuth JSON file to a client.
+Point each new box's Codex client at `https://quotio.place-fit.com/v1` and give it the **first** `access.api-keys` entry from `/etc/cliproxyapi/secondary.yaml` as `OPENAI_API_KEY` (`api-keys` in the legacy layout). Transfer the key through a private channel or install it directly on the box; do not put it in a repository or a command argument. Do not copy either server's OAuth JSON file to a client.
 
 Use the same provider shape as the existing Firebat client, changing only the base URL:
 
