@@ -11,6 +11,8 @@ The global adapter supplies the missing runtime pieces:
   `GROK_HOME` defaults to `~/.grok`. Other guidance, native hooks, and `config.toml` are preserved.
 - `hook.py` translates Grok `read_file`, `search_replace`, and `run_terminal_command` payloads into the existing devkit
   gate input. It reuses coder, comment, peer-stdin and canonical dev-server checks from the generating clone.
+- The native `UserPromptSubmit` hook sends workflow feedback to Jev without requiring imported Claude hooks.
+  Jev records the Grok session's canonical `updates.jsonl` address when the event omits its transcript path.
 - A code edit requires reading the coder skill in the same Grok session. The native adapter returns an explicit Grok
   denial when a check fails or cannot run. Shell access is still shell access; these hooks are not a sandbox.
 

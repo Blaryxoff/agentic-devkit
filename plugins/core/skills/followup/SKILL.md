@@ -11,14 +11,16 @@ Complete the requested follow-up on each named tracker task and verify its saved
 For estimation requests, gather the task context and publish the resulting estimate using **Estimation follow-up** below.
 For implementation reports, resolve remaining implementation gaps and post verified work answering the QA remarks;
 when none exist, use the task description as the report source.
+For user-visible fixes, complete step 5's local browser/runtime retest before calling the work locally verified or
+pushing it. Track that check and its evidence in the persistent finding checklist so it survives context pruning.
 Finish the selected path with its required tracker writes and read-back: estimates publish through **Estimation follow-up**;
 implementation and bugfix reports publish only after step 6's deployment and remote-check gate or an explicit waiver.
 A combined request remains open until its requested tracker updates are verified. Honor draft-only restrictions and
 suppress equivalent updates already saved. If the gate blocks publication, keep the report pending and explain the
 blocker in chat; never substitute a local-progress, blocker, or evidence-gap comment to bypass the gate.
 Keep tracker state and environment deployment separate from implementation and local verification.
-Prefer tracker MCP tools, authenticated APIs, and repository/runtime CLIs over browser interaction. Use a browser for
-visual behavior and flows whose evidence cannot be obtained through those interfaces. Follow project-specific tracker
+For tracker access and data preparation, prefer MCP tools, authenticated APIs, and repository/runtime CLIs. Use a browser
+for visual behavior and flows that require UI evidence, including step 5's retest. Follow project-specific tracker
 fallback instructions when a connector is unavailable; keep credentials out of output and skill files.
 
 ## Estimation follow-up
@@ -113,13 +115,14 @@ For an explanatory question, answer the question first; do not infer a requested
    Before drafting or posting any implementation or bugfix report,
    identify the remote environment where the reporters can check the result and verify that its deployment containing every fix claimed
    in the reply has succeeded. Use the requested environment: a staging request needs verified staging deployment and
-   checks, not an additional production release. Match the deployed revision to the fixes through deployment records.
+   checks, not an additional production release. Match the deployed revision to the fixes through deployment records
+   and the running process/container using the project's documented access path, including SSH when required.
    Treat core versions, active themes, artifact readiness, and health/readiness endpoints as rollout evidence only;
    they do not establish that the feature is available or works for its users.
    By default, map every proposed completion claim to a task-specific scenario on that deployed target: record the tenant or
    application variant, actual role, prerequisites, action, expected outcome, and observed result. Check required
-   feature settings and permissions, then exercise the affected UI flow or API/runtime behavior and inspect its
-   functional result; an HTTP 200 or a page loading does not establish that result. For authenticated features,
+   module availability, feature settings and permissions, then exercise the affected UI flow or API/runtime behavior
+   and inspect its functional result; an HTTP 200 or a page loading does not establish that result. For authenticated features,
    sign in through the project's authorized test login path; guest probes do not cover authenticated behavior.
    For a feature rollout, cover its main user journey across the applicable deployed components, including the
    backend and active frontend/theme. Claim only the scope supported by these checks; a narrow smoke check cannot

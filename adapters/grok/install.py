@@ -22,7 +22,8 @@ def write_file(path, content):
 
 def is_managed(command):
     try:
-        return any(value.endswith("/adapters/grok/hook.py") for value in shlex.split(command))
+        return any(value.endswith(("/adapters/grok/hook.py", "/plugins/core/hooks/jev-feedback.py"))
+                   for value in shlex.split(command))
     except ValueError:
         return False
 
@@ -53,6 +54,10 @@ def install(root, grok_home, server_command):
     hooks.setdefault("PreToolUse", []).append({"hooks": [{
         "type": "command", "command": " ".join(shlex.quote(value) for value in command), "timeout": 60,
     }]})
+    feedback = ["python3", str(root / "plugins/core/hooks/jev-feedback.py"), "prompt"]
+    hooks.setdefault("UserPromptSubmit", []).append({"hooks": [{
+        "type": "command", "command": " ".join(shlex.quote(value) for value in feedback), "timeout": 15,
+    }]})
 
     agents_file = grok_home / "AGENTS.md"
     current = agents_file.read_text() if agents_file.exists() else ""
@@ -72,7 +77,14 @@ For work owned by a devkit workflow, follow devkit's routing and authorization g
 capabilities devkit lacks; they must not silently start a second implementation/review pipeline or change AI providers.
 
 Project stack skills, agents, hooks, and MCP servers use Grok's Claude compatibility. Preserve normal project
-folder trust. Do not replace the configured Herd/DBngin runtime; resolve it with devkit-projects before serving.
+folder trust. Do not replace the configured Herd/DBngin runtime.
+
+Before a worktree, a dev server, or a local page, use the devkit-projects MCP. Call `projects_status`
+first. Start a stopped project or a discovered worktree with `project_start` and use the link it returns.
+Use `project_stop`, `project_logs`, `worktree_flags`, and `worktree_remove` for those checkouts. Do not
+start a package, PHP, or Artisan server yourself. The MCP does not create a checkout: run `git worktree add`
+only after `projects_status` shows no worktree for that branch, then start the discovered id. When those
+MCP tools are absent, use `devkit-projects status` and `devkit-projects start` instead of inventing a port.
 Keep one writer per checkout and follow devkit-pair's selected-peer and delivery rules for paired work.
 Use the agterm skill to resolve live session and pane identities before terminal actions.
 
@@ -86,7 +98,7 @@ actual worktree. Before finishing implementation, run the focused verification r
         updated = current.rstrip() + ("\n\n" if current.strip() else "") + section + "\n"
     write_file(hooks_file, json.dumps(data, indent=2) + "\n")
     write_file(agents_file, updated)
-    print("    Grok: native payload gates and managed activation guidance installed in " + str(grok_home))
+    print("    Grok: native payload gates, prompt feedback and activation guidance installed in " + str(grok_home))
 
 
 if __name__ == "__main__":

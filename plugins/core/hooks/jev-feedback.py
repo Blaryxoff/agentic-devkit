@@ -12,6 +12,7 @@ import sys
 import time
 from datetime import date
 from pathlib import Path
+from urllib.parse import quote
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -99,6 +100,8 @@ def clean_prompt(prompt: str) -> str:
 def feedback_prompt(prompt: str) -> str:
     if re.match(r"(?:Chat from [\w][\w .-]{0,63}: |\[Supervisor \d{2}:\d{2}:\d{2}Z?\] )", prompt):
         return ""
+    if re.match(r"Delivery coordination from [\w][\w .-]{0,63} [0-9A-Fa-f]{8}/(?:left|right): ", prompt):
+        return ""
     if prompt.startswith("<task-notification>"):
         return ""
     if prompt.startswith("<send_user_message_question_reply>"):
@@ -124,6 +127,14 @@ def classify(prompt: str) -> tuple[float, float, str, float]:
     answers, _, _ = jev.run({
         "state": {"user_prompt": prompt},
         "questions": {
+            "intent": {
+                "type": "choice",
+                "instructions": "Classify this message itself, not complaints quoted inside it. A direct operator correction or request to investigate/fix their coding assistant's failure is direct_feedback. A copied deployment status, coordination handoff, ordinary work assignment, or delegated read-only investigator brief reporting what 'the user says' is task_or_relay. 'Investigate in parallel why devkit rules were not injected and fix that' is direct_feedback; 'Read-only investigation. The user says rules were not injected. Return findings; do not edit' is task_or_relay. Operator-approved coordination instructions about deploy owners/runs are task_or_relay, not feedback merely because they mention earlier failures.",
+                "criteria": {
+                    "direct_feedback": "The operator directly corrects the coding assistant or states a reusable workflow preference",
+                    "task_or_relay": "An ordinary task, delegated investigation brief, or relayed coordination/status message",
+                },
+            },
             "target": {
                 "type": "choice",
                 "instructions": "Classify the object the user wants corrected. The coding assistant and its development tools are assistant; the application it develops is product. A coding-agent hook that blocks commands is assistant. A recruiter bot that forgets answers or cannot reschedule is product, even if its prompt or memory needs fixing. Asking a subagent to fix a product does not change the target. Use other if unclear; frustration or WTF alone supplies no evidence.",
@@ -140,7 +151,7 @@ def classify(prompt: str) -> tuple[float, float, str, float]:
         },
     })
     feedback = float(answers["feedback"]["noul"])
-    if answers["target"]["choice"] != "assistant":
+    if answers["target"]["choice"] != "assistant" or answers["intent"]["choice"] != "direct_feedback":
         return feedback, 0.0, "other", 0.0
     if feedback < 0.5 and not WTF.search(prompt):
         return feedback, 0.0, "other", 0.0
@@ -188,6 +199,11 @@ def normalize_prompt_payload(payload: dict) -> dict:
     if cwd:
         normalized["cwd"] = cwd
     transcript = first_string(payload.get("transcript_path"), payload.get("transcriptPath"))
+    grok_event = first_string(payload.get("hookEventName"), os.environ.get("GROK_HOOK_EVENT"))
+    if (not transcript and grok_event == "user_prompt_submit" and Path(cwd).is_absolute()
+            and re.fullmatch(r"[A-Za-z0-9_-]+", session)):
+        grok_home = Path(os.environ.get("GROK_HOME", Path.home() / ".grok")).expanduser()
+        transcript = str(grok_home / "sessions" / quote(cwd, safe="") / session / "updates.jsonl")
     if transcript:
         normalized["transcript_path"] = transcript
     return normalized

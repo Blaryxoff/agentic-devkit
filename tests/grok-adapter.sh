@@ -25,14 +25,18 @@ run_install > "$TMP_DIR/install.out" 2>&1 || fail "Grok install failed"
 hooks="$HOME_DIR/.grok/hooks/devkit-toolkit.json"
 [ -f "$hooks" ] || fail "Grok native hook was not installed"
 jq -e '.hooks.PreToolUse | length == 1' "$hooks" >/dev/null || fail "native gate registration missing"
+jq -e '.hooks.UserPromptSubmit | length == 1' "$hooks" >/dev/null || fail "native feedback registration missing"
+feedback_command=$(jq -r '.hooks.UserPromptSubmit[0].hooks[0].command' "$hooks")
+[[ "$feedback_command" == *"$CLONE/plugins/core/hooks/jev-feedback.py"* ]] || fail "feedback lost relocated clone path"
 command=$(jq -r '.hooks.PreToolUse[0].hooks[0].command' "$hooks")
 [[ "$command" == *"$CLONE/adapters/grok/hook.py"* ]] || fail "hook lost relocated clone path"
 [[ "$command" == *"--require-server-config"* ]] || fail "managed runtime requirement was not pinned"
 grep -Fq 'User Grok guidance.' "$HOME_DIR/.grok/AGENTS.md" || fail "user guidance was overwritten"
 grep -Fq 'read its SKILL.md' "$HOME_DIR/.grok/AGENTS.md" || fail "Grok activation guidance missing"
+grep -Fq 'projects_status' "$HOME_DIR/.grok/AGENTS.md" || fail "Grok did not inject the devkit-projects MCP rule"
 cmp "$TMP_DIR/config.before" "$HOME_DIR/.grok/config.toml" || fail "user TOML was changed"
 cp "$HOME_DIR/.grok/AGENTS.md" "$TMP_DIR/agents.before"
-jq '.hooks.PreToolUse += [{hooks:[{type:"command",command:"user-hook"}]}]' "$hooks" > "$TMP_DIR/hooks.json"
+jq '.hooks.PreToolUse += [{hooks:[{type:"command",command:"user-hook"}]}] | .hooks.UserPromptSubmit += [{hooks:[{type:"command",command:"user-prompt-hook"}]}]' "$hooks" > "$TMP_DIR/hooks.json"
 mv "$TMP_DIR/hooks.json" "$hooks"
 run_install > "$TMP_DIR/install.out" 2>&1 || fail "second Grok install failed"
 cmp "$TMP_DIR/agents.before" "$HOME_DIR/.grok/AGENTS.md" || fail "guidance is not idempotent"
@@ -40,6 +44,10 @@ jq -e '[.hooks.PreToolUse[].hooks[].command | select(. == "user-hook")] | length
   || fail "user native hook was lost"
 jq -e '[.hooks.PreToolUse[].hooks[].command | select(contains("adapters/grok/hook.py"))] | length == 1' "$hooks" >/dev/null \
   || fail "managed gate was duplicated"
+jq -e '[.hooks.UserPromptSubmit[].hooks[].command | select(contains("jev-feedback.py"))] | length == 1' "$hooks" >/dev/null \
+  || fail "managed feedback was duplicated"
+jq -e '[.hooks.UserPromptSubmit[].hooks[].command | select(. == "user-prompt-hook")] | length == 1' "$hooks" >/dev/null \
+  || fail "user prompt hook was lost"
 [ ! -e "$HOME_DIR/.grok/trusted_folders.toml" ] || fail "install silently trusted projects"
 printf '%s\n' 'not JSON' > "$CLONE/projects.json"
 run_install > "$TMP_DIR/install.out" 2>&1 || fail "Grok reinstall failed with temporarily unreadable runtime config"

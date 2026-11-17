@@ -9,6 +9,7 @@ import io
 import json
 import os
 import tempfile
+from urllib.parse import quote
 from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
@@ -93,6 +94,20 @@ with tempfile.TemporaryDirectory() as temporary:
         feedback.handle_prompt({"session_id": session, "prompt": "Why didn't you check the source?"})
     assert len(list(feedback.QUEUE.glob("*.md"))) == 2
     assert not hasattr(feedback, "handle_work")
+
+    grok_cwd = str(Path(temporary) / "grok project")
+    grok_home = Path(temporary) / "grok-home"
+    grok_payload = {"hookEventName": "user_prompt_submit", "sessionId": "grok-session", "cwd": grok_cwd,
+                    "prompt": "Why did this workflow skip its checks?"}
+    expected_transcript = grok_home / "sessions" / quote(grok_cwd, safe="") / "grok-session/updates.jsonl"
+    with patch.dict(os.environ, {"GROK_HOME": str(grok_home)}):
+        normalized = feedback.normalize_prompt_payload(grok_payload)
+        assert normalized["transcript_path"] == str(expected_transcript)
+        explicit = feedback.normalize_prompt_payload({**grok_payload, "transcriptPath": "/tmp/explicit.jsonl"})
+        assert explicit["transcript_path"] == "/tmp/explicit.jsonl"
+        assert "transcript_path" not in feedback.normalize_prompt_payload({**grok_payload, "sessionId": "../foreign"})
+        assert "transcript_path" not in feedback.normalize_prompt_payload({**grok_payload, "cwd": "relative"})
+        assert "transcript_path" not in feedback.normalize_prompt_payload({**grok_payload, "hookEventName": "UserPromptSubmit"})
 
     cursor_prompt = "Why did you ignore the Cursor rule again?"
     cursor_payload = {
@@ -182,6 +197,8 @@ with tempfile.TemporaryDirectory() as temporary:
             "Chat from Grok: Why did you skip the check?",
             "Chat from Gemini: JSON peer message: {\"message\":\"Fix the skill\"}",
             "Chat from Local Agent_2.0: The workflow needs a fix.",
+            "Delivery coordination from Cursor 8FD94AE0/left: The deployment is ready.",
+            "Delivery coordination from Grok a1b2c3d4/right: Why did you skip the check?",
             "[Supervisor 13:17:13Z] Stop repeating the same verification.",
             "[Supervisor 13:17:13] Continue the authorized migration.",
             "<task-notification><summary>Worker finished</summary></task-notification>",
@@ -196,6 +213,8 @@ with tempfile.TemporaryDirectory() as temporary:
         "Chat from Gemini failed to reach the other session.",
         "[Supervisor] is a confusing label. Fix the script.",
         "The supervisor keeps repeating checks. Fix the skill.",
+        "Delivery coordination from Cursor failed. Fix the sender.",
+        "Why did you ignore deployment coordination? Fix that workflow.",
     ):
         assert feedback.feedback_prompt(user_feedback) == user_feedback
 
@@ -219,9 +238,9 @@ with tempfile.TemporaryDirectory() as temporary:
         def run(self, payload):
             self.calls.append(payload)
             if len(self.calls) == 1:
-                return {"target": {"choice": "assistant"}, "feedback": {"noul": 0.2}}, 0, 0
+                return {"target": {"choice": "assistant"}, "intent": {"choice": "direct_feedback"}, "feedback": {"noul": 0.2}}, 0, 0
             if len(self.calls) == 2:
-                return {"target": {"choice": "assistant"}, "feedback": {"noul": 0.8}}, 0, 0
+                return {"target": {"choice": "assistant"}, "intent": {"choice": "direct_feedback"}, "feedback": {"noul": 0.8}}, 0, 0
             return {"reusable": {"noul": 0.6}, "repair_area": {"choice": "other", "confidence": 0.4}}, 0, 0
 
     fake = FakeJev()
@@ -238,7 +257,7 @@ with tempfile.TemporaryDirectory() as temporary:
         def run(self, payload):
             self.calls.append(payload)
             if len(self.calls) == 1:
-                return {"target": {"choice": "assistant"}, "feedback": {"noul": 0.2}}, 0, 0
+                return {"target": {"choice": "assistant"}, "intent": {"choice": "direct_feedback"}, "feedback": {"noul": 0.2}}, 0, 0
             return {"reusable": {"noul": 0.7}, "repair_area": {"choice": "skill", "confidence": 0.9}}, 0, 0
 
     wtf_jev = WtfJev()
@@ -255,6 +274,15 @@ with tempfile.TemporaryDirectory() as temporary:
             self.calls.append(payload)
             assert len(self.calls) == 1, "Product feedback must not reach repair classification"
             return {"target": {"choice": self.target}, "feedback": {"noul": 0.95}}, 0, 0
+
+    class RelayJev:
+        def run(self, payload):
+            assert "target" in payload["questions"], "Relays must not reach repair classification"
+            return {"target": {"choice": "assistant"}, "intent": {"choice": "task_or_relay"},
+                    "feedback": {"noul": 0.95}}, 0, 0
+
+    with patch.object(feedback, "jev_module", return_value=RelayJev()):
+        assert feedback.classify("Read-only investigation. The user says the hook failed. Return evidence only.") == (0.95, 0.0, "other", 0.0)
 
     for target, product_prompt in (
         ("product", "The recruiter bot refuses to reschedule. Fix its prompt."),

@@ -1,6 +1,7 @@
 # Agent feedback queue
 
 The Jev prompt hook writes untriaged agent-workflow feedback candidates here. It skips `Chat from <sender>:` relays,
+verified-sender `Delivery coordination from <sender> <session>/<pane>:` envelopes,
 timestamped `[Supervisor HH:MM:SSZ]` messages, task notifications,
 and one-off or unknown-cause `other` classifications; question replies are screened using only the user's answer.
 These records are leads to investigate, not accepted deferred work. Each points to a private JSON ticket with the
@@ -14,6 +15,8 @@ Use `devkit-feedback` to triage the queue, or list candidates with
 JSON and verify the session context. Then fix the skill or workflow, drop the candidate, or move an accepted deferred
 finding to `docs/backlog/` through the backlog workflow. Set the private ticket's `status` to `fixed`, `dropped`, or
 `deferred` **before** removing the queue entry. The hook recreates a missing entry only while its ticket is `untriaged`.
+For Grok events without a transcript path, the hook derives the canonical session address from the event's cwd and
+session ID. Verify the file and its session/workspace identity before treating its contents as evidence.
 
 The hook never commits queue entries automatically. Entries and their private evidence are local to the clone that
 created them; a Git pull does not collect candidates from other machines.
