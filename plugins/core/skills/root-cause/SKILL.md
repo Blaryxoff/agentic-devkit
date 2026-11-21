@@ -14,7 +14,9 @@ description: >-
 
 1. Establish the expected and observed behaviour, reproduction, affected environment and recent changes. Check the
    actual code, configuration and runtime state; treat a defect, misleading documentation and a mistaken expectation
-   as possibilities until evidence distinguishes them.
+   as possibilities until evidence distinguishes them. When the affected service exposes an authenticated API or CLI,
+   use that path before opening a browser. Use browser interaction for UI-specific evidence or when the authorized API
+   and CLI cannot establish the reported behaviour.
 2. Separate observations from hypotheses. Trace the failing path and test competing explanations with the smallest
    useful log, query, source slice or reproducible probe. Check version history when it helps locate the regression.
 3. Follow the causal chain as far as the evidence supports, including contributing factors and state ownership.
