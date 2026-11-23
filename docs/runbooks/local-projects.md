@@ -68,7 +68,9 @@ Worktree templates inherit the parent project's `profile_env_file`, `profiles`, 
 `profile_hooks`. When a checkout relies on ignored local files, the template can
 prepare them on first start. `env_source` copies a source environment file from
 the registered repository into the worktree, and `shared_paths` creates symlinks
-for reusable dependency directories such as `vendor` or `node_modules`.
+for reusable dependency directories such as `node_modules`. Composer `vendor`
+should be installed per checkout because its generated autoload metadata contains
+absolute source paths.
 `setup` runs configured idempotent argument arrays in the worktree before its
 services start, which is useful for dependency installation that must rebuild
 checkout-specific metadata.
@@ -76,7 +78,7 @@ checkout-specific metadata.
 ```json
 "worktrees": {
   "env_source": ".env",
-  "shared_paths": ["vendor", "node_modules"],
+  "shared_paths": ["node_modules"],
   "setup": [["composer", "install", "--no-interaction", "--prefer-dist"]],
   "services": []
 }
