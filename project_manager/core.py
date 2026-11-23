@@ -324,6 +324,13 @@ def _prepare_worktree(project):
     settings = project["_worktree_template"]
     source_root = Path(project["_worktree_source_root"])
     worktree_root = Path(project["root"])
+    composer_project = (source_root / "composer.json").is_file() or (worktree_root / "composer.json").is_file()
+
+    if composer_project:
+        vendor = worktree_root / "vendor"
+        source_vendor = (source_root / "vendor").resolve()
+        if vendor.is_symlink() and source_vendor.exists() and vendor.resolve() == source_vendor:
+            vendor.unlink()
 
     env_source = settings.get("env_source")
     if env_source:
@@ -338,6 +345,8 @@ def _prepare_worktree(project):
             shutil.copy2(source, target)
 
     for relative in settings.get("shared_paths", []):
+        if composer_project and Path(relative) == Path("vendor"):
+            continue
         source = (source_root / relative).resolve()
         target = worktree_root / relative
         if not source.is_relative_to(source_root):
@@ -695,10 +704,10 @@ def _spawn(project, service):
 
 
 def start(project, timeout=60):
-    if project.get("parent_id"):
-        _assign_worktree_slot(project)
-        _prepare_worktree(project)
     try:
+        if project.get("parent_id"):
+            _assign_worktree_slot(project)
+            _prepare_worktree(project)
         with _locked(project):
             for service in project["services"]:
                 if not _owned(project, service):

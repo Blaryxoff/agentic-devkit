@@ -105,6 +105,10 @@ profile selection, and worktree actions. The CLI offers the same serving flow wh
 [Local projects](docs/runbooks/local-projects.md) for configuration, MCP registration, local-domain setup, and
 process/worktree safeguards.
 
+Use the returned project `links` as browser origins. Loopback addresses in service checks are manager health probes;
+they are not browser URLs. For Herd worktrees, configure links and application origins with the project's `.test`
+host and assigned port so browser cookies and CORS stay on the managed origin.
+
 ## Resolver CLI
 
 - List resolved plugin names.

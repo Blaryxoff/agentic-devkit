@@ -12,6 +12,7 @@ DENIAL = (
     "Canonical dev-server policy: use projects_status/project_start or devkit-projects "
     "status/start for the registered checkout and runtime profile. Repair a missing or "
     "unavailable shared registry first; do not fall back to an ad hoc server or port. "
+    "Use the returned project links as browser origins; loopback service checks are internal. "
     "Register any approved isolated QA runtime with an owner and teardown plan."
 )
 SHELL_TOOLS = {"Bash", "Shell", "exec_command", "shell_command", "run_terminal_cmd", "RunCommand", "Terminal"}

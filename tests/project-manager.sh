@@ -233,10 +233,12 @@ class ProjectManagerTest(unittest.TestCase):
         identity = ["-c", "user.name=Test", "-c", "user.email=test@example.test"]
         subprocess.run(["git", "-C", str(repo), *identity, "commit", "-qm", "initial", "--allow-empty"], check=True)
         (repo / ".env").write_text("APP_NAME=Platforma\nTENANCY_ENABLED=true\n")
+        (repo / "composer.json").write_text("{}\n")
         (repo / "vendor").mkdir()
         (repo / "vendor" / "autoload.php").write_text("<?php\n")
         checkout = self.root / "profile-worktree"
         subprocess.run(["git", "-C", str(repo), "worktree", "add", "--quiet", "-b", "profile", str(checkout)], check=True)
+        (checkout / "vendor").symlink_to(repo / "vendor", target_is_directory=True)
         port = self.free_port()
         path = self.root / "profile-worktrees.json"
         path.write_text(json.dumps({"version": 1, "projects": [{
@@ -245,7 +247,7 @@ class ProjectManagerTest(unittest.TestCase):
             "profile_env_file": ".env",
             "profiles": {"Popovichfit": {"set": {"APP_NAME": "Popovichfit", "TENANCY_ENABLED": "false"}}},
             "worktrees": {"port_base": port, "slot_size": 1, "slots": 1, "env_source": ".env", "shared_paths": ["vendor"],
-                           "setup": [[sys.executable, "-c", "from pathlib import Path; Path('setup.marker').write_text('ok')"]],
+                           "setup": [[sys.executable, "-c", "from pathlib import Path; Path('vendor').mkdir(exist_ok=True); Path('vendor/checkout.marker').write_text('ok'); Path('setup.marker').write_text('ok')"]],
                            "services": [{"id": "web", "argv": [sys.executable, "-m", "http.server", "{port0}", "--bind", "127.0.0.1"],
                                          "ports": ["{port0}"], "checks": [{"type": "tcp", "host": "127.0.0.1", "port": "{port0}"}]}]}
         }]}))
@@ -257,11 +259,39 @@ class ProjectManagerTest(unittest.TestCase):
             started = core.start(child, timeout=5)
             self.assertEqual(started["state"], "running")
             self.assertEqual((checkout / ".env").read_text(), (repo / ".env").read_text())
-            self.assertTrue((checkout / "vendor").is_symlink())
+            self.assertFalse((checkout / "vendor").is_symlink())
+            self.assertTrue((checkout / "vendor" / "checkout.marker").is_file())
+            self.assertFalse((repo / "vendor" / "checkout.marker").exists())
             self.assertEqual((checkout / "setup.marker").read_text(), "ok")
             self.assertEqual(core.select_profile(child, "Popovichfit")["profile"], "Popovichfit")
         finally:
             core.stop(child)
+
+    def test_failed_worktree_setup_releases_pending_slot(self):
+        repo = self.root / "setup-repo"
+        repo.mkdir()
+        subprocess.run(["git", "init", "-q", str(repo)], check=True)
+        identity = ["-c", "user.name=Test", "-c", "user.email=test@example.test"]
+        subprocess.run(["git", "-C", str(repo), *identity, "commit", "-qm", "initial", "--allow-empty"], check=True)
+        (repo / "composer.json").write_text("{}\n")
+        checkout = self.root / "setup-worktree"
+        subprocess.run(["git", "-C", str(repo), "worktree", "add", "--quiet", "-b", "setup", str(checkout)], check=True)
+        port = self.free_port()
+        path = self.root / "setup-worktrees.json"
+        path.write_text(json.dumps({"version": 1, "projects": [{
+            "id": "setup-parent", "root": str(repo),
+            "services": [{"id": "base", "argv": [sys.executable, "-m", "http.server", str(self.port)], "ports": [self.port]}],
+            "worktrees": {"port_base": port, "slot_size": 1, "slots": 1,
+                           "setup": [[sys.executable, "-c", "raise SystemExit(1)"]],
+                           "services": [{"id": "web", "argv": [sys.executable, "-m", "http.server", "{port0}"],
+                                         "ports": ["{port0}"]}]}
+        }]}))
+        projects = core.load_config(path)
+        child = next(project for project in projects if project.get("parent_id") == "setup-parent")
+        with self.assertRaisesRegex(core.ProjectError, "Worktree setup failed"):
+            core.start(child, timeout=1)
+        entry = core._worktree_registry()[child["_worktree_registry_key"]][child["root"]]
+        self.assertNotIn("pending_until", entry)
 
     def test_worktrees_from_two_repositories_share_one_project_card(self):
         roots = []

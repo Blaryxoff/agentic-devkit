@@ -41,13 +41,15 @@ To manage Git worktrees, add a `worktrees` template to the parent project in the
     "ports": ["{port0}"],
     "checks": [{"type": "tcp", "host": "127.0.0.1", "port": "{port0}"}]
   }],
-  "links": {"Фронт": "http://127.0.0.1:{port0}"}
+  "links": {"Фронт": "http://my-app.test:{port0}"}
 }
 ```
 
 For multiple repositories, wrap templates in a list. A frontend source can use `id: web`, `name: Фронт`, and `root: ~/www/vetsy`; an API source can use `id: api`, `name: API`, and `root: ~/www/api.vetsy`. Give each entry its own `port_base`, `slot_size`, `services`, and `links` as in the template above.
 
 `port_base` begins a project-specific range. A slot has `slot_size` ports, addressed as `{port0}`, `{port1}`, and so on in commands, environment values, checks, and links. By default the range has room for up to ten ports: ten one-port slots or five two-port slots. All discovered worktrees appear in the list even when there are more worktrees than slots; stopped worktrees give up their slot when another needs it. Slots are assigned on first start, kept across restarts, and recycled from stopped worktrees when needed. Configure distinct ranges for projects and keep them clear of base project ports. Worktrees run in their own checkout and use that checkout's dependencies and `.env`; prepare those files before starting. Use commands that accept a port override rather than a script that hardcodes the base project's port.
+
+Use `links` for browser-facing origins. Keep loopback hosts in service bind arguments and readiness checks. On Herd, point worktree links and application origins at the project's `.test` host with the assigned port so cookies and CORS use the same host the browser opens.
 
 The row icons mark modified tracked files (✎), untracked files (＋), and a HEAD commit not found in any locally known remote branch (↑). Hover or focus an icon for its meaning. The manager reads remote-tracking refs without fetching, so fetch the repository to update this indicator after a push elsewhere. Git status is fetched when the list is expanded. The start/stop button also shows each worktree's state. Delete removes a stopped worktree and its local files while leaving its branch in Git. Select worktrees with their checkboxes, or use **Select available**, then **Delete selected** to remove several checkouts in one confirmed operation. The confirmation lists every selected path and warns about modified, untracked, or ignored files such as `.env` that will be lost. Each deletion runs through the same safeguards as the row's trash button; if one fails, the others continue and the failed row shows its error. MCP callers must pass the worktree branch name as confirmation when any of those files exist. The manager uses one `git worktree remove --force` for modified or untracked files, so locked worktrees remain protected. A detached worktree whose HEAD is absent from locally known remote branches cannot be deleted from the dashboard. The manager does not delete branches.
 
@@ -70,7 +72,8 @@ prepare them on first start. `env_source` copies a source environment file from
 the registered repository into the worktree, and `shared_paths` creates symlinks
 for reusable dependency directories such as `node_modules`. Composer `vendor`
 should be installed per checkout because its generated autoload metadata contains
-absolute source paths.
+absolute source paths. The manager removes a stale worktree `vendor` symlink to the
+source checkout and never creates a shared `vendor` symlink for a Composer project.
 `setup` runs configured idempotent argument arrays in the worktree before its
 services start, which is useful for dependency installation that must rebuild
 checkout-specific metadata.
@@ -111,4 +114,4 @@ For Cursor, merge the server into the user-level `~/.cursor/mcp.json` so it is a
 
 Adjust the path to that machine's devkit clone, preserving any other entries already in `mcpServers`. Restart Cursor after editing the file, then check `cursor-agent mcp list-tools devkit-projects`. The MCP server offers `projects_status`, `project_start`, `project_stop`, `project_logs`, `worktree_flags`, `worktree_remove`, and `project_select_profile`. The project start, stop, and log tools accept discovered worktree IDs. `worktree_remove` keeps the branch and applies the same safeguards as the dashboard. The server never accepts a shell command from the model; project IDs and commands come from the local config.
 
-MCP registration makes the tools available but does not force agents to use them. Put a preference in each agent's global instructions to check `projects_status`, start a stopped configured project, and use its configured link before local browser QA. The CLI offers the same flow when MCP is unavailable.
+MCP registration makes the tools available but does not force agents to use them. Put a preference in each agent's global instructions to check `projects_status`, start a stopped configured project, and open only its returned `links` before local browser QA. Service check URLs and loopback bind addresses are internal manager details. The CLI offers the same flow when MCP is unavailable.

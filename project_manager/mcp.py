@@ -11,7 +11,7 @@ def _schema(fields):
 def _tools():
     return [
         {"name": "projects_status", "description": "Check local projects and, with a project ID, its discovered worktrees and their IDs before opening or testing pages.", "inputSchema": {"type": "object", "properties": {"project": {"type": "string"}}, "additionalProperties": False}, "annotations": {"readOnlyHint": True}},
-        {"name": "project_start", "description": "Start a configured project or discovered worktree and check readiness before browser testing.", "inputSchema": _schema({}), "annotations": {"idempotentHint": True}},
+        {"name": "project_start", "description": "Start a configured project or discovered worktree and check readiness before browser testing. Open only the returned links as browser entrypoints. Service check hosts and URLs are internal readiness probes.", "inputSchema": _schema({}), "annotations": {"idempotentHint": True}},
         {"name": "project_stop", "description": "Stop only processes launched by this project manager.", "inputSchema": _schema({}), "annotations": {"destructiveHint": True, "idempotentHint": True}},
         {"name": "project_logs", "description": "Read recent, redacted output for a managed service.", "inputSchema": _schema({"service": {"type": "string"}}), "annotations": {"readOnlyHint": True}},
         {"name": "worktree_flags", "description": "Inspect a discovered worktree for modified, untracked, ignored, or unpublished files and commits.", "inputSchema": _schema({}), "annotations": {"readOnlyHint": True}},
