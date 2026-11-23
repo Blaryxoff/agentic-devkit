@@ -226,6 +226,41 @@ class ProjectManagerTest(unittest.TestCase):
             core.stop(first)
             core.stop(second)
 
+    def test_worktrees_inherit_profiles_and_prepare_local_dependencies(self):
+        repo = self.root / "profile-repo"
+        repo.mkdir()
+        subprocess.run(["git", "init", "-q", str(repo)], check=True)
+        identity = ["-c", "user.name=Test", "-c", "user.email=test@example.test"]
+        subprocess.run(["git", "-C", str(repo), *identity, "commit", "-qm", "initial", "--allow-empty"], check=True)
+        (repo / ".env").write_text("APP_NAME=Platforma\nTENANCY_ENABLED=true\n")
+        (repo / "vendor").mkdir()
+        (repo / "vendor" / "autoload.php").write_text("<?php\n")
+        checkout = self.root / "profile-worktree"
+        subprocess.run(["git", "-C", str(repo), "worktree", "add", "--quiet", "-b", "profile", str(checkout)], check=True)
+        port = self.free_port()
+        path = self.root / "profile-worktrees.json"
+        path.write_text(json.dumps({"version": 1, "projects": [{
+            "id": "profile-parent", "root": str(repo),
+            "services": [{"id": "base", "argv": [sys.executable, "-m", "http.server", str(self.port)], "ports": [self.port]}],
+            "profile_env_file": ".env",
+            "profiles": {"Popovichfit": {"set": {"APP_NAME": "Popovichfit", "TENANCY_ENABLED": "false"}}},
+            "worktrees": {"port_base": port, "slot_size": 1, "slots": 1, "env_source": ".env", "shared_paths": ["vendor"],
+                           "services": [{"id": "web", "argv": [sys.executable, "-m", "http.server", "{port0}", "--bind", "127.0.0.1"],
+                                         "ports": ["{port0}"], "checks": [{"type": "tcp", "host": "127.0.0.1", "port": "{port0}"}]}]}
+        }]}))
+        projects = core.load_config(path)
+        child = next(project for project in projects if project.get("parent_id") == "profile-parent")
+        self.assertEqual(core.status(child)["profiles"], ["Popovichfit"])
+        self.assertIsNone(core.status(child)["profile"])
+        try:
+            started = core.start(child, timeout=5)
+            self.assertEqual(started["state"], "running")
+            self.assertEqual((checkout / ".env").read_text(), (repo / ".env").read_text())
+            self.assertTrue((checkout / "vendor").is_symlink())
+            self.assertEqual(core.select_profile(child, "Popovichfit")["profile"], "Popovichfit")
+        finally:
+            core.stop(child)
+
     def test_worktrees_from_two_repositories_share_one_project_card(self):
         roots = []
         checkouts = []

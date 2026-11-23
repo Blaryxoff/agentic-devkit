@@ -64,6 +64,23 @@ For applications with selectable variants, add `profile_env_file`, `profiles`, a
 }
 ```
 
+Worktree templates inherit the parent project's `profile_env_file`, `profiles`, and
+`profile_hooks`. When a checkout relies on ignored local files, the template can
+prepare them on first start. `env_source` copies a source environment file from
+the registered repository into the worktree, and `shared_paths` creates symlinks
+for reusable dependency directories such as `vendor` or `node_modules`.
+
+```json
+"worktrees": {
+  "env_source": ".env",
+  "shared_paths": ["vendor", "node_modules"],
+  "services": []
+}
+```
+
+These paths are opt-in and relative to the worktree source repository. Existing
+worktree files are preserved.
+
 `profile <project> <name>` edits only the listed keys in the checkout's local environment file, runs the hooks, and restarts managed services if they were running. The choice persists in that file. Profiles do not import data or change databases. The dashboard shows an unmatched profile as unselected, so manual `.env` edits remain visible.
 
 To opt an agent into MCP, register a **stdio** server whose command is the absolute path to `bin/devkit-projects` and whose argument is `mcp`. For Codex and Claude Code:

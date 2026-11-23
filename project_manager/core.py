@@ -1,4 +1,5 @@
 import contextlib
+import copy
 import fcntl
 import hashlib
 import json
@@ -230,6 +231,23 @@ def _worktree_settings(project, settings):
             match = PORT_TOKEN.fullmatch(str(port))
             if not match or int(match.group(1)) >= settings["slot_size"]:
                 raise ProjectError(f"Worktree managed ports must use a slot offset in {project['id']}")
+    env_source = settings.get("env_source")
+    if env_source is not None and (
+        not isinstance(env_source, str)
+        or not env_source
+        or Path(env_source).is_absolute()
+        or ".." in Path(env_source).parts
+    ):
+        raise ProjectError(f"Invalid worktree env source for {project['id']}")
+    shared_paths = settings.get("shared_paths", [])
+    if not isinstance(shared_paths, list) or any(
+        not isinstance(path, str)
+        or not path
+        or Path(path).is_absolute()
+        or ".." in Path(path).parts
+        for path in shared_paths
+    ):
+        raise ProjectError(f"Invalid worktree shared paths for {project['id']}")
     return settings
 
 
@@ -296,6 +314,34 @@ def _materialize_worktree(project, slot):
             check["port"] = int(check["port"])
 
 
+def _prepare_worktree(project):
+    settings = project["_worktree_template"]
+    source_root = Path(project["_worktree_source_root"])
+    worktree_root = Path(project["root"])
+
+    env_source = settings.get("env_source")
+    if env_source:
+        source = (source_root / env_source).resolve()
+        target = (worktree_root / project.get("profile_env_file", ".env")).resolve()
+        if not source.is_relative_to(source_root) or not target.is_relative_to(worktree_root):
+            raise ProjectError(f"Worktree environment paths must stay inside the checkout for {project['id']}")
+        if not source.is_file():
+            raise ProjectError(f"Worktree environment source is missing for {project['id']}: {source}")
+        if not target.exists() and not target.is_symlink():
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+
+    for relative in settings.get("shared_paths", []):
+        source = (source_root / relative).resolve()
+        target = worktree_root / relative
+        if not source.is_relative_to(source_root):
+            raise ProjectError(f"Worktree shared paths must stay inside the checkout for {project['id']}")
+        if not source.exists() or target.exists() or target.is_symlink():
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.symlink_to(source, target_is_directory=source.is_dir())
+
+
 def _discover_worktrees(parents):
     registry = _worktree_registry()
     children = []
@@ -323,6 +369,9 @@ def _discover_worktrees(parents):
                          "created_at": record["created_at"], "source": source["name"] if source["id"] else None,
                          "_worktree_source_root": source["root"], "_worktree_registry_key": source["registry_key"],
                          "_worktree_template": settings, "services": [], "links": {}}
+                for key in ("profile_env_file", "profile_hooks", "profiles"):
+                    if key in parent and key not in child:
+                        child[key] = copy.deepcopy(parent[key])
                 if isinstance(slot, int) and not isinstance(slot, bool) and 0 <= slot < settings["slots"]:
                     _materialize_worktree(child, slot)
                 children.append(child)
@@ -586,7 +635,7 @@ def selected_profile(project):
 
 def status(project):
     if project.get("parent_id") and project.get("slot") is None:
-        result = {"id": project["id"], "name": project["name"], "root": project["root"], "state": "stopped", "services": [], "external": [], "links": {}, "profiles": [], "profile": None,
+        result = {"id": project["id"], "name": project["name"], "root": project["root"], "state": "stopped", "services": [], "external": [], "links": {}, "profiles": list(project.get("profiles", {})), "profile": selected_profile(project),
                   "parent_id": project["parent_id"], "branch": project["branch"], "slot": None, "created_at": project.get("created_at")}
         if project.get("source"):
             result["source"] = project["source"]
@@ -633,6 +682,7 @@ def _spawn(project, service):
 def start(project, timeout=60):
     if project.get("parent_id"):
         _assign_worktree_slot(project)
+        _prepare_worktree(project)
     try:
         with _locked(project):
             for service in project["services"]:
@@ -736,6 +786,12 @@ def _atomic_write(path, data):
 def select_profile(project, name):
     if name not in project.get("profiles", {}):
         raise ProjectError(f"Unknown profile for {project['id']}: {name}")
+    if project.get("parent_id") and project.get("slot") is None:
+        _assign_worktree_slot(project)
+        try:
+            _prepare_worktree(project)
+        finally:
+            _clear_worktree_pending(project)
     if selected_profile(project) == name:
         return status(project)
     with _locked(project):
