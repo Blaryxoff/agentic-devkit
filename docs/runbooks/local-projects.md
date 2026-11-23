@@ -69,11 +69,15 @@ Worktree templates inherit the parent project's `profile_env_file`, `profiles`, 
 prepare them on first start. `env_source` copies a source environment file from
 the registered repository into the worktree, and `shared_paths` creates symlinks
 for reusable dependency directories such as `vendor` or `node_modules`.
+`setup` runs configured idempotent argument arrays in the worktree before its
+services start, which is useful for dependency installation that must rebuild
+checkout-specific metadata.
 
 ```json
 "worktrees": {
   "env_source": ".env",
   "shared_paths": ["vendor", "node_modules"],
+  "setup": [["composer", "install", "--no-interaction", "--prefer-dist"]],
   "services": []
 }
 ```

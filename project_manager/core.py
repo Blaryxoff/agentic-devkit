@@ -248,6 +248,12 @@ def _worktree_settings(project, settings):
         for path in shared_paths
     ):
         raise ProjectError(f"Invalid worktree shared paths for {project['id']}")
+    setup = settings.get("setup", [])
+    if not isinstance(setup, list) or any(
+        not isinstance(argv, list) or not argv or not all(isinstance(arg, str) for arg in argv)
+        for argv in setup
+    ):
+        raise ProjectError(f"Invalid worktree setup for {project['id']}")
     return settings
 
 
@@ -340,6 +346,15 @@ def _prepare_worktree(project):
             continue
         target.parent.mkdir(parents=True, exist_ok=True)
         target.symlink_to(source, target_is_directory=source.is_dir())
+
+    for argv in settings.get("setup", []):
+        try:
+            result = subprocess.run(argv, cwd=worktree_root, capture_output=True, text=True, timeout=300, check=False)
+        except (OSError, subprocess.TimeoutExpired) as error:
+            raise ProjectError(f"Worktree setup failed for {project['id']}: {error}") from error
+        if result.returncode:
+            detail = redact((result.stderr or result.stdout)[-500:]).strip()
+            raise ProjectError(f"Worktree setup failed for {project['id']}: {detail}")
 
 
 def _discover_worktrees(parents):

@@ -245,6 +245,7 @@ class ProjectManagerTest(unittest.TestCase):
             "profile_env_file": ".env",
             "profiles": {"Popovichfit": {"set": {"APP_NAME": "Popovichfit", "TENANCY_ENABLED": "false"}}},
             "worktrees": {"port_base": port, "slot_size": 1, "slots": 1, "env_source": ".env", "shared_paths": ["vendor"],
+                           "setup": [[sys.executable, "-c", "from pathlib import Path; Path('setup.marker').write_text('ok')"]],
                            "services": [{"id": "web", "argv": [sys.executable, "-m", "http.server", "{port0}", "--bind", "127.0.0.1"],
                                          "ports": ["{port0}"], "checks": [{"type": "tcp", "host": "127.0.0.1", "port": "{port0}"}]}]}
         }]}))
@@ -257,6 +258,7 @@ class ProjectManagerTest(unittest.TestCase):
             self.assertEqual(started["state"], "running")
             self.assertEqual((checkout / ".env").read_text(), (repo / ".env").read_text())
             self.assertTrue((checkout / "vendor").is_symlink())
+            self.assertEqual((checkout / "setup.marker").read_text(), "ok")
             self.assertEqual(core.select_profile(child, "Popovichfit")["profile"], "Popovichfit")
         finally:
             core.stop(child)
