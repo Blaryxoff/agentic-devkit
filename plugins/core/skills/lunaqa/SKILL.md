@@ -45,6 +45,12 @@ resolve omitted scope from the active task and ask only when no concrete scope i
    Bridge access. Missing selected bindings, Codex, the resolved Luna or required chrome-devtools leave their cells
    blocked and the pass incomplete; do not silently substitute a browser or model.
 
+## Fast path
+
+- Complete the canonical runtime, surface, revision, fixture and login preflight before launching a worker. Repair a failed prerequisite before starting more lanes.
+- A spot pass uses one Luna executor and does not launch scouts, a reviewer or extra waves unless evidence is missing or disputed. Canonical evidence and cleanup still apply.
+- Targeted and exhaustive passes reuse one resolved Luna, pinned fixtures and matching evidence. Recheck only cells selected by the §1.7 impact map and their required dependencies.
+
 ## Completion
 
 Use the canonical evidence, adjudication, reporting and cleanup gates. Record actual model, effort and native/CLI

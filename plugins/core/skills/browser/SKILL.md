@@ -47,6 +47,13 @@ partitioning independent lanes and returning concise evidence references.
 - Apply §1.7 to rechecks: after the initial review, the reviewer inspects only new or invalidated results, results potentially affected by new fixes, and disputed findings. The invoker maps fix dependencies to affected checks and adjacent regressions and reconciles the final ledger without another full review.
 - Keep orchestration and the final response in the top-level agent. Reuse executor evidence and dispatch leaf workers whose sole responsibility is their assigned lane. If model-selectable subagents are unavailable, execute the same stages in the current session and preserve the ledger explicitly.
 
+## Execution economy
+
+- Complete runtime, surface, revision, fixture and login preflight once before the first lane. Keep setup outside retries and reuse the pass-owned fixture namespace when its state remains valid.
+- Keep spot passes on the single execution path defined in §1.6. For targeted and exhaustive passes, dispatch only independent lanes concurrently after the isolation handshake. Keep connected stateful flows together.
+- Reuse matching pinned snapshots, layout audits and runtime evidence. After a fix or disputed result, follow §1.7 and rerun only affected, adjacent or disputed cells with their required setup dependencies.
+- Preserve every required dimension of the declared pass scope while reusing setup and evidence.
+
 ## Workflow
 
 1. **Input.** Scope = feature name, route list, page names, or `whole project`. Identify the intended environment and exact base origin before browser work. Resolve the local runtime under §2.2 before browser navigation, including spot checks against an already running origin. Optional: Figma URLs, screenshots, mockups, or other design references. Classify the pass as exhaustive, targeted or spot per `browser-qa-rules.md` §1.4. A targeted pass is never the final acceptance gate. A spot pass replaces steps 2–5 with one local execution under §1.6, then runs steps 6 and 7.
