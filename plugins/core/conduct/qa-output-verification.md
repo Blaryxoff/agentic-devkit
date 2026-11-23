@@ -11,6 +11,7 @@
 
 - Verify the required output entry point in each distinct supported implementation; a shared feature name does not prove each layout/client exposes it.
 - Generate the artifact for the current pinned case, then open, parse, or render it with available tools suited to the assertion. A successful download establishes availability only.
+- Match the verification claim to the inspected scope. A spot check or selected-name search cannot support a whole-archive or whole-collection claim, so report uninspected members as gaps.
 - Check required fields, selected template, relevant image transparency/assets, links/QR destinations, and authorization against the contract. Use rendered evidence for visual assertions; text extraction cannot prove transparency or layout.
 - Exercise supported download, open, and back-navigation behavior on the affected surface. Preserve unsupported viewer/device boundaries as gaps.
 

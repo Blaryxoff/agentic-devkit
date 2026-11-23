@@ -12,6 +12,7 @@ Run independent concurrent AI tasks on the same repo in isolated git worktrees s
 
 - Independent features or fixes that touch disjoint files.
 - A long task (research, large refactor) in one worktree while routine work continues in another.
+- An independent documentation or runbook update can run concurrently with a long-running implementation or verification task while the active task continues.
 - Spiking two approaches to the same problem on separate branches.
 
 ## When NOT to parallelize
