@@ -23,7 +23,7 @@ Run independent concurrent AI tasks on the same repo in isolated git worktrees s
 
 ## Worktree discipline
 
-- For a separate task that needs isolation, create one worktree per branch: `git worktree add ../<repo>-<feature> -b feature/<id>-<slug>` (Claude Code: `claude --worktree <feature>`). For follow-up work, apply the existing-branch rule above.
+- For a separate task that needs isolation, when `devkit-projects` is available call `projects_status` first and reuse a discovered worktree for that branch. Create one only when no checkout exists for the branch: `git worktree add ../<repo>-<feature> -b feature/<id>-<slug>` (Claude Code: `claude --worktree <feature>`). When starting a managed worktree, call `project_start` on its discovered id. For follow-up work, apply the existing-branch rule above.
 - Record the path and owning repository of every worktree or temporary clone this task creates. Never treat another session's checkout or the main repository as task-owned.
 - Name the directory after the feature; keep it a sibling of the main checkout, not nested inside it.
 - A worktree needing runtime QA follows [runtime-configuration.md](./runtime-configuration.md#canonical-local-servers) → **Canonical local servers**: an explicitly canonical setup allocates its own registered checkout/profile through that manager; other environments use existing project runtime commands and a dedicated worktree port. Record the task owner and stop task-started runtimes at task end; do not reuse another checkout's runtime.
