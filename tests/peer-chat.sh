@@ -121,6 +121,8 @@ for footer_hints in ("  ← for agents · ? for shortcuts", wrapped_hints, "  �
     assert chat.codex_live_prompt_text(pane("! echo unsafe", " ", *wrapped_footer)) is None
     assert chat.codex_live_prompt_text(pane("› 1. Yes, proceed", "  2. No", " ", *wrapped_footer)) is None
 assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", wrapped_status, "  623K used · 75.9M in", wrapped_tokens, wrapped_hints)) == "Ask Codex to do anything"
+quotio_status = "  GPT-6.2-Sol high · Context 0% used · Quotio · 5h 34% left · 7d 13% left ·"
+assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", quotio_status, "  Pro 7d 67% left", "  ← for agents · ? for shortcuts")) == "Ask Codex to do anything"
 assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", wrapped_status, "  Unrecognised status", wrapped_hints)) is None
 assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", wrapped_status, wrapped_tokens, "  Press enter to confirm")) is None
 assert chat.codex_live_prompt_text(pane("› Ask Codex to do anything", " ", "  Unrecognised status", wrapped_tokens, wrapped_hints)) is None

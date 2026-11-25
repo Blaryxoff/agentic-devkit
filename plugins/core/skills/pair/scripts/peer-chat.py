@@ -62,9 +62,14 @@ CODEX_EMPTY_PROMPT = "Ask Codex to do anything"
 CODEX_FOOTER_RE = re.compile(r"^ {2,}\S.*$")
 CODEX_FOOTER_ROWS = 2
 CODEX_CONTEXT_STATUS_RE = re.compile(r"^ {2,}\S.*\bContext \d+(?:\.\d+)?% used(?:\s*·.*)?\s*$")
-CODEX_STATUS_FIELD_PATTERN = r"(?:\d+(?:\.\d+)?[KMB]? (?:used|in|out)|Main \[(?:default|plan)\])"
+CODEX_STATUS_FIELD_PATTERN = (
+    r"(?:\d+(?:\.\d+)?[KMB]? (?:used|in|out)"
+    r"|Main \[(?:default|plan)\]"
+    r"|Quotio"
+    r"|(?:[A-Za-z0-9_-]+\s+){0,2}\d+(?:\.\d+)?% left(?:\s*\([^)]+\))?)"
+)
 CODEX_STATUS_CONTINUATION_RE = re.compile(
-    rf"^ {{2,}}(?:·\s*)?{CODEX_STATUS_FIELD_PATTERN}(?:\s*·\s*{CODEX_STATUS_FIELD_PATTERN})*\s*$"
+    rf"^ {{2,}}(?:·\s*)?{CODEX_STATUS_FIELD_PATTERN}(?:\s*·\s*{CODEX_STATUS_FIELD_PATTERN})*(?:\s*·)?\s*$"
 )
 CODEX_HINT_STATUS_RE = re.compile(
     r"^ {2,}(?:← for agents · \? for shortcuts(?:\s+⚠ \d+ warnings? · f2 to view)?"
