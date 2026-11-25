@@ -30,7 +30,7 @@ rm -f .claude/skills/devkit-*--*
 
 # 3. Regenerate only stack infra (subagents, hooks, MCP) — core/router are global now
 ~/.claude/agentic-devkit/bin/devkit-install --claude --project=.
-# plus --cursor / --codex if the project uses those tools
+# plus --cursor / --codex / --grok / --agy if the project uses those tools
 ```
 
 What stays per-repo: `.devkit/toolkit.json` (commit it). What becomes global: core skills, the `devkit` stack-router,

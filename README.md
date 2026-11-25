@@ -1,7 +1,7 @@
 # agentic-devkit
 
 A model-agnostic toolkit for AI-assisted product development. One **global clone** supplies skills, coding rules,
-hooks, and stack-specific agents to Claude Code, Cursor, Codex, and Grok. Each project selects the plugins it needs.
+hooks, and stack-specific agents to Claude Code, Cursor, Codex, Grok, and Antigravity (`agy`). Each project selects the plugins it needs.
 The same clone also provides a local development project manager with a CLI, dashboard, and optional MCP server.
 
 ## Quick Start
@@ -29,6 +29,7 @@ cd my-project
 ~/.claude/agentic-devkit/bin/devkit-install --codex          # .codex/ resolved skills + AGENTS.md
 ~/.claude/agentic-devkit/bin/devkit-install --claude         # .claude/ stack subagents, hooks, .mcp.json
 ~/.claude/agentic-devkit/bin/devkit-install --grok           # Grok native gates + Claude-compatible project stack
+~/.claude/agentic-devkit/bin/devkit-install --agy            # .agents/ rules + skills + hooks + MCP
 ```
 
 Cursor uses the same core skill bodies as the other agents. Its project adapter links only the selected stack skills,
@@ -141,7 +142,7 @@ host and assigned port so browser cookies and CORS stay on the managed origin.
 ~/.claude/agentic-devkit/bin/devkit-resolve --adapter=...
 ```
 
-Supported adapters: `claude`, `cursor`, `codex`, `grok`.
+Supported adapters: `claude`, `cursor`, `codex`, `grok`, `agy`.
 
 ## Available Plugins
 
@@ -182,7 +183,7 @@ Use [examples/express-native-desktop.json](./examples/express-native-desktop.jso
 
 ```bash
 bin/devkit-resolve --preset=express-native-desktop --project=/path/to/project
-bin/devkit-install --claude --cursor --codex --project=/path/to/project
+bin/devkit-install --claude --cursor --codex --grok --agy --project=/path/to/project
 ```
 
 Express, React Native, and Electron mirror the architect, fast/deep/business-logic reviewer, and tester workflows. React and Drizzle provide shared conduct loaded by the owning layer. UI plugins reuse the shared design, reference-build, visual-guard, and motion workflows, resolving verification mechanics from the active runtime's conduct. Each plugin links upstream sources and requires the consuming project's installed versions and commands. See the [Laravel/Frontend coverage map](./howto/stack-coverage.md) for baseline obligations and their canonical owners.
@@ -241,11 +242,12 @@ Resolves: `core -> laravel`
 | `claude` | `.claude/settings.json` (hooks), `.claude/agents/*.md` (stack subagents), `.claude/skills/devkit-*--*` symlinks (inline stack skills), `.mcp.json` — core skills + router are global |
 | `cursor` | `.cursor/skills/<frontmatter-name>/`, `.cursor/agents/*.md`, compact conduct-index rules, MCP config, and hooks |
 | `codex`  | `.codex/skills/devkit-*--*/` for non-core plugins and compact conduct indexes in `AGENTS.md`                     |
+| `agy`    | `.agents/skills/<frontmatter-name>/`, `.agents/rules/devkit-*.md`, `.agents/mcp_config.json`, `.agents/hooks.json` |
 
 Generated text (conduct paths in `.mdc` / `AGENTS.md`) references the global clone at `~/.claude/agentic-devkit`, so
 output is identical regardless of where the project lives on disk. Disabled plugins do not enter generated AI context.
 
-`devkit-install` keeps only `devkit-core` skills globally for Codex and Cursor and removes stale global non-core links.
+`devkit-install` keeps only `devkit-core` skills globally for Codex, Cursor, and Antigravity (`agy`) and removes stale global non-core links.
 Cursor skill links use each `SKILL.md` frontmatter `name`, because Cursor requires that name to match the folder.
 Their project adapters link only resolved non-core skills, including transitive dependencies. `devkit-frontend` brings
 `devkit-css` into frontend projects; backend-only projects omit CSS unless explicitly enabled. `css-expert` is the

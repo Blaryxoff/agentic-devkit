@@ -177,6 +177,8 @@ def sync(project, defaults):
         canonical_path: json.dumps(canonical, indent=2, ensure_ascii=False) + "\n",
         cursor_path: json.dumps(cursor, indent=2, ensure_ascii=False) + "\n",
     }
+    if (project / ".agents").exists() or (project / ".agents/mcp_config.json").exists():
+        outputs[project / ".agents/mcp_config.json"] = json.dumps({"mcpServers": servers}, indent=2, ensure_ascii=False) + "\n"
     for client in ("codex", "grok"):
         path = project / f".{client}/config.toml"
         outputs[path] = native_config(path, native, client)

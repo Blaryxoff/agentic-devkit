@@ -9,7 +9,8 @@
 #   devkit-install --claude     Also run the per-project Claude stack adapter for CWD
 #                               (stack subagents, hooks, .mcp.json — core is global).
 #   devkit-install --grok       Install Grok hooks and generate its Claude-compatible project stack.
-#   devkit-install --project=DIR Target project for --cursor/--codex/--claude/--grok (default: CWD).
+#   devkit-install --agy        Also run the per-project Antigravity (agy) adapter for CWD.
+#   devkit-install --project=DIR Target project for --cursor/--codex/--claude/--grok/--agy (default: CWD).
 #
 # Global layout:
 #   $HOME/.claude/skills/devkit-core--<skill>/     symlinks to core skills for Claude
@@ -23,6 +24,8 @@
 #   $HOME/.cursor/rules/devkit-skill-policy.mdc    alwaysApply managed skill-selection policy
 #   $HOME/.cursor/hooks.json                       sessionStart → devkit-update --if-stale;
 #                                                  preToolUse coder/comment gates + beforeSubmitPrompt feedback
+#   $HOME/.agents/skills/<skill-name>/             symlinks to core skills for Antigravity (agy)
+#   $HOME/.agents/rules/devkit-skill-policy.md     alwaysApply managed skill-selection policy for agy
 #
 # The global clone is the single source of truth. devkit-install runs from the
 # clone it lives in; if that is not the canonical location it bootstraps a clone
@@ -38,6 +41,7 @@ RUN_CURSOR=0
 RUN_CODEX=0
 RUN_CLAUDE=0
 RUN_GROK=0
+RUN_AGY=0
 PROJECT="$(pwd)"
 for arg in "$@"; do
   case "$arg" in
@@ -45,6 +49,7 @@ for arg in "$@"; do
     --codex)     RUN_CODEX=1 ;;
     --claude)    RUN_CLAUDE=1 ;;
     --grok)      RUN_GROK=1 ;;
+    --agy)       RUN_AGY=1 ;;
     --project=*) PROJECT="${arg#--project=}" ;;
     -h|--help)
       sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
@@ -129,7 +134,11 @@ CURSOR_SKILLS_DEST="$CURSOR_DIR/skills"
 CURSOR_AGENTS_DEST="$CURSOR_DIR/agents"
 CURSOR_RULES_DEST="$CURSOR_DIR/rules"
 CURSOR_SKILL_POLICY_RULE="$CURSOR_RULES_DEST/devkit-skill-policy.mdc"
-mkdir -p "$SKILLS_DEST" "$CODEX_SKILLS_DEST" "$CURSOR_SKILLS_DEST"
+AGY_DIR="${AGY_HOME:-$HOME/.agents}"
+AGY_SKILLS_DEST="$AGY_DIR/skills"
+AGY_RULES_DEST="$AGY_DIR/rules"
+AGY_SKILL_POLICY_RULE="$AGY_RULES_DEST/devkit-skill-policy.md"
+mkdir -p "$SKILLS_DEST" "$CODEX_SKILLS_DEST" "$CURSOR_SKILLS_DEST" "$AGY_SKILLS_DEST" "$AGY_RULES_DEST"
 
 # --- Symlink every core skill globally (universal + the devkit router) ---
 core_skills_src="$DEVKIT_HOME/plugins/core/skills"
@@ -244,6 +253,37 @@ if [ "$cursor_migrated_skill_count" -gt 0 ]; then
   echo "            Regenerate each Cursor project with: DEVKIT_PROJECT_ROOT=/path/to/project $DEVKIT_HOME/adapters/cursor/generate"
 fi
 
+# --- Symlink core skills globally for Antigravity (agy) ---
+agy_skill_count=0
+agy_skill_kept=""
+for d in "$core_skills_src"/*/; do
+  [ -f "$d/SKILL.md" ] || continue
+  abs="$(cd "$d" && pwd)"
+  n=$(devkit_frontmatter "$d/SKILL.md" | LC_ALL=C sed -n 's/^name:[[:space:]]*//p' | head -1)
+  [ -n "$n" ] || { echo "ERROR: missing skill name in $d/SKILL.md" >&2; exit 1; }
+  agy_skill_dest="$AGY_SKILLS_DEST/$n"
+  if [ -L "$agy_skill_dest" ] && [ "$(readlink "$agy_skill_dest")" != "$abs" ]; then
+    old_target="$(readlink "$agy_skill_dest")"
+    case "$old_target" in
+      */plugins/core/skills/"$(basename "$d")") rm -f "$agy_skill_dest" ;;
+    esac
+  fi
+  if [ -L "$agy_skill_dest" ] && [ "$(readlink "$agy_skill_dest")" = "$abs" ]; then
+    agy_skill_count=$((agy_skill_count + 1))
+    continue
+  fi
+  if [ -e "$agy_skill_dest" ] || [ -L "$agy_skill_dest" ]; then
+    agy_skill_kept="$agy_skill_kept $n"
+    continue
+  fi
+  ln -s "$abs" "$agy_skill_dest"
+  agy_skill_count=$((agy_skill_count + 1))
+done
+echo "    Linked:  ~/.agents/skills/<skill-name> ($agy_skill_count skill(s))"
+if [ -n "$agy_skill_kept" ]; then
+  echo "    NOTICE: kept non-devkit entries in ~/.agents/skills for:$agy_skill_kept"
+fi
+
 # --- Core subagents → ~/.claude/agents (claudeSubagent skills keep isolation) ---
 plugin_index=$(_build_plugin_index)
 core_agents=()
@@ -349,6 +389,23 @@ fi
   printf '%s\n' "$skill_policy"
 } > "$CURSOR_SKILL_POLICY_RULE"
 echo "    Guidance: ~/.cursor/rules/devkit-skill-policy.mdc (managed alwaysApply skill policy)"
+
+mkdir -p "$AGY_RULES_DEST"
+if [ -f "$AGY_SKILL_POLICY_RULE" ] && ! grep -qF '# devkit skill policy' "$AGY_SKILL_POLICY_RULE"; then
+  echo "    NOTICE: kept your own $AGY_SKILL_POLICY_RULE — devkit did not overwrite it."
+else
+  {
+    printf '%s\n' '---'
+    printf '%s\n' 'description: "devkit skill selection policy"'
+    printf '%s\n' 'alwaysApply: true'
+    printf '%s\n' '---'
+    printf '\n'
+    printf '%s\n' '# devkit skill policy'
+    printf '\n'
+    printf '%s\n' "$skill_policy"
+  } > "$AGY_SKILL_POLICY_RULE"
+  echo "    Guidance: ~/.agents/rules/devkit-skill-policy.md (managed alwaysApply skill policy)"
+fi
 
 # Managed hooks are matched by script name rather than by absolute path, so relocating
 # DEVKIT_HOME replaces the old command instead of leaving a dangling one behind, and
@@ -898,7 +955,11 @@ if [ "$RUN_GROK" -eq 1 ]; then
   echo ""
   DEVKIT_PROJECT_ROOT="$PROJECT" bash "$DEVKIT_HOME/adapters/grok/generate"
 fi
+if [ "$RUN_AGY" -eq 1 ]; then
+  echo ""
+  DEVKIT_PROJECT_ROOT="$PROJECT" bash "$DEVKIT_HOME/adapters/agy/generate"
+fi
 
 echo ""
-echo "Done. Start a new Cursor, Claude Code, or Codex session to load skills and hooks."
-echo "Per project, keep .devkit/toolkit.json; run devkit-install --cursor to install the resolved Cursor stack."
+echo "Done. Start a new Cursor, Claude Code, Codex, or Antigravity (agy) session to load skills and hooks."
+echo "Per project, keep .devkit/toolkit.json; run devkit-install --cursor or --agy to install the resolved stack."

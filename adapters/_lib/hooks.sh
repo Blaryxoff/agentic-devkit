@@ -181,6 +181,74 @@ inject_cursor_edit_gates() {
   '
 }
 
+translate_hooks_to_agy() {
+  local merged_hooks="$1"
+
+  echo "$merged_hooks" | jq '
+    def map_matcher:
+      if . == null then "*"
+      elif . == "Bash" or . == "Shell" or . == "exec_command" or . == "shell_command" then "run_command"
+      elif . == "Edit|Write|MultiEdit" or . == "Edit|Write" or . == "apply_patch|Edit|Write" then "edit_file|write_file"
+      elif . == "Read|ReadFile" then "read_file"
+      else . end;
+
+    reduce (to_entries[]) as $entry (
+      {};
+      if $entry.key == "PreToolUse" or $entry.key == "PostToolUse" then
+        .[$entry.key] = [
+          $entry.value[] | {
+            matcher: (.matcher | map_matcher),
+            hooks: [
+              .hooks[] |
+              if (.timeout | type) == "number" and .timeout >= 1000
+              then .timeout = ((.timeout / 1000) | ceil) else . end
+            ]
+          }
+        ]
+      elif $entry.key == "SessionStart" or $entry.key == "Stop" then
+        .[$entry.key] = [
+          $entry.value[].hooks[] |
+          if (.timeout | type) == "number" and .timeout >= 1000
+          then .timeout = ((.timeout / 1000) | ceil) else . end
+        ]
+      elif $entry.key == "UserPromptSubmit" then
+        .[$entry.key] = [
+          $entry.value[].hooks[] |
+          if (.timeout | type) == "number" and .timeout >= 1000
+          then .timeout = ((.timeout / 1000) | ceil) else . end
+        ]
+      else . end
+    )
+  '
+}
+
+inject_agy_edit_gates() {
+  local hooks_json="$1"
+  local coder_cmd="$2"
+  local comment_cmd="$3"
+  local server_cmd="$4"
+  local peer_cmd="$5"
+
+  echo "$hooks_json" | jq --arg coder "$coder_cmd" --arg comment "$comment_cmd" --arg server "$server_cmd" --arg peer "$peer_cmd" '
+    .PreToolUse = (
+      [(.PreToolUse // [])[] |
+        .hooks = [
+          .hooks[] |
+          select((.command // "" | contains("plugins/core/hooks/coder-gate.sh")) | not) |
+          select((.command // "" | contains("plugins/core/hooks/comment-gate.sh")) | not) |
+          select((.command // "" | contains("plugins/core/hooks/dev-server-gate.sh")) | not) |
+          select((.command // "" | contains("plugins/core/hooks/peer-cli-gate.sh")) | not)
+        ] | select((.hooks | length) > 0)
+      ] + [
+        {matcher: "edit_file|write_file", hooks: [{type: "command", command: $coder, timeout: 60}]},
+        {matcher: "edit_file|write_file", hooks: [{type: "command", command: $comment, timeout: 60}]},
+        {matcher: "run_command", hooks: [{type: "command", command: $server, timeout: 60}]},
+        {matcher: "run_command", hooks: [{type: "command", command: $peer, timeout: 60}]}
+      ]
+    )
+  '
+}
+
 dev_server_gate_command() {
   python3 - "$1" "${2:-[]}" <<'PY'
 import json

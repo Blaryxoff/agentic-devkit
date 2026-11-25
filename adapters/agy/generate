@@ -1,0 +1,220 @@
+#!/usr/bin/env bash
+# devkit-toolkit: Antigravity CLI (agy) adapter
+#
+# Generates Antigravity rules, skills, MCP configuration, and hooks from resolved plugins.
+# Core skills are installed globally; resolved non-core skills are linked per project.
+#
+# Output (in PROJECT_ROOT):
+#   .agents/skills/<skill-name>/      — symlinks for resolved non-core plugins
+#   .agents/rules/devkit-<plugin>.md  — compact conduct-index rules per resolved plugin
+#   .agents/mcp_config.json           — MCP servers with per-project chrome-devtools profile
+#   .agents/hooks.json                — merged hooks translated to Antigravity format
+#
+# Input config:
+#   .devkit/toolkit.json              — standard devkit project config
+
+set -euo pipefail
+
+ADAPTER_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$ADAPTER_DIR/../_lib/resolve.sh"
+source "$ADAPTER_DIR/../_lib/hooks.sh"
+source "$ADAPTER_DIR/../_lib/claude_agents.sh"
+source "$ADAPTER_DIR/../_lib/mcp.sh"
+
+DEVKIT_REF=$(toolkit_home_ref)
+skill_policy=$(< "$ADAPTER_DIR/../../plugins/core/hooks/skill-eval.txt")
+skill_policy=${skill_policy//\{\{DEVKIT_HOME\}\}/$DEVKIT_REF}
+
+echo "==> Antigravity (agy) adapter: generating config..."
+echo "    Toolkit: $TOOLKIT_ROOT"
+echo "    Project: $PROJECT_ROOT"
+echo ""
+
+plugin_index=$(_build_plugin_index)
+resolved_names=$(resolve_plugins)
+resolved_non_core=$(printf '%s\n' "$resolved_names" | grep -v '^devkit-core$' || true)
+
+skills_dir="$PROJECT_ROOT/.agents/skills"
+rules_dir="$PROJECT_ROOT/.agents/rules"
+
+# Collision check: fail before touching anything if destination is occupied by a non-symlink
+collision=0
+seen_skill_names=""
+while IFS= read -r name; do
+  [ -z "$name" ] && continue
+  plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
+  plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
+  skills_src="$plugin_dir/$(echo "$plugin_data" | jq -r '.paths.skills // "./skills"')"
+  [ -d "$skills_src" ] || continue
+  for skill_dir in "$skills_src"/*/; do
+    [ -f "$skill_dir/SKILL.md" ] || continue
+    skill_name=$(devkit_frontmatter "$skill_dir/SKILL.md" | LC_ALL=C sed -n 's/^name:[[:space:]]*//p' | head -1)
+    if [ -z "$skill_name" ]; then
+      echo "ERROR: missing skill name in $skill_dir/SKILL.md" >&2
+      collision=1
+      continue
+    fi
+    if printf '%s\n' "$seen_skill_names" | grep -qxF "$skill_name"; then
+      echo "ERROR: duplicate skill name: $skill_name" >&2
+      collision=1
+      continue
+    fi
+    seen_skill_names="$seen_skill_names$skill_name
+"
+    skill_dest="$skills_dir/$skill_name"
+    if [ -e "$skill_dest" ] || [ -L "$skill_dest" ]; then
+      if [ ! -L "$skill_dest" ]; then
+        echo "ERROR: enabled skill destination is occupied by a non-symlink: $skill_dest" >&2
+        collision=1
+      else
+        target=$(readlink "$skill_dest")
+        case "$target" in
+          "$TOOLKIT_ROOT"/plugins/*) ;;
+          *) echo "ERROR: enabled skill destination is a user symlink: $skill_dest" >&2; collision=1 ;;
+        esac
+      fi
+    fi
+  done
+done <<< "$resolved_non_core"
+[ "$collision" -eq 0 ] || exit 1
+
+ensure_gitignore_entry ".agents/"
+
+mkdir -p "$rules_dir"
+
+reaped_rules=0
+for _rule in "$rules_dir"/devkit-*.md; do
+  if [ -e "$_rule" ] || [ -L "$_rule" ]; then
+    rm -f "$_rule"
+    reaped_rules=$((reaped_rules + 1))
+  fi
+done
+[ "$reaped_rules" -gt 0 ] && echo "    Removed: $reaped_rules stale .agents/rules/devkit-*.md rule(s)"
+
+# Rebuild project-scoped non-core skill links
+mkdir -p "$skills_dir"
+reaped=0
+for _l in "$skills_dir"/*; do
+  [ -L "$_l" ] || continue
+  target=$(readlink "$_l")
+  case "$(basename "$_l"):$target" in
+    devkit-*--*:*) ;;
+    *:"$TOOLKIT_ROOT"/plugins/*) ;;
+    *) continue ;;
+  esac
+  rm -f "$_l"
+  reaped=$((reaped + 1))
+done
+[ "$reaped" -gt 0 ] && echo "    Removed: $reaped stale .agents/skills symlink(s)"
+
+linked=0
+while IFS= read -r name; do
+  [ -z "$name" ] && continue
+  plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
+  plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
+  skills_src="$plugin_dir/$(echo "$plugin_data" | jq -r '.paths.skills // "./skills"')"
+  [ -d "$skills_src" ] || continue
+  for skill_dir in "$skills_src"/*/; do
+    [ -f "$skill_dir/SKILL.md" ] || continue
+    skill_name=$(devkit_frontmatter "$skill_dir/SKILL.md" | LC_ALL=C sed -n 's/^name:[[:space:]]*//p' | head -1)
+    skill_dest="$skills_dir/$skill_name"
+    ln -s "$(cd "$skill_dir" && pwd)" "$skill_dest"
+    linked=$((linked + 1))
+  done
+done <<< "$resolved_non_core"
+[ "$linked" -gt 0 ] && echo "    Linked:  .agents/skills/<skill-name> ($linked resolved non-core skill(s))"
+rmdir "$skills_dir" 2>/dev/null || true
+
+# Rules generation
+while IFS= read -r name; do
+  [ -z "$name" ] && continue
+  plugin_data=$(echo "$plugin_index" | jq --arg name "$name" '.[$name]')
+  plugin_dir=$(echo "$plugin_data" | jq -r '._dir')
+  plugin_basename=$(basename "$plugin_dir")
+  rel_plugin="$DEVKIT_REF/plugins/$plugin_basename"
+
+  has_conduct=$(echo "$plugin_data" | jq 'has("paths") and (.paths | has("conduct"))')
+
+  if [ "$has_conduct" = "true" ]; then
+    conduct_rel="$rel_plugin/conduct"
+    conduct_abs="$plugin_dir/conduct"
+    desc=$(echo "$plugin_data" | jq -r '.description')
+
+    rule_file="$rules_dir/${name}.md"
+    {
+      echo "---"
+      echo "description: \"$name: $desc\""
+      echo "alwaysApply: true"
+      echo "---"
+      echo ""
+      echo "# $name"
+      echo ""
+      if [ "$name" = "devkit-core" ]; then
+        printf '%s\n' "$skill_policy"
+        echo ""
+      fi
+      echo "Enabled plugins define eligible conduct, not mandatory context. Open this index only when the task touches"
+      echo "the plugin, then load further documents only to resolve concrete layers, risks or decisions raised by the target."
+      echo ""
+      if [ -d "$conduct_abs" ]; then
+        if [ -f "$conduct_abs/overview.md" ]; then
+          echo "- $conduct_rel/overview.md"
+        else
+          echo "ERROR: conduct directory has no overview.md index: $conduct_abs" >&2
+          exit 1
+        fi
+      fi
+    } > "$rule_file"
+    echo "    Created: .agents/rules/${name}.md"
+  fi
+done <<< "$resolved_names"
+
+# Subagents generation (for stack subagents)
+agy_agents=()
+while IFS= read -r agent_name; do
+  [ -n "$agent_name" ] && agy_agents+=("$agent_name")
+done < <(generate_subagents "$PROJECT_ROOT/.agents/agents" "$plugin_index" "$resolved_names" cursor)
+if [ "${#agy_agents[@]}" -gt 0 ]; then
+  echo "    Agents:  .agents/agents/ (${#agy_agents[@]} resolved subagent(s))"
+fi
+
+# Sync project MCP servers (Claude, Cursor, Codex, Grok, and Antigravity)
+sync_project_mcp_servers "$plugin_index" "$resolved_names"
+
+# Hooks generation
+merged_hooks=$(merge_plugin_hooks "$plugin_index" "$resolved_names")
+agy_hooks=$(translate_hooks_to_agy "$merged_hooks")
+
+codergate_cmd="sh '$TOOLKIT_ROOT/plugins/core/hooks/coder-gate.sh'"
+commentgate_cmd="sh '$TOOLKIT_ROOT/plugins/core/hooks/comment-gate.sh'"
+peercli_cmd="sh '$TOOLKIT_ROOT/plugins/core/hooks/peer-cli-gate.sh'"
+hooks_file="$PROJECT_ROOT/.agents/hooks.json"
+previous_servergate_cmds='[]'
+if [ -f "$hooks_file" ]; then
+  previous_servergate_cmds=$(jq '[.devkit.PreToolUse[]?.hooks[]?.command | select(type == "string" and contains("plugins/core/hooks/dev-server-gate.sh"))]' "$hooks_file" 2>/dev/null || echo '[]')
+fi
+servergate_cmd=$(dev_server_gate_command "$TOOLKIT_ROOT" "$previous_servergate_cmds")
+feedback_cmd="python3 '$TOOLKIT_ROOT/plugins/core/hooks/jev-feedback.py' prompt"
+update_cmd="$TOOLKIT_ROOT/bin/devkit-update --if-stale"
+
+agy_hooks=$(inject_agy_edit_gates "$agy_hooks" "$codergate_cmd" "$commentgate_cmd" "$servergate_cmd" "$peercli_cmd")
+agy_hooks=$(echo "$agy_hooks" | jq --arg cmd "$feedback_cmd" '
+  .UserPromptSubmit = (
+    [(.UserPromptSubmit // [])[] | select((.command // "" | contains("jev-feedback.py")) | not)]
+    + [{type: "command", command: $cmd, timeout: 15}]
+  )
+')
+agy_hooks=$(echo "$agy_hooks" | jq --arg cmd "$update_cmd" '
+  .SessionStart = (
+    [(.SessionStart // [])[] | select((.command // "" | contains("bin/devkit-update")) | not)]
+    + [{type: "command", command: $cmd, timeout: 60}]
+  )
+')
+
+existing_hooks_obj='{}'
+if [ -f "$hooks_file" ]; then
+  existing_hooks_obj=$(jq '.' "$hooks_file" 2>/dev/null || echo '{}')
+fi
+final_hooks=$(echo "$existing_hooks_obj" | jq --argjson devkit "$agy_hooks" '.devkit = $devkit')
+write_json "$hooks_file" "$final_hooks"
+echo "    Created: .agents/hooks.json (Antigravity lifecycle hooks)"

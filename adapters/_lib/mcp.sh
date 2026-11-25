@@ -63,4 +63,5 @@ sync_project_mcp_servers() {
   ensure_gitignore_entry ".cursor/chrome-profile/"
   ensure_gitignore_entry ".codex/"
   ensure_gitignore_entry ".grok/"
+  ensure_gitignore_entry ".agents/"
 }

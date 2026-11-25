@@ -224,6 +224,8 @@ bin/devkit-resolve --dirs --project=<backend> --project=<frontend>
 bin/devkit-install --claude --project=.    # or: bin/devkit-resolve --adapter=claude
 bin/devkit-install --cursor --project=.
 bin/devkit-install --codex --project=.
+bin/devkit-install --grok --project=.
+bin/devkit-install --agy --project=.
 
 # Run the shell test suite (hooks, adapters, output style) before pushing
 tests/run-all.sh

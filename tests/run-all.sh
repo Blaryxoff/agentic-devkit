@@ -3,6 +3,7 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPTS=(
+  agy-adapter.sh
   babysit-skill.sh
   browser-oracles.sh
   browser-policy.sh

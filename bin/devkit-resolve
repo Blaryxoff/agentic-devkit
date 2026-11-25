@@ -37,7 +37,7 @@ Usage:
   devkit-resolve --validate          Check every toolkit.json and plugin.json against
                                    schemas/, then resolve
   devkit-resolve --adapter=<name>    Resolve + generate config for an adapter
-                                   Supported: claude, cursor, codex, grok
+                                   Supported: claude, cursor, codex, grok, agy
 
 Options:
   -h, --help      Show this help
