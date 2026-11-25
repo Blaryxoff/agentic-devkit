@@ -63,6 +63,10 @@ Compare at least these choices when feasible:
 Check credit grant expiry and remaining useful work before treating one credit as worth its purchase price.
 Compare measured net credit burn after included usage with the balance and days until expiry. Exclude new grants,
 refunds, expired grants and cross-account artifacts before deriving a rate. Missing measurements remain missing.
+Price each wait using validated credit-only exposure or a clearly labeled comparable-workload scenario from
+[usage.md](usage.md). Include the next substantial batch and concurrent work before comparing its cost with the balance;
+an imminent burst can consume the buffer before a daily checkpoint. When only mixed calendar averages are available,
+leave the bridge cost unknown and do not recommend waiting on the claim that the balance will last.
 Credits projected to expire unused make a short wait cheaper; credits likely to run out favor earlier useful redemption.
 Keep usage credits separate from cash, API credits and reset credits. Follow explicit user exclusions for future grants.
 

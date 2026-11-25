@@ -62,6 +62,9 @@ python3 "$SKILL_DIR/scripts/usage.py" --as-of "$QUOTA_NOW" --timezone "$QUOTA_TZ
 Use other authorized agent sources only when they materially fill a coverage gap. Report source coverage and distinguish
 human availability from autonomous compute. Derive burn rates only from reconciled account consumption; never convert
 prompt hours or stale rollout balances into credit charges.
+Validate credit-only exposure under [usage.md](references/usage.md) before pricing a wait. Treat totals spanning included
+allowance or manual/automatic refills as historical totals, not a credit-only burn rate. Assess the next substantial
+workload and user-reported bursts before concluding that credits can bridge to a refresh; keep unmeasured costs unknown.
 
 ## 4. Compare redemption choices
 

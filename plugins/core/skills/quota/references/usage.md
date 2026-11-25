@@ -30,6 +30,16 @@ Match account/workspace and allow for propagation delay; take another authorized
 Credit fields inside rollouts can be stale, replayed, concurrent or from another account: they are not a spending ledger.
 Human hours do not establish tokens, credits or the absolute size of a weekly allowance.
 
+Validate the denominator before forecasting credit spend. Identify when credits actually paid for work, the included
+allowance state, intervening refills and any idle time. Use measured credit-consuming time or comparable workloads to
+estimate credit-only burn. Keep calendar totals descriptive when they mix included usage, reset coverage and credits;
+dividing them by calendar days does not establish the cost of waiting while the allowance is exhausted.
+Mark credit-only burn unknown when exposure cannot be isolated; collect a comparable exhausted-allowance session or
+give conditional choices instead of declaring the bridge affordable. Exclude partial days from complete-day averages.
+Treat an imminent user-reported burst as a separate workload scenario that can outweigh a smoothed historical average.
+Label its cost as user-reported or estimated, preserve its timing, and do not spread it across idle or allowance-covered
+days. Avoid converting that credit cost into a refill's capacity without comparable account evidence.
+
 When reliable, report remaining balance divided by remaining calendar days and estimated active hours as planning
 thresholds, explicitly distinct from measured burn. State that rates vary with model, reasoning, context, caching,
 speed and autonomous/concurrent work. Verify current pricing only when a rate conversion changes the decision.
