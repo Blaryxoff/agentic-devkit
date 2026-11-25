@@ -36,7 +36,7 @@ Apply these mechanics from any caller to the selected peer, including another se
 1. Use the peer explicitly requested for this task; otherwise use the consuming project's documented preference, then the user's global preference. A task-specific choice overrides an earlier default.
 2. Record the peer's identity, transport, executable or session/thread ID, working directory, output channel and write boundary. The CLI name and the model name are separate choices.
 3. Use `devkit-pair` when the user selected an already-running session. Do not replace that session with a subprocess. A CLI workflow requires an explicitly selected CLI or permission to start an independent peer conversation.
-4. Ask for the missing selection when no preference exists or several sessions match; continue independent native work while waiting. The mere presence of `claude`, `cursor-agent`, `grok`, `gemini` or `codex` is not a preference.
+4. Ask for the missing selection when no preference exists or several sessions match; continue independent native work while waiting. The mere presence of `claude`, `cursor-agent`, `grok`, `gemini`, `agy` or `codex` is not a preference.
 5. Keep one peer conversation per task. Another Codex session is a valid peer; never resume the caller's own thread or select a different session merely because its checkout matches.
 
 Use the known command forms below only for the selected CLI. For Gemini, Grok or any other CLI, inspect its installed help and current official documentation for non-interactive input, result extraction, resume support and enforced write restrictions. Record the verified command in the task scratchpad. Do not invent shared flags or silently reuse Claude's mode.
@@ -92,6 +92,16 @@ DEVKIT_FEEDBACK_WORKER=1 cursor-agent -p --trust --mode plan --output-format jso
 - Use `--mode ask` for answer-only questions. Preserve the selected mode's edit and shell restrictions; never add `-f` to a review launch.
 - Read `.result` from the completed JSON output and reject missing or empty results. Plan mode is a tool policy, not an OS sandbox; verify its restrictions against the installed CLI before relying on it for a new version.
 - Prefer `cursor-agent`; accept `agent` only after resolving it to the same Cursor executable. An unrelated command named `agent` is not a peer selection.
+
+### Antigravity (agy) peer
+
+```bash
+DEVKIT_FEEDBACK_WORKER=1 agy -p --mode plan --sandbox --output-format json "<prompt>" < /dev/null
+```
+
+- `--mode plan --sandbox` enforces both plan-mode edit restrictions and the OS terminal sandbox. Never pass `--dangerously-skip-permissions` to a peer review/cross-check run.
+- Read the final answer from stdout JSON (or plain text when `--output-format text` is selected) and keep stderr separate for diagnostics.
+- Resume an existing peer conversation with `--conversation <id>` while keeping `--mode plan --sandbox` on every round.
 
 ### Persistent subprocess peer sessions
 

@@ -13,15 +13,22 @@ SHELLS = {"sh", "bash", "zsh", "fish", "dash", "login"}
 
 def resumed_id(argv):
     for i, arg in enumerate(argv):
-        if arg in ("--resume", "-r") and i + 1 < len(argv) and UUID.match(argv[i + 1]):
+        if arg in ("--resume", "-r", "--conversation") and i + 1 < len(argv) and UUID.match(argv[i + 1]):
             return argv[i + 1]
+        for prefix in ("--resume=", "--conversation="):
+            if arg.startswith(prefix) and UUID.match(arg[len(prefix):]):
+                return arg[len(prefix):]
     return None
 
 
-def transcript(argv):
+def transcript(argv, command="claude"):
     sid = resumed_id(argv or [])
     if not sid:
         return "-"
+    if command == "agy":
+        agy_home = os.path.expanduser(os.environ.get("AGY_HOME", f"{HOME}/.gemini/antigravity-cli"))
+        candidate = f"{agy_home}/brain/{sid}/.system_generated/logs/transcript.jsonl"
+        return candidate if os.path.isfile(candidate) else "-"
     hits = glob.glob(f"{HOME}/.claude/projects/*/{sid}.jsonl")
     return max(hits, key=os.path.getmtime) if hits else "-"
 
@@ -51,7 +58,7 @@ def main():
             command = os.path.basename(argv[0]) if argv else ""
             if not command or command in SHELLS or any(c.isspace() for c in command):
                 continue
-            path = transcript(argv) if command == "claude" else "-"
+            path = transcript(argv, command) if command in ("claude", "agy") else "-"
             print(f"{info['id']} {label(info)} {path} {pane} {command}")
             print(f"#   cwd={info.get('cwd')} pane={pane} command={command}", file=sys.stderr)
 

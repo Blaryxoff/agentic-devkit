@@ -1,6 +1,6 @@
 # Recover a coding-agent session
 
-Use this workflow when the user asks to continue work from a selected Claude Code, Codex, Cursor or Grok session.
+Use this workflow when the user asks to continue work from a selected Claude Code, Codex, Cursor, Grok or Antigravity (`agy`) session.
 It recovers context in the current harness; it does not launch the old CLI, replay its commands or transfer its
 permissions. Project knowledge capture remains the separate `devkit-learn` workflow.
 
@@ -13,7 +13,7 @@ bin/devkit-session codex list --project /absolute/project
 bin/devkit-session codex show SESSION_ID --project /absolute/project
 ```
 
-Replace `codex` with `claude`, `cursor` or `grok`. `show latest` selects the newest available session in that project.
+Replace `codex` with `claude`, `cursor`, `grok` or `agy`. `show latest` selects the newest available session in that project.
 Use it only when the user selected the latest session. Otherwise list candidates, identify the requested native ID
 and source path, and pass its ID. A prefix matching several sessions exits with `ambiguous_reference` and
 candidate metadata; ask the user to choose rather than guessing. A full ID or absolute transcript path pins a source.
@@ -26,6 +26,7 @@ The defaults search the native stores associated with the selected project:
 | Codex | Project entries in `$CODEX_HOME/state_*.sqlite`, then the indexed rollout JSONL |
 | Cursor | Ordered project JSONL under `~/.cursor/projects/.../agent-transcripts`; CLI stores are identified but opaque SQLite content is not decoded |
 | Grok | Project update streams under `$GROK_HOME/sessions` or `~/.grok/sessions` |
+| Antigravity (`agy`) | Conversation transcripts under `$AGY_HOME/brain/<id>/.system_generated/logs/transcript.jsonl` (default `~/.gemini/antigravity-cli`), scoped via `cache/conversation_metadata.json` (`WorkspaceURIs`) and `history.jsonl` |
 
 Codex discovery opens its index as an immutable read-only snapshot. Newly written WAL entries can be absent; use an
 explicit selected rollout if the expected session is missing. The helper never falls back to scanning every project's

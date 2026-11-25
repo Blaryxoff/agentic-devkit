@@ -109,6 +109,15 @@ with tempfile.TemporaryDirectory() as temporary:
         assert "transcript_path" not in feedback.normalize_prompt_payload({**grok_payload, "cwd": "relative"})
         assert "transcript_path" not in feedback.normalize_prompt_payload({**grok_payload, "hookEventName": "UserPromptSubmit"})
 
+    agy_home = Path(temporary) / "agy-home"
+    agy_payload = {"hook_event_name": "PreInvocation", "conversation_id": "agy-conv-1", "cwd": "/tmp/project",
+                   "prompt": "Why did this workflow skip its checks?"}
+    expected_agy = agy_home / "brain/agy-conv-1/.system_generated/logs/transcript.jsonl"
+    with patch.dict(os.environ, {"AGY_HOME": str(agy_home)}):
+        assert feedback.normalize_prompt_payload(agy_payload)["transcript_path"] == str(expected_agy)
+        assert feedback.normalize_prompt_payload({**agy_payload, "transcript_path": "/tmp/agy.jsonl"})["transcript_path"] == "/tmp/agy.jsonl"
+        assert "transcript_path" not in feedback.normalize_prompt_payload({**agy_payload, "conversation_id": "../foreign"})
+
     cursor_prompt = "Why did you ignore the Cursor rule again?"
     cursor_payload = {
         "hook_event_name": "beforeSubmitPrompt",

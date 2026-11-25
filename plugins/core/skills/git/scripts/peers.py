@@ -96,6 +96,10 @@ def classify(argv):
         return command, "codex"
     if command == "claude":
         return command, "claude"
+    if command == "grok":
+        return command, "grok"
+    if command == "agy":
+        return command, "agy"
     return command, ""
 
 

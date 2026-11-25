@@ -203,6 +203,8 @@ with tempfile.TemporaryDirectory() as tmp:
 
     assert peers.clean_remote("../local/repo") == ""
     assert peers.clean_remote("https://[bad-host/repo") == ""
+    assert peers.classify(["/Users/me/.local/bin/agy"]) == ("agy", "agy")
+    assert peers.classify(["grok"]) == ("grok", "grok")
 
     # Partial tree enumeration reports an error and keeps other windows' candidates.
     def partial(args, **kwargs):

@@ -40,7 +40,7 @@ Pin the selected session and target `--pane left|right`. Both panes may run the 
 remain Claude/Cursor left and Codex right, but workflows must pass the observed target pane explicitly. A session
 with no split or a shell in the opposite pane is refused.
 
-Choose `--to claude|cursor|codex|grok` for the receiving UI protocol. Use `--target-command` (alias `--command`) to identify
+Choose `--to claude|cursor|codex|grok|agy` for the receiving UI protocol. Use `--target-command` (alias `--command`) to identify
 its actual executable or wrapper independently. For example, a renamed Codex executable uses `--to codex
 --target-command review-codex --pane left`; a second Codex on the right uses `--to codex --pane right`.
 The exact composer parser must match the live UI; a model name is not evidence of protocol compatibility.
@@ -76,6 +76,7 @@ prefix_rule(pattern=["peer-chat.py", "--to", "claude", "--message-file"], decisi
 prefix_rule(pattern=["peer-chat.py", "--to", "cursor", "--message-file"], decision="allow")
 prefix_rule(pattern=["peer-chat.py", "--to", "codex", "--message-file"], decision="allow")
 prefix_rule(pattern=["peer-chat.py", "--to", "grok", "--message-file"], decision="allow")
+prefix_rule(pattern=["peer-chat.py", "--to", "agy", "--message-file"], decision="allow")
 ```
 
 Keep only the profiles you use. A rule for a literal argv prefix must match the actual option order; add a narrow
@@ -101,11 +102,11 @@ Verify the live split's title, checkout and both agent commands, then pass its I
 
 ## Wrapper-launched agents
 
-The script reads the pane's command from agterm and looks for `claude` / `cursor-agent` / `codex` / `grok`. Cursor's `agent`
+The script reads the pane's command from agterm and looks for `claude` / `cursor-agent` / `codex` / `grok` / `agy`. Cursor's `agent`
 entrypoint counts as Cursor when that same argv also contains the versioned `cursor-agent` script path. A process
 named only `agent` does not. A wrapper's name is what agterm sees instead, so pass `--target-command <name>` (a path
 works; only the last component is compared), or set `PEER_CHAT_CLAUDE_COMMAND` / `PEER_CHAT_CURSOR_COMMAND` /
-`PEER_CHAT_CODEX_COMMAND` / `PEER_CHAT_GROK_COMMAND`.
+`PEER_CHAT_CODEX_COMMAND` / `PEER_CHAT_GROK_COMMAND` / `PEER_CHAT_AGY_COMMAND`.
 The opposite pane's foreground supplies the sender label for every profile. Known profiles retain their display
 names; another executable uses its basename. Set `--sender NAME --sender-command COMMAND` to label a wrapper and pin
 its executable. Shells and an ambiguous bare `agent` command are refused. An agent whose launcher leaves no stable
@@ -151,11 +152,21 @@ caret is column 6. A draft, permission dialog, unknown layout or active turn blo
 is supported: Grok has no verified `--queue` or `--steer` transport. A `submitted` receipt proves the composer cleared;
 verify a reply separately. Paths, mentions and wide characters use the same ASCII JSON envelope described above.
 
+## Antigravity (agy)
+
+Install core skills globally with `bin/devkit-install` (links `~/.agents/skills/<name>`), and project stack infra with
+`bin/devkit-install --agy --project=/path/to/project`.
+
+Use `--to agy --pane <left|right>` with the observed pane pinned explicitly. The `agy` parser requires horizontal-rule
+borders (`─`) around a `>` prompt row with at most two status/hint footer lines below it; its empty caret is column 2.
+Known empty mode placeholders are recognized; a draft, chooser, permission prompt, or unknown layout blocks before typing.
+Paths, mentions, and wide characters use the same ASCII JSON envelope to avoid triggering `/` commands or `@` mentions.
+
 ## Limits worth knowing
 
 - **Do not leave half-written input in a pane about to receive a message.** The pre-write gate checks
-  the caret at column 2 for Claude/Codex, column 0 for Cursor and column 6 for Grok. Claude drafts sitting at column 2
-  can pass. Codex and Cursor also require their known placeholders; Grok requires an empty framed composer.
+  the caret at column 2 for Claude/Codex/Antigravity (`agy`), column 0 for Cursor and column 6 for Grok. Claude drafts sitting at column 2
+  can pass. Codex, Cursor, Grok, and Antigravity also require their known empty placeholders/blank state.
 - **Do not type in the receiving pane during a send.** Cleanup verifies it owns every visible row
   before each backspace batch, but a keystroke arriving after that check can still be erased.
 - **A dialog on screen stops the send**, but a chooser appearing between the final check and the

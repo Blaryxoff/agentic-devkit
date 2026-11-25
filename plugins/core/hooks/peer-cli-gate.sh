@@ -32,8 +32,8 @@ command -v jq >/dev/null 2>&1 || exit 0
 # "claude". Prefilter the extracted command instead — that keeps awk off the calls
 # that cannot match, which is the expensive half.
 cmd=$(printf '%s' "$input" | jq -r '
-  if ((.tool_name // .toolName) as $tool | ["Bash", "Shell", "exec_command", "shell_command"] | index($tool)) != null
-  then (.tool_input.command // .toolInput.command // .tool_input.cmd // .toolInput.cmd // .input.command // .input.cmd // "")
+  if ((.tool_name // .toolName) as $tool | ["Bash", "Shell", "exec_command", "shell_command", "run_command"] | index($tool)) != null
+  then (.tool_input.command // .toolInput.command // .tool_input.cmd // .toolInput.cmd // .tool_input.CommandLine // .toolInput.CommandLine // .input.command // .input.cmd // .input.CommandLine // "")
   else "" end
 ' 2>/dev/null)
 [ -n "$cmd" ] || exit 0
@@ -53,7 +53,7 @@ function check(t, piped,   w1, w2, base) {
     if (w2 != "exec" && w2 != "e") return       # `codex mcp get exec`, `codex help exec`
   } else if (base == "claude") {
     if (t !~ /(^|[ \t])(-p|--print)([ \t]|$)/) return
-  } else if (base == "cursor-agent" || base == "agent" || base == "gemini" || base == "grok") {
+  } else if (base == "cursor-agent" || base == "agent" || base == "gemini" || base == "grok" || base == "agy") {
     if (t !~ /(^|[ \t])(-p|--print|--prompt|--headless)([= \t]|$)/) return
   } else if (!(base in configured)) return
   if (piped) return                             # stdin comes from the pipeline

@@ -15,7 +15,7 @@ You are converting **real repository history** into a useful changelog. Your job
 
 1. **Resolve the range.** Prefer an explicit user range (`v1.2.0..HEAD`, dates, branch comparison). If absent, inspect tags and recent history, then state the chosen range.
 2. **Collect evidence.** Use `git log`, `git diff --stat`, and targeted diffs for unclear commits; ground every change description in the diff.
-   Recover missing intent or user impact from matching Claude, Codex, Cursor and Grok sessions per
+   Recover missing intent or user impact from matching Claude, Codex, Cursor, Grok and Antigravity (`agy`) sessions per
    [Agent session sources](../../conduct/agent-session-sources.md). Scope by project and range; disclose source gaps
    when session evidence is used. Corroborate session claims against the selected git range before including them.
 3. **Group changes.** Use only categories that have real content:

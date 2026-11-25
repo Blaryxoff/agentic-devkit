@@ -122,7 +122,7 @@ Example body after resolved mentions, assuming these fixes are verified on the t
 ## Session sources
 
 Apply [Agent session sources](../../conduct/agent-session-sources.md) to locate candidates across Claude Code, Codex,
-Cursor and Grok, regardless of the caller's harness. Honour an explicitly selected session. Prefer native session
+Cursor, Grok and Antigravity (`agy`), regardless of the caller's harness. Honour an explicitly selected session. Prefer native session
 search; otherwise filter by repository/worktree metadata and time before reading content. Match the task link/key and
 affected behavior, then read the matching request, completion summary, and only the tool results needed to support
 claims. Report inaccessible or unsupported sources to the user when they prevent selecting or substantiating the session.

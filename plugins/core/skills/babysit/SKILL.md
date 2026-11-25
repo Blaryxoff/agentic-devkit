@@ -96,7 +96,7 @@ current run's active state; confirm completion in pane/transcript evidence. Keep
 
 - Prefer native session/thread steering for any harness, including another session of your own. Pin the endpoint,
   preserve owner drafts and verify acknowledgement per `references/sessions.md`.
-- For a verified Claude/Cursor/Codex/Grok UI protocol, reuse `../pair/scripts/peer-chat.py --supervisor --to <profile>
+- For a verified Claude/Cursor/Codex/Grok/Antigravity (`agy`) UI protocol, reuse `../pair/scripts/peer-chat.py --supervisor --to <profile>
   --session <full-id> --pane <left|right> --target-command <command> --stdin`. Supply the direction on stdin, or use
   its private prepared-message file flow when required by the caller. This mode requires explicit endpoint selectors,
   adds a supervisor tag and preserves the same composer/draft guards; it also supports a standalone left pane.

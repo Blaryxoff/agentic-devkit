@@ -18,7 +18,7 @@ release work. Group by product area — not by repo, commit, or agent.
 | cutoff date | yes | ask if absent; never guess |
 | repo roots | no | cwd + every other accessible repo of the same product |
 | release branch | no | `origin/HEAD` of each root (`master` / `main` / `production`) |
-| agent sessions | no | matching local Claude, Codex, Cursor, and Grok transcript stores |
+| agent sessions | no | matching local Claude, Codex, Cursor, Grok, and Antigravity (`agy`) transcript stores |
 | scale | no | infer: few sections → `Мини-релиз`, otherwise a dated full release |
 
 Accept `DD.MM.YYYY`, `YYYY-MM-DD`, `с 10 июня`, `за последнюю неделю`. Normalise to `YYYY-MM-DD` and state the
@@ -63,14 +63,16 @@ normalised value before collecting.
     security, and build changes against their diffs and available deployment evidence. Name shipped runtime upgrades
     and security fixes explicitly in the post; a generic reliability line does not cover them. No SHAs, paths,
     ticket/session ids, prompt text, or secrets leaked; fix-flavoured sections last; Russian throughout. Outside the
-    post, state the roots/range and coverage or gaps for each of Claude, Codex, Cursor, and Grok.
+    post, state the roots/range and coverage or gaps for each of Claude, Codex, Cursor, Grok, and Antigravity (`agy`).
 
 ## Agent session sources
 
-Apply [Agent session sources](../../conduct/agent-session-sources.md) to inventory Claude, Codex, Cursor, and Grok
-for every release root and its git worktrees. Check Cursor project transcripts, CLI stores and IDE chats separately;
-an unreadable or opaque store remains a reported coverage gap. Reconstruct Grok message chunks before interpreting
-requests or completion claims. Accept explicit transcript roots or a harness-provided scoped session search.
+Apply [Agent session sources](../../conduct/agent-session-sources.md) to inventory Claude, Codex, Cursor, Grok, and
+Antigravity (`agy`) for every release root and its git worktrees. Check Cursor project transcripts, CLI stores and IDE
+chats separately; an unreadable or opaque store remains a reported coverage gap. Reconstruct Grok message chunks before
+interpreting requests or completion claims. For Antigravity, scope `brain/<id>/.system_generated/logs/transcript.jsonl`
+via `cache/conversation_metadata.json` (`WorkspaceURIs`) or `history.jsonl`, and skip hidden `thinking` fields. Accept
+explicit transcript roots or a harness-provided scoped session search.
 
 - Shortlist files by cutoff before reading them, and limit inspection to relevant project stores.
 - Read top-level sessions first. Skip subagent transcripts when their parent summary already covers the work.

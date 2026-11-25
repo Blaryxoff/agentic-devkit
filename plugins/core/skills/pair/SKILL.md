@@ -49,7 +49,7 @@ events, then sends the submit key after the last one settles. A raw `session typ
 and that is how messages arrive merged, truncated, or sitting unsent in a composer.
 
 Resolve the live session, target pane and foreground command before sending. The target may be any agent, including
-another session of the caller's harness. Select `--to claude|cursor|codex|grok` by the observed composer protocol, not the
+another session of the caller's harness. Select `--to claude|cursor|codex|grok|agy` by the observed composer protocol, not the
 agent's model or brand; `--pane left|right` pins its location and `--target-command NAME` pins a wrapper or another
 executable using that protocol. Verify the parser matches its live UI. An unknown UI needs native thread steering or
 a tested protocol adapter; never fall back to Claude's composer. State an unsupported delivery capability for that
@@ -97,6 +97,7 @@ Use `--sender NAME --sender-command COMMAND` when a wrapper's name needs a human
 - Use `--queue` with Codex or Cursor only for an informational note that can wait until the current turn ends.
   Codex receives Tab; Cursor receives one Return without promotion.
 - Grok accepts an idle submission only. Wait for its current turn to finish; `--steer` and `--queue` are unsupported.
+- Antigravity (`agy`) manages its own queued/submitted input and accepts neither `--steer` nor `--queue`; messages containing `/` or `@` use the ASCII JSON envelope to keep its slash menu and file mention picker closed.
 - Resolve an occupied or unreadable Cursor queue before steering. The script refuses before typing when earlier
   follow-ups exist; it never promotes someone else's message or sends a blind second Return.
 - Read the JSON receipt's `delivery`: `queued` confirms queue submission, `steering` confirms Cursor's promotion UI,

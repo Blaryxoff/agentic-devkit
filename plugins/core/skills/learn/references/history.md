@@ -8,9 +8,10 @@ index as history; the helper uses a new private project-scoped state and never t
 
 Resolve the canonical project directory and identify only its authorized transcripts using
 [Agent session sources](../../../conduct/agent-session-sources.md). For project-wide history, inventory Claude Code,
-Codex, Cursor and Grok regardless of the collector's harness; honour an explicitly selected source or session. Pass
-each verified project store or exact transcript as a separate `--source`. Include Grok `updates.jsonl` and flat/nested
-Cursor project JSONL; disclose opaque CLI stores, unavailable IDE exports and other coverage gaps. Ask for a missing
+Codex, Cursor, Grok and Antigravity (`agy`) regardless of the collector's harness; honour an explicitly selected source
+or session. Pass each verified project store or exact transcript as a separate `--source`. Include Grok `updates.jsonl`,
+Antigravity `brain/<id>/.system_generated/logs/transcript.jsonl`, and flat/nested Cursor project JSONL; disclose opaque
+CLI stores, unavailable IDE exports and other coverage gaps. Ask for a missing
 required source location while continuing independent work. Never sweep every user's session directory or assume
 that a similarly named workspace belongs to this project.
 
@@ -18,10 +19,11 @@ Select the read-only collector independently of the source harness:
 
 | Collector runtime | Source selection | Enforced collector boundary |
 |---|---|---|
-| Cursor | Any verified project transcripts from the four agents | Generated `devkit-mine` native agent with `readonly: true` |
-| Claude Code | Any verified project transcripts from the four agents | Generated `devkit-mine` agent restricted to `Read, Glob, Grep` |
-| Codex | Any verified project transcripts from the four agents | Read-only native worker, or `codex exec --sandbox read-only` |
-| Grok | Any verified project transcripts from the four agents | Available enforced read-only worker; otherwise return the missing capability |
+| Cursor | Any verified project transcripts from the five agents | Generated `devkit-mine` native agent with `readonly: true` |
+| Claude Code | Any verified project transcripts from the five agents | Generated `devkit-mine` agent restricted to `Read, Glob, Grep` |
+| Codex | Any verified project transcripts from the five agents | Read-only native worker, or `codex exec --sandbox read-only` |
+| Grok | Any verified project transcripts from the five agents | Available enforced read-only worker; otherwise return the missing capability |
+| Antigravity (`agy`) | Any verified project transcripts from the five agents | Read-only native `research` subagent, or `agy -p --mode plan --sandbox` |
 
 Dispatch the collector on the runtime-resolved economical model per `plugins/core/conduct/model-routing.md`. Preserve an
 explicit user model choice. For a Codex subprocess, pass a prompt file through a quoted positional argument, close stdin

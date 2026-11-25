@@ -204,6 +204,10 @@ def normalize_prompt_payload(payload: dict) -> dict:
             and re.fullmatch(r"[A-Za-z0-9_-]+", session)):
         grok_home = Path(os.environ.get("GROK_HOME", Path.home() / ".grok")).expanduser()
         transcript = str(grok_home / "sessions" / quote(cwd, safe="") / session / "updates.jsonl")
+    agy_event = first_string(payload.get("hook_event_name"), payload.get("hookEventName"))
+    if not transcript and agy_event == "PreInvocation" and re.fullmatch(r"[A-Za-z0-9_-]+", session):
+        agy_home = Path(os.environ.get("AGY_HOME", Path.home() / ".gemini/antigravity-cli")).expanduser()
+        transcript = str(agy_home / "brain" / session / ".system_generated/logs/transcript.jsonl")
     if transcript:
         normalized["transcript_path"] = transcript
     return normalized

@@ -186,6 +186,37 @@ for screen in (
 ):
     assert chat.live_prompt_text(grok, screen) is None, screen
 
+agy = chat.PROFILES["agy"]
+assert agy.pane == "right" and agy.command == "agy"
+assert agy.empty_cursor_column == 2 and agy.submit == "\r"
+assert chat.parse_args(["--to", "agy", "--stdin"]).to == "agy"
+
+def agy_screen(draft="", footer="agentic-devkit (main) │ Gemini 4 Neon (High) │ ctx 25% │ 5h: 97% (3h38m)"):
+    rule = "─" * 78
+    rows = draft.splitlines() or [""]
+    body = ["> " + rows[0] if rows[0] else ">"] + ["  " + row for row in rows[1:]]
+    lines = [rule, *body, rule]
+    if footer:
+        lines.append(footer)
+    return "\n".join(lines)
+
+for draft in ("", "a draft", "wrapped first\nwrapped second"):
+    assert chat.live_prompt_text(agy, agy_screen(draft)) == draft
+assert chat.live_prompt_text(agy, agy_screen("", footer="")) == ""
+assert chat.composer_is_empty(agy, "")
+assert chat.composer_is_empty(agy, "Auto mode: edits & safe commands auto-approved (shift+tab to cycle)")
+assert chat.composer_is_empty(agy, "Accept-edits mode: file edits auto-approved (shift+tab to cycle)")
+assert not chat.composer_is_empty(agy, "user draft")
+for screen in (
+    agy_screen() + "\n  1. Allow\n  2. Deny",
+    agy_screen() + "\nError: unavailable",
+    agy_screen(footer="1. Yes, allow\n2. No"),
+    agy_screen().replace(">", "!", 1),
+    "no rules at all\n> draft",
+    agy_screen() + "\nline2\nline3",
+):
+    assert chat.live_prompt_text(agy, screen) is None, screen
+
 cursor = chat.PROFILES["cursor"]
 assert cursor.pane == "left" and cursor.command == "cursor-agent"
 assert cursor.empty_cursor_column == 0
@@ -198,6 +229,8 @@ for argv in (
     ["--to", "claude", "--stdin", "--queue"],
     ["--to", "grok", "--stdin", "--queue"],
     ["--to", "grok", "--stdin", "--steer"],
+    ["--to", "agy", "--stdin", "--queue"],
+    ["--to", "agy", "--stdin", "--steer"],
     ["--prepare-message", "peer-chat-codex-options.txt", "--steer"],
 ):
     with contextlib.redirect_stderr(io.StringIO()):
@@ -477,12 +510,37 @@ class GrokAgterm(FakeAgterm):
                 return "ok"
         return super().ctl(*args, input_text=input_text)
 
+class AgyAgterm(FakeAgterm):
+    def __init__(self, draft="", truncate=False):
+        super().__init__(draft=draft, truncate=truncate)
+        self.node.update(foreground=["codex"], splitForeground=["agy"])
+        self.trailing = ""
+        self.ignore_submit = False
+
+    def ctl(self, *args, input_text=None):
+        if args[:2] == ("session", "text"):
+            return agy_screen(self.draft) + self.trailing
+        if args[:2] == ("surface", "cursor"):
+            return str(2 + len(self.draft.rsplit("\n", 1)[-1]))
+        if args[:2] == ("session", "type"):
+            if input_text == "\r":
+                self.events.append(input_text)
+                if not self.ignore_submit:
+                    self.accepted.append(self.draft)
+                    self.draft = ""
+                return "ok"
+            if input_text and set(input_text) == {"\x7f"}:
+                self.events.append(input_text)
+                self.draft = self.draft[:-len(input_text)]
+                return "ok"
+        return super().ctl(*args, input_text=input_text)
+
 chat.clear_composer = original_clear_composer
 chat.CHUNK_SETTLE_DELAY = 0
 chat.COMPOSER_SETTLE_DELAY = 0
 chat.PROBE_TIMEOUT = 0.01
 saved_commands = {name: os.environ.pop(name, None) for name in (
-    "PEER_CHAT_CLAUDE_COMMAND", "PEER_CHAT_CURSOR_COMMAND", "PEER_CHAT_CODEX_COMMAND", "PEER_CHAT_GROK_COMMAND",
+    "PEER_CHAT_CLAUDE_COMMAND", "PEER_CHAT_CURSOR_COMMAND", "PEER_CHAT_CODEX_COMMAND", "PEER_CHAT_GROK_COMMAND", "PEER_CHAT_AGY_COMMAND",
 )}
 original_ctl = chat.ctl
 try:
@@ -536,6 +594,28 @@ try:
         raise AssertionError("Grok submission without receipt accepted")
     assert fake.events.count("\r") == 1
     assert not fake.accepted and fake.draft
+    fake = AgyAgterm()
+    chat.ctl = fake.ctl
+    assert chat.with_sender_label(fake.sid, agy, fake.window).label == "Chat from Codex: "
+    assert chat.observed_harness(["/Users/me/.local/bin/agy"]) == "Agy"
+    for message in ("hello", "first line\nsecond line", "review /tmp/notes.md @peer 😊"):
+        fake = AgyAgterm()
+        chat.ctl = fake.ctl
+        assert chat.send(fake.sid, agy, message, fake.window)
+        assert fake.accepted == [chat.normalize(agy, message)]
+        assert fake.events.count("\r") == 1
+        assert not fake.draft
+    for draft, trailing in (("user draft", ""), ("", "\n  1. Allow")):
+        fake = AgyAgterm(draft=draft)
+        fake.trailing = trailing
+        chat.ctl = fake.ctl
+        try:
+            chat.send(fake.sid, agy, "must not type", fake.window)
+        except chat.PromptBlocked:
+            pass
+        else:
+            raise AssertionError("unsafe Agy composer accepted")
+        assert not fake.events and not fake.accepted and fake.draft == draft
     for target in ("cursor", "codex", "claude"):
         fake = CoordinationAgterm()
         chat.ctl = fake.ctl

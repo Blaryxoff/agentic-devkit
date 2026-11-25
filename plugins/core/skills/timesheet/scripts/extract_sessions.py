@@ -3,7 +3,7 @@
 import argparse, collections, datetime as dt, glob, json, os, re, sqlite3
 from pathlib import Path
 from contextlib import closing
-from urllib.parse import unquote
+from urllib.parse import unquote, urlparse
 
 p = argparse.ArgumentParser()
 p.add_argument('--config', required=True)
@@ -12,11 +12,13 @@ p.add_argument('--hermes', action='append', default=[])
 p.add_argument('--home', default=os.path.expanduser('~'))
 p.add_argument('--codex-home')
 p.add_argument('--grok-home')
+p.add_argument('--agy-home')
 a = p.parse_args()
 cfg = json.load(open(a.config))
 HOME = a.home
 CODEX_HOME = Path(a.codex_home or os.environ.get('CODEX_HOME', f'{HOME}/.codex'))
 GROK_HOME = Path(a.grok_home or os.environ.get('GROK_HOME', f'{HOME}/.grok')).expanduser()
+AGY_HOME = Path(a.agy_home or os.environ.get('AGY_HOME', f'{HOME}/.gemini/antigravity-cli')).expanduser()
 TZ = dt.timedelta(hours=cfg.get('tz_offset_hours', 0))
 UTC = dt.timezone.utc
 W0 = (dt.datetime.fromisoformat(cfg['period']['from']) - TZ).replace(tzinfo=UTC)
@@ -134,8 +136,8 @@ def add_prompt(s, value, txt, source, event_id=None):
 
 
 def finish(s):
-    ranks = {'claude-history': 0, 'codex-history': 0, 'claude': 1, 'codex-rollout': 1,
-             'codex-event': 2, 'codex-cache': 3}
+    ranks = {'claude-history': 0, 'codex-history': 0, 'agy-history': 0, 'claude': 1, 'codex-rollout': 1,
+             'agy': 1, 'codex-event': 2, 'codex-cache': 3}
     groups, by_text, by_id = [], collections.defaultdict(list), {}
     for when, text, source, event_id in sorted(s.pop('_inputs'), key=lambda x: (ranks.get(x[2], 1), x[0])):
         signature = ' '.join(text.split())
@@ -537,6 +539,97 @@ def cursor_composers(sessions, info, excluded):
         coverage['warnings'].append('Cursor composer database unavailable or unsupported; remaining coverage may be partial')
 
 
+def agy_workspace_uri(uri):
+    if not isinstance(uri, str) or not uri:
+        return None
+    parsed = urlparse(uri)
+    if parsed.scheme == 'file':
+        return unquote(parsed.path) or None
+    return uri if uri.startswith('/') else None
+
+
+def agy_user_text(content):
+    text = text_of(content).strip()
+    match = re.search(r'<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>', text, re.S)
+    return match.group(1).strip() if match else text
+
+
+def agy():
+    paths = list((AGY_HOME / 'brain').glob('*/.system_generated/logs/transcript.jsonl')) if AGY_HOME.is_dir() else []
+    history_path = AGY_HOME / 'history.jsonl'
+    meta_path = AGY_HOME / 'cache/conversation_metadata.json'
+    info = coverage['agy'] = {'store_present': AGY_HOME.is_dir(), 'transcript_files': len(paths),
+                              'history_present': history_path.is_file(), 'untimed_user_records': 0}
+    if not AGY_HOME.is_dir():
+        coverage['warnings'].append('Antigravity session store absent; human activity coverage is unavailable')
+        return
+    meta_map = {}
+    if meta_path.is_file():
+        try:
+            raw_meta = json.loads(meta_path.read_text(errors='ignore'))
+            convs = raw_meta.get('conversations') if isinstance(raw_meta, dict) else None
+            if isinstance(convs, dict):
+                for cid, entry in convs.items():
+                    if not isinstance(entry, dict):
+                        continue
+                    summary = entry.get('summary') if isinstance(entry.get('summary'), dict) else {}
+                    uris = summary.get('WorkspaceURIs') or []
+                    cwd = next((agy_workspace_uri(u) for u in uris if agy_workspace_uri(u)), None)
+                    meta_map[cid] = {
+                        'cwd': cwd,
+                        'internal': bool(entry.get('is_internal') or summary.get('Internal')),
+                    }
+        except (OSError, ValueError):
+            coverage['warnings'].append('Antigravity conversation metadata unavailable; workspace mapping may be partial')
+    sessions, transcripts = {}, set()
+    for path in paths:
+        sid = path.parent.parent.parent.name
+        meta = meta_map.get(sid, {})
+        if meta.get('internal'):
+            continue
+        s = sessions.setdefault(sid, session('agy', sid, meta.get('cwd')))
+        transcripts.add(sid)
+        for d in records(path):
+            rtype = d.get('type')
+            if rtype == 'PLANNER_RESPONSE':
+                when = instant(d.get('created_at')) or event_time(d)
+                if in_window(when) and isinstance(d.get('content'), str):
+                    h = hits(d['content'])
+                    if h:
+                        s['bhits'].append((iso(when), h))
+                continue
+            if rtype != 'USER_INPUT':
+                continue
+            if d.get('source') not in (None, 'USER_EXPLICIT') or not human_origin(d):
+                continue
+            when = instant(d.get('created_at')) or event_time(d)
+            if when is None:
+                info['untimed_user_records'] += 1
+                continue
+            step_id = f"step:{d['step_index']}" if d.get('step_index') is not None else None
+            add_prompt(s, when, agy_user_text(d.get('content')), 'agy', step_id)
+    if history_path.is_file():
+        for n, d in enumerate(records(history_path)):
+            ts = instant(d.get('timestamp'), millis=True)
+            if not in_window(ts):
+                continue
+            sid = d.get('conversationId') or f'agy-history-{n}'
+            meta = meta_map.get(sid, {})
+            if meta.get('internal'):
+                continue
+            cwd = d.get('workspace') or meta.get('cwd')
+            s = sessions.setdefault(sid, session('agy-history', sid, cwd))
+            s['cwd'] = s['cwd'] or cwd
+            add_prompt(s, ts, d.get('display'), 'agy-history')
+    if info['untimed_user_records']:
+        coverage['warnings'].append('Antigravity user records without input timestamps were excluded from hours')
+    for sid, s in sessions.items():
+        if sid not in transcripts:
+            s['content_routed'] = True
+        if s['_inputs'] or s['bhits']:
+            yield finish(s)
+
+
 def hermes():
     for path in a.hermes:
         d = json.load(open(path))
@@ -550,7 +643,7 @@ def hermes():
 
 counts = collections.Counter()
 with open(a.out, 'w') as out:
-    for gen in (claude(), codex(), cursor(), grok(), hermes()):
+    for gen in (claude(), codex(), cursor(), grok(), agy(), hermes()):
         for s in gen:
             counts[s['tool']] += len(s['prompts'])
             out.write(json.dumps(s, ensure_ascii=False) + '\n')

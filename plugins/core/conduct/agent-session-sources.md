@@ -1,8 +1,8 @@
 # Agent session sources
 
-Inventory Claude Code, Codex, Cursor and Grok when a workflow collects prior development sessions. Source coverage is
+Inventory Claude Code, Codex, Cursor, Grok and Antigravity (`agy`) when a workflow collects prior development sessions. Source coverage is
 independent of the caller's harness and the model used inside a session. Honour an explicitly selected session or
-source scope; otherwise check all four agents for the requested project and period.
+source scope; otherwise check all five agents for the requested project and period.
 
 ## Discover scoped sources
 
@@ -15,8 +15,9 @@ filters; otherwise use the stores below. Accept explicit source roots and honour
 | Codex | `${CODEX_HOME:-$HOME/.codex}/sessions/YYYY/MM/DD/*.jsonl`, `archived_sessions/`, `history.jsonl`; read-only `state_*.sqlite` and `thread_history_*.sqlite` | Thread metadata and `session_meta` / `turn_context` `cwd` |
 | Cursor | `$HOME/.cursor/projects/<encoded-root>/agent-transcripts/` (flat or nested JSONL); `$HOME/.cursor/chats/<workspace-hash>/<session>/{meta.json,store.db}`; IDE `globalStorage/state.vscdb` | Recorded `cwd`, CLI `meta.json`, exact encoded project directory, or verified workspace mapping; do not decode a hyphenated name into an assumed path |
 | Grok | `${GROK_HOME:-$HOME/.grok}/sessions/<percent-encoded-absolute-cwd>/<session>/updates.jsonl` | URL-decode the project directory and corroborate recorded `cwd` when present |
+| Antigravity (`agy`) | `${AGY_HOME:-$HOME/.gemini/antigravity-cli}/brain/<id>/.system_generated/logs/transcript.jsonl`; `history.jsonl`; `cache/conversation_metadata.json` | Match `summary.WorkspaceURIs` (`file://`) in `conversation_metadata.json` or `workspace` in `history.jsonl` |
 
-Use `bin/devkit-session <claude|codex|cursor|grok> list --project <root>` to locate bounded project candidates and
+Use `bin/devkit-session <claude|codex|cursor|grok|agy> list --project <root>` to locate bounded project candidates and
 `show <id-or-path>` for recovery excerpts; see [session recovery](../../../howto/session-recovery.md). Its output is
 clipped recovery evidence, not an exhaustive dated report. Inspect scoped original records when a report needs full
 coverage, timestamps or tool evidence. An opaque SQLite/binary store needs a supported read-only reader or ordered
@@ -32,6 +33,9 @@ JSONL export; finding the file does not establish that its messages were inspect
 - Read Grok `_x.ai/session/update` records under `params.update`: `user_message_chunk` and `agent_message_chunk`
   carry text in `content`. Join chunks by prompt identity (`_meta.promptIndex`), retain original line references and
   deduplicate replayed `params._meta.eventId` events. Use record `timestamp` or event `agentTimestampMs` for dates.
+- Read Antigravity (`agy`) `transcript.jsonl` records: `type: "USER_INPUT"` (`source: "USER_EXPLICIT"`) carries the prompt
+  wrapped in `<USER_REQUEST>...</USER_REQUEST>`, and `type: "PLANNER_RESPONSE"` (`source: "MODEL"`) carries assistant text
+  in `content` (ignore `thinking`). Use `created_at` for timestamps.
 - Exclude machine provenance before treating user-role text as a human request: subagents, peers, scheduled turns,
   system/meta records and compaction summaries. Grok `_meta.syntheticPrompt` / `hideFromScrollback` mark generated
   prompts. Use assistant messages only as context and completion claims.

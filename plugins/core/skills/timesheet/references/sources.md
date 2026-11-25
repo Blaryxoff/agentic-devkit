@@ -4,7 +4,7 @@ Every source: where it lives, what counts as the person's own activity, and what
 
 ## Agent logs
 
-Inventory all four agents per [Agent session sources](../../../conduct/agent-session-sources.md), independently of
+Inventory all five agents per [Agent session sources](../../../conduct/agent-session-sources.md), independently of
 the reporting harness. Separate absent stores, unreadable stores, unsupported formats and untimestamped messages in
 coverage. A missing human timestamp cannot be replaced by file mtime or thread creation/update time.
 
@@ -83,6 +83,19 @@ coverage. A missing human timestamp cannot be replaced by file mtime or thread c
   origins. Honour machine provenance even when the text looks human. Count only the person's timestamped inputs.
 - Report missing, unreadable or untimestamped streams in coverage. A surviving session directory or its update time
   does not establish hours; obtain timestamped exports or disclose unmeasured work.
+
+### Antigravity (agy)
+
+- Transcripts: `${AGY_HOME:-$HOME/.gemini/antigravity-cli}/brain/<id>/.system_generated/logs/transcript.jsonl`;
+  `--agy-home` selects an explicit source root.
+- Workspace mapping comes from `cache/conversation_metadata.json` (`conversations.<id>.summary.WorkspaceURIs`) and
+  `history.jsonl` (`workspace` / `conversationId`). Skip `is_internal` / `summary.Internal` subagent conversations.
+- Human prompt = `type: USER_INPUT` with `source: USER_EXPLICIT` (or legacy unlabelled user input) and `created_at`
+  timestamp; unwrap `<USER_REQUEST>...</USER_REQUEST>` when present. Exclude peer/machine prefixes and hidden
+  `thinking` fields. `PLANNER_RESPONSE` content provides project hints only; it never creates human time.
+- Merge `${AGY_HOME:-$HOME/.gemini/antigravity-cli}/history.jsonl` (`timestamp` in ms, `display`, `workspace`,
+  `conversationId`) one-to-one with transcripts so surviving input history covers pruned or partial conversations.
+- Report absent stores and untimestamped user records in coverage; never turn directory mtimes into human activity.
 
 ### Telegram bots (Hermes-style)
 

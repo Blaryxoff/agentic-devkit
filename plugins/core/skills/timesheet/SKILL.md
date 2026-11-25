@@ -1,7 +1,7 @@
 ---
 name: devkit-timesheet
 description: >-
-  reconstruct a person's actual working hours for a period from AI-agent logs (Claude Code, Codex, Cursor, Grok, Telegram
+  reconstruct a person's actual working hours for a period from AI-agent logs (Claude Code, Codex, Cursor, Grok, agy, Telegram
   bots), prompt history, commits, browser history, trackers and calls, and deliver a per-project / per-task hours
   report as text and PDF. Use for "отчёт по затраченному времени", "сколько часов на каждый проект",
   "timesheet", "часы из нейронки". Does not estimate future work (devkit-estimate) or plan capacity.
@@ -29,7 +29,7 @@ choices that move the total to the user.
 
 1. **Inventory sources before computing.** Walk every row of `references/sources.md`: which exist on this machine,
    which live remotely (bot containers, other hosts), what retention already deleted. Report coverage per source and
-   week, including separate Claude, Codex, Cursor and Grok coverage. Apply
+   week, including separate Claude, Codex, Cursor, Grok and Antigravity (`agy`) coverage. Apply
    [Agent session sources](../../conduct/agent-session-sources.md) regardless of the caller's harness.
    A week with commits but no prompts is a retention
    hole, not idle time. Check browser profiles and surviving dates before asking about unmeasured calls or QA.
@@ -99,7 +99,7 @@ choices that move the total to the user.
 
 | Script | Job |
 |---|---|
-| `extract_sessions.py` | Claude/Codex history and transcripts, read-only Codex caches, Cursor composers and project transcripts, Grok updates, bot dumps → sessions + coverage |
+| `extract_sessions.py` | Claude/Codex history and transcripts, read-only Codex caches, Cursor composers and project transcripts, Grok updates, Antigravity transcripts/history, bot dumps → sessions + coverage |
 | `hermes_dump.py` | one user's messages from a Hermes-style bot `state.db`; run inside the bot's container |
 | `browser_history.py` | Chrome History copies → work-site visits and call rooms with durations |
 | `timeline.py` | anchors → minute timeline → hours per project/month/task/day, sanity summary |

@@ -105,6 +105,17 @@ GROK_HINTS_RE = re.compile(
     r"(?:Ctrl\+b:send to bg\s+│\s+)?Ctrl\+x:shortcuts"
     r"|Enter:(?:send|queue)\s+│\s+Shift\+Enter/Opt\+Enter:newline\s+│\s+Shift\+Tab:mode)\s*$"
 )
+AGY_PROMPT_RE = re.compile(r"^>[ \u00a0]?(.*?)\s*$")
+AGY_TRAILING_BLOCK_RE = re.compile(
+    r"^(?:\d+\.\s|Error:|Press enter to confirm|Do you trust|[$%#]\s|.*\S\s+[%$#]\s*$)"
+)
+AGY_EMPTY_PROMPTS = {
+    "",
+    "Plan mode: research & plan only (shift+tab to cycle)",
+    "Accept-edits mode: file edits auto-approved (shift+tab to cycle)",
+    "Auto mode: edits & safe commands auto-approved (shift+tab to cycle)",
+    "Best-of-N mode: parallel arms, /model to pick models (shift+tab to cycle)",
+}
 MESSAGE_NAME_RE = re.compile(r"peer-chat-[a-z0-9][a-z0-9-]{2,48}\.txt")
 MESSAGE_SPOOL = Path(tempfile.gettempdir()) / f"agterm-peer-chat-{os.getuid()}"
 
@@ -153,6 +164,7 @@ PROFILES = {
     "codex": Profile("right", "codex", "codex", "Chat from peer: ", "\n"),
     "cursor": Profile("left", "cursor", "cursor-agent", "Chat from peer: ", "\n", 0),
     "grok": Profile("right", "grok", "grok", "Chat from peer: ", "\r", 6, delivery="submit"),
+    "agy": Profile("right", "agy", "agy", "Chat from peer: ", "\r", 2, delivery="submit"),
 }
 SHELL_COMMANDS = {"sh", "bash", "zsh", "fish", "dash", "login"}
 
@@ -355,7 +367,7 @@ def with_sender_label(
         )
     if sender_command and not runs(foreground[:1], command_name(sender_command)):
         raise RuntimeError("sender command changed; nothing was typed")
-    names = {"claude": "Claude", "cursor": "Cursor", "codex": "Codex", "grok": "Grok"}
+    names = {"claude": "Claude", "cursor": "Cursor", "codex": "Codex", "grok": "Grok", "agy": "Agy"}
     senders = [
         key for key in PROFILES
         if runs(foreground[:1], target_profile(key, None).command)
@@ -886,6 +898,39 @@ def grok_live_prompt_text(text: str) -> str | None:
     return "\n".join([first.group(1).rstrip(), *(row.group(1).rstrip() for row in rest)])
 
 
+def agy_live_prompt_text(text: str) -> str | None:
+    lines = text.splitlines()[-BOX_LINES:]
+    while lines and not lines[-1].strip():
+        lines.pop()
+    if len(lines) < 3:
+        return None
+    bottom = None
+    for index in range(len(lines) - 1, -1, -1):
+        if RULE_RE.match(lines[index]):
+            bottom = index
+            break
+    if bottom is None:
+        return None
+    trailing = [item for item in lines[bottom + 1 :] if item.strip()]
+    if len(trailing) > 2 or any(AGY_TRAILING_BLOCK_RE.match(item.strip()) for item in trailing):
+        return None
+    top = None
+    for index in range(bottom - 1, -1, -1):
+        if RULE_RE.match(lines[index]):
+            top = index
+            break
+    if top is None:
+        return None
+    body = lines[top + 1 : bottom]
+    if not body:
+        return None
+    first = AGY_PROMPT_RE.fullmatch(body[0])
+    if first is None:
+        return None
+    rows = [first.group(1).rstrip(), *(row.strip() for row in body[1:])]
+    return "\n".join(part for part in rows if part)
+
+
 def live_prompt_text(profile: Profile, text: str) -> str | None:
     if profile.agent == "codex":
         return codex_live_prompt_text(text)
@@ -893,6 +938,8 @@ def live_prompt_text(profile: Profile, text: str) -> str | None:
         return cursor_live_prompt_text(text)
     if profile.agent == "grok":
         return grok_live_prompt_text(text)
+    if profile.agent == "agy":
+        return agy_live_prompt_text(text)
     return claude_live_prompt_text(text)
 
 
@@ -932,6 +979,8 @@ def composer_is_empty(profile: Profile, content: str) -> bool:
         return " ".join(content.splitlines()) in CURSOR_EMPTY_PROMPTS
     if profile.agent == "grok":
         return content == ""
+    if profile.agent == "agy":
+        return " ".join(content.splitlines()) in AGY_EMPTY_PROMPTS
     joined = " ".join(content.splitlines())
     return joined in CLAUDE_EMPTY_PROMPTS or bool(
         CLAUDE_STARTUP_HINT_RE.fullmatch(joined)
@@ -1546,7 +1595,7 @@ def normalize(profile: Profile, message: str) -> str:
         line = line[len(prefix) :].lstrip(": ").strip()
     if not line:
         raise ValueError("chat message is empty")
-    if profile.agent in {"cursor", "grok"} and (
+    if profile.agent in {"cursor", "grok", "agy"} and (
         line.startswith(CURSOR_JSON_PREFIX)
         or any(char in line for char in "/@")
         or any(
@@ -1631,7 +1680,7 @@ def send(
         ):
             raise PromptBlocked("Grok is busy; wait for its current turn to finish; nothing was typed")
         # Claude's free-form suggestions look like drafts in plain screen text.
-        if profile.agent in {"codex", "cursor", "grok"} and not composer_is_empty(
+        if profile.agent in {"codex", "cursor", "grok", "agy"} and not composer_is_empty(
             profile, empty_text
         ):
             raise PromptBlocked(

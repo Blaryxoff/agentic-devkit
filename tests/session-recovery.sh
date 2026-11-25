@@ -116,6 +116,33 @@ with tempfile.TemporaryDirectory() as temporary:
     assert shown["handoff"]["recent_assistant_reports"] == ["Recovery reviewed. Next: integration test."]
     assert "HIDDEN-THOUGHT" not in json.dumps(shown)
 
+    agy_home = home / ".gemini/antigravity-cli"
+    agy_cid = "11111111-2222-3333-4444-555555555555"
+    other_agy_cid = "99999999-2222-3333-4444-555555555555"
+    write(agy_home / "brain" / agy_cid / ".system_generated/logs/transcript.jsonl", [
+        {"step_index": 0, "source": "USER_EXPLICIT", "type": "USER_INPUT", "status": "DONE",
+         "content": "<USER_REQUEST>\nVerify agy session recovery\n</USER_REQUEST>\n<ADDITIONAL_METADATA>\nnow\n</ADDITIONAL_METADATA>"},
+        {"step_index": 1, "source": "MODEL", "type": "PLANNER_RESPONSE", "status": "DONE",
+         "thinking": "PRIVATE-AGY-THOUGHT", "content": "Agy recovery verified."},
+    ])
+    write(agy_home / "brain" / other_agy_cid / ".system_generated/logs/transcript.jsonl", [
+        {"step_index": 0, "source": "USER_EXPLICIT", "type": "USER_INPUT", "status": "DONE",
+         "content": "<USER_REQUEST>\nUnrelated project prompt\n</USER_REQUEST>"},
+    ])
+    (agy_home / "cache").mkdir(parents=True, exist_ok=True)
+    (agy_home / "cache/conversation_metadata.json").write_text(json.dumps({
+        "conversations": {
+            agy_cid: {"summary": {"WorkspaceURIs": [f"file://{project}"]}},
+            other_agy_cid: {"summary": {"WorkspaceURIs": [f"file://{other}"]}},
+        }
+    }))
+    agy_list = run("agy", "list")
+    assert [s["id"] for s in agy_list["sessions"]] == [agy_cid], agy_list
+    agy_shown = run("agy", "show", agy_cid)
+    assert agy_shown["handoff"]["latest_user_request"] == "Verify agy session recovery"
+    assert agy_shown["handoff"]["recent_assistant_reports"] == ["Agy recovery verified."]
+    assert "PRIVATE-AGY-THOUGHT" not in json.dumps(agy_shown)
+
     duplicate = write(claude_dir / "claude-second.jsonl", [{"type": "user", "cwd": str(project), "message": {"content": "Fix something else"}}])
     ambiguous = run("claude", "show", "claude", code=2)
     assert ambiguous["error"] == "ambiguous_reference" and len(ambiguous["candidates"]) == 2

@@ -8,7 +8,7 @@ import re
 import sqlite3
 import subprocess
 import sys
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
 
 MAX_BYTES = 4 * 1024 * 1024
@@ -124,7 +124,11 @@ def candidate(path, project, scoped, warnings):
     if meta.get("cwd") and not within(project, meta["cwd"]):
         warnings.append("Excluded a transcript whose recorded working directory belongs to another project.")
         return None
-    sid = meta.get("id") or (path.parent.name if path.name in {"updates.jsonl", "store.db"} else path.stem)
+    sid = meta.get("id") or (
+        path.parents[2].name if path.name == "transcript.jsonl" and len(path.parents) >= 3 and path.parents[1].name == ".system_generated"
+        else path.parent.name if path.name in {"updates.jsonl", "store.db"}
+        else path.stem
+    )
     return {"id": clean(sid, 120), "path": str(path.resolve()), "updated_at": path.stat().st_mtime,
             "project_association": "recorded_cwd" if meta.get("cwd") else "project_scoped_store" if scoped else "explicit_source_unverified"}
 
@@ -153,6 +157,59 @@ def codex_paths(projects, warnings):
         raise RecoveryError("Cannot read the Codex project index; select the transcript using --source.") from error
 
 
+def agy_paths(projects, warnings):
+    home = Path(os.environ.get("AGY_HOME", Path.home() / ".gemini/antigravity-cli")).expanduser()
+    matched = []
+    seen = set()
+    meta_file = home / "cache/conversation_metadata.json"
+    if meta_file.is_file() and not meta_file.is_symlink():
+        try:
+            data = json.loads(meta_file.read_text(encoding="utf-8"))
+            conversations = data.get("conversations", {}) if isinstance(data, dict) else {}
+            if isinstance(conversations, dict):
+                for cid, entry in conversations.items():
+                    if not isinstance(cid, str) or not isinstance(entry, dict):
+                        continue
+                    summary = entry.get("summary")
+                    uris = summary.get("WorkspaceURIs", []) if isinstance(summary, dict) else []
+                    if not isinstance(uris, list):
+                        continue
+                    for uri in uris:
+                        if not isinstance(uri, str):
+                            continue
+                        ws = unquote(uri[7:]) if uri.startswith("file://") else uri
+                        if any(within(project, ws) for project in projects) and cid not in seen:
+                            seen.add(cid)
+                            matched.append(cid)
+                            break
+        except (OSError, ValueError):
+            warnings.append("Antigravity conversation metadata could not be read; pass --source explicitly if needed.")
+    history_file = home / "history.jsonl"
+    if history_file.is_file() and not history_file.is_symlink():
+        try:
+            for raw in history_file.read_text(encoding="utf-8", errors="replace").splitlines():
+                try:
+                    entry = json.loads(raw)
+                except ValueError:
+                    continue
+                if not isinstance(entry, dict):
+                    continue
+                ws = entry.get("workspace")
+                cid = entry.get("conversationId")
+                if isinstance(ws, str) and isinstance(cid, str) and cid not in seen:
+                    if any(within(project, ws) for project in projects):
+                        seen.add(cid)
+                        matched.append(cid)
+        except OSError:
+            warnings.append("Antigravity history.jsonl could not be read.")
+    results = []
+    for cid in matched[:MAX_SOURCES]:
+        transcript = home / "brain" / cid / ".system_generated/logs/transcript.jsonl"
+        if transcript.is_file() and not transcript.is_symlink():
+            results.append(transcript)
+    return results
+
+
 def scoped_roots(tool, project):
     if tool == "claude":
         base = Path(os.environ.get("CLAUDE_CONFIG_DIR", Path.home() / ".claude")).expanduser() / "projects"
@@ -176,6 +233,8 @@ def discover(args, project):
         sources = [(p, True) for p in roots]
         if args.tool == "codex":
             sources += [(p, True) for p in codex_paths(projects, warnings)]
+        if args.tool == "agy":
+            sources += [(p, True) for p in agy_paths(projects, warnings)]
     if args.reference and Path(args.reference).expanduser().is_absolute():
         path = Path(args.reference).expanduser().resolve()
         sources = [(path, any(within(root.resolve(), path) for root in roots))]
@@ -274,6 +333,15 @@ def extract(records, tool, project, warnings):
                 if status in {"completed", "failed"}:
                     outcomes.append({"tool": "Grok tool", "reported_status": status})
             continue
+        if tool == "agy":
+            source_kind = record.get("source")
+            content = record.get("content")
+            if kind == "USER_INPUT" and source_kind == "USER_EXPLICIT" and isinstance(content, str):
+                req = re.search(r"<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>", content, re.S)
+                add("user", req.group(1) if req else content)
+            elif kind == "PLANNER_RESPONSE" and source_kind == "MODEL" and isinstance(content, str):
+                add("assistant", content)
+            continue
         payload = record.get("payload", {}) if tool == "codex" else record
         if not isinstance(payload, dict):
             continue
@@ -325,7 +393,7 @@ def current_state(project):
 
 def main():
     parser = argparse.ArgumentParser(description="Recover bounded, inert evidence from a selected coding-agent session. Never executes or resumes history.")
-    parser.add_argument("tool", choices=("claude", "codex", "cursor", "grok"))
+    parser.add_argument("tool", choices=("claude", "codex", "cursor", "grok", "agy"))
     parser.add_argument("action", choices=("list", "show"))
     parser.add_argument("reference", nargs="?")
     parser.add_argument("--project", type=Path, default=Path.cwd())

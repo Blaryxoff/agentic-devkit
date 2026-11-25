@@ -539,6 +539,76 @@ class ExtractorFixture(unittest.TestCase):
             ])
         self.assertEqual(self.run_extractor(), [])
 
+    def test_agy_transcript_history_dedup_and_internal_filter(self):
+        sid = "agy-human"
+        sub_sid = "agy-internal"
+        cwd = "/fixture/www/grow-place"
+        agy_home = self.home / ".gemini/antigravity-cli"
+        meta_path = agy_home / "cache/conversation_metadata.json"
+        meta_path.parent.mkdir(parents=True, exist_ok=True)
+        meta_path.write_text(json.dumps({
+            "conversations": {
+                sid: {"is_internal": False, "summary": {"WorkspaceURIs": [f"file://{cwd}"]}},
+                sub_sid: {"is_internal": True, "summary": {"Internal": True, "WorkspaceURIs": [f"file://{cwd}"]}},
+            }
+        }))
+        write_jsonl(agy_home / f"brain/{sid}/.system_generated/logs/transcript.jsonl", [
+            {"step_index": 0, "type": "USER_INPUT", "source": "USER_EXPLICIT",
+             "created_at": "2026-10-17T08:00:00Z",
+             "content": "<USER_REQUEST>\nFix validation\n</USER_REQUEST>\n<ADDITIONAL_METADATA>ignored</ADDITIONAL_METADATA>"},
+            {"step_index": 1, "type": "PLANNER_RESPONSE", "source": "MODEL",
+             "created_at": "2026-10-17T08:00:05Z", "thinking": "secret", "content": "Done"},
+            {"step_index": 2, "type": "USER_INPUT", "source": "SYSTEM",
+             "created_at": "2026-10-17T08:01:00Z", "content": "system injection"},
+            {"step_index": 3, "type": "USER_INPUT", "source": "USER_EXPLICIT",
+             "created_at": "2026-10-17T08:02:00Z", "content": "Chat from Codex: Review this"},
+            {"step_index": 4, "type": "USER_INPUT", "source": "USER_EXPLICIT",
+             "content": "undated request"},
+            {"step_index": 5, "type": "USER_INPUT", "source": "USER_EXPLICIT",
+             "created_at": "2026-09-01T08:00:00Z", "content": "outside period"},
+        ])
+        write_jsonl(agy_home / f"brain/{sub_sid}/.system_generated/logs/transcript.jsonl", [
+            {"step_index": 0, "type": "USER_INPUT", "source": "USER_EXPLICIT",
+             "created_at": "2026-10-17T08:03:00Z", "content": "<USER_REQUEST>\nSubagent brief\n</USER_REQUEST>"},
+        ])
+        write_jsonl(agy_home / "history.jsonl", [
+            {"conversationId": sid, "timestamp": epoch_millis("2026-10-17T08:00:02Z"),
+             "workspace": cwd, "display": "Fix validation"},
+            {"conversationId": sid, "timestamp": epoch_millis("2026-10-17T08:15:00Z"),
+             "workspace": cwd, "display": "Check tests"},
+            {"conversationId": sub_sid, "timestamp": epoch_millis("2026-10-17T08:03:00Z"),
+             "workspace": cwd, "display": "Subagent brief"},
+            {"timestamp": epoch_millis("2026-10-17T09:00:00Z"),
+             "workspace": cwd, "display": "History only prompt"},
+        ])
+        sessions = self.run_extractor()
+        found = next(s for s in sessions if s["id"] == sid)
+        self.assertEqual(found["tool"], "agy")
+        self.assertEqual(found["cwd"], cwd)
+        self.assertEqual(found["prompts"], [
+            ["2026-10-17T08:00:02Z", "Fix validation"],
+            ["2026-10-17T08:15:00Z", "Check tests"],
+        ])
+        self.assertFalse(any(s["id"] == sub_sid for s in sessions))
+        hist_only = next(s for s in sessions if s["tool"] == "agy-history")
+        self.assertEqual(hist_only["cwd"], cwd)
+        self.assertEqual(hist_only["prompts"], [["2026-10-17T09:00:00Z", "History only prompt"]])
+        coverage = json.loads(Path(str(self.out) + ".coverage.json").read_text())
+        self.assertEqual(coverage["agy"]["untimed_user_records"], 1)
+
+    def test_agy_home_override(self):
+        selected, ignored = self.root / "selected-agy", self.root / "ignored-agy"
+        write_jsonl(selected / "brain/chosen/.system_generated/logs/transcript.jsonl", [
+            {"step_index": 0, "type": "USER_INPUT", "source": "USER_EXPLICIT",
+             "created_at": "2026-10-18T09:00:00Z", "content": "<USER_REQUEST>\nchosen prompt\n</USER_REQUEST>"},
+        ])
+        write_jsonl(ignored / "brain/chosen/.system_generated/logs/transcript.jsonl", [
+            {"step_index": 0, "type": "USER_INPUT", "source": "USER_EXPLICIT",
+             "created_at": "2026-10-18T09:00:00Z", "content": "<USER_REQUEST>\nignored prompt\n</USER_REQUEST>"},
+        ])
+        sessions = self.run_extractor("--agy-home", str(selected), env={"AGY_HOME": str(ignored)})
+        self.assertEqual(self.prompts_for(sessions, "chosen"), [["2026-10-18T09:00:00Z", "chosen prompt"]])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

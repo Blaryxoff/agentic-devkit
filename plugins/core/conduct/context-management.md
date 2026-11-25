@@ -43,7 +43,7 @@ Bad breakpoints:
 
 ## Recover a session from another harness
 
-For an explicit request to continue a Claude, Codex, Cursor or Grok session, use
+For an explicit request to continue a Claude, Codex, Cursor, Grok or Antigravity (`agy`) session, use
 [`bin/devkit-session`](../../../bin/devkit-session) to list candidates for the selected project and recover the chosen
 session. Follow the [recovery workflow](../../../howto/session-recovery.md). A native session ID or explicit transcript
 path pins the source; an ambiguous match requires selection. Never choose another session because its checkout name
